@@ -104,7 +104,7 @@ contains
     if (trim(fileNameIn)=='')then  ! Not input at the command line 
                                    ! so use input.nml
 #ifdef DEF_CASE
-      write(namelistIn, '(A,A,A)') 'namelists/', DEF_CASE, '_input.nml'
+      write(namelistIn, '(A,A,A)') 'namelists/','DEF_CASE','_input.nml'
 #endif
 
       write(*,*) 'Unable to determine input file from command line, so querying ', trim(namelistIn), ' instead...'

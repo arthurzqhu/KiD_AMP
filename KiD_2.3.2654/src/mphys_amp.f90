@@ -205,6 +205,18 @@ contains
   name='drops_init'
   units='kg/kg/ln(r)'
   call save_dg('bin',fielddp2d,name,i_dgtime,units)
+
+!parameters
+  field(:)=guessc2d(:,nx,1)
+  call save_dg(field,'shape_parameter_cloud', i_dgtime,units='unitless', dim='z')
+  field(:)=guessr2d(:,nx,1)
+  call save_dg(field,'shape_parameter_rain', i_dgtime,units='unitless', dim='z')
+  field(:)=guessc2d(:,nx,2)
+  call save_dg(field,'characteristic_diameter_cloud', i_dgtime,units='m', dim='z')
+  field(:)=guessr2d(:,nx,2)
+  call save_dg(field,'characteristic_diameter_rain', i_dgtime,units='m', dim='z') 
+  
+
 end Subroutine mphys_amp_interface
 
 end module mphys_amp
