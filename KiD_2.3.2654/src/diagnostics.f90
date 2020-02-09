@@ -1807,7 +1807,7 @@ contains
 
     if (fileNameOut=='')then
       write(char4,'(I4.4)')icase
-      outdir='/glade/scratch/arthurhu/KiD_AMP_output/'
+      outdir='output/'
       if (trim(KiD_outdir)/='')outdir=KiD_outdir
       if (trim(KiD_outfile)/='') then 
         outfile = trim(outdir)//trim(KiD_outfile)
