@@ -27,8 +27,10 @@ pmomsc=(/3,imomc1,imomc2/)
 pmomsr=(/3,imomr1,imomr2/)
 if (imomc1==imomc2) then
   npm=2 !Run 2M scheme, Num. Pred. Moments = 2
+  print*,2
 else
   npm=3 !Run 3M scheme, Num. Pred. Moments = 3
+  print*,3
 endif
 
 !Open output files, or decide that we don't need to run this combination of moments
