@@ -25,13 +25,14 @@ ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
 
 pmomsc=(/3,imomc1,imomc2/)
 pmomsr=(/3,imomr1,imomr2/)
-if (imomc1==imomc2) then
-  npm=2 !Run 2M scheme, Num. Pred. Moments = 2
-  print*,2
-else
-  npm=3 !Run 3M scheme, Num. Pred. Moments = 3
-  print*,3
-endif
+!if (imomc1==imomc2) then
+!  npm=2 !Run 2M scheme, Num. Pred. Moments = 2
+!  print*,2
+!else
+!  npm=3 !Run 3M scheme, Num. Pred. Moments = 3
+!  print*,3
+!endif
+npm=num_h_moments(1)
 
 !Open output files, or decide that we don't need to run this combination of moments
 if (imomc1>=7 .and. imomc1 .ne. imomc2) then
