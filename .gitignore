@@ -29,5 +29,5 @@
 
 # Executables
 #*.exe
-*.out
+test.out
 *.swp
