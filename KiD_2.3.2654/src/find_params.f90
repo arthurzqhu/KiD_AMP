@@ -341,10 +341,9 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
     MyM3 = min12
     Myp = MyM3 * M3p   
   elseif (MyM3 > max12) then
-    print*,myM3/max12
+    flag=-abs(myM3/max12)
     MyM3 = max12
     Myp = MyM3 * M3p
-    flag=1
   endif
 
   !Again, find where we are on the log scale between the upper and lower
@@ -419,8 +418,8 @@ if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals(1))>tol) flag=-1
-if (abs(vals(2))>tol) flag=-1
+if (abs(vals(1))>tol) flag=-3
+if (abs(vals(2))>tol) flag=-2
 
 !Force third moment to have no error and calculate final distribution
 !print*,'a',guess
