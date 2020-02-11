@@ -309,13 +309,13 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
 
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   if (MxM3 < minMx3) then
+    flag=-abs(minMx3/MxM3)
     MxM3 = minMx3
     Mxp = MxM3 * M3p
-    flag=1
   elseif (MxM3 > maxMx3) then
+    flag=-abs(MxM3/maxMx3)
     MxM3 = maxMx3
     Mxp = MxM3 * M3p
-    flag=1
   endif
 
   !Find where we are on a log10 scale bewteen those two points
@@ -337,10 +337,11 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   min12=min(minmy1,minmy2)
   max12=max(maxmy1,maxmy2)
   if (MyM3 < min12) then
+    flag=-abs(min12/myM3)
     MyM3 = min12
-    Myp = MyM3 * M3p
-    flag=1
+    Myp = MyM3 * M3p   
   elseif (MyM3 > max12) then
+    print*,myM3/max12
     MyM3 = max12
     Myp = MyM3 * M3p
     flag=1
@@ -418,7 +419,8 @@ if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag = 1
+if (abs(vals(1))>tol) flag=-1
+if (abs(vals(2))>tol) flag=-1
 
 !Force third moment to have no error and calculate final distribution
 !print*,'a',guess

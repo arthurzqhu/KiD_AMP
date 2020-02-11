@@ -192,7 +192,7 @@ do k=1,nz
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1))
    else
       ffcloud=0.
-      flag(k,j,1)=-1
+      flag(k,j,1)=1
    endif  
    !----------RAIN--------------------------------
    ihyd=2
@@ -204,7 +204,7 @@ do k=1,nz
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2))
    else
       ffrain=0.
-      flag(k,j,2)=-1
+      flag(k,j,2)=1
    endif
    !----------SUM the Cloud and Rain Distributions-----------  
    ffcd(k,j,:) = ffcloud+ffrain
