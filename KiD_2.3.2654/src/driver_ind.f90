@@ -37,10 +37,10 @@ npm=num_h_moments(1)
 !Open output files, or decide that we don't need to run this combination of moments
 if (imomc1>=7 .and. imomc1 .ne. imomc2) then
  print*,"not a valid moment combination",imomc1,imomc2
- stop 
+ stop
 else !Run AMP
   !Open and read lookup tables
-  if (npm==3) then 
+  if (npm==3) then
     lutfolder='./src/input_data/lutables/'
 
     write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
@@ -77,7 +77,7 @@ endif
 !call microphysics initialization routines
 CALL micro_init()
 CALL micro_init2()
-CALL kernalsdt()  
+CALL kernalsdt()
 
 !Set up initial distribution and set moment values and parameter guesses
 if (npm==3) then
@@ -135,7 +135,7 @@ ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
 !call microphysics initialization routines
 CALL micro_init()
 CALL micro_init2()
-CALL kernalsdt()  
+CALL kernalsdt()
 
 !Set up initial distribution and set moment values and parameter guesses
 dnc=0.;dnr=0.
@@ -192,8 +192,8 @@ do k=1,nz
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1))
    else
       ffcloud=0.
-      flag(k,j,1)=-1
-   endif  
+      flag(k,j,1)=NaN
+   endif
    !----------RAIN--------------------------------
    ihyd=2
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
@@ -204,9 +204,9 @@ do k=1,nz
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2))
    else
       ffrain=0.
-      flag(k,j,2)=-1
+      flag(k,j,2)=NaN
    endif
-   !----------SUM the Cloud and Rain Distributions-----------  
+   !----------SUM the Cloud and Rain Distributions-----------
    ffcd(k,j,:) = ffcloud+ffrain
    ffcdinit(k,j,:)=ffcd(k,j,:)
 
@@ -259,9 +259,9 @@ do k=1,nz
            realpmom = real(pmomsc(i))
            newdiam = (Mpc(k,j,1)/Mpc(k,j,i))**(1./(3.-realpmom))
            if (newdiam < diams(1)) then
-              Mpc(k,j,i) = Mpc(k,j,1)/(1.01*diams(1))**(3.-realpmom) 
+              Mpc(k,j,i) = Mpc(k,j,1)/(1.01*diams(1))**(3.-realpmom)
            elseif (newdiam > diams(krdrop)) then
-              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(krdrop))**(3.-realpmom) 
+              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(krdrop))**(3.-realpmom)
            endif
          endif
          !Could also think about checking diameter in terms of my/mx for 3M ...
@@ -274,11 +274,11 @@ do k=1,nz
       endif
       mc(k,j,ip)=Mpc(k,j,i)
 
-      ip=pmomsr(i)+1 
+      ip=pmomsr(i)+1
       if (mr0(k,j,ip)>0.) then
          dummy=(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
          if(dummy<0.) then
-           Mpr(k,j,i)=0. 
+           Mpr(k,j,i)=0.
          else
            Mpr(k,j,i)=dummy
          endif
@@ -286,9 +286,9 @@ do k=1,nz
            realpmom = real(pmomsr(i))
            newdiam = (Mpr(k,j,1)/Mpr(k,j,i))**(1./(3.-realpmom))
            if (newdiam < diams(krdrop+1)) then
-              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(krdrop+1))**(3.-realpmom) 
+              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(krdrop+1))**(3.-realpmom)
            elseif (newdiam > diams(nkr)) then
-              Mpr(k,j,i) = Mpr(k,j,1)/(0.99*diams(nkr))**(3.-realpmom) 
+              Mpr(k,j,i) = Mpr(k,j,1)/(0.99*diams(nkr))**(3.-realpmom)
            endif
          endif
       else
