@@ -26,7 +26,7 @@ if (x(2)<=0. .or. x(2)>dnbounds(2,ihyd) &
 else
   rx=1.e-10 !This is an arbitrary value of rx
   nu=x(1) !Shape parameter
-  dn=x(2)*1.e-6 !Scale diameter multiplied by 1e6 to make its magnitude 
+  dn=x(2)*1.e-6 !Scale diameter multiplied by 1e6 to make its magnitude
                 !approximately the same as nu
 
   md=0. !Initialize the mass distribution
@@ -75,7 +75,7 @@ if (x(1)<=0. .or. x(1)>1.e10) then
 else
   rx=1.e-10 !This is an arbitrary value of rx
   nu=nug !nug is the global value of nu
-  dn=x(1)*1.e-6 !x(1) is the scale diameter multiplied by 1e6 to make its magnitude 
+  dn=x(1)*1.e-6 !x(1) is the scale diameter multiplied by 1e6 to make its magnitude
                 !approximately the same as nu
   md=0. !Initialize the distribution
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
@@ -128,7 +128,7 @@ implicit none
 double precision :: rx,nu,dn,n0,expterm,md(nkr)
 integer :: ia,iz,kr
 
-  n0=rx/gamma(nu+3) 
+  n0=rx/gamma(nu+3)
   do kr=ia,iz !Loop over bins
     expterm=exp(-1.*diams(kr)/dn)
     md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
@@ -191,7 +191,7 @@ integer n
 double precision rx, nu, dn, m3
 double precision, dimension(nkr):: md
 
-!Use this function to force correct 3rd moment 
+!Use this function to force correct 3rd moment
 !Very similar to fcn_2p
   rx=1.e-10
   nu=x(1)
@@ -223,7 +223,7 @@ double precision, dimension(nkr):: md
   endif
   if (n>1000) then
     print*,'calcdist stuck',m3,M3p
-    stop 
+    stop
   endif
  enddo
 
@@ -263,8 +263,8 @@ real(8),dimension(lwa) :: wa
 external :: fcn_2p
 
 flag = 0
-!This subroutine drives the search for PDF parameters that satisfy the 
-!moments. 
+!This subroutine drives the search for PDF parameters that satisfy the
+!moments.
 M3p=Mp(1);Mxp=Mp(2);Myp=Mp(3)
 
 relax=1. !Initial value of relax. Do not change.
@@ -294,9 +294,9 @@ endif
 !If first try was wildly off, or no 1st guess exists - use look up table
 if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Ratio of xth moment to 3rd moment.
-  MxM3 = Mxp/M3p 
+  MxM3 = Mxp/M3p
   !Ratio of yth moment to 3rd moment.
-  MyM3 = Myp/M3p 
+  MyM3 = Myp/M3p
 
   !Need to see if these ratios are in the solution space
   !If not, adjust Mx and/or My until they are in the solution space
@@ -339,7 +339,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   if (MyM3 < min12) then
     flag=-abs(min12/myM3)
     MyM3 = min12
-    Myp = MyM3 * M3p   
+    Myp = MyM3 * M3p
   elseif (MyM3 > max12) then
     flag=-abs(myM3/max12)
     MyM3 = max12
@@ -388,7 +388,7 @@ i=0
 if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
   i=0
   minsqval=ovals(1)
-  do 
+  do
     if(abs(vals(1))>tol) guess = guess*(1.01)**(-1*(i+1))
     CALL hybrd1(fcn_2p,n,guess,vals,tol,info,wa,lwa)
     sqval = sqrt(sum(vals**2))
@@ -418,8 +418,9 @@ if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals(1))>tol) flag=-3
-if (abs(vals(2))>tol) flag=-2
+if (abs(vals(1))>tol .and. flag>=0) flag=3
+if (abs(vals(2))>tol .and. flag>=0) flag=2
+if (abs(vals(1))>tol .and. abs(vals(2))>tol .and. flag>=0) flag=4
 
 !Force third moment to have no error and calculate final distribution
 !print*,'a',guess
@@ -443,8 +444,8 @@ real(8),dimension(lwa) :: wa
 external :: fcn_1p
 
 flag = 0
-!This subroutine drives the search for PDF parameters that satisfy the 
-!moments. 
+!This subroutine drives the search for PDF parameters that satisfy the
+!moments.
 M3p=Mp(1)
 Mxp=Mp(2)
 
@@ -480,7 +481,7 @@ if (vals==1.) then
 else
   guess(2)=guessin(1)
 endif
- 
+
 !Set flag to 1 if fitting didn't work as well as we wished
 if (abs(vals)>tol) flag = 1
 
