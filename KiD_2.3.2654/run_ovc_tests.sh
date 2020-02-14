@@ -3,6 +3,8 @@
 ovc_factor=(0 0.0001 0.001 0.01 0.1)
 ovc_num=${#ovc_factor[@]}
 
+caselist=(101 102 103 105 106 107)
+case_num=${#caselist[@]}
 
 
 icimm=0.0
@@ -523,9 +525,8 @@ CALL calcdist(guess,md)
 return
 
 End subroutine searchparams2M
-
-/
 END
+	make CASE=1D all
 
 		for ((ic=0; ic<case_num; ic++))
 		do
@@ -616,9 +617,10 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
+KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/'
 /
 END
-		make CASE=1D all; ./bin/KiD_1D.exe namelists/AMP.nml
+		./bin/KiD_1D.exe namelists/AMP.nml
 				#done
 			#done
 #		done

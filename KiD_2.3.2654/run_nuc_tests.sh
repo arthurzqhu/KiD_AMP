@@ -126,6 +126,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
+KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/'
 /
 END
 		./bin/KiD_1D.exe namelists/AMP.nml
