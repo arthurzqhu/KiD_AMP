@@ -1,3 +1,4 @@
+
 subroutine fcn_2p(n,x,fvec,iflag)
 use micro_prm, only:ihyd,nubounds,dnbounds,nkr,diams,M3p,Mxp,Myp,momx,momy,skr,ekr,relax
 use module_hujisbm, only:xl
@@ -310,11 +311,11 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   if (MxM3 < minMx3) then
     flag=-abs(minMx3/MxM3)
-    MxM3 = minMx3
+    MxM3 = minMx3*(1+0.1)
     Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
     flag=-abs(MxM3/maxMx3)
-    MxM3 = maxMx3
+    MxM3 = maxMx3*(1-0.1)
     Mxp = MxM3 * M3p
   endif
 
@@ -338,11 +339,11 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   max12=max(maxmy1,maxmy2)
   if (MyM3 < min12) then
     flag=-abs(min12/myM3)
-    MyM3 = min12
+    MyM3 = min12*(1+0.1)
     Myp = MyM3 * M3p
   elseif (MyM3 > max12) then
     flag=-abs(myM3/max12)
-    MyM3 = max12
+    MyM3 = max12*(1-0.1)
     Myp = MyM3 * M3p
   endif
 
