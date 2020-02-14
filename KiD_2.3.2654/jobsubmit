@@ -8,8 +8,6 @@
 #PBS -M azqhu@ucdavis.edu
 #PBS -l select=1:ncpus=1:mpiprocs=1
 ### Set TMPDIR as recommended
-setenv TMPDIR /glade/scratch/$USER/temp
-mkdir -p $TMPDIR
 
 ### Run the executable
-./run_nuc_tests.sh
+./run_ovc_tests.sh
