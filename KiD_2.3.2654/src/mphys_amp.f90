@@ -199,12 +199,12 @@ contains
   fielddp2d(:,:)=drops2d(:,nx,:)
   name='drops'
   units='kg/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+  !call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
   fielddp2d(:,:)=dropsinit2d(:,nx,:)
   name='drops_init'
   units='kg/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+  !call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
 !parameters
   field(:)=guessc2d(:,nx,1)
