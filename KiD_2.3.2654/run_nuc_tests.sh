@@ -8,8 +8,8 @@ icimm=0.0
 icinm=0.0
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
-#imc1=0 # II moment for cloud
-#imc2=2 # III moment for cloud
+imc1=4 # II moment for cloud
+imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 ia=300
@@ -24,19 +24,19 @@ ia=300
 #	for isp_r in 2 15
 #	do
 
-mc1=(0 2 2 4 4 6)
-mc2=(2 0 4 2 6 4)
-mnum=${#mc1[@]}
+#mc1=(0 2 2 4 4 6)
+#mc2=(2 0 4 2 6 4)
+#mnum=${#mc1[@]}
 
-for ((imnum=0; imnum<mnum; imnum++))
-do
-	imc1=${mc1[imnum]}
-	imc2=${mc2[imnum]}
+#for ((imnum=0; imnum<mnum; imnum++))
+#do
+#	imc1=${mc1[imnum]}
+#	imc2=${mc2[imnum]}
 #for ((imc1=0; imc1<8; imc1=imc1+2))
 #do
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
-		echo $imc1 $imc2
+#		echo $imc1 $imc2
 		for ((ic=0; ic<case_num; ic++))
 		do
 			if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
@@ -133,5 +133,5 @@ END
 				#done
 			#done
 #		done
-	done
+#	done
 done
