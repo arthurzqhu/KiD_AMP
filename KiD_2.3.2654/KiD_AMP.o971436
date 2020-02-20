@@ -1,0 +1,59 @@
+0.1
+true
+if [ "default" != "default" ]; then . default; fi 
+[ -d bin ] || mkdir -p "bin"; \
+[ -d obj ] || mkdir -p "obj"; \
+[ -d output ] || mkdir -p "output"; \
+[ -d namelists ] || mkdir -p "namelists"; \
+cd src; make TESTING= COMPILER=ifort \
+		OBJDIR=../obj EXECDIR=../bin all
+make[1]: Entering directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+./mkdepend.py   -a ../obj/
+make -f makefile.inc TESTING= COMPILER=ifort \
+	 OBJDIR=../obj EXECDIR=../bin all
+make[2]: Entering directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+touch case.used
+[ -d ../obj/UM_source ] || [ "" == " " ] || mkdir -p "../obj/UM_source";
+[ -d ../obj/4A_code ] || [ "" == " " ] || mkdir -p "../obj/4A_code";
+if [[ "1D" != `cat case.used` ]]; then \
+touch parameters.f90; \
+echo 1D > case.used; \
+fi
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c mphys_amp.f90 -o ../obj/mphys_amp.o 
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c mphys_interface.f90 -o ../obj/mphys_interface.o 
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c main.f90 -o ../obj/main.o 
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c KiD.f90 -o ../obj/KiD.o 
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c driver_ind.f90 -o ../obj/driver_ind.o 
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c find_params.f90 -o ../obj/find_params.o 
+ifort -O3 -traceback -pg -g    -o ../bin/KiD_1D.exe ../obj/*.o   -lnetcdf
+make[2]: Leaving directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+make[1]: Leaving directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+101
+ Querying command line
+ Using namelist: namelists/AMP.nml
+    2% completed...
+    4% completed...
+    6% completed...
+    8% completed...
+   10% completed...
+   12% completed...
+   14% completed...
+   16% completed...
+   18% completed...
+forrtl: error (78): process killed (SIGTERM)
+Image              PC                Routine            Line        Source             
+KiD_1D.exe         0000000000958ADE  Unknown               Unknown  Unknown
+libpthread.so.0    00002AAEAC55CB00  Unknown               Unknown  Unknown
+KiD_1D.exe         00000000009360AC  Unknown               Unknown  Unknown
+KiD_1D.exe         0000000000427766  fcn_2p_                    40  find_params.f90
+KiD_1D.exe         000000000042E9A8  hybrd_                    337  hybrd.f
+KiD_1D.exe         000000000042DBC3  hybrd1_                   114  hybrd1.f
+KiD_1D.exe         000000000042A5B6  searchparamsg_            371  find_params.f90
+KiD_1D.exe         0000000000420FB7  mp_amp_                   209  driver_ind.f90
+KiD_1D.exe         00000000004BE3B0  mphys_amp_mp_mphy         107  mphys_amp.f90
+KiD_1D.exe         0000000000432964  main_mp_main_loop          98  main.f90
+KiD_1D.exe         0000000000432835  MAIN__                     17  KiD.f90
+KiD_1D.exe         000000000040496E  Unknown               Unknown  Unknown
+libc.so.6          00002AAEAC7896E5  __libc_start_main     Unknown  Unknown
+
+Stack trace terminated abnormally.

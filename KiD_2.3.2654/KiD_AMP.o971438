@@ -1,0 +1,42 @@
+0.1
+true
+if [ "default" != "default" ]; then . default; fi 
+[ -d bin ] || mkdir -p "bin"; \
+[ -d obj ] || mkdir -p "obj"; \
+[ -d output ] || mkdir -p "output"; \
+[ -d namelists ] || mkdir -p "namelists"; \
+cd src; make TESTING= COMPILER=ifort \
+		OBJDIR=../obj EXECDIR=../bin all
+make[1]: Entering directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+./mkdepend.py   -a ../obj/
+make -f makefile.inc TESTING= COMPILER=ifort \
+	 OBJDIR=../obj EXECDIR=../bin all
+make[2]: Entering directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+touch case.used
+[ -d ../obj/UM_source ] || [ "" == " " ] || mkdir -p "../obj/UM_source";
+[ -d ../obj/4A_code ] || [ "" == " " ] || mkdir -p "../obj/4A_code";
+if [[ "1D" != `cat case.used` ]]; then \
+touch parameters.f90; \
+echo 1D > case.used; \
+fi
+ifort -O3 -traceback -pg -g -fpp -DDEF_NX=1 -DDEF_NZ=120 -DDEF_CASE=\'1D\' -DCOMMANDLINE=1 -DMODEL_KiD=1 -DMODEL_LEM=2 -DMODEL_UM=3 -DDEF_MODEL=MODEL_KiD -DALLOCATABLE_TYPE=0 -DSHIPWAY_MICRO=0 -DUM_MICRO=0 -DCOMPILER=ifort  -c find_params.f90 -o ../obj/find_params.o 
+ifort -O3 -traceback -pg -g    -o ../bin/KiD_1D.exe ../obj/*.o   -lnetcdf
+make[2]: Leaving directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+make[1]: Leaving directory '/glade/u/home/arthurhu/KiD_repo/KiD_2.3.2654/src'
+101
+ Querying command line
+ Using namelist: namelists/AMP.nml
+    2% completed...
+    4% completed...
+    6% completed...
+    8% completed...
+   10% completed...
+forrtl: error (78): process killed (SIGTERM)
+Image              PC                Routine            Line        Source             
+KiD_1D.exe         0000000000958ADE  Unknown               Unknown  Unknown
+libpthread.so.0    00002AB4DC518B00  Unknown               Unknown  Unknown
+KiD_1D.exe         0000000000427745  fcn_2p_                    40  find_params.f90
+KiD_1D.exe         0000000000426FF5  fdjac1_                   111  fdjac1.f
+KiD_1D.exe         000000000042DEFC  hybrd_                    228  hybrd.f
+
+Stack trace terminated abnormally.
