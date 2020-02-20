@@ -258,12 +258,13 @@ real(8) :: guess(2),oguess(2),vals(2),ovals(2),tol
 real(8) :: MxM3,MyM3,irm,iry,wgtm,wgty1,wgty2
 real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(nkr),min12,max12
 real(8) :: minMx3,maxMx3
-integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b,flag
+integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
+integer, dimension(4) :: flag
 integer, parameter :: lwa=33
 real(8),dimension(lwa) :: wa
 external :: fcn_2p
 
-flag = 0
+flag(:) = 0
 !This subroutine drives the search for PDF parameters that satisfy the
 !moments.
 M3p=Mp(1);Mxp=Mp(2);Myp=Mp(3)
@@ -310,12 +311,12 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
 
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   if (MxM3 < minMx3) then
-    flag=-abs(minMx3/MxM3)
-    MxM3 = minMx3*(1.0+0.0)
+    flag(1)=-abs(minMx3/MxM3)
+    MxM3 = minMx3*(1.+0.0)
     Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
-    flag=-abs(MxM3/maxMx3)
-    MxM3 = maxMx3*(1.0-0.0)
+    flag(1)=-abs(MxM3/maxMx3)
+    MxM3 = maxMx3*(1.-0.0)
     Mxp = MxM3 * M3p
   endif
 
@@ -338,12 +339,12 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   min12=min(minmy1,minmy2)
   max12=max(maxmy1,maxmy2)
   if (MyM3 < min12) then
-    flag=-abs(min12/myM3)
-    MyM3 = min12*(1.0+0.0)
+    flag(2)=-abs(min12/myM3)
+    MyM3 = min12*(1.+0.0)
     Myp = MyM3 * M3p
   elseif (MyM3 > max12) then
-    flag=-abs(myM3/max12)
-    MyM3 = max12*(1.0-0.0)
+    flag(2)=-abs(myM3/max12)
+    MyM3 = max12*(1.-0.0)
     Myp = MyM3 * M3p
   endif
 
@@ -419,9 +420,9 @@ if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals(1))>tol .and. flag>=0) flag=3
-if (abs(vals(2))>tol .and. flag>=0) flag=2
-if (abs(vals(1))>tol .and. abs(vals(2))>tol .and. flag>=0) flag=4
+if (abs(vals(1))>tol) flag(3)=1
+if (abs(vals(2))>tol) flag(4)=1
+! if (abs(vals(1))>tol .and. abs(vals(2))>tol .and. flag>=0) flag=4
 
 !Force third moment to have no error and calculate final distribution
 !print*,'a',guess
