@@ -312,11 +312,11 @@
 
 	  !Check now to see if MxM3 is out of allowable range and adjust Mx
 	  if (MxM3 < minMx3) then
-	    flag(1)=-abs(minMx3/MxM3)
+	    flag(1)=abs(minMx3/MxM3)
 	    MxM3 = minMx3*(1.+0.001)
 	    Mxp = MxM3 * M3p
 	  elseif (MxM3 > maxMx3) then
-	    flag(1)=-abs(MxM3/maxMx3)
+	    flag(1)=abs(MxM3/maxMx3)
 	    MxM3 = maxMx3*(1.-0.001)
 	    Mxp = MxM3 * M3p
 	  endif
@@ -340,11 +340,11 @@
 	  min12=min(minmy1,minmy2)
 	  max12=max(maxmy1,maxmy2)
 	  if (MyM3 < min12) then
-	    flag(2)=-abs(min12/myM3)
+	    flag(2)=abs(min12/myM3)
 	    MyM3 = min12*(1.+0.001)
 	    Myp = MyM3 * M3p
 	  elseif (MyM3 > max12) then
-	    flag(2)=-abs(myM3/max12)
+	    flag(2)=abs(myM3/max12)
 	    MyM3 = max12*(1.-0.001)
 	    Myp = MyM3 * M3p
 	  endif
