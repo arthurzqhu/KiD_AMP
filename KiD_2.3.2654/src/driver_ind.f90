@@ -167,7 +167,7 @@ use, intrinsic :: iso_fortran_env, only: real32
 
 implicit none
 integer:: i,j,k,ip
-integer,dimension(nz,nx,2)::flag
+integer,dimension(nz,nx,2,4)::flag
 
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,nkr)::ffcd,fncn,ffcdinit
@@ -183,7 +183,7 @@ nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
 do k=1,nz
  do j=1,nx
-   flag(k,j,:) = 0
+   flag(k,j,:,:) = 0
    !Find gamma PDF parameters
    !searchparamsG returns the distribution bins
    !-----------CLOUD---------------------------------
@@ -194,10 +194,10 @@ do k=1,nz
    momy=pmomsc(3) !pmomsc(1)=3 always
 !if(k==18)print*,k,Mp
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1))
+      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:))
    else
       ffcloud=0.
-      flag(k,j,1)=nan
+      flag(k,j,1,:)=nan
    endif
    !----------RAIN--------------------------------
    ihyd=2
@@ -206,10 +206,10 @@ do k=1,nz
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2))
+      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2,:))
    else
       ffrain=0.
-      flag(k,j,2)=nan
+      flag(k,j,2,:)=nan
    endif
    !----------SUM the Cloud and Rain Distributions-----------
    ffcd(k,j,:) = ffcloud+ffrain
