@@ -1,7 +1,7 @@
 
 &mphys
 ! hydrometeor names
-h_names='cloud','rain'  
+h_names='cloud','rain'
 
 !Moment names
 mom_names='M1','M2','M3'
@@ -22,8 +22,8 @@ num_h_moments= 3,3
 num_h_bins=1,1
 
 !AMP control - which moments to predict
-imomc1 = 2  !1st predicted cloud moment
-imomc2 = 8  !2nd predicted cloud moment (if 3M)
+imomc1 = 4  !1st predicted cloud moment
+imomc2 = 6  !2nd predicted cloud moment (if 3M)
 imomr1 = 0  !1st predicted rain moment
 imomr2 = 6  !2nd predicted rain moment (if 3M)
 
@@ -52,14 +52,14 @@ icase=107
 
 &control
 mphys_scheme='amp'
-dt=16.0       !Timestep length (s)
-dgstart=0.0      	!When to start diagnostic output
-dg_dt=16.0    !Timestep for diagnostic output
-wctrl(1)=2.0            !Updraft speed
-tctrl(1)=3600.    	!Total length of simulation (s)
-tctrl(2)=600.    	!May not be used, depends on the case. Typically the period of w oscillation
-tctrl(3)=1080.	  	!For cases 105-107
-tctrl(4)=1200.    	!For cases 105-107
+dt=0.5            !Timestep length (s)
+dgstart=0.0       !When to start diagnostic output
+dg_dt=1.0         !Timestep for diagnostic output
+wctrl(1)=2.0      !Updraft speed
+tctrl(1)=3600.    !Total length of simulation (s)
+tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
+tctrl(3)=1080.	  !For cases 105-107
+tctrl(4)=1200.    !For cases 105-107
 zctrl=0 !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
 /
 

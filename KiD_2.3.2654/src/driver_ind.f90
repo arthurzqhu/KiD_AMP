@@ -167,7 +167,7 @@ use, intrinsic :: iso_fortran_env, only: real32
 
 implicit none
 integer:: i,j,k,ip
-integer,dimension(nz,nx,2,4)::flag
+real(8),dimension(nz,nx,2,4)::flag
 
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,nkr)::ffcd,fncn,ffcdinit

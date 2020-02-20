@@ -36,9 +36,10 @@ contains
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
     real, dimension(nz,nx,nkr) :: aer2d,drops2d,dropsinit2d
     real, dimension(nz) :: field
+    real(8),dimension(nz,4) :: fieldflag
     real(8), dimension(nz) :: fielddp
     real(8), dimension(nz,nkr) :: fielddp2d
-    integer, dimension(nz,nx,2) :: flag
+    real(8), dimension(nz,nx,2,4) :: flag
     character(1) :: Mnum
 
     do i=1,nx
@@ -176,9 +177,9 @@ contains
 ! Save some diagnostics
 !fitting flag
    if (imomc1.ne.3) then
-      field(:)=flag(:,nx,1)
+      fieldflag(:)=flag(:,nx,1,:)
       call save_dg(field,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
-      field(:)=flag(:,nx,2)
+      fieldflag(:)=flag(:,nx,2,:)
       call save_dg(field,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
    endif
 

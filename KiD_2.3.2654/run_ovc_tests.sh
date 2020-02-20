@@ -270,7 +270,8 @@ do
 	implicit none
 	real(8) :: guess(2)
 	real(8) :: md(nkr)
-	integer :: ihyd,flag
+	integer :: ihyd
+	real(8),dimension(4) :: flag
 
 	if (npm==3) then !if rain is 2M, then cloud is also 2M
 	   CALL searchparams3M(guess,ihyd,md,flag)
@@ -291,7 +292,7 @@ do
 	real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(nkr),min12,max12
 	real(8) :: minMx3,maxMx3
 	integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
-	integer, dimension(4) :: flag
+	real(8), dimension(4) :: flag
 	integer, parameter :: lwa=33
 	real(8),dimension(lwa) :: wa
 	external :: fcn_2p
