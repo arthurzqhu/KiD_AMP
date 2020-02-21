@@ -31,37 +31,37 @@ Module diagnostics
   type, public :: diagBinData   ! Holds bin data (e.g. sizes)
      character(max_char_len) :: name, units, longname
      character(max_char_len) :: dim
-     real(wp), pointer :: data(:) 
+     real(wp), pointer :: data(:)
   end type diagBinData
 
   type, public :: diagScalarTS   ! Holds scalar timeseries data
      character(max_char_len) :: name, units, longname
      character(max_char_len) :: dim
-     real(wp), pointer :: data(:) 
+     real(wp), pointer :: data(:)
   end type diagScalarTS
-  
+
   type, public :: diag1DTS   ! Holds 1D timeseries data
      character(max_char_len) :: name, units, longname
      character(max_char_len) :: dim
-     real(wp), pointer :: data(:,:) 
+     real(wp), pointer :: data(:,:)
   end type diag1DTS
 
   type, public :: diag1D_nxTS   ! Holds 1D timeseries data in nx (only used for 2D)
      character(max_char_len) :: name, units, longname
      character(max_char_len) :: dim
-     real(wp), pointer :: data(:,:) 
-  end type diag1D_nxTS  
+     real(wp), pointer :: data(:,:)
+  end type diag1D_nxTS
 
   type, public :: diag2DTS   ! Holds 2D timeseries data
      character(max_char_len) :: name, units, longname
      character(max_char_len) :: dim
-     real(wp), pointer :: data(:,:,:) 
+     real(wp), pointer :: data(:,:,:)
   end type diag2DTS
 
   type, public :: diag_bin2DTS   ! Holds 2D bin-height timeseries data
      character(max_char_len) :: name, units, longname
      character(max_char_len) :: dim
-     real(wp), pointer :: data(:,:,:) 
+     real(wp), pointer :: data(:,:,:)
   end type diag_bin2DTS
 
   type, public :: dgIDarray
@@ -74,19 +74,19 @@ Module diagnostics
   type(diag1D_nxTS), target :: instant_nx(max_dgs) ! Instaneous nx field for 2D sim
   type(diag2DTS), target :: instant_2D(max_dgs) ! Instantaneous fields
   type(diagScalarTS), target :: scalars(max_dgs) ! Instantaneous scalars
-  type(diagBinData), target :: binData(max_dgs) ! bin data  
+  type(diagBinData), target :: binData(max_dgs) ! bin data
   type(diag_bin2DTS), target :: instant_bindgs(max_dgs) ! Instantaneous bin diags
 
 
   type(dgIDarray), save, target :: ID_instant_column
-  type(dgIDarray), save, target :: ID_instant_nx 
+  type(dgIDarray), save, target :: ID_instant_nx
   type(dgIDarray), save, target :: ID_instant_2D
   type(dgIDarray), save, target :: ID_scalars
   type(dgIDarray), save, target :: ID_binData
   type(dgIDarray), save, target :: ID_instant_bindgs
 
   integer :: maxn_dgtimes=0
-  
+
   interface allocate_dgs
      module procedure allocate_dgs_1DTS, allocate_dgs_2DTS, &
           allocate_dgs_ScalarTS, allocate_dgs_bindata, &
@@ -107,7 +107,7 @@ Module diagnostics
   interface save_dg_2d
 
      module procedure save_dg_2D_point_sp, save_dg_2D_point_dp,      &
-        save_dg_2D_sp, save_dg_2D_dp                                
+        save_dg_2D_sp, save_dg_2D_dp
 
   end interface
 
@@ -122,7 +122,7 @@ Module diagnostics
   end interface
 
   character(*), parameter :: fmta= "(A5, i2.2, A1, i2.2, A1, i4.4, A7"
-  character(*), parameter :: fmtb= ", i2.2, A1, i2.2, A1, i2.2, A5, A4)" 
+  character(*), parameter :: fmtb= ", i2.2, A1, i2.2, A1, i2.2, A5, A4)"
   character(*), parameter :: fmt=fmta//fmtb
 
   integer :: k, j
@@ -130,7 +130,7 @@ Module diagnostics
   integer :: k_here, i_here, j_here
 
 contains
-  
+
   subroutine query_dgstep
 
     if(mod(time,dg_dt)<dt.and.time>dgstart)then
@@ -139,14 +139,15 @@ contains
     else
        l_dgstep=.false.
     end if
-           
+
   end subroutine query_dgstep
 
 
   subroutine save_diagnostics_1d
-    
+
     real(wp), allocatable :: field(:)
-    real(wp), allocatable :: field_nx(:)   
+    real(wp), allocatable :: field_flag(:,:)
+    real(wp), allocatable :: field_nx(:)
     real(wp), allocatable :: field_bin_c(:)
     real(wp), allocatable :: field_bin_r(:)
     real(wp), allocatable :: field_bin(:,:)
@@ -156,20 +157,21 @@ contains
     if (.not. l_dgstep) return
 
     !
-    ! Instantaneous (for 1-D run) or horizontally averaged (for 2d run) 
+    ! Instantaneous (for 1-D run) or horizontally averaged (for 2d run)
     ! column data
     !
     allocate(field(nz))
-    allocate(field_nx(0:nx+1))    
+    allocate(field_flag(nz,4))
+    allocate(field_nx(0:nx+1))
     allocate(field_bin_c(nz))
     allocate(field_bin_r(nz))
     allocate(field_bin(nz,max_nbins))
-    
-    ! set dimensions for the diagnostic column or grid output, i.e. 
+
+    ! set dimensions for the diagnostic column or grid output, i.e.
     ! 1-D set-up is dimensioned with column - 'z'
-    
+
     dims = 'z'
-   
+
     ! pressure
     field(:)=pmb(:,nx)
     call save_dg(field, 'pressure', i_dgtime,  units='mb',dim=dims)
@@ -192,11 +194,11 @@ contains
              field(k)=sum(aerosol(k,nx,ih)%moments(:,imom))
           end do
           name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))
-          units=trim(aero_mom_units(imom)) 
+          units=trim(aero_mom_units(imom))
           call save_dg(field, name, i_dgtime, units,dim=dims)
        end do
     end do
-    
+
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -209,12 +211,12 @@ contains
                 field_bin_r(k) = sum(hydrometeors(k,nx,ih)%moments(split_bins+1:max_nbins,imom))
              endif
           end do
-          call save_dg(field, name, i_dgtime,  units,dim=dims)          
+          call save_dg(field, name, i_dgtime,  units,dim=dims)
 
           if (num_h_bins(ih) > 1) then
-             name=trim('cloud_only_'//trim(mom_names(imom)))          
+             name=trim('cloud_only_'//trim(mom_names(imom)))
              call save_dg(field_bin_c, name, i_dgtime, units, dim=dims)
-             name=trim('rain_only_'//trim(mom_names(imom)))          
+             name=trim('rain_only_'//trim(mom_names(imom)))
              call save_dg(field_bin_r, name, i_dgtime, units, dim=dims)
              do ibin= 1,num_h_bins(ih)
                 field_bin(:,ibin) = 0.0
@@ -223,9 +225,14 @@ contains
                 end do
              end do
              name=trim(h_names(ih))//'_bin_'//trim(mom_names(imom))
-             call save_dg('bin',field_bin, name, i_dgtime,  units,dim=dims)     
+             call save_dg('bin',field_bin, name, i_dgtime,  units,dim=dims)
           end if
        end do
+    end do
+
+    !4D flags
+    do ift=1,4 !iflagtype
+      call save_dg('flag',field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
     end do
 
     !========================================================
@@ -247,8 +254,8 @@ contains
           do k=1,nz
              field(k)=sum(daerosol_adv(k,nx,ih)%moments(:,imom))
           end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv' 
-          units=trim(aero_mom_units(imom)//'/s') 
+          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv'
+          units=trim(aero_mom_units(imom)//'/s')
           call save_dg(field , name, i_dgtime, units,dim=dims)
        end do
     end do
@@ -269,7 +276,7 @@ contains
     ! Divergence
     !
     !-----------
-    if (l_diverge)then 
+    if (l_diverge)then
        ! theta
        field(:)=dtheta_div(:,nx)
        call save_dg(field, 'dtheta_div', i_dgtime,  units='K/s',dim=dims)
@@ -282,7 +289,7 @@ contains
              do k=1,nz
                 field(k)=sum(daerosol_div(k,nx,ih)%moments(:,imom))
              end do
-             name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div' 
+             name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div'
              units=trim(aero_mom_units(imom)//'/s')
              call save_dg(field, name, i_dgtime, units,dim=dims)
           end do
@@ -291,7 +298,7 @@ contains
        do ih=1,nspecies
           do imom=1,num_h_moments(ih)
              name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_div'
-             units=trim(mom_units(imom)//'/s')             
+             units=trim(mom_units(imom)//'/s')
              do k=1,nz
                 field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
              enddo
@@ -306,10 +313,10 @@ contains
     !-------------
     !
     ! theta
-    field(:)=dtheta_mphys(:,nx)  
+    field(:)=dtheta_mphys(:,nx)
     call save_dg(field, 'dtheta_mphys', i_dgtime,  units='K/s',dim=dims)
     ! qv tendency
-    field(:)=dqv_mphys(:,nx)      
+    field(:)=dqv_mphys(:,nx)
     call save_dg(field, 'dqv_mphys', i_dgtime,  units='kg/kg/s',dim=dims)
     !aerosol
     do ih=1,naerosol
@@ -317,8 +324,8 @@ contains
           do k=1,nz
              field(k)=sum(daerosol_mphys(k,nx,ih)%moments(:,imom))
           end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys' 
-          units=trim(aero_mom_units(imom)//'/s') 
+          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys'
+          units=trim(aero_mom_units(imom)//'/s')
           call save_dg(field, name, i_dgtime, units,dim=dims)
        end do
     end do
@@ -330,7 +337,7 @@ contains
           do k=1,nz
              field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
           end do
-          call save_dg(field, name, i_dgtime,  units,dim=dims)   
+          call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
     !----------------
@@ -381,7 +388,7 @@ contains
            field(k)=unset_real
         end if
      end do
-     call save_dg(field(:)*field_mask(:,nx), 'RH_ice', i_dgtime, units, dims) 
+     call save_dg(field(:)*field_mask(:,nx), 'RH_ice', i_dgtime, units, dims)
 
 
     !-------------------------
@@ -400,14 +407,14 @@ contains
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
-          units=trim(mom_units(imom))//' kg/m2'          
+          units=trim(mom_units(imom))//' kg/m2'
           do k=1,nz
              field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
           end do
           call save_dg(sum(field), name, i_dgtime,  units,dim='time')
        end do
     end do
-    
+
     do ih=1,nspecies
        if (num_h_bins(ih) > 1)then
           field_bin_c(:)=0.0
@@ -429,7 +436,7 @@ contains
 
     deallocate(field_bin)
     deallocate(field)
-    deallocate(field_nx)    
+    deallocate(field_nx)
     deallocate(field_bin_c)
     deallocate(field_bin_r)
 
@@ -463,23 +470,23 @@ contains
     !
     ! Instantaneous grid diags for a 2-D run
     !
-    allocate(field_nx(0:nx+1))    
+    allocate(field_nx(0:nx+1))
     allocate(field_2D(nz,1:nx))
     allocate(field_bin_c_2d(nz,1:nx))
-    allocate(field_bin_r_2d(nz,1:nx))   
+    allocate(field_bin_r_2d(nz,1:nx))
     !
     ! Instantaneous horizontally averged diags for a scalar diags
-    !    
+    !
     allocate(field(nz))
     allocate(field_bin_c(nz))
     allocate(field_bin_r(nz))
 
-    ! set dimensions for the diagnostic column or grid output, i.e. 
+    ! set dimensions for the diagnostic column or grid output, i.e.
     ! 2-D set-up is dimensioned with grid - 'z,x'
-    
+
     dims = 'z,x'
-    
-    ! pressure       
+
+    ! pressure
     field_2d(:,1:nx) = pmb(:,1:nx)
     call save_dg(field_2d, 'pressure', i_dgtime,  units='mb',dim=dims)
     !temperature(K)
@@ -505,9 +512,9 @@ contains
                 field_2D(k,j)=sum(aerosol(k,j,ih)%moments(:,imom))
              end do
           end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom)) 
-          units=trim(aero_mom_units(imom)) 
-          call save_dg(field_2D, name, i_dgtime, units,dim='z,x')             
+          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))
+          units=trim(aero_mom_units(imom))
+          call save_dg(field_2D, name, i_dgtime, units,dim='z,x')
        end do
     end do
 
@@ -527,16 +534,16 @@ contains
                 endif
              end do
           end do
-          call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim=dims)          
+          call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim=dims)
 
-          name=trim(h_names(ih))//'_'//trim(mom_names(imom))  
+          name=trim(h_names(ih))//'_'//trim(mom_names(imom))
           call save_dg(field_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims)
-          
+
           if (num_h_bins(ih) > 1) then
-             name=trim('cloud_only_'//trim(mom_names(imom)))          
+             name=trim('cloud_only_'//trim(mom_names(imom)))
              call save_dg(field_bin_c_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims)
-             name=trim('rain_only_'//trim(mom_names(imom)))          
-             call save_dg(field_bin_r_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims) 
+             name=trim('rain_only_'//trim(mom_names(imom)))
+             call save_dg(field_bin_r_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims)
           endif
        enddo
     enddo
@@ -553,7 +560,7 @@ contains
     call save_dg(field_2d, 'dtheta_adv', i_dgtime,  units='K/s',dim=dims)
     ! qv
     field_2d(:,1:nx)=dqv_adv(:,1:nx)
-    call save_dg(field_2d, 'dqv_adv', i_dgtime,  units='kg/kg/s',dim=dims)  
+    call save_dg(field_2d, 'dqv_adv', i_dgtime,  units='kg/kg/s',dim=dims)
     ! aerosols
     do ih=1,naerosol
        do imom=1,num_aero_moments(ih)
@@ -562,8 +569,8 @@ contains
                 field_2d(k,j)=sum(daerosol_adv(k,j,ih)%moments(:,imom))
              end do
           end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv' 
-          units=trim(aero_mom_units(imom))//'/s' 
+          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv'
+          units=trim(aero_mom_units(imom))//'/s'
           call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
        end do
     end do
@@ -577,7 +584,7 @@ contains
                 field_2D(k,j)=sum(dhydrometeors_adv(k,j,ih)%moments(:,imom))
              end do
           end do
-          call save_dg(field_2d, name, i_dgtime,  units,dim=dims) 
+          call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
        end do
     end do
     !
@@ -586,7 +593,7 @@ contains
     ! Divergence
     !
     !-----------
-    if (l_diverge)then 
+    if (l_diverge)then
        ! theta
        field_2d(:,1:nx)=dtheta_div(:,1:nx)
        call save_dg(field_2d, 'dtheta_div', i_dgtime,  units='K/s',dim=dims)
@@ -601,16 +608,16 @@ contains
                    field_2D(k,j)=sum(daerosol_div(k,j,ih)%moments(:,imom))
                 end do
              end do
-             name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div' 
-             units=trim(aero_mom_units(imom))//'/s' 
-             call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')  
+             name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div'
+             units=trim(aero_mom_units(imom))//'/s'
+             call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
           end do
        end do
        !hydrometeors
        do ih=1,nspecies
           do imom=1,num_h_moments(ih)
              name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_div'
-             units=trim(mom_units(imom)//'/s')             
+             units=trim(mom_units(imom)//'/s')
              do k=1,nz
                 do j=1,nx
                    field_2D(k,j)=sum(dhydrometeors_div(k,j,ih)%moments(:,imom))
@@ -627,10 +634,10 @@ contains
     !-------------
     !
     ! theta
-    field_2d(:,1:nx)=dtheta_mphys(:,1:nx)    
+    field_2d(:,1:nx)=dtheta_mphys(:,1:nx)
     call save_dg(field_2d, 'dtheta_mphys', i_dgtime,  units='K/s',dim='z')
     ! qv tendency
-    field_2d(:,1:nx)=dqv_mphys(:,1:nx)    
+    field_2d(:,1:nx)=dqv_mphys(:,1:nx)
     call save_dg(field_2d, 'dqv_mphys', i_dgtime,  units='kg/kg/s',dim='z')
     !aerosol
     do ih=1,naerosol
@@ -640,8 +647,8 @@ contains
                 field_2D(k,j)=sum(daerosol_mphys(k,j,ih)%moments(:,imom))
              end do
           end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys' 
-          units=trim(aero_mom_units(imom)//'/s') 
+          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys'
+          units=trim(aero_mom_units(imom)//'/s')
           call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
        end do
     end do
@@ -655,7 +662,7 @@ contains
                 field_2D(k,j)=sum(dhydrometeors_mphys(k,j,ih)%moments(:,imom))
              end do
            end do
-           call save_dg(field_2d, name, i_dgtime,  units,dim=dims)               
+           call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
       end do
     end do
     !----------------
@@ -679,7 +686,7 @@ contains
                 field_2D(k,j)=sum(dhydrometeors_force(k,j,ih)%moments(:,imom))
              end do
            end do
-           call save_dg(field_2d, name, i_dgtime,  units,dim=dims)   
+           call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
        end do
      end do
     !--------------
@@ -712,7 +719,7 @@ contains
            end if
         end do
      enddo
-     call save_dg(field_2D(1:nz,1:nx)*field_mask(1:nz,1:nx), 'RH_ice', i_dgtime, units, dim='z,x')       
+     call save_dg(field_2D(1:nz,1:nx)*field_mask(1:nz,1:nx), 'RH_ice', i_dgtime, units, dim='z,x')
 
     !-------------------------
     !
@@ -723,7 +730,7 @@ contains
 
     !-------------------------
     !
-    ! Horizontally averaged 
+    ! Horizontally averaged
     ! column integrated values
     !
     !-------------------------
@@ -731,21 +738,21 @@ contains
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
           name='mean '//trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
-          units=trim(mom_units(imom))//' kg/m2'  
-          do j=1,nx        
+          units=trim(mom_units(imom))//' kg/m2'
+          do j=1,nx
             do k=1,nz
                 field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,ih)%moments(:,imom))
              end do
-             field_nx(j) = sum(field_2D(:,j))  
+             field_nx(j) = sum(field_2D(:,j))
           end do
           ! horizontally averaged column integrated value
-          call save_dg(sum(field_nx(1:nx))/nx, name, i_dgtime,  units,dim='time') 
+          call save_dg(sum(field_nx(1:nx))/nx, name, i_dgtime,  units,dim='time')
           ! column integrated values for each column
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
           call save_dg(field_nx(1:nx), name, i_dgtime,  units,dim='x')
        end do
     end do
-    
+
     do ih=1,nspecies
        if (num_h_bins(ih) > 1)then
           field_bin_c(:)=0.0
@@ -760,7 +767,7 @@ contains
              field_bin_c(k) = sum(field_bin_c_2d(k,1:nx))/nx
              field_bin_r(k) = sum(field_bin_r_2d(k,1:nx))/nx
           enddo
-          
+
           call save_dg(sum(field_bin_c), 'cloud_water_path',&
                i_dgtime, units='kg/m2',dim='time')
           call save_dg(sum(field_bin_r), 'rain_water_path',&
@@ -769,7 +776,7 @@ contains
     enddo
 
 
-    deallocate(field_nx)    
+    deallocate(field_nx)
     deallocate(field_2D)
     deallocate(field_bin_c_2d)
     deallocate(field_bin_r_2d)
@@ -790,22 +797,22 @@ contains
   subroutine allocate_dgs_1DTS(dgStore)
 
     type(diag1DTS), intent(inout) :: dgStore
-    integer :: n_offset, n_dgtimes 
+    integer :: n_offset, n_dgtimes
 
-    n_offset = dgstart/dt-1 
-    n_dgtimes = n_times - n_offset 
+    n_offset = dgstart/dt-1
+    n_dgtimes = n_times - n_offset
 
-    if (nx == 1) then 
-       
+    if (nx == 1) then
+
        maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
        allocate(dgStore%data(nz, maxn_dgtimes))
        dgStore%data=unset_real
-       
+
     else
 
        maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
        allocate(dgStore%data(1:nx, maxn_dgtimes))
-       dgStore%data=unset_real      
+       dgStore%data=unset_real
 
     endif
 
@@ -814,12 +821,12 @@ contains
   subroutine allocate_dgs_2DTS(dgStore)
 
     type(diag2DTS), intent(inout) :: dgStore
-    integer :: n_offset, n_dgtimes 
+    integer :: n_offset, n_dgtimes
 
-    n_offset = dgstart/dt-1 
-    n_dgtimes = n_times - n_offset 
-    
-    maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1) 
+    n_offset = dgstart/dt-1
+    n_dgtimes = n_times - n_offset
+
+    maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(nz, 1:nx, maxn_dgtimes))
     dgStore%data=unset_real
 
@@ -827,25 +834,25 @@ contains
 
   subroutine allocate_dgs_bindgs(dgStore)
 
-    type(diag_bin2dTS), intent(inout) :: dgStore  
-    integer :: n_offset, n_dgtimes 
+    type(diag_bin2dTS), intent(inout) :: dgStore
+    integer :: n_offset, n_dgtimes
 
-    n_offset = dgstart/dt-1 
-    n_dgtimes = n_times - n_offset   
+    n_offset = dgstart/dt-1
+    n_dgtimes = n_times - n_offset
 
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
-    allocate(dgStore%data(nz, max_nbins, maxn_dgtimes))    
-    dgStore%data=unset_real    
+    allocate(dgStore%data(nz, max_nbins, maxn_dgtimes))
+    dgStore%data=unset_real
 
-  end subroutine allocate_dgs_bindgs    
+  end subroutine allocate_dgs_bindgs
 
   subroutine allocate_dgs_ScalarTS(dgStore)
 
     type(diagScalarTS), intent(inout) :: dgStore
-    integer :: n_offset, n_dgtimes 
+    integer :: n_offset, n_dgtimes
 
-    n_offset = dgstart/dt-1 
-    n_dgtimes = n_times - n_offset 
+    n_offset = dgstart/dt-1
+    n_dgtimes = n_times - n_offset
 
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(maxn_dgtimes))
@@ -870,9 +877,9 @@ contains
 
     integer :: i
     logical ::l_new ! logical to indicate a new variable
-    
+
     ! First check to see if name already defined
-    ! Start checking last accessed index and then 
+    ! Start checking last accessed index and then
     ! loop around all other values (linear search)
     l_new=.true.
     do i=0,dg_index%nids-1
@@ -891,52 +898,52 @@ contains
        dg_index%dgIds(ivar)%name=name
        dg_index%lastAccessed=ivar
     end if
-          
+
   end subroutine getUniqueId
 
   subroutine save_dg_1d_sp(field, name, itime, units, dim, longname)
-     
+
     real(sp), intent(in) :: field(:)
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables for column diagnostics
     type(diag1DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
-    
+
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
-    
+
     if (.not. l_dgstep) return
-    
+
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
-    
+
     dg=>instant_column
     dg_index=>ID_instant_column
-     
+
     if (present(units))then
        cunits=units
     else
        cunits='Not set'
     end if
-    
+
     if (present(dim))then
        cdim=dim
     else
        cdim='z'
     end if
-    
+
     if (present(longname))then
        clongname=longname
     else
        clongname=name
     end if
-    
+
     call getUniqueId(name, dg_index, ivar)
-    
+
     if (.not. associated(dg(ivar)%data)) then
        call allocate_dgs(dg(ivar))
        dg(ivar)%name=name
@@ -946,7 +953,7 @@ contains
     end if
 
     dg(ivar)%data(:,itime)=field(:)
-       
+
   end subroutine save_dg_1d_sp
 
   subroutine save_dg_1d_range_sp(ks, ke, field, name, itime, units, &
@@ -957,7 +964,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag1DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -967,12 +974,12 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_column
     dg_index=>ID_instant_column
 
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1012,7 +1019,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag1DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1022,11 +1029,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_column
     dg_index=>ID_instant_column
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1065,7 +1072,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag2DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1075,11 +1082,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_2D
     dg_index=>ID_instant_2D
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1109,7 +1116,7 @@ contains
     end if
 
     dg(ivar)%data(:,:,itime)=field(:,:)
-    
+
   end subroutine save_dg_2d_sp
 
   subroutine save_dg_2d_point_sp(k, l, value, name, itime, units, &
@@ -1120,7 +1127,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag2DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1130,11 +1137,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_2D
     dg_index=>ID_instant_2D
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1163,7 +1170,7 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(k,l,itime)=value
-    
+
   end subroutine save_dg_2d_point_sp
 
   subroutine save_dg_scalar_sp(value, name, itime, units, dim, longname)
@@ -1172,7 +1179,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diagScalarTS), pointer:: dg(:)
     type(dgIDarray), pointer :: dg_index
@@ -1183,7 +1190,7 @@ contains
 
     dg=>scalars
     dg_index=>ID_scalars
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1221,7 +1228,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag1DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1232,11 +1239,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_column
     dg_index=>ID_instant_column
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1256,7 +1263,7 @@ contains
     end if
 
     call getUniqueId(name, dg_index, ivar)
-    
+
     if (.not. associated(dg(ivar)%data)) then
        call allocate_dgs(dg(ivar))
        dg(ivar)%name=name
@@ -1276,7 +1283,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag1DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1286,12 +1293,12 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_column
     dg_index=>ID_instant_column
 
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1331,7 +1338,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag1DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1341,11 +1348,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_column
     dg_index=>ID_instant_column
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1384,7 +1391,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag2DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1394,11 +1401,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_2D
     dg_index=>ID_instant_2D
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1427,7 +1434,7 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(:,:,itime)=field(:,:)
-    
+
   end subroutine save_dg_2d_dp
 
   subroutine save_dg_2d_point_dp(k, l, value, name, itime, units, &
@@ -1438,7 +1445,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diag2DTS), pointer :: dg(:)
     type(dgIDarray), pointer  :: dg_index
@@ -1448,11 +1455,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_2D
     dg_index=>ID_instant_2D
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1481,7 +1488,7 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(k,l,itime)=value
-    
+
   end subroutine save_dg_2d_point_dp
 
 
@@ -1491,7 +1498,7 @@ contains
     character(*), intent(in) :: name
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
-    
+
     !local variables
     type(diagScalarTS), pointer:: dg(:)
     type(dgIDarray), pointer :: dg_index
@@ -1502,7 +1509,7 @@ contains
 
     dg=>scalars
     dg_index=>ID_scalars
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1536,10 +1543,10 @@ contains
 
   subroutine save_dg_bin_sp(bin, field, name, itime, units, &
      dim, longname)
-    
+
     real(sp), intent(in) :: field(:,:)
     character(*), intent(in) :: name
-    character(*), intent(in) :: bin  
+    character(*), intent(in) :: bin
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
 
@@ -1552,11 +1559,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_bindgs
     dg_index=>ID_instant_bindgs
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1584,17 +1591,17 @@ contains
        dg(ivar)%dim=trim(cdim)
        dg(ivar)%longname=trim(clongname)
     end if
-    
+
     dg(ivar)%data(:,:,itime)=field(:,:)
-    
+
   end subroutine save_dg_bin_sp
 
   subroutine save_dg_bin_dp(bin, field, name, itime, units, &
      dim, longname)
-    
+
     real(dp), intent(in) :: field(:,:)
     character(*), intent(in) :: name
-    character(*), intent(in) :: bin  
+    character(*), intent(in) :: bin
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
 
@@ -1607,11 +1614,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_bindgs
     dg_index=>ID_instant_bindgs
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1639,9 +1646,9 @@ contains
        dg(ivar)%dim=trim(cdim)
        dg(ivar)%longname=trim(clongname)
     end if
-    
+
     dg(ivar)%data(:,:,itime)=field(:,:)
-    
+
   end subroutine save_dg_bin_dp
 
   subroutine save_binData_sp(field, name, units, &
@@ -1650,16 +1657,16 @@ contains
     real(sp), intent(in) :: field(:)
     character(*), intent(in) :: name
     character(*), intent(in), optional :: units, longname
-    
+
     !local variables
     type(diagBinData), pointer :: dg(:)
-    type(dgIDarray), pointer  :: dg_index 
+    type(dgIDarray), pointer  :: dg_index
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
 
     dg=>binData
     dg_index=>ID_binData
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1684,7 +1691,7 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(:)=field(:)
-    
+
   end subroutine save_binData_sp
 
   subroutine save_binData_dp(field, name, units, &
@@ -1693,16 +1700,16 @@ contains
     real(dp), intent(in) :: field(:)
     character(*), intent(in) :: name
     character(*), intent(in), optional :: units, longname
-    
+
     !local variables
     type(diagBinData), pointer :: dg(:)
-    type(dgIDarray), pointer  :: dg_index 
+    type(dgIDarray), pointer  :: dg_index
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
 
     dg=>binData
     dg_index=>ID_binData
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1727,15 +1734,15 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(:)=field(:)
-    
+
   end subroutine save_binData_dp
 
   subroutine my_save_dg_bin_dp(bin, field, name, itime, units, &
      dim, longname)
-    
+
     real(dp), intent(in) :: field(:,:)
     character(*), intent(in) :: name
-    character(*), intent(in) :: bin  
+    character(*), intent(in) :: bin
     integer, intent(in) :: itime
     character(*), intent(in), optional :: units, dim, longname
 
@@ -1748,11 +1755,11 @@ contains
     if (.not. l_dgstep) return
 
     ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do 
+    ! could put in an optional argument later to do
     ! averaged, accumulated, etc. later.
     dg=>instant_bindgs
     dg_index=>ID_instant_bindgs
-    
+
     if (present(units))then
        cunits=units
     else
@@ -1780,9 +1787,9 @@ contains
        dg(ivar)%dim=trim(cdim)
        dg(ivar)%longname=trim(clongname)
     end if
-    
+
     dg(ivar)%data(:,:,itime)=field(:,:)
-    
+
   end subroutine my_save_dg_bin_dp
 
   subroutine write_diagnostics
@@ -1793,25 +1800,25 @@ contains
 
     character(max_char_len) :: outfile, nmlfile, outdir, name
 
-    ! Local variables    
+    ! Local variables
     integer :: ivar, itmp=1, offset=3, n_dgs, k, iq, tim
     character(4) :: char4
-    
+
     ! netcdf variables
     integer :: status, ncid, zid, xid, timeid, binsid
     integer :: tzdim(2), txdim(2), tzldim(3), tzxdim(3), dim, dim2d(2), dim3d(3)
     integer, allocatable :: varid(:)
     real, allocatable :: field3d(:,:,:)
-    
+
     write(6,*) 'Integration complete.'
 
     if (fileNameOut=='')then
       write(char4,'(I4.4)')icase
       outdir='output/'
       if (trim(KiD_outdir)/='')outdir=KiD_outdir
-      if (trim(KiD_outfile)/='') then 
+      if (trim(KiD_outfile)/='') then
         outfile = trim(outdir)//trim(KiD_outfile)
-      else   
+      else
         outfile=trim(outdir)//trim(modelName)//'_m-'//trim(mphys_id)// &
            '_u-'//trim(username)//'_c-'//char4//'_v-0001.nc'
       endif
@@ -1838,17 +1845,17 @@ contains
 
     !------------------------
     ! Write global attributes
-    !------------------------   
+    !------------------------
 
     call date_and_time(zone=dt_zone,values=dt_values)
-    
+
     write ( dateString, fmt )  'Date ',dt_values(3), '/', dt_values(2), '/',&
          & dt_values(1), '; time ', dt_values(5), ':', dt_values(6),&
          & ':', dt_values(7), dt_zone,' UTC'
 
     status=nf90_put_att(ncid, nf90_global, 'title',              &
          ' Microphysics dataset produced by '//               &
-         trim(modelName)//' model version '//trim(version)// & 
+         trim(modelName)//' model version '//trim(version)// &
          '('//trim(revision)//').')
 
     status=nf90_put_att(ncid, nf90_global, 'creation date',      &
@@ -1860,13 +1867,13 @@ contains
     status=nf90_put_att(ncid, nf90_global, 'Advection ID', advection_id)
     status=nf90_put_att(ncid, nf90_global, 'references', references)
     status=nf90_put_att(ncid, nf90_global, 'comments', comments)
-    
+
     status=nf90_def_dim(ncid, 'time', int(n_dgtimes, kind=incdfp), timeid)
     call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'z', int(nz, kind=incdfp), zid)
     call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'bins', int(max_nbins, kind=incdfp), binsid)
-    call check_ncstatus(status)    
+    call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'x', int(nx, kind=incdfp), xid)
     call check_ncstatus(status)
 
@@ -1890,7 +1897,7 @@ contains
     call check_ncstatus(status)
 
     status=nf90_enddef(ncid)
-    
+
     ivar=1
     status=nf90_put_var(ncid, varid(ivar), z)
     call check_ncstatus(status)
@@ -1921,7 +1928,7 @@ contains
        status=nf90_put_att(ncid, varid(ivar),        &
             'missing_value', unset_real)
     end do
-    
+
     status=nf90_enddef(ncid)
 
     do ivar=1,n_dgs
@@ -1932,7 +1939,7 @@ contains
 
 
     deallocate(varid)
-    
+
     ! Do scalars (including time)
     n_dgs=ID_Scalars%nids
     allocate(varid(n_dgs))
@@ -1952,7 +1959,7 @@ contains
        status=nf90_put_att(ncid, varid(ivar),        &
             'missing_value', unset_real)
     end do
-    
+
     status=nf90_enddef(ncid)
 
     do ivar=1,n_dgs
@@ -1984,9 +1991,9 @@ contains
           status=nf90_put_att(ncid, varid(ivar),        &
                'missing_value', unset_real)
        end do
-       
+
        status=nf90_enddef(ncid)
-       
+
        do ivar=1,n_dgs
           status=nf90_put_var(ncid, varid(ivar), &
                transpose(instant_column(ivar)%data(1:nz,1:n_dgtimes)))
@@ -2000,7 +2007,7 @@ contains
        allocate(varid(n_dgs))
        status=nf90_redef(ncid)
        dim3d=tzldim
-       
+
        do ivar=1,n_dgs
           status=nf90_def_var(ncid, instant_bindgs(ivar)%name &
                , nf90_float, dim3d, varid(ivar))
@@ -2014,7 +2021,7 @@ contains
        end do
 
        status=nf90_enddef(ncid)
-       
+
        allocate(field3d(n_dgtimes, max_nbins, nz))
 
        do ivar=1,n_dgs
@@ -2026,17 +2033,17 @@ contains
              enddo
           enddo
           status=nf90_put_var(ncid, varid(ivar), field3d)
-          
+
           call check_ncstatus(status)
-          
+
        enddo
-       
+
        deallocate(field3d)
-       
-       deallocate(varid)      
-       
+
+       deallocate(varid)
+
     else
-       
+
        ! Do the instantaneous diags (2D)
        n_dgs=ID_instant_2D%nids
        allocate(varid(n_dgs))
@@ -2054,11 +2061,11 @@ contains
           status=nf90_put_att(ncid, varid(ivar),        &
                'missing_value', unset_real)
        end do
-       
+
        status=nf90_enddef(ncid)
 
        allocate(field3d(n_dgtimes, nx, nz))
-       
+
        do ivar=1,n_dgs
           do tim=1,n_dgtimes
              do j = 1, nx
@@ -2083,7 +2090,7 @@ contains
        allocate(varid(n_dgs))
        status=nf90_redef(ncid)
        dim2d=txdim
-    
+
        do ivar=1,n_dgs
           status=nf90_def_var(ncid, instant_column(ivar)%name &
                , nf90_float, dim2d, varid(ivar))
@@ -2103,11 +2110,11 @@ contains
                transpose(instant_column(ivar)%data(1:nx,1:n_dgtimes)))
           call check_ncstatus(status)
        end do
-       
+
        deallocate(varid)
 
     endif
-  
+
     status=nf90_close(ncid)
     call check_ncstatus(status)
 
@@ -2143,9 +2150,9 @@ contains
     end if
 
   end subroutine check_ncstatus
- 
+
   subroutine print_dg_1D_point(name, itime, k, dg_obj, dg_index)
-    
+
     character(*), intent(in) :: name
     integer, intent(in) :: itime, k
     type(diag1DTS), intent(in) :: dg_obj(:)
@@ -2168,7 +2175,7 @@ contains
     !
     character(*), intent(inout) :: name
     integer :: i
-    
+
     do i = 1, len_trim(name)
        if( name(i:i) == '[' ) name(i:i) = '_'
        if( name(i:i) == ']' ) name(i:i) = '_'
@@ -2177,6 +2184,6 @@ contains
     end do
 
   end subroutine sanitize
-    
+
 
 end Module diagnostics
