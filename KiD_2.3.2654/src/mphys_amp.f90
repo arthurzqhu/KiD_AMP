@@ -176,19 +176,19 @@ contains
 
 ! Save some diagnostics
 !fitting flag
-   if (imomc1.ne.3) then
-      fieldflag(:)=flag(:,nx,1,:)
-      call save_dg('flag',fieldflag,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
-      fieldflag(:)=flag(:,nx,2,:)
-      call save_dg('flag',fieldflag,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
-   endif
-
 !   if (imomc1.ne.3) then
-!         field(:)=flag(:,nx,1)
-!         call save_dg(field,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
-!         field(:)=flag(:,nx,2)
-!         call save_dg(field,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
-!      endif
+!      fieldflag(:,:)=flag(:,nx,1,:) 
+!      call save_dg(fieldflag,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
+!      fieldflag(:,:)=flag(:,nx,2,:)
+!      call save_dg(fieldflag,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+!   endif
+
+   if (imomc1.ne.3) then
+         field(:)=flag(:,nx,1)
+         call save_dg(field,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
+         field(:)=flag(:,nx,2)
+         call save_dg(field,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+   endif
 
 !diagnosed moments
    do i=1,10
