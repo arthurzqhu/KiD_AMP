@@ -234,12 +234,13 @@
 	Subroutine searchparamsG(guess,ihyd,md,flag)
 
 	use micro_prm, only:nkr,npm
+	use parameters, only:flag_count
 
 	implicit none
 	real(8) :: guess(2)
 	real(8) :: md(nkr)
 	integer :: ihyd
-	real(8),dimension(4) :: flag
+	real(8),dimension(flag_count) :: flag
 
 	if (npm==3) then !if rain is 2M, then cloud is also 2M
 	   CALL searchparams3M(guess,ihyd,md,flag)
@@ -253,6 +254,7 @@
 
 	use micro_prm, only:relax,Mp,M3p,Mxp,Myp,momx,nkr, &
 	               nutab,dntab,minmaxmx,mintab,maxtab,ntab
+  use parameters, only:flag_count
 
 	implicit none
 	real(8) :: guess(2),oguess(2),vals(2),ovals(2),tol
@@ -260,7 +262,7 @@
 	real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(nkr),min12,max12
 	real(8) :: minMx3,maxMx3
 	integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
-	real(8), dimension(4) :: flag
+	real(8), dimension(flag_count) :: flag
 	integer, parameter :: lwa=33
 	real(8),dimension(lwa) :: wa
 	external :: fcn_2p
@@ -312,11 +314,13 @@
 
 	  !Check now to see if MxM3 is out of allowable range and adjust Mx
 	  if (MxM3 < minMx3) then
-	    flag(1)=abs(minMx3/MxM3)
+			flag(1)=1
+	    flag(2)=abs(minMx3/MxM3)
 	    MxM3 = minMx3*(1.+0.001)
 	    Mxp = MxM3 * M3p
 	  elseif (MxM3 > maxMx3) then
-	    flag(1)=abs(MxM3/maxMx3)
+			flag(1)=1
+	    flag(2)=abs(MxM3/maxMx3)
 	    MxM3 = maxMx3*(1.-0.001)
 	    Mxp = MxM3 * M3p
 	  endif
@@ -340,11 +344,13 @@
 	  min12=min(minmy1,minmy2)
 	  max12=max(maxmy1,maxmy2)
 	  if (MyM3 < min12) then
-	    flag(2)=abs(min12/myM3)
+			flag(1)=1
+	    flag(3)=abs(min12/myM3)
 	    MyM3 = min12*(1.+0.001)
 	    Myp = MyM3 * M3p
 	  elseif (MyM3 > max12) then
-	    flag(2)=abs(myM3/max12)
+			flag(1)=1
+	    flag(3)=abs(myM3/max12)
 	    MyM3 = max12*(1.-0.001)
 	    Myp = MyM3 * M3p
 	  endif
@@ -421,9 +427,9 @@
 	endif
 
 	!Set flag to 1 if fitting didn't work as well as we wished
-	if (abs(vals(1))>tol) flag(3)=1
-	if (abs(vals(2))>tol) flag(4)=1
-	! if (abs(vals(1))>tol .and. abs(vals(2))>tol .and. flag>=0) flag=4
+	if (abs(vals(1))>tol) flag(4)=1
+	if (abs(vals(2))>tol) flag(5)=1
+	if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag(1)=1
 
 	!Force third moment to have no error and calculate final distribution
 	!print*,'a',guess
