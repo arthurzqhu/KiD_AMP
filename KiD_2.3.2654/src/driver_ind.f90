@@ -161,13 +161,13 @@ subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,ffcd
 
 use module_hujisbm
 use micro_prm
-use parameters, only: nx,nz,num_h_moments
+use parameters, only: nx,nz,num_h_moments,flag_count
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
 implicit none
 integer:: i,j,k,ip
-real(8),dimension(nz,nx,2,4)::flag
+real(8),dimension(nz,nx,2,flag_count)::flag
 
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,nkr)::ffcd,fncn,ffcdinit
@@ -197,7 +197,8 @@ do k=1,nz
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:))
    else
       ffcloud=0.
-      flag(k,j,1,:)=nan
+      flag(k,j,1,1)=-1
+      flag(k,j,1,2:flag_count)=nan
    endif
    !----------RAIN--------------------------------
    ihyd=2
@@ -209,7 +210,8 @@ do k=1,nz
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2,:))
    else
       ffrain=0.
-      flag(k,j,2,:)=nan
+      flag(k,j,2,1)=-1
+      flag(k,j,2,2:flag_count)=nan
    endif
    !----------SUM the Cloud and Rain Distributions-----------
    ffcd(k,j,:) = ffcloud+ffrain

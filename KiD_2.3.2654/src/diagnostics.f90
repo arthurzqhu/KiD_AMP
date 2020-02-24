@@ -64,6 +64,12 @@ Module diagnostics
      real(wp), pointer :: data(:,:,:)
   end type diag_bin2DTS
 
+  type, public :: diag_flag2DTS   ! Holds 2D flag-height timeseries data
+      character(max_char_len) :: name, units, longname
+      character(max_char_len) :: dim
+      real(wp), pointer :: data(:,:,:)
+  end type diag_flag2DTS
+
   type, public :: dgIDarray
      type(dgID) :: dgIDs(max_dgs)
      integer    :: nIds=0
@@ -76,7 +82,7 @@ Module diagnostics
   type(diagScalarTS), target :: scalars(max_dgs) ! Instantaneous scalars
   type(diagBinData), target :: binData(max_dgs) ! bin data
   type(diag_bin2DTS), target :: instant_bindgs(max_dgs) ! Instantaneous bin diags
-
+  type(diag_flag2DTS), target :: instant_flagdgs(max_dgs) ! Instantaneous flag diags
 
   type(dgIDarray), save, target :: ID_instant_column
   type(dgIDarray), save, target :: ID_instant_nx
@@ -84,13 +90,14 @@ Module diagnostics
   type(dgIDarray), save, target :: ID_scalars
   type(dgIDarray), save, target :: ID_binData
   type(dgIDarray), save, target :: ID_instant_bindgs
+  type(dgIDarray), save, target :: ID_instant_flagdgs
 
   integer :: maxn_dgtimes=0
 
   interface allocate_dgs
      module procedure allocate_dgs_1DTS, allocate_dgs_2DTS, &
           allocate_dgs_ScalarTS, allocate_dgs_bindata, &
-          allocate_dgs_bindgs
+          allocate_dgs_bindgs, allocate_dgs_flagdgs
   end interface
 
   interface save_dg
@@ -100,7 +107,8 @@ Module diagnostics
         save_dg_1D_dp, save_dg_1D_point_dp, save_dg_scalar_dp,       &
         save_dg_2D_point_sp, save_dg_2D_point_dp,                    &
         save_dg_2D_sp, save_dg_2D_dp,                                &
-        save_dg_bin_sp, save_dg_bin_dp
+        save_dg_bin_sp, save_dg_bin_dp, save_dg_flag_sp,             &
+        save_dg_flag_dp
 
   end interface
 
@@ -161,7 +169,7 @@ contains
     ! column data
     !
     allocate(field(nz))
-    allocate(field_flag(nz,4))
+    allocate(field_flag(nz,flag_count))
     allocate(field_nx(0:nx+1))
     allocate(field_bin_c(nz))
     allocate(field_bin_r(nz))
@@ -232,7 +240,7 @@ contains
 
     !4D flags
     !do ift=1,4 !iflagtype
-    call save_dg('flag',field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
+    ! call save_dg('flag',field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
     !end do
 
     !========================================================
@@ -845,6 +853,20 @@ contains
     dgStore%data=unset_real
 
   end subroutine allocate_dgs_bindgs
+
+  subroutine allocate_dgs_flagdgs(dgStore)
+
+    type(diag_flag2DTS), intent(inout) :: dgStore
+    integer :: n_offset, n_dgtimes
+
+    n_offset = dgstart/dt-1
+    n_dgtimes = n_times - n_offset
+
+    maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
+    allocate(dgStore%data(nz, flag_count, maxn_dgtimes))
+    dgStore%data=unset_real
+
+  end subroutine allocate_dgs_flagdgs
 
   subroutine allocate_dgs_ScalarTS(dgStore)
 
@@ -1556,8 +1578,6 @@ contains
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
 
-    print*, 'sp called'
-
     if (bin=='bin') then
       if (.not. l_dgstep) return
 
@@ -1568,31 +1588,31 @@ contains
       dg_index=>ID_instant_bindgs
 
       if (present(units))then
-       cunits=units
+        cunits=units
       else
-       cunits='Not set'
+        cunits='Not set'
       end if
 
       if (present(dim))then
-       cdim=dim
+        cdim=dim
       else
-       cdim='z'
+        cdim='z'
       end if
 
       if (present(longname))then
-       clongname=longname
+        clongname=longname
       else
-       clongname=name
+        clongname=name
       end if
 
       call getUniqueId(name, dg_index, ivar)
 
       if (.not. associated(dg(ivar)%data)) then
-       call allocate_dgs(dg(ivar))
-       dg(ivar)%name=name
-       dg(ivar)%units=trim(cunits)
-       dg(ivar)%dim=trim(cdim)
-       dg(ivar)%longname=trim(clongname)
+        call allocate_dgs(dg(ivar))
+        dg(ivar)%name=name
+        dg(ivar)%units=trim(cunits)
+        dg(ivar)%dim=trim(cdim)
+        dg(ivar)%longname=trim(clongname)
       end if
 
       dg(ivar)%data(:,:,itime)=field(:,:)
@@ -1615,9 +1635,9 @@ contains
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
 
-!    if (bin=='bin') then
+   if (bin=='bin') then
       if (.not. l_dgstep) return
-      print*, 'dp called bin'
+      ! print*, 'dp called bin'
       ! We're assuming diagnostics are instant for now
       ! could put in an optional argument later to do
       ! averaged, accumulated, etc. later.
@@ -1625,37 +1645,145 @@ contains
       dg_index=>ID_instant_bindgs
 
       if (present(units))then
-         cunits=units
+        cunits=units
       else
-         cunits='Not set'
+        cunits='Not set'
       end if
 
       if (present(dim))then
-         cdim=dim
+        cdim=dim
       else
-         cdim='z'
+        cdim='z'
       end if
 
       if (present(longname))then
-         clongname=longname
+        clongname=longname
       else
-         clongname=name
+        clongname=name
       end if
 
       call getUniqueId(name, dg_index, ivar)
 
       if (.not. associated(dg(ivar)%data)) then
-         call allocate_dgs(dg(ivar))
-         dg(ivar)%name=name
-         dg(ivar)%units=trim(cunits)
-         dg(ivar)%dim=trim(cdim)
-         dg(ivar)%longname=trim(clongname)
+        call allocate_dgs(dg(ivar))
+        dg(ivar)%name=name
+        dg(ivar)%units=trim(cunits)
+        dg(ivar)%dim=trim(cdim)
+        dg(ivar)%longname=trim(clongname)
       end if
 
       dg(ivar)%data(:,:,itime)=field(:,:)
-!    end if
+  end if
 
   end subroutine save_dg_bin_dp
+
+  subroutine save_dg_flag_sp(flag, field, name, itime, units, &
+     dim, longname)
+
+    real(sp), intent(in) :: field(:,:)
+    character(*), intent(in) :: name
+    character(*), intent(in) :: flag
+    integer, intent(in) :: itime
+    character(*), intent(in), optional :: units, dim, longname
+
+    !local variables
+    type(diag_flag2DTS), pointer :: dg(:)
+    type(dgIDarray), pointer  :: dg_index
+    character(max_char_len):: cunits, cdim, clongname
+    integer :: ivar
+
+    if (flag=='flag') then
+      if (.not. l_dgstep) return
+
+      dg=>instant_flagdgs
+      dg_index=>ID_instant_flagdgs
+
+      if (present(units))then
+        cunits=units
+      else
+        cunits='Not set'
+      end if
+
+      if (present(dim))then
+        cdim=dim
+      else
+        cdim='z'
+      end if
+
+      if (present(longname))then
+        clongname=longname
+      else
+        clongname=name
+      end if
+
+      call getUniqueId(name, dg_index, ivar)
+
+      if (.not. associated(dg(ivar)%data)) then
+        call allocate_dgs(dg(ivar))
+        dg(ivar)%name=name
+        dg(ivar)%units=trim(cunits)
+        dg(ivar)%dim=trim(cdim)
+        dg(ivar)%longname=trim(clongname)
+      end if
+
+      dg(ivar)%data(:,:,itime)=field(:,:)
+    end if
+
+  end subroutine save_dg_flag_sp
+
+  subroutine save_dg_flag_dp(flag, field, name, itime, units, &
+     dim, longname)
+
+    real(dp), intent(in) :: field(:,:)
+    character(*), intent(in) :: name
+    character(*), intent(in) :: flag
+    integer, intent(in) :: itime
+    character(*), intent(in), optional :: units, dim, longname
+
+    !local variables
+    type(diag_flag2DTS), pointer :: dg(:)
+    type(dgIDarray), pointer  :: dg_index
+    character(max_char_len):: cunits, cdim, clongname
+    integer :: ivar
+
+    if (flag=='flag') then
+      if (.not. l_dgstep) return
+
+      dg=>instant_flagdgs
+      dg_index=>ID_instant_flagdgs
+
+      if (present(units))then
+        cunits=units
+      else
+        cunits='Not set'
+      end if
+
+      if (present(dim))then
+        cdim=dim
+      else
+        cdim='z'
+      end if
+
+      if (present(longname))then
+        clongname=longname
+      else
+        clongname=name
+      end if
+
+      call getUniqueId(name, dg_index, ivar)
+
+      if (.not. associated(dg(ivar)%data)) then
+        call allocate_dgs(dg(ivar))
+        dg(ivar)%name=name
+        dg(ivar)%units=trim(cunits)
+        dg(ivar)%dim=trim(cdim)
+        dg(ivar)%longname=trim(clongname)
+      end if
+
+      dg(ivar)%data(:,:,itime)=field(:,:)
+    end if
+
+  end subroutine save_dg_flag_dp
 
   subroutine save_binData_sp(field, name, units, &
        longname)
@@ -1811,8 +1939,9 @@ contains
     character(4) :: char4
 
     ! netcdf variables
-    integer :: status, ncid, zid, xid, timeid, binsid
-    integer :: tzdim(2), txdim(2), tzldim(3), tzxdim(3), dim, dim2d(2), dim3d(3)
+    integer :: status, ncid, zid, xid, timeid, binsid, flagsid
+    integer :: tzdim(2), txdim(2), tzldim(3), tzxdim(3), tzfdim(3), dim, &
+               dim2d(2), dim3d(3)
     integer, allocatable :: varid(:)
     real, allocatable :: field3d(:,:,:)
 
@@ -1882,11 +2011,14 @@ contains
     call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'x', int(nx, kind=incdfp), xid)
     call check_ncstatus(status)
+    status=nf90_def_dim(ncid, 'flagsid', int(flag_count, kind=incdfp), flagsid)
+    call check_ncstatus(status)
 
     tzdim=(/ timeid, zid /)
     txdim=(/ timeid, xid /)
     tzldim=(/ timeid, binsid, zid /)
     tzxdim=(/ timeid, xid, zid /)
+    tzfdim=(/timeid, flagsid, zid/)
 
     ! Do the dim variables
     n_dgs=2
@@ -2035,6 +2167,47 @@ contains
              do iq=1, max_nbins
                 do k = 1,nz
                    field3d(tim,iq,k)= instant_bindgs(ivar)%data(k,iq,tim)
+                enddo
+             enddo
+          enddo
+          status=nf90_put_var(ncid, varid(ivar), field3d)
+
+          call check_ncstatus(status)
+
+       enddo
+
+       deallocate(field3d)
+
+       deallocate(varid)
+
+
+       ! Do the instantaneous flag diags (2D)
+       n_dgs=ID_instant_flagdgs%nids
+       allocate(varid(n_dgs))
+       status=nf90_redef(ncid)
+       dim3d=tzfdim
+
+       do ivar=1,n_dgs
+          status=nf90_def_var(ncid, instant_flagdgs(ivar)%name &
+               , nf90_float, dim3d, varid(ivar))
+          call check_ncstatus(status)
+          status=nf90_put_att(ncid, varid(ivar),        &
+               'units', instant_flagdgs(ivar)%units)
+          status=nf90_put_att(ncid, varid(ivar),        &
+               'dim', instant_flagdgs(ivar)%dim)
+          status=nf90_put_att(ncid, varid(ivar),        &
+               'missing_value', unset_real)
+       end do
+
+       status=nf90_enddef(ncid)
+
+       allocate(field3d(n_dgtimes, flag_count, nz))
+
+       do ivar=1,n_dgs
+          do tim=1,n_dgtimes
+             do iq=1, flag_count
+                do k = 1,nz
+                   field3d(tim,iq,k)= instant_flagdgs(ivar)%data(k,iq,tim)
                 enddo
              enddo
           enddo

@@ -5,7 +5,7 @@
 ! *****************************COPYRIGHT*******************************
 !
 ! Some parameters and arrays needed by different schemes
-! Note that some of these are no longer parameters, but can be 
+! Note that some of these are no longer parameters, but can be
 ! passed in through a namelist (see namelists.f90)
 !
 !
@@ -19,19 +19,20 @@
 #endif
 
 module parameters
-  
+
 
   Use typeKind
   Implicit None
 
   ! control parameters
-  real               :: dt=1.        ! Time step 
+  real               :: dt=1.        ! Time step
   integer, parameter :: nz=DEF_NZ    ! Number of height levels
   integer, parameter :: nx=DEF_NX    ! Number of horizontal gridpoints
 
   ! microphysics specific parameters
   integer, parameter :: max_nmoments=3
   integer, parameter :: max_nbins=33
+  integer, parameter :: flag_count=4
   integer, parameter :: nspecies=2
 #if SHIPWAY_MICRO == 1
   integer, parameter :: naerosol=9 ! number of aerosol species
@@ -49,9 +50,9 @@ module parameters
                         ! time interval between diagnostic calcs
                         ! should be an integer multiple of dt
 
-  integer            :: diaglevel = 5 ! switch for level of diagnostic output 
-  
-  real(wp)           :: dgstart = 0.0 ! start time for diagnostics 
+  integer            :: diaglevel = 5 ! switch for level of diagnostic output
+
+  real(wp)           :: dgstart = 0.0 ! start time for diagnostics
 
  ! other parameters
   real(wp),parameter :: unset_real=-999
@@ -107,31 +108,31 @@ module parameters
        ,  '/kg       '   &
        ,  'm3/kg     '  /)
 
-  character(10) :: aero_names(naerosol)='aero'! & 
-     !(/ 'aitken    '   & 
-     !,  'accum     '   & 
-     !,  'coarse    '   & 
+  character(10) :: aero_names(naerosol)='aero'! &
+     !(/ 'aitken    '   &
+     !,  'accum     '   &
+     !,  'coarse    '   &
 !#if SHIPWAY_MICRO == 1
-!     ,  'active    '   & 
-!     ,  'active_r  '   & 
-!     ,  'dust      '   & 
-!     ,  'dust_ice  '   & 
-!     ,  'dust_cloud'   & 
-!     ,  'sol_ice   '   & 
+!     ,  'active    '   &
+!     ,  'active_r  '   &
+!     ,  'dust      '   &
+!     ,  'dust_ice  '   &
+!     ,  'dust_cloud'   &
+!     ,  'sol_ice   '   &
 !#endif
-!     /) 
-  
-  character(10) :: aero_mom_names(max_nmoments)= & 
-     (/ 'number    '   & 
-     ,  'mass      '   & 
-     ,  'unknown   '  /) 
-  
-  character(10) :: aero_mom_units(max_nmoments)= & 
-     (/ 'kg/kg     '   & 
-     ,  '/kg       '   & 
-     ,  'unknown   '  /) 
+!     /)
 
-   ! if using bin microphysics set variable below to 
+  character(10) :: aero_mom_names(max_nmoments)= &
+     (/ 'number    '   &
+     ,  'mass      '   &
+     ,  'unknown   '  /)
+
+  character(10) :: aero_mom_units(max_nmoments)= &
+     (/ 'kg/kg     '   &
+     ,  '/kg       '   &
+     ,  'unknown   '  /)
+
+   ! if using bin microphysics set variable below to
    ! determine the last bin of cloud
    ! if not using bin, this value is ignored
    integer :: split_bins = 15
