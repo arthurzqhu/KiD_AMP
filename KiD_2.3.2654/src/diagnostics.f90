@@ -1615,11 +1615,9 @@ contains
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
 
-    print*, 'dp_called'
-
-    if (bin=='bin') then
+!    if (bin=='bin') then
       if (.not. l_dgstep) return
-
+      print*, 'dp called bin'
       ! We're assuming diagnostics are instant for now
       ! could put in an optional argument later to do
       ! averaged, accumulated, etc. later.
@@ -1655,7 +1653,7 @@ contains
       end if
 
       dg(ivar)%data(:,:,itime)=field(:,:)
-    end if
+!    end if
 
   end subroutine save_dg_bin_dp
 

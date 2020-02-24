@@ -178,9 +178,9 @@ contains
 !fitting flag
   if (imomc1.ne.3) then
      fieldflag(:,:)=flag(:,nx,1,:)
-     call save_dg(fieldflag,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
+     call save_dg('flag',fieldflag,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
      fieldflag(:,:)=flag(:,nx,2,:)
-     call save_dg(fieldflag,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+     call save_dg('flag',fieldflag,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
   endif
 
    ! if (imomc1.ne.3) then
@@ -207,12 +207,12 @@ contains
   fielddp2d(:,:)=drops2d(:,nx,:)
   name='drops'
   units='kg/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+  !call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
   fielddp2d(:,:)=dropsinit2d(:,nx,:)
   name='drops_init'
   units='kg/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+  !call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
 !parameters
   field(:)=guessc2d(:,nx,1)
