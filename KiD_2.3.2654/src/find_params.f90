@@ -314,12 +314,12 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
 
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   if (MxM3 < minMx3) then
-		flag(1)=1
+    flag(1)=1
     flag(2)=abs(minMx3/MxM3)
-    MxM3 = minMx3*(1.+ovc_factor)
+    MxM3 = minMx3*(1.+ovc_factor) 
     Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
-		flag(1)=1
+    flag(1)=1
     flag(2)=abs(MxM3/maxMx3)
     MxM3 = maxMx3*(1.-ovc_factor)
     Mxp = MxM3 * M3p

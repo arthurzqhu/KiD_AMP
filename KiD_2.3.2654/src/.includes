@@ -26,7 +26,7 @@
 
 ../obj/typeKind.o: typeKind.f90 
 
-../obj/mphys_amp.o: mphys_amp.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/diagnostics.o ../obj/switches.o 
+../obj/mphys_amp.o: mphys_amp.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/diagnostics.o ../obj/switches.o ../obj/parameters.o 
 
 ../obj/stepfields.o: stepfields.f90 ../obj/runtime.o ../obj/typeKind.o ../obj/parameters.o ../obj/physconst.o ../obj/switches.o ../obj/column_variables.o 
 
@@ -42,7 +42,7 @@
 
 ../obj/runtime.o: runtime.f90 ../obj/typeKind.o 
 
-../obj/find_params.o: find_params.f90 ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o 
+../obj/find_params.o: find_params.f90 ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o 
 
 ../obj/advection_interface.o: advection_interface.f90 ../obj/runtime.o ../obj/parameters.o ../obj/column_variables.o ../obj/ultf2d_mod.o ../obj/switches.o 
 
