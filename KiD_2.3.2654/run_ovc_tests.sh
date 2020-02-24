@@ -594,7 +594,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=0.5            !Timestep length (s)
+dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=2.0      !Updraft speed

@@ -1677,7 +1677,7 @@ contains
 
   end subroutine save_dg_bin_dp
 
-  subroutine save_dg_flag_sp(flag, field, name, itime, units, &
+  subroutine save_dg_flag_sp(field, flag, name, itime, units, &
      dim, longname)
 
     real(sp), intent(in) :: field(:,:)
@@ -1731,7 +1731,7 @@ contains
 
   end subroutine save_dg_flag_sp
 
-  subroutine save_dg_flag_dp(flag, field, name, itime, units, &
+  subroutine save_dg_flag_dp(field, flag, name, itime, units, &
      dim, longname)
 
     real(dp), intent(in) :: field(:,:)
@@ -2011,7 +2011,7 @@ contains
     call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'x', int(nx, kind=incdfp), xid)
     call check_ncstatus(status)
-    status=nf90_def_dim(ncid, 'flagsid', int(flag_count, kind=incdfp), flagsid)
+    status=nf90_def_dim(ncid, 'flags', int(flag_count, kind=incdfp), flagsid)
     call check_ncstatus(status)
 
     tzdim=(/ timeid, zid /)

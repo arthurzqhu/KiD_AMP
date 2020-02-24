@@ -178,9 +178,9 @@ contains
 !fitting flag
   if (imomc1.ne.3) then
      fieldflag(:,:)=flag(:,nx,1,:)
-     call save_dg('flag',fieldflag,'fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
+     call save_dg(fieldflag,'flag','fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
      fieldflag(:,:)=flag(:,nx,2,:)
-     call save_dg('flag',fieldflag,'fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+     call save_dg(fieldflag,'flag','fitting_flag_rain', i_dgtime,units='unitless', dim='z')
   endif
 
    ! if (imomc1.ne.3) then
