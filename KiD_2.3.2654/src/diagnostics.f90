@@ -232,7 +232,7 @@ contains
 
     !4D flags
     !do ift=1,4 !iflagtype
-    !  call save_dg(field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
+    call save_dg('flag',field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
     !end do
 
     !========================================================
@@ -1555,48 +1555,48 @@ contains
     type(dgIDarray), pointer  :: dg_index
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
-    
+
     print*, 'sp called'
 
     if (bin=='bin') then
-        if (.not. l_dgstep) return
+      if (.not. l_dgstep) return
 
-        ! We're assuming diagnostics are instant for now
-        ! could put in an optional argument later to do
-        ! averaged, accumulated, etc. later.
-        dg=>instant_bindgs
-        dg_index=>ID_instant_bindgs
+      ! We're assuming diagnostics are instant for now
+      ! could put in an optional argument later to do
+      ! averaged, accumulated, etc. later.
+      dg=>instant_bindgs
+      dg_index=>ID_instant_bindgs
 
-    if (present(units))then
+      if (present(units))then
        cunits=units
-    else
+      else
        cunits='Not set'
-    end if
+      end if
 
-    if (present(dim))then
+      if (present(dim))then
        cdim=dim
-    else
+      else
        cdim='z'
-    end if
+      end if
 
-    if (present(longname))then
+      if (present(longname))then
        clongname=longname
-    else
+      else
        clongname=name
-    end if
+      end if
 
-    call getUniqueId(name, dg_index, ivar)
+      call getUniqueId(name, dg_index, ivar)
 
-    if (.not. associated(dg(ivar)%data)) then
+      if (.not. associated(dg(ivar)%data)) then
        call allocate_dgs(dg(ivar))
        dg(ivar)%name=name
        dg(ivar)%units=trim(cunits)
        dg(ivar)%dim=trim(cdim)
        dg(ivar)%longname=trim(clongname)
-    end if
+      end if
 
-    dg(ivar)%data(:,:,itime)=field(:,:)
-    end if 
+      dg(ivar)%data(:,:,itime)=field(:,:)
+    end if
 
   end subroutine save_dg_bin_sp
 
@@ -1614,46 +1614,48 @@ contains
     type(dgIDarray), pointer  :: dg_index
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
-    
-    print*,'dp_called'
 
-    if (.not. l_dgstep) return
+    print*, 'dp_called'
 
-    ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do
-    ! averaged, accumulated, etc. later.
-    dg=>instant_bindgs
-    dg_index=>ID_instant_bindgs
+    if (bin=='bin') then
+      if (.not. l_dgstep) return
 
-    if (present(units))then
-       cunits=units
-    else
-       cunits='Not set'
+      ! We're assuming diagnostics are instant for now
+      ! could put in an optional argument later to do
+      ! averaged, accumulated, etc. later.
+      dg=>instant_bindgs
+      dg_index=>ID_instant_bindgs
+
+      if (present(units))then
+         cunits=units
+      else
+         cunits='Not set'
+      end if
+
+      if (present(dim))then
+         cdim=dim
+      else
+         cdim='z'
+      end if
+
+      if (present(longname))then
+         clongname=longname
+      else
+         clongname=name
+      end if
+
+      call getUniqueId(name, dg_index, ivar)
+
+      if (.not. associated(dg(ivar)%data)) then
+         call allocate_dgs(dg(ivar))
+         dg(ivar)%name=name
+         dg(ivar)%units=trim(cunits)
+         dg(ivar)%dim=trim(cdim)
+         dg(ivar)%longname=trim(clongname)
+      end if
+
+      dg(ivar)%data(:,:,itime)=field(:,:)
     end if
-
-    if (present(dim))then
-       cdim=dim
-    else
-       cdim='z'
-    end if
-
-    if (present(longname))then
-       clongname=longname
-    else
-       clongname=name
-    end if
-
-    call getUniqueId(name, dg_index, ivar)
-
-    if (.not. associated(dg(ivar)%data)) then
-       call allocate_dgs(dg(ivar))
-       dg(ivar)%name=name
-       dg(ivar)%units=trim(cunits)
-       dg(ivar)%dim=trim(cdim)
-       dg(ivar)%longname=trim(clongname)
-    end if
-
-    dg(ivar)%data(:,:,itime)=field(:,:)
 
   end subroutine save_dg_bin_dp
 
