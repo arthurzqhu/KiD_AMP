@@ -23,19 +23,19 @@ module namelists
      , l_inuc, iopt_rcrit, iopt_inuc                                &
      , l_evaporation, l_rain, l_sed, l_boussinesq, diag_mu_option   &
      , l_sed_3mdiff, l_cons, l_abelshipway, l_condensation          &
-     , l_active_inarg2000, l_oneway, l_newoptions 
+     , l_active_inarg2000, l_oneway, l_newoptions
   Use mphys_parameters, only: p1, p2, p3, sp1, sp2, sp3             &
      , max_step_length, max_sed_length
 #endif
 
   implicit none
-  
+
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
        aero_mom_init, aero_N_init, aero_sig_init, aero_rd_init, aero_names, &
        imomc1,imomc2,imomr1,imomr2,donucleation,docondensation,docollisions, &
        dosedimentation,cloud_init,rain_init
-  
+
   namelist/control/dt, dg_dt, mphys_scheme, mphys_var &
        , wctrl, zctrl, tctrl, pctrl_z, pctrl_v, pctrl_T, ipctrl &
        , xctrl, lhf_ctrl, shf_ctrl, diaglevel, dgstart
@@ -53,6 +53,7 @@ module namelists
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
+  real(8) :: ovc_factor
 
   namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor  &
 #if SHIPWAY_MICRO == 1
@@ -91,17 +92,17 @@ contains
     !
 
 #if COMMANDLINE == 1
-    ! This bit is F2003 - If your compiler doesnt support 
-    ! it you need to comment the line out you can then specify 
-    ! which namelist to use throught namelists/input.nml file 
-    ! or else use command line processing that works with your 
+    ! This bit is F2003 - If your compiler doesnt support
+    ! it you need to comment the line out you can then specify
+    ! which namelist to use throught namelists/input.nml file
+    ! or else use command line processing that works with your
     ! compiler (nearly all will do it but not in a portable way).
     write(*,*) 'Querying command line'
     CALL GET_COMMAND_ARGUMENT(1,fileNameIn)
     CALL GET_COMMAND_ARGUMENT(2,fileNameOut)
 #endif
 
-    if (trim(fileNameIn)=='')then  ! Not input at the command line 
+    if (trim(fileNameIn)=='')then  ! Not input at the command line
                                    ! so use input.nml
 #ifdef DEF_CASE
       write(namelistIn, '(A,A,A)') 'namelists/','DEF_CASE','_input.nml'
@@ -118,22 +119,22 @@ contains
       fileNameIn  = fileIn
       if (trim(fileOut)/='')fileNameOut = fileOut
     end if
-    
+
     if (trim(fileNameIn)/='')fileName=fileNameIn
 
     write(6,*) 'Using namelist: ', trim(fileName)
 
     open(1, file=fileName)
 !    rewind(1)
-    read(1,mphys) 
+    read(1,mphys)
 !    rewind(1)
     read(1,case)
 !    rewind(1)
-    read(1,control) 
+    read(1,control)
 !    rewind(1)
-    read(1,switch) 
+    read(1,switch)
 !    rewind(1)
-    read(1,addcontrol) 
+    read(1,addcontrol)
     close(1)
 
     select case(mphys_scheme)
@@ -154,7 +155,7 @@ contains
        mphys_id='thompson06'
     case('thompson07')
        imphys=imphys_thompson07
-       mphys_id='thompson07' 
+       mphys_id='thompson07'
     case('morr_two_moment')
        imphys=imphys_morr_two_moment
        mphys_id='morr_two_moment'
@@ -175,7 +176,7 @@ contains
        mphys_id='amp'
      case default
        print*, 'Mphys scheme not recognized: ', mphys_scheme
-       print*, 'Did you mean:' 
+       print*, 'Did you mean:'
        print*, '   lem2.4?'
        print*, '   um7_3?'
        print*, '   tau_bin?'
@@ -195,4 +196,3 @@ contains
   end subroutine read_namelist
 
 end module namelists
-
