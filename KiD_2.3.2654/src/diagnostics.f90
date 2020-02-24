@@ -152,7 +152,7 @@ contains
     real(wp), allocatable :: field_bin_r(:)
     real(wp), allocatable :: field_bin(:,:)
     character(max_char_len) :: name, units, dims
-    integer :: k, ih, imom, ibin
+    integer :: k, ih, imom, ibin, ift
 
     if (.not. l_dgstep) return
 
@@ -231,9 +231,9 @@ contains
     end do
 
     !4D flags
-    do ift=1,4 !iflagtype
-      call save_dg('flag',field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
-    end do
+    !do ift=1,4 !iflagtype
+    !  call save_dg(field_flag,'fitting_flag',i_dgtime,units='unitless',dim=dims)
+    !end do
 
     !========================================================
     ! Tendency terms
@@ -1555,14 +1555,17 @@ contains
     type(dgIDarray), pointer  :: dg_index
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
+    
+    print*, 'sp called'
 
-    if (.not. l_dgstep) return
+    if (bin=='bin') then
+        if (.not. l_dgstep) return
 
-    ! We're assuming diagnostics are instant for now
-    ! could put in an optional argument later to do
-    ! averaged, accumulated, etc. later.
-    dg=>instant_bindgs
-    dg_index=>ID_instant_bindgs
+        ! We're assuming diagnostics are instant for now
+        ! could put in an optional argument later to do
+        ! averaged, accumulated, etc. later.
+        dg=>instant_bindgs
+        dg_index=>ID_instant_bindgs
 
     if (present(units))then
        cunits=units
@@ -1593,6 +1596,7 @@ contains
     end if
 
     dg(ivar)%data(:,:,itime)=field(:,:)
+    end if 
 
   end subroutine save_dg_bin_sp
 
@@ -1610,6 +1614,8 @@ contains
     type(dgIDarray), pointer  :: dg_index
     character(max_char_len):: cunits, cdim, clongname
     integer :: ivar
+    
+    print*,'dp_called'
 
     if (.not. l_dgstep) return
 
