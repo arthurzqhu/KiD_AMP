@@ -47,7 +47,7 @@ mom_init=0,0,0
 /
 
 &case
-icase=103
+icase=107
 /
 
 &control
@@ -60,7 +60,7 @@ tctrl(1)=3600.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.	  !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
-zctrl=3000.,600.,900. !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
+zctrl=0 !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
 /
 
 &switch
@@ -78,5 +78,5 @@ l_periodic_bound=.False.
 
 &addcontrol
 KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/'
-ovc_factor=0.01
+ovc_factor=0.0
 /
