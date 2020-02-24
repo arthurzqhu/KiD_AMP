@@ -54,7 +54,7 @@ module namelists
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
 
-  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile  &
+  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor  &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &

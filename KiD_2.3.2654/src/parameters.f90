@@ -32,7 +32,7 @@ module parameters
   ! microphysics specific parameters
   integer, parameter :: max_nmoments=3
   integer, parameter :: max_nbins=33
-  integer, parameter :: flag_count=4
+  integer, parameter :: flag_count=5
   integer, parameter :: nspecies=2
 #if SHIPWAY_MICRO == 1
   integer, parameter :: naerosol=9 ! number of aerosol species
