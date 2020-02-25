@@ -53,7 +53,7 @@ module namelists
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
-  real(8) :: ovc_factor
+  real(8) :: ovc_factor=0.0
 
   namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor  &
 #if SHIPWAY_MICRO == 1
