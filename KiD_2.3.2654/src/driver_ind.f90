@@ -157,7 +157,8 @@ enddo
 
 end subroutine sbm_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,ffcdinit)
+subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,&
+  ffcdinit,oMxM3,oMyM3,nMxM3,nMyM3)
 
 use module_hujisbm
 use micro_prm
@@ -178,6 +179,7 @@ real(8),dimension(nz,nx,10) :: mc,mr,mc0,mr0
 real(8),dimension(nkr) :: ffcloud,ffrain
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
+real(8), optional :: oMxM3,oMyM3,nMxM3,nMyM3
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
@@ -194,7 +196,8 @@ do k=1,nz
    momy=pmomsc(3) !pmomsc(1)=3 always
 !if(k==18)print*,k,Mp
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:))
+      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:),oMxM3,oMyM3,&
+                         nMxM3,nMyM3)
    else
       ffcloud=0.
       flag(k,j,1,1)=-1

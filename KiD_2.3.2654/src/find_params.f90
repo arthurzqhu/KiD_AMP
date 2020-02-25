@@ -249,7 +249,7 @@ endif
 
 End subroutine searchparamsG
 !--------------------------------------------------------
-Subroutine searchparams3M(guess,ihyd,md,flag)
+Subroutine searchparams3M(guess,ihyd,md,flag,oMxM3,oMyM3,nMxM3,nMyM3)
 
 use micro_prm, only:relax,Mp,M3p,Mxp,Myp,momx,nkr, &
                nutab,dntab,minmaxmx,mintab,maxtab,ntab
@@ -266,6 +266,7 @@ real(8), dimension(flag_count) :: flag
 integer, parameter :: lwa=33
 real(8),dimension(lwa) :: wa
 external :: fcn_2p
+real(8), optional :: oMxM3,oMyM3,nMxM3,nMyM3
 
 flag(:) = 0
 !This subroutine drives the search for PDF parameters that satisfy the
@@ -302,6 +303,9 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   MxM3 = Mxp/M3p
   !Ratio of yth moment to 3rd moment.
   MyM3 = Myp/M3p
+  !Save the original value as output
+  oMxM3 = MxM3
+  oMyM3 = MyM3
 
   !Need to see if these ratios are in the solution space
   !If not, adjust Mx and/or My until they are in the solution space
@@ -316,7 +320,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   if (MxM3 < minMx3) then
     flag(1)=1
     flag(2)=abs(minMx3/MxM3)
-    MxM3 = minMx3*(1.+ovc_factor) 
+    MxM3 = minMx3*(1.+ovc_factor)
     Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
     flag(1)=1
@@ -368,6 +372,10 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   ix1b = floor(iry)
   wgty2=iry-ix1b
   ix2b=min(ntab,ix1b+1)
+
+  !Save the new values as output
+  nMxM3 = MxM3
+  nMyM3 = MyM3
 
   !Find best-guess parameters in the look up tables
   guess(1) = (1.-wgtm)*((1.-wgty1)*nutab(iy1a,im1,ihyd)+wgty1*nutab(iy2a,im1,ihyd)) + &

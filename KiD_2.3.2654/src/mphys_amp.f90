@@ -41,6 +41,7 @@ contains
     real(8), dimension(nz) :: fielddp
     real(8), dimension(nz,nkr) :: fielddp2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
+    real(8), dimension(nz,nx,2) optional :: oMxM3,oMyM3,nMxM3,nMyM3
     character(1) :: Mnum
 
     do i=1,nx
@@ -107,7 +108,8 @@ contains
       dropsinit2d=0.
 !print*,'s',Mpc2d(18,1,:)
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
-           p2d,t2d,qv2d,aer2d,drops2d,mc,mr,flag,dropsinit2d)
+           p2d,t2d,qv2d,aer2d,drops2d,mc,mr,flag,dropsinit2d,oMxM3,oMyM3,nMxM3,&
+           nMyM3)
 !print*,'e',Mpc2d(18,1,:)
    else
       call mp_sbm(drops2d,p2d,t2d,qv2d,aer2d,mc,mr)
@@ -178,11 +180,49 @@ contains
 ! Save some diagnostics
 !fitting flag
   if (imomc1.ne.3) then
-     fieldflag(:,:)=flag(:,nx,1,:)
-     call save_dg(fieldflag,'flag','fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
-     fieldflag(:,:)=flag(:,nx,2,:)
-     call save_dg(fieldflag,'flag','fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+     field(:)=flag(:,nx,1,1)
+     call save_dg(field,'old_fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
+     field(:)=flag(:,nx,2,1)
+     call save_dg(field,'old_fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+
+     field(:)=flag(:,nx,1,2)
+     call save_dg(field,'fitting_flag_cloud_x_oob', i_dgtime,units='unitless', dim='z')
+     field(:)=flag(:,nx,2,2)
+     call save_dg(field,'fitting_flag_rain_x_oob', i_dgtime,units='unitless', dim='z')
+
+     field(:)=flag(:,nx,1,3)
+     call save_dg(field,'fitting_flag_cloud_y_oob', i_dgtime,units='unitless', dim='z')
+     field(:)=flag(:,nx,2,3)
+     call save_dg(field,'fitting_flag_rain_y_oob', i_dgtime,units='unitless', dim='z')
+
+     field(:)=flag(:,nx,1,4)
+     call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')
+     field(:)=flag(:,nx,2,4)
+     call save_dg(field,'fitting_flag_rain_x_intol', i_dgtime,units='unitless', dim='z')
+
+     field(:)=flag(:,nx,1,5)
+     call save_dg(field,'fitting_flag_cloud_y_intol', i_dgtime,units='unitless', dim='z')
+     field(:)=flag(:,nx,2,5)
+     call save_dg(field,'fitting_flag_rain_y_intol', i_dgtime,units='unitless', dim='z')
   endif
+
+  ! Saving ratios
+  field(:)=oMxM3(:,nx,1)
+  call save_dg(field,'oMxM3_c',i_dgtime,units='n/a', dim='z')
+  field(:)=oMxM3(:,nx,2)
+  call save_dg(field,'oMxM3_r',i_dgtime,units='n/a', dim='z')
+  field(:)=oMyM3(:,nx,1)
+  call save_dg(field,'oMyM3_c',i_dgtime,units='n/a', dim='z')
+  field(:)=oMyM3(:,nx,2)
+  call save_dg(field,'oMyM3_r',i_dgtime,units='n/a', dim='z')
+  field(:)=nMxM3(:,nx,1)
+  call save_dg(field,'nMxM3_c',i_dgtime,units='n/a', dim='z')
+  field(:)=nMxM3(:,nx,2)
+  call save_dg(field,'nMxM3_r',i_dgtime,units='n/a', dim='z')
+  field(:)=nMyM3(:,nx,1)
+  call save_dg(field,'nMyM3_c',i_dgtime,units='n/a', dim='z')
+  field(:)=nMyM3(:,nx,2)
+  call save_dg(field,'nMyM3_r',i_dgtime,units='n/a', dim='z')
 
    ! if (imomc1.ne.3) then
    !       field(:)=flag(:,nx,1)
