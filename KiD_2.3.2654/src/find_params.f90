@@ -344,12 +344,12 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   min12=min(minmy1,minmy2)
   max12=max(maxmy1,maxmy2)
   if (MyM3 < min12) then
-		flag(1)=1
+    flag(1)=1
     flag(3)=abs(min12/myM3)
     MyM3 = min12*(1.+ovc_factor)
     Myp = MyM3 * M3p
   elseif (MyM3 > max12) then
-		flag(1)=1
+    flag(1)=1
     flag(3)=abs(myM3/max12)
     MyM3 = max12*(1.-ovc_factor)
     Myp = MyM3 * M3p
