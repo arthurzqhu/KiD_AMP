@@ -230,7 +230,7 @@ double precision, dimension(nkr):: md
 return
 End subroutine calcdist
 !--------------------------------------------------------
-Subroutine searchparamsG(guess,ihyd,md,flag)
+Subroutine searchparamsG(guess,ihyd,md,flag,oMxM3,oMyM3,nMxM3,nMyM3)
 
 use micro_prm, only:nkr,npm
 use parameters, only:flag_count
@@ -240,9 +240,10 @@ real(8) :: guess(2)
 real(8) :: md(nkr)
 integer :: ihyd
 real(8),dimension(flag_count) :: flag
+real(8), optional :: oMxM3,oMyM3,nMxM3,nMyM3
 
 if (npm==3) then !if rain is 2M, then cloud is also 2M
-   CALL searchparams3M(guess,ihyd,md,flag)
+   CALL searchparams3M(guess,ihyd,md,flag,oMxM3,oMyM3,nMxM3,nMyM3)
 else
    CALL searchparams2M(guess,md,flag)
 endif
@@ -306,7 +307,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Save the original value as output
   oMxM3 = MxM3
   oMyM3 = MyM3
-
+ 
   !Need to see if these ratios are in the solution space
   !If not, adjust Mx and/or My until they are in the solution space
 

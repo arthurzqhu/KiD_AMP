@@ -179,7 +179,7 @@ real(8),dimension(nz,nx,10) :: mc,mr,mc0,mr0
 real(8),dimension(nkr) :: ffcloud,ffrain
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
-real(8), optional :: oMxM3,oMyM3,nMxM3,nMyM3
+real(8), dimension(nz,nx,2) :: oMxM3,oMyM3,nMxM3,nMyM3
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
@@ -196,8 +196,8 @@ do k=1,nz
    momy=pmomsc(3) !pmomsc(1)=3 always
 !if(k==18)print*,k,Mp
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:),oMxM3,oMyM3,&
-                         nMxM3,nMyM3)
+      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:),oMxM3(k,j,1),&
+                         oMyM3(k,j,1),nMxM3(k,j,1),nMyM3(k,j,1))
    else
       ffcloud=0.
       flag(k,j,1,1)=-1
@@ -210,7 +210,8 @@ do k=1,nz
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2,:))
+      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2,:),oMxM3(k,j,2),&
+                         oMyM3(k,j,2),nMxM3(k,j,2),nMyM3(k,j,2))
    else
       ffrain=0.
       flag(k,j,2,1)=-1

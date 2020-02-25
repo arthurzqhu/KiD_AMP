@@ -41,7 +41,7 @@ contains
     real(8), dimension(nz) :: fielddp
     real(8), dimension(nz,nkr) :: fielddp2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
-    real(8), dimension(nz,nx,2) optional :: oMxM3,oMyM3,nMxM3,nMyM3
+    real(8), dimension(nz,nx,2) :: oMxM3,oMyM3,nMxM3,nMyM3
     character(1) :: Mnum
 
     do i=1,nx
