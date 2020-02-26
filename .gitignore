@@ -32,3 +32,4 @@
 test.out
 *.swp
 cu_2d.nml
+.DS_Store
