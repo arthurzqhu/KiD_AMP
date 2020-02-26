@@ -307,7 +307,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Save the original value as output
   oMxM3 = MxM3
   oMyM3 = MyM3
- 
+
   !Need to see if these ratios are in the solution space
   !If not, adjust Mx and/or My until they are in the solution space
 
@@ -332,7 +332,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
 
   !Find where we are on a log10 scale bewteen those two points
   !in terms of the number of points in our look up tables
-  irm = log10(MxM3/minMx3)/log10(maxMx3/minMx3)*(real(ntab)-1.)+1.
+  irm = (MxM3-minMx3)/(maxMx3-minMx3)*(real(ntab)-1.)+1.
   irm = max(1.,min(real(ntab)-1.,irm))
   im1 = int(floor(irm))
   wgtm = irm-floor(irm)
