@@ -316,7 +316,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   if (MxM3 < minMx3) then
     flag(1)=1
     flag(2)=abs(minMx3/MxM3)
-    MxM3 = minMx3*(1.+ovc_factor) 
+    MxM3 = minMx3*(1.+ovc_factor)
     Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
     flag(1)=1
@@ -327,7 +327,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
 
   !Find where we are on a log10 scale bewteen those two points
   !in terms of the number of points in our look up tables
-  irm = (MxM3-minMx3)/(maxMx3-minMx3)*(real(ntab)-1.)+1.
+  irm = log10(MxM3/minMx3)/log10(maxMx3/minMx3)*(real(ntab)-1.)+1.
   irm = max(1.,min(real(ntab)-1.,irm))
   im1 = int(floor(irm))
   wgtm = irm-floor(irm)
