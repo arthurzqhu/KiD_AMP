@@ -544,7 +544,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !   MxM3 = maxMx3*(1.-ovc_factor)
   !   Mxp = MxM3 * M3p
   endif
-  CALL getCP((/MxM3,MyM3/), mintab, maxtab, minMx3, maxMx3, CP)
+  CALL getCP(OP, mintab, maxtab, minMx3, maxMx3, CP)
   MxM3 = CP(1)
   MyM3 = CP(2)
   Mxp = MxM3 * M3p
@@ -568,19 +568,19 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   maxmy2 = maxtab(im2,ihyd)
 
   !Check now to see if MxM3 is out of allowable range and adjust Mx
-  min12=min(minmy1,minmy2)
-  max12=max(maxmy1,maxmy2)
-  if (MyM3 < min12) then
-    flag(1)=1
-    flag(3)=abs(min12/myM3)
-    MyM3 = min12*(1.+ovc_factor)
-    Myp = MyM3 * M3p
-  elseif (MyM3 > max12) then
-    flag(1)=1
-    flag(3)=abs(myM3/max12)
-    MyM3 = max12*(1.-ovc_factor)
-    Myp = MyM3 * M3p
-  endif
+  ! min12=min(minmy1,minmy2)
+  ! max12=max(maxmy1,maxmy2)
+  ! if (MyM3 < min12) then
+  !   flag(1)=1
+  !   flag(3)=abs(min12/myM3)
+  !   MyM3 = min12*(1.+ovc_factor)
+  !   Myp = MyM3 * M3p
+  ! elseif (MyM3 > max12) then
+  !   flag(1)=1
+  !   flag(3)=abs(myM3/max12)
+  !   MyM3 = max12*(1.-ovc_factor)
+  !   Myp = MyM3 * M3p
+  ! endif
 
   !Again, find where we are on the log scale between the upper and lower
   !limits. Do this twice, once for each of the nearest min and max pairs
