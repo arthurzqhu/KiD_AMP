@@ -238,10 +238,10 @@ character(3), intent(in) :: linORlog
 real(8), intent(out) :: dist
 
 if (linORlog == 'lin') then
-  dist = sqrt((pt2(1)-pt1(1))^2+(pt2(2)-pt1(2))^2)
+  dist = sqrt((pt2(1)-pt1(1))**2.+(pt2(2)-pt1(2))**2.)
 elseif (linORlog == 'log') then
-  dist = sqrt( ( log10( pt2(1) ) - log10( pt1(1) ) )^2 + &
-               ( log10( pt2(2) ) - log10( pt1(2) ) )^2)
+  dist = sqrt( ( log10( pt2(1) ) - log10( pt1(1) ) )**2. + &
+               ( log10( pt2(2) ) - log10( pt1(2) ) )**2.)
 else
   print*, "specify 'lin' or 'log' as the third argument in &
    getDist2D(pt1,pt2,linORlog,dist)"
@@ -252,13 +252,13 @@ End subroutine getDist2D
 Subroutine binSearch2D(x,y,pt,cp,idx_l,idx_r)
 
 implicit none
-real(8), intent(in) :: x,y
+real(8), intent(in) :: x(:),y(:)
 real(8), dimension(2), intent(in) :: pt
 real(8), dimension(2), intent(out) :: cp
 integer, intent(out), optional :: idx_l, idx_r
 real(8), dimension(2) :: pt_ml, pt_mm, pt_mr
 real(8) :: dist_ml, dist_mm, dist_mr
-integer :: idx_ml, idx_mm, idx_mr, minOf3, maxOf3, idx_min
+integer :: len, idx_ml, idx_mm, idx_mr, minOf3, maxOf3, idx_min
 logical :: last_three
 
 len = size(x) ! or y, they should be of the same length
@@ -312,10 +312,10 @@ do while(idx_l < idx_r-1)
       idx_r = idx_mr
     end if
   else
-    minOf3 = minloc( (/dist_ml,dist_mm,dist_mr/) )
+    minOf3 = minloc( (/dist_ml,dist_mm,dist_mr/), dim=1)
     idx_min = idx_l+minOf3-1 ! idx for the correct answer
     ! eliminate the one that's farthest from the closest point
-    maxOf3 = maxloc( (/dist_ml,dist_mm,dist_mr/) )
+    maxOf3 = maxloc( (/dist_ml,dist_mm,dist_mr/), dim=1)
     if ( maxOf3==1 ) then
       idx_l = idx_ml+1
     elseif ( maxOf3 == 3 ) then
@@ -359,8 +359,8 @@ end if
 ! before comparing the out of bound y and its limit value, need to
 ! know the interpolated ubound or lbound
 CALL logspace(log10(xmin), log10(xmax), ntab, xarray)
-CALL interp1_noext(xarray, ymins, pt(1), ymin)
-CALL interp1_noext(xarray, ymaxs, pt(1), ymax)
+CALL interp1_noext(xarray, ymins, (/pt(1)/), (/ymin/))
+CALL interp1_noext(xarray, ymaxs, (/pt(1)/), (/ymax/))
 
 ! define the six regions
 if ( pt(2)>ymax .and. pt(1)<xmax .and. pt(1)>xmin ) then
