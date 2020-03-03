@@ -335,7 +335,7 @@ contains
 
     implicit none
     real(wp), intent(in)  :: z(:),f(:),znew(:)
-    real(wp), intent(out) :: fnew(:)
+    real(wp) :: fnew(:)
     integer, intent(in), optional :: scheme_id
     real(real32) :: nan
     !local variables
