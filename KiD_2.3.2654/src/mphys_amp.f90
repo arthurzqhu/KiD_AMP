@@ -184,23 +184,18 @@ if (imomc1.ne.3) then
    call save_dg(field,'old_fitting_flag_rain', i_dgtime,units='unitless', dim='z')
 
    field(:)=flag(:,nx,1,2)
-   call save_dg(field,'fitting_flag_cloud_x_oob', i_dgtime,units='unitless', dim='z')
+   call save_dg(field,'fitting_flag_cloud_oob', i_dgtime,units='unitless', dim='z')
    field(:)=flag(:,nx,2,2)
-   call save_dg(field,'fitting_flag_rain_x_oob', i_dgtime,units='unitless', dim='z')
+   call save_dg(field,'fitting_flag_rain_oob', i_dgtime,units='unitless', dim='z')
 
    field(:)=flag(:,nx,1,3)
-   call save_dg(field,'fitting_flag_cloud_y_oob', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,3)
-   call save_dg(field,'fitting_flag_rain_y_oob', i_dgtime,units='unitless', dim='z')
-
-   field(:)=flag(:,nx,1,4)
    call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,4)
+   field(:)=flag(:,nx,2,3)
    call save_dg(field,'fitting_flag_rain_x_intol', i_dgtime,units='unitless', dim='z')
 
-   field(:)=flag(:,nx,1,5)
+   field(:)=flag(:,nx,1,4)
    call save_dg(field,'fitting_flag_cloud_y_intol', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,5)
+   field(:)=flag(:,nx,2,4)
    call save_dg(field,'fitting_flag_rain_y_intol', i_dgtime,units='unitless', dim='z')
 endif
 
