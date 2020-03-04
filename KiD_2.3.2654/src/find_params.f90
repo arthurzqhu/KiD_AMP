@@ -551,8 +551,9 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   MyM3 = CP(2)
   Mxp = MxM3 * M3p
   Myp = MyM3 * M3p
-  flag(2) = abs(log10(MxM3)-log10(oMxM3))
-  flag(3) = abs(log10(MyM3)-log10(oMyM3))
+  ! flag(2) = abs(log10(MxM3)-log10(oMxM3))
+  ! flag(3) = abs(log10(MyM3)-log10(oMyM3))
+  flag(2) = sqrt( log10(MxM3/oMxM3)**2 + log10(MyM3/oMyM3)**2 )
 
   !Find where we are on a log10 scale bewteen those two points
   !in terms of the number of points in our look up tables
@@ -660,8 +661,8 @@ if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals(1))>tol) flag(4)=1
-if (abs(vals(2))>tol) flag(5)=1
+if (abs(vals(1))>tol) flag(3)=1
+if (abs(vals(2))>tol) flag(4)=1
 if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag(1)=1
 
 !Force third moment to have no error and calculate final distribution
