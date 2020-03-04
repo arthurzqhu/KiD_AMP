@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ovc_factor=(0.01 0.001 0.0)
+ovc_factor=(0.0)
 ovc_num=${#ovc_factor[@]}
 
 caselist=(101 102 103 105 106 107)
