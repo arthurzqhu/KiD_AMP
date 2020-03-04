@@ -249,34 +249,31 @@ end if
 
 End subroutine getDist2D
 !--------------------------------------------------------
-Subroutine binSearch2D(x,y,pt,cp,idx_l,idx_r)
+Subroutine binSearch2D(x,y,pt,cp)
+use micro_prm, only: ntab
 
 implicit none
-real(8), intent(in) :: x(:),y(:)
+real(8), dimension(ntab), intent(in) :: x,y
 real(8), dimension(2), intent(in) :: pt
 real(8), dimension(2), intent(out) :: cp
-integer, intent(out), optional :: idx_l, idx_r
 real(8), dimension(2) :: pt_ml, pt_mm, pt_mr
 real(8) :: dist_ml, dist_mm, dist_mr
-integer :: len, idx_ml, idx_mm, idx_mr, minOf3, maxOf3, idx_min
+integer :: idx_l, idx_r, leng, idx_ml, idx_mm, idx_mr, minOf3, maxOf3, idx_min
 logical :: last_three
 
-len = size(x) ! or y, they should be of the same length
-
+leng = size(x) ! or y, they should be of the same length
 ! set initial index of the left and right bound
 idx_l = 1
-idx_r = len
+idx_r = leng
 
 last_three = .false. ! explained below
 
-do while(idx_l < idx_r-1)
+do while (idx_l < idx_r-1)
   ! in order to do binary search of distance to a curve, we need TWO
   ! middle pointS to know which direction from THE middle point is
-  ! decreasing the distance between the point and the shape
-
+  ! decreasing the distance between the point and the shape 
   idx_ml = floor((idx_l+idx_r)/2.)
-  idx_mr = ceiling((idx_l+idx_r)/2.)
-
+  idx_mr = ceiling((idx_l+idx_r)/2.) 
   ! differentiate the two middle points in case (idx_l+idx_r)/2. is
   ! an integer
   if ( idx_ml==idx_mr .and. idx_l/=idx_r-2) then
@@ -292,8 +289,7 @@ do while(idx_l < idx_r-1)
     idx_mr = (idx_l+idx_r)/2+1 ! actually equals to idx_r
     pt_mm = (/x(idx_mm), y(idx_mm)/)
     CALL getDist2D(pt, pt_mm, 'log', dist_mm)
-  end if
-
+  end if 
   ! get the position of the middle points
   pt_ml = (/x(idx_ml), y(idx_ml)/)
   pt_mr = (/x(idx_mr), y(idx_mr)/)
@@ -316,12 +312,12 @@ do while(idx_l < idx_r-1)
     idx_min = idx_l+minOf3-1 ! idx for the correct answer
     ! eliminate the one that's farthest from the closest point
     maxOf3 = maxloc( (/dist_ml,dist_mm,dist_mr/), dim=1)
-    if ( maxOf3==1 ) then
+    if ( maxOf3 == 1 ) then
       idx_l = idx_ml+1
     elseif ( maxOf3 == 3 ) then
       idx_l = idx_ml ! no change
     else
-      print*, "something's wrong!"
+      print*, "these are not the last three. something's wrong!"
     end if
 
     idx_r = idx_l+1
@@ -544,7 +540,13 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !   MxM3 = maxMx3*(1.-ovc_factor)
   !   Mxp = MxM3 * M3p
   endif
-  CALL getCP(OP, mintab, maxtab, minMx3, maxMx3, CP)
+  !print*, 'full mintab size and shape'
+  !print*, size(mintab), shape(mintab)
+  !print*, ' '
+  !print*, 'mintab with right dim size and shape'
+  !print*, size(mintab(:,ihyd)), shape(mintab(:,ihyd))
+
+  CALL getCP(OP, mintab(:,ihyd), maxtab(:,ihyd), minMx3, maxMx3, CP)
   MxM3 = CP(1)
   MyM3 = CP(2)
   Mxp = MxM3 * M3p
