@@ -340,6 +340,7 @@ real(8), intent(in) :: xmin, xmax
 real(8), dimension(2), intent(out) :: cp
 
 real(8), dimension(ntab) :: xarray
+real(8), dimension(1) :: ymin_arr, ymax_arr
 real(8) :: ymin, ymax
 integer :: region, slant
 
@@ -355,8 +356,11 @@ end if
 ! before comparing the out of bound y and its limit value, need to
 ! know the interpolated ubound or lbound
 CALL logspace(log10(xmin), log10(xmax), ntab, xarray)
-CALL interp1_noext(xarray, ymins, (/pt(1)/), (/ymin/))
-CALL interp1_noext(xarray, ymaxs, (/pt(1)/), (/ymax/))
+CALL interp1_noext(xarray, ymins, (/pt(1)/), ymin_arr)
+CALL interp1_noext(xarray, ymaxs, (/pt(1)/), ymax_arr)
+
+ymin = ymin_arr(1)
+ymax = ymax_arr(1)
 
 ! define the six regions
 if ( pt(2)>ymax .and. pt(1)<xmax .and. pt(1)>xmin ) then
@@ -393,6 +397,9 @@ elseif (pt(1) >= xmax) then
       region = 6
     end if
   end select
+elseif ( pt(1)>xmin .and. pt(1)<xmax .and. pt(2)>ymin .and. pt(2)<ymax ) then
+  region = 0
+  cp = pt
 end if
 
 select case (region)
@@ -544,8 +551,8 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   MyM3 = CP(2)
   Mxp = MxM3 * M3p
   Myp = MyM3 * M3p
-  flag(2) = abs(log10(CP(1))-log10(MxM3))
-  flag(3) = abs(log10(CP(2))-log10(MyM3))
+  flag(2) = abs(log10(MxM3)-log10(oMxM3))
+  flag(3) = abs(log10(MyM3)-log10(oMyM3))
 
   !Find where we are on a log10 scale bewteen those two points
   !in terms of the number of points in our look up tables
