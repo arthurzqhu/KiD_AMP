@@ -230,6 +230,213 @@ double precision, dimension(nkr):: md
 return
 End subroutine calcdist
 !--------------------------------------------------------
+Subroutine getDist2D(pt1,pt2,linORlog,dist)
+
+implicit none
+real(8), dimension(2), intent(in) :: pt1, pt2
+character(3), intent(in) :: linORlog
+real(8), intent(out) :: dist
+
+if (linORlog == 'lin') then
+  dist = sqrt((pt2(1)-pt1(1))**2.+(pt2(2)-pt1(2))**2.)
+elseif (linORlog == 'log') then
+  dist = sqrt( ( log10( pt2(1) ) - log10( pt1(1) ) )**2. + &
+               ( log10( pt2(2) ) - log10( pt1(2) ) )**2.)
+else
+  print*, "specify 'lin' or 'log' as the third argument in &
+   getDist2D(pt1,pt2,linORlog,dist)"
+end if
+
+End subroutine getDist2D
+!--------------------------------------------------------
+Subroutine binSearch2D(x,y,pt,cp)
+use micro_prm, only: ntab
+
+implicit none
+real(8), dimension(ntab), intent(in) :: x,y
+real(8), dimension(2), intent(in) :: pt
+real(8), dimension(2), intent(out) :: cp
+real(8), dimension(2) :: pt_ml, pt_mm, pt_mr
+real(8) :: dist_ml, dist_mm, dist_mr
+integer :: idx_l, idx_r, leng, idx_ml, idx_mm, idx_mr, minOf3, maxOf3, idx_min
+logical :: last_three
+
+leng = size(x) ! or y, they should be of the same length
+! set initial index of the left and right bound
+idx_l = 1
+idx_r = leng
+
+last_three = .false. ! explained below
+
+do while (idx_l < idx_r-1)
+  ! in order to do binary search of distance to a curve, we need TWO
+  ! middle pointS to know which direction from THE middle point is
+  ! decreasing the distance between the point and the shape
+  idx_ml = floor((idx_l+idx_r)/2.)
+  idx_mr = ceiling((idx_l+idx_r)/2.)
+  ! differentiate the two middle points in case (idx_l+idx_r)/2. is
+  ! an integer
+  if ( idx_ml==idx_mr .and. idx_l/=idx_r-2) then
+    idx_mr = idx_ml+1
+  end if
+
+  ! calculate THE middle point in case idx_l, idx_ml, and idx_r are
+  ! three consecutive numbers
+  if ( idx_l == idx_r-2 ) then
+    last_three = .true.
+    idx_ml = (idx_l+idx_r)/2-1 ! actually equals to idx_l
+    idx_mm = (idx_l+idx_r)/2
+    idx_mr = (idx_l+idx_r)/2+1 ! actually equals to idx_r
+    pt_mm = (/x(idx_mm), y(idx_mm)/)
+    CALL getDist2D(pt, pt_mm, 'log', dist_mm)
+  end if
+  ! get the position of the middle points
+  pt_ml = (/x(idx_ml), y(idx_ml)/)
+  pt_mr = (/x(idx_mr), y(idx_mr)/)
+
+  ! get the distance between pt and the middle points
+  CALL getDist2D(pt, pt_ml, 'log', dist_ml)
+  CALL getDist2D(pt, pt_mr, 'log', dist_mr)
+
+  ! adjust the idx_ml and idx_mr by eliminating one of the 3 middle points
+  if ( .not. last_three ) then
+    ! move the left bound to the middle left if the distance is
+    ! decreasing in the positive direction. vice versa.
+    if ( dist_ml > dist_mr ) then
+      idx_l = idx_ml
+    else
+      idx_r = idx_mr
+    end if
+  else
+    minOf3 = minloc( (/dist_ml,dist_mm,dist_mr/), dim=1)
+    idx_min = idx_l+minOf3-1 ! idx for the correct answer
+    ! eliminate the one that's farthest from the closest point
+    maxOf3 = maxloc( (/dist_ml,dist_mm,dist_mr/), dim=1)
+    if ( maxOf3 == 1 ) then
+      idx_l = idx_ml+1
+    elseif ( maxOf3 == 3 ) then
+      idx_l = idx_ml ! no change
+    else
+      print*, "these are not the last three. something's wrong!"
+    end if
+
+    idx_r = idx_l+1
+  end if
+end do
+
+cp = (/x(idx_min),y(idx_min)/)
+
+End subroutine binSearch2D
+!--------------------------------------------------------
+Subroutine getCP(pt, ymins, ymaxs, xmin, xmax, cp)
+
+use micro_prm, only: ntab
+use interpolation, only: interp1_noext
+
+implicit none
+real(8), dimension(2), intent(in) :: pt
+real(8), dimension(ntab), intent(in) :: ymins, ymaxs
+real(8), intent(in) :: xmin, xmax
+real(8), dimension(2), intent(out) :: cp
+
+real(8), dimension(ntab) :: xarray
+real(8) :: ymin, ymax
+integer :: region, slant
+
+! determine the how the lines/curves are slanted
+! upwards to the right -> slant = 1
+! downwards to the right -> slant = -1
+if ( ymins(1) < ymins(ntab) ) then
+  slant = 1
+else
+  slant = -1
+end if
+
+! before comparing the out of bound y and its limit value, need to
+! know the interpolated ubound or lbound
+CALL logspace(log10(xmin), log10(xmax), ntab, xarray)
+CALL interp1_noext(xarray, ymins, (/pt(1)/), (/ymin/))
+CALL interp1_noext(xarray, ymaxs, (/pt(1)/), (/ymax/))
+
+! define the six regions
+if ( pt(2)>ymax .and. pt(1)<xmax .and. pt(1)>xmin ) then
+  region = 1
+elseif ( pt(2)<ymin .and. pt(1)<xmax .and. pt(1)>xmin ) then
+  region = 2
+elseif ( pt(1)<=xmin ) then
+  select case (slant)
+  case (1)
+    if ( pt(2) > ymaxs(1) ) then
+      region = 3
+    else
+      region = 4
+    end if
+  case (-1)
+    if ( pt(2) > ymaxs(1) ) then
+      region = 4
+    else
+      region = 5
+    end if
+  end select
+elseif (pt(1) >= xmax) then
+  select case (slant)
+  case (1)
+    if ( pt(2) > ymaxs(1) ) then
+      region = 6
+    else
+      region = 5
+    end if
+  case (-1)
+    if ( pt(2) > ymaxs(1) ) then
+      region = 3
+    else
+      region = 6
+    end if
+  end select
+end if
+
+select case (region)
+case (1,3)
+  CALL binSearch2D(xarray,ymaxs,pt,cp)
+case (2,5)
+  CALL binSearch2D(xarray,ymins,pt,cp)
+case (4)
+  cp = (/xmin, ymins(1)/) ! or ymaxs, shouldnt really matter since they converge
+case (6)
+  cp = (/xmax, ymaxs(ntab)/)
+
+end select
+
+End subroutine getCP
+!--------------------------------------------------------
+Subroutine logspace(from, to, n, array)
+! from and to here are powers of ten, so they can be negative
+! need to take log10 before passing in values
+implicit none
+real(8), intent(in) :: from, to
+integer, intent(in) :: n
+real(8), dimension(n), intent(out) :: array
+real(8), dimension(n) :: power_arr
+
+CALL linspace(from, to, n, power_arr)
+array = 10. ** power_arr
+End Subroutine logspace
+!--------------------------------------------------------
+Subroutine linspace(from,to,n,array)
+! haven't found a way to reduce the redundancy of n and array of size n.
+implicit none
+real(8), intent(in) :: from, to
+integer, intent(in) :: n
+real(8), dimension(n), intent(out) :: array
+real(8) :: range
+integer :: i, num, numi
+
+range = to - from
+numi = n - 1
+
+array = from + (/(i, i=0,numi)/) * range/real(numi)
+End subroutine linspace
+!--------------------------------------------------------
 Subroutine searchparamsG(guess,ihyd,md,flag,oMxM3,oMyM3,nMxM3,nMyM3)
 
 use micro_prm, only:nkr,npm
@@ -262,6 +469,7 @@ real(8) :: guess(2),oguess(2),vals(2),ovals(2),tol
 real(8) :: MxM3,MyM3,irm,iry,wgtm,wgty1,wgty2
 real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(nkr),min12,max12
 real(8) :: minMx3,maxMx3
+real(8), dimension(2) :: OP, CP
 integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
 real(8), dimension(flag_count) :: flag
 integer, parameter :: lwa=33
@@ -307,6 +515,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Save the original value as output
   oMxM3 = MxM3
   oMyM3 = MyM3
+  OP = (/oMxM3,oMyM3/)
 
   !Need to see if these ratios are in the solution space
   !If not, adjust Mx and/or My until they are in the solution space
@@ -320,15 +529,23 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   if (MxM3 < minMx3) then
     flag(1)=1
-    flag(2)=abs(minMx3/MxM3)
-    MxM3 = minMx3*(1.+ovc_factor)
-    Mxp = MxM3 * M3p
+    ! flag(2)=abs(minMx3/MxM3)
+    ! MxM3 = minMx3*(1.+ovc_factor)
+    ! Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
     flag(1)=1
-    flag(2)=abs(MxM3/maxMx3)
-    MxM3 = maxMx3*(1.-ovc_factor)
-    Mxp = MxM3 * M3p
+    ! flag(2)=abs(MxM3/maxMx3)
+    ! MxM3 = maxMx3*(1.-ovc_factor)
+    ! Mxp = MxM3 * M3p
   endif
+
+  CALL getCP(OP, mintab(:,ihyd), maxtab(:,ihyd), minMx3, maxMx3, CP)
+  MxM3 = CP(1)
+  MyM3 = CP(2)
+  Mxp = MxM3 * M3p
+  Myp = MyM3 * M3p
+  flag(2) = abs(log10(CP(1))-log10(MxM3))
+  flag(3) = abs(log10(CP(2))-log10(MyM3))
 
   !Find where we are on a log10 scale bewteen those two points
   !in terms of the number of points in our look up tables
@@ -350,14 +567,14 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   max12=max(maxmy1,maxmy2)
   if (MyM3 < min12) then
     flag(1)=1
-    flag(3)=abs(min12/myM3)
-    MyM3 = min12*(1.+ovc_factor)
-    Myp = MyM3 * M3p
+    ! flag(3)=abs(min12/myM3)
+    ! MyM3 = min12*(1.+ovc_factor)
+    ! Myp = MyM3 * M3p
   elseif (MyM3 > max12) then
     flag(1)=1
-    flag(3)=abs(myM3/max12)
-    MyM3 = max12*(1.-ovc_factor)
-    Myp = MyM3 * M3p
+    ! flag(3)=abs(myM3/max12)
+    ! MyM3 = max12*(1.-ovc_factor)
+    ! Myp = MyM3 * M3p
   endif
 
   !Again, find where we are on the log scale between the upper and lower
