@@ -32,7 +32,7 @@ contains
 
     !local variables
     integer :: itype, k, j, ih,imom
-    
+
     real :: tend_init=0.  ! initial value for tendency terms
 
 ! Initialize aerosols and their tendencies
@@ -54,7 +54,7 @@ contains
                   , num_aero_moments(ih), num_aero_bins(ih), ih &
                   , tend_init)
              do imom=1,num_aero_moments(ih)
-                aerosol(k,j,ih)%moments(:,imom)=aero_mom_init(imom) 
+                aerosol(k,j,ih)%moments(:,imom)=aero_mom_init(imom)
              end do
           end do
        end do
@@ -78,7 +78,7 @@ contains
              call species_allocate(dhydrometeors_force(k,j,ih) &
                   , num_h_moments(ih), num_h_bins(ih), ih &
                   , tend_init)
-             do imom=1,num_h_moments(ih) 
+             do imom=1,num_h_moments(ih)
                 hydrometeors(k,j,ih)%moments(:,imom)=mom_init(imom)
              end do
           end do
@@ -107,14 +107,14 @@ contains
              end do
           end if
         end do
-        ! Initialize some aerosol species 
-        do ih=1,naerosol 
-          if (l_ainit(ih))then 
-            do j=0,nx+1 
-              do k=1,nz 
-                do imom=1,num_aero_moments(ih) 
-                  aerosol(k,j,ih)%moments(:,imom) = & 
-                     aerosol_init(k,ih)%moments(:,imom) 
+        ! Initialize some aerosol species
+        do ih=1,naerosol
+          if (l_ainit(ih))then
+            do j=0,nx+1
+              do k=1,nz
+                do imom=1,num_aero_moments(ih)
+                  aerosol(k,j,ih)%moments(:,imom) = &
+                     aerosol_init(k,ih)%moments(:,imom)
                 end do
               end do
             end do
@@ -125,11 +125,11 @@ contains
 
   end subroutine interpolate_input
 
-  
+
   subroutine interpolate_forcing
 
     Use parameters, only : nz, nx, dt
-    Use column_variables, only : w, v, w_half, v_half,  z, z_half, x, x_half, & 
+    Use column_variables, only : w, v, w_half, v_half,  z, z_half, x, x_half, &
        Tforce, qforce, wth_surf, wqv_surf &
        ,Trelax, qv, theta, exner, thinit, qvinit
     Use input_variables, only : w_t, time_in, Tforce_in, qforce_in &
@@ -141,7 +141,7 @@ contains
 
     itime=interval(time_in, time)
 
-    if ( n_force_times > 0 .and. n_force_times < n_times ) then 
+    if ( n_force_times > 0 .and. n_force_times < n_times ) then
        loc_ntimes = n_force_times
     else
        loc_ntimes = n_times
@@ -151,19 +151,19 @@ contains
        w(1:nz,0:nx+1)= w_t(1:nz,0:nx+1,itime) +               &
             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
             *(w_t(1:nz,0:nx+1,itime+1)-w_t(1:nz,0:nx+1,itime))
-       w_half(1:nz,0:nx+1)= w_t_half(1:nz,0:nx+1,itime) +               & 
-          ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  & 
-          *(w_t_half(1:nz,0:nx+1,itime+1)-w_t_half(1:nz,0:nx+1,itime))  
+       w_half(1:nz,0:nx+1)= w_t_half(1:nz,0:nx+1,itime) +               &
+          ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
+          *(w_t_half(1:nz,0:nx+1,itime+1)-w_t_half(1:nz,0:nx+1,itime))
 
        v(1:nz,0:nx+1)= v_t(1:nz,0:nx+1,itime) +               &
             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
             *(v_t(1:nz,0:nx+1,itime+1)-v_t(1:nz,0:nx+1,itime))
-       if (nx > 1) then 
-          v_half(1:nz,0:nx+1)= v_t_half(1:nz,0:nx+1,itime) +               & 
-             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  & 
-             *(v_t_half(1:nz,0:nx+1,itime+1)-v_t_half(1:nz,0:nx+1,itime))          
-        else 
-          v_half = v 
+       if (nx > 1) then
+          v_half(1:nz,0:nx+1)= v_t_half(1:nz,0:nx+1,itime) +               &
+             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
+             *(v_t_half(1:nz,0:nx+1,itime+1)-v_t_half(1:nz,0:nx+1,itime))
+        else
+          v_half = v
         endif
 
         select case (iforce_method)
@@ -171,15 +171,15 @@ contains
           Tforce(1:nz,0:nx+1)=Tforce_in(1:nz,0:nx+1,itime) +               &
             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
             *(Tforce_in(1:nz,0:nx+1,itime+1)-Tforce_in(1:nz,0:nx+1,itime))
-         
+
          qforce(1:nz,0:nx+1)=qforce_in(1:nz,0:nx+1,itime) +               &
             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
             *(qforce_in(1:nz,0:nx+1,itime+1)-qforce_in(1:nz,0:nx+1,itime))
-         
+
          wth_surf(0:nx+1)=wth_surf_t(0:nx+1,itime) +               &
             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
             *(wth_surf_t(0:nx+1,itime+1)-wth_surf_t(0:nx+1,itime))
-         
+
          wqv_surf(0:nx+1)=wqv_surf_t(0:nx+1,itime) +               &
             ((time-time_in(itime))/(time_in(itime+1)-time_in(itime)))  &
             *(wqv_surf_t(0:nx+1,itime+1)-wqv_surf_t(0:nx+1,itime))
@@ -210,8 +210,8 @@ contains
     real(wp) :: x(:)
     real(wp) :: x0
     integer :: i,nx
-    
-    nx=size(x) 
+
+    nx=size(x)
     if ((x0-x(1))*(x0-x(nx))>0.)then
        if (x(1)<x(nx))then
           if (x0<x(1))i=0
@@ -251,20 +251,20 @@ contains
     !
     real(wp), intent(in)  :: z(:)
     real(wp), intent(out) :: znew(:)
-    
+
     !local variables
     integer :: k, nz
 
     integer :: kpm=1 !or 0
-    
+
     nz=size(z(:))
-    
+
     do k=2-kpm,nz-kpm
        znew(k)=.5*(z(k+kpm)+z(k+kpm-1))
     end do
-    k=1+(nz-1)*kpm    
+    k=1+(nz-1)*kpm
     znew(k)=2.*z(k)-znew(k-1)
-    
+
   end subroutine make_wgrid
 
   subroutine make_vgrid(x,xnew)
@@ -273,14 +273,14 @@ contains
     !
     real(wp), intent(in)  :: x(0:)
     real(wp), intent(out) :: xnew(0:)
-    
+
     !local variables
     integer :: j, nx
 
     integer :: jpm=1 !or 0
-    
+
     nx=size(x(:))-1
-    
+
     ! this assumes the 0 and nx+1 array bounds
     do j=1-jpm,nx-jpm
        xnew(j)=.5*(x(j)+x(j+jpm))
@@ -290,7 +290,7 @@ contains
     xnew(j)=2.*x(j)-xnew(j-1)
 
   end subroutine make_vgrid
- 
+
 
   subroutine interpolate(z,f,znew,fnew,scheme_id)
     !
@@ -322,11 +322,49 @@ contains
           l=interval(z,znew(k))
           if (l==0) l=l+1    !extrapolate
           if (l==nz) l=l-1 !extrapolate
-          fnew(k)=f(l)+(f(l+1)-f(l))*(znew(k)-z(l))/(z(l+1)-z(l)) 
+          fnew(k)=f(l)+(f(l+1)-f(l))*(znew(k)-z(l))/(z(l+1)-z(l))
        end do
     end select
 
   end subroutine interpolate
+
+  subroutine interp1_noext(z,f,znew,fnew,scheme_id)
+    ! same as above but no extrapolation
+    use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
+    use, intrinsic :: iso_fortran_env, only: real32
+
+    implicit none
+    real(wp), intent(in)  :: z(:),f(:),znew(:)
+    real(wp) :: fnew(:)
+    integer, intent(in), optional :: scheme_id
+    real(real32) :: nan
+    !local variables
+    integer :: cscheme_id, k,l,nz,nznew
+
+    nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
+    nz=size(z(:))
+    nznew=size(znew(:))
+
+    if (present(scheme_id))then
+       cscheme_id=scheme_id
+    else
+       cscheme_id=1
+    end if
+
+    select case(cscheme_id)
+    case(1)
+       !linear interpolation
+       do k=1,nznew
+          l=interval(z,znew(k))
+          if (l==0 .or. l==nz) then
+            fnew(k) = nan ! not exactly right but will ignore for now
+          else
+            fnew(k)=f(l)+(f(l+1)-f(l))*(znew(k)-z(l))/(z(l+1)-z(l))
+          end if
+       end do
+    end select
+
+  end subroutine interp1_noext
 
   subroutine interpolate_x(x,f,xnew,fnew,scheme_id)
     !
@@ -360,7 +398,7 @@ contains
           if (l>=(nxnew)) l=l-1 !extrapolate
           fnew(k)=f(l)+(f(l+1)-f(l))*(xnew(k)-x(l))/(x(l+1)-x(l))
        end do
-       
+
     end select
 
   end subroutine interpolate_x
@@ -368,7 +406,7 @@ contains
   subroutine smooth1D(field, field_out, n)
     ! Smooth field
     real(wp), intent(in) :: field(:)
-    real(wp), intent(out) :: field_out(:)    
+    real(wp), intent(out) :: field_out(:)
     integer, intent(in), optional :: n
 
     !local variables
@@ -391,4 +429,3 @@ contains
   end subroutine smooth1D
 
 end module interpolation
-
