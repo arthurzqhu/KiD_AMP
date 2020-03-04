@@ -260,7 +260,7 @@ implicit none
 real(8) :: guess(2),oguess(2),vals(2),ovals(2),tol
 real(8) :: MxM3,MyM3,irm,iry,wgtm,wgty1,wgty2
 real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(nkr),min12,max12
-real(8) :: minMx3,maxMx3
+real(8) :: minMx3,maxMx3,oMxM3,oMyM3
 integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
 real(8), dimension(flag_count) :: flag
 integer, parameter :: lwa=33
@@ -303,6 +303,9 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Ratio of yth moment to 3rd moment.
   MyM3 = Myp/M3p
 
+  oMxM3 = MxM3
+  oMyM3 = MyM3
+
   !Need to see if these ratios are in the solution space
   !If not, adjust Mx and/or My until they are in the solution space
 
@@ -315,12 +318,10 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   if (MxM3 < minMx3) then
     flag(1)=1
-    flag(2)=abs(minMx3/MxM3)
     MxM3 = minMx3*(1.+ovc_factor)
     Mxp = MxM3 * M3p
   elseif (MxM3 > maxMx3) then
     flag(1)=1
-    flag(2)=abs(MxM3/maxMx3)
     MxM3 = maxMx3*(1.-ovc_factor)
     Mxp = MxM3 * M3p
   endif
@@ -345,12 +346,10 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   max12=max(maxmy1,maxmy2)
   if (MyM3 < min12) then
     flag(1)=1
-    flag(3)=abs(min12/myM3)
     MyM3 = min12*(1.+ovc_factor)
     Myp = MyM3 * M3p
   elseif (MyM3 > max12) then
     flag(1)=1
-    flag(3)=abs(myM3/max12)
     MyM3 = max12*(1.-ovc_factor)
     Myp = MyM3 * M3p
   endif
@@ -368,7 +367,8 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   ix1b = floor(iry)
   wgty2=iry-ix1b
   ix2b=min(ntab,ix1b+1)
-
+  
+  flag(2) = sqrt( log10(MxM3/oMxM3)**2 + log10(MyM3/oMyM3)**2 )
   !Find best-guess parameters in the look up tables
   guess(1) = (1.-wgtm)*((1.-wgty1)*nutab(iy1a,im1,ihyd)+wgty1*nutab(iy2a,im1,ihyd)) + &
              wgtm*((1.-wgty2)*nutab(ix1b,im2,ihyd)+wgty2*nutab(ix2b,im2,ihyd))
@@ -427,8 +427,8 @@ if (abs(vals(1))>tol.and.abs(vals(1))<1000.) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals(1))>tol) flag(4)=1
-if (abs(vals(2))>tol) flag(5)=1
+if (abs(vals(1))>tol) flag(3)=1
+if (abs(vals(2))>tol) flag(4)=1
 if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag(1)=1
 
 !Force third moment to have no error and calculate final distribution
