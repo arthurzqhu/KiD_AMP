@@ -252,9 +252,12 @@ End subroutine searchparamsG
 Subroutine searchparams3M(guess,ihyd,md,flag)
 
 use micro_prm, only:relax,Mp,M3p,Mxp,Myp,momx,nkr, &
-               nutab,dntab,minmaxmx,mintab,maxtab,ntab
+               nutab,dntab,minmaxmx,mintab,maxtab,ntab, &
+               cloud_mr_th, rain_mr_th
 use parameters, only:flag_count
 use namelists, only:ovc_factor
+use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
+use, intrinsic :: iso_fortran_env, only: real32
 
 implicit none
 real(8) :: guess(2),oguess(2),vals(2),ovals(2),tol
@@ -266,6 +269,9 @@ real(8), dimension(flag_count) :: flag
 integer, parameter :: lwa=33
 real(8),dimension(lwa) :: wa
 external :: fcn_2p
+real(real32) :: nan
+
+nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
 flag(:) = 0
 !This subroutine drives the search for PDF parameters that satisfy the
@@ -367,7 +373,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   ix1b = floor(iry)
   wgty2=iry-ix1b
   ix2b=min(ntab,ix1b+1)
-  
+
   flag(2) = sqrt( log10(MxM3/oMxM3)**2 + log10(MyM3/oMyM3)**2 )
   !Find best-guess parameters in the look up tables
   guess(1) = (1.-wgtm)*((1.-wgty1)*nutab(iy1a,im1,ihyd)+wgty1*nutab(iy2a,im1,ihyd)) + &
@@ -430,6 +436,17 @@ endif
 if (abs(vals(1))>tol) flag(3)=1
 if (abs(vals(2))>tol) flag(4)=1
 if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag(1)=1
+
+!Set flag to -1 or nan if cloud or rain mass didn't reach the threshold
+if ((ihyd==1 .and. M3p<cloud_mr_th) .or. (ihyd==2 .and. M3p<rain_mr_th)) then
+  flag(1) = -1
+  flag(2:flag_count) = nan
+end if
+
+!if (ihyd==2 .and. M3p<1e-7) then
+!  flag(1) = -1
+!  flag(2:flag_count) = nan
+!end if
 
 !Force third moment to have no error and calculate final distribution
 !print*,'a',guess

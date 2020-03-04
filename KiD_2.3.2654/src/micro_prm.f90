@@ -8,10 +8,10 @@ real, parameter ::                    &
         alvl     = 2.50e6             &
     ,   alvi     = 2.834e6            &
     ,   alli     = 0.334e6            &
-    ,   cpi      = 1. / 1004.            
+    ,   cpi      = 1. / 1004.
 !real(8) :: press,tempk,rhw
 logical :: lhrtheta = .true.
-integer :: imbudget,icloud,idriz,irain,ipris,isnow,iaggr,igraup,ihail  
+integer :: imbudget,icloud,idriz,irain,ipris,isnow,iaggr,igraup,ihail
 !******Variables Needed for COMPUTING BUDGETS ******************************
 !For imbudget>=1
 real :: latheatvap,latheatfrz,nuccldrt,cld2raint &
@@ -28,7 +28,7 @@ real :: inuchomrt,inuccontrt,inucifnrt,inucifnct,inuchazrt   &
 
 !******Variables for SBM*******!
 logical :: iprint
-! number of bins 
+! number of bins
 integer, parameter :: nkr=33
 
 ! for bulk nucleation
@@ -42,7 +42,7 @@ real :: COL3 = 0.693147180559945  !=log(2.)
 !  add for diagnostic CCN. If diagCCN=.false., CCN is prognostic
 LOGICAL, PARAMETER :: diagCCN=.false.
 
-! Parameters are used for calculation of 
+! Parameters are used for calculation of
 
 ! RO_SOLUTE - density of aerosol+h20
 ! ROCCN0, g/cm^3 - density of aerosol
@@ -65,9 +65,9 @@ integer, parameter :: ICCN=1
 integer :: ICEPROCS,IFASTSBM
 
 ! ICEFLAG=0 USE MEYERS ICE NUCLEATION SCHEME; ICEFLAG=1 USE Classical Theory
-integer :: ICEFLAG 
+integer :: ICEFLAG
 
-!c ICEMAX - number of ice crystal types                                                                                       
+!c ICEMAX - number of ice crystal types
 integer, parameter :: ICEMAX=3
 
 !c flags for turbulance in collection kernals
@@ -80,27 +80,28 @@ integer, parameter :: NHYDR=5,NHYDRO=7                &
              ,KRMINL_GL=1,KRMAXL_GL=24                &
              ,KRMING_GL=1,KRMAXG_GL=33                &
              ,KRDROP=14                               & !First Bin number that is rain in FFCD
-             ,JMAX=33,JBREAK = 18                       !For rain breakup routines 
+             ,JMAX=33,JBREAK = 18                       !For rain breakup routines
 integer,dimension(ICEMAX), parameter::    &
          KRPRIS=(/14,16,16/)                              !First Bin number that is RAMS snow for each
                                                         !of the 3 ice crystal types
-                                                                                                             
+
 !Coefficient for deposition-condensation freezing, and contact nuclei fomrulations from Meyers, respectively.
-!The code came to me (Adele) with C2_MEY=0, corresponding to no contact nuclei. This should stay zero 
+!The code came to me (Adele) with C2_MEY=0, corresponding to no contact nuclei. This should stay zero
 !unless the nucleation code is fixed. It currently does not treat the contact nuclei correctly.
 real, parameter :: C1_MEY=0.00012,C2_MEY=0.
 
-! For drop freezing (iceform=1) or drop evaporation nuclei (iceform = 2) mechanism 
-integer, parameter :: iceform = 2 
+! For drop freezing (iceform=1) or drop evaporation nuclei (iceform = 2) mechanism
+integer, parameter :: iceform = 2
 
 !c KRFREEZ set bin boundary between plates and hail with freezing
-!c AFREEZE, BFREEZE, BFREEZEMAX - coefficients in formula of 
+!c AFREEZE, BFREEZE, BFREEZEMAX - coefficients in formula of
 !c                                homogeneous freezing
 integer, PARAMETER :: KRFREEZ=21
 REAL, PARAMETER :: BFREEZMAX=0.66E0
 
-!c other parameters and thresholds 
+!c other parameters and thresholds
 real, parameter :: AFREEZMY=0.3333E-04,BFREEZMY=0.6600E00
+real, parameter :: cloud_mr_th=1d-5, rain_mr_th=1d-7 !cloud/rain mixing ratio threshold
 
 !c Parameters are used in algorithm of diffusional growth
 !c NCOND determine timestep (DT/NCOND) with diffusional growth
@@ -109,7 +110,7 @@ real :: DTCOND
 
 !c Coeffients for diffusional growth
 real, parameter :: A1_MYN=2.53,BB1_MYN=5.42, A2_MYN=3.41E1,BB2_MYN=6.13
-real, parameter :: AA1_MY=2.53E12,BB1_MY=5.42E3, AA2_MY=3.41E13,BB2_MY=6.13E3 
+real, parameter :: AA1_MY=2.53E12,BB1_MY=5.42E3, AA2_MY=3.41E13,BB2_MY=6.13E3
 real, parameter :: DEL_BB=BB2_MY-BB1_MY, DEL_BBN=BB2_MYN-BB1_MYN, DEL_BBR=BB1_MYN/DEL_BBN
 
 !c COAGULATION
@@ -139,12 +140,12 @@ integer, parameter :: alcr_hail=3
 !c threshold bin number for hail formation from graupel-drop collisions
 integer, parameter :: kp_hail=25
 
-!c scal=1.0 is valid under condition of mass doubling : 
-!c xl(k+1)=xl(k)*2 
+!c scal=1.0 is valid under condition of mass doubling :
+!c xl(k+1)=xl(k)*2
 real, parameter :: SCAL=1.0E00
 
 !c Parameters used for ice multiplication :
-!c if icempl=0 no ice multiplication; 
+!c if icempl=0 no ice multiplication;
 !c if icempl=1 - ice multiplication is included
 integer, parameter :: ICEMPL=1
 integer, parameter :: kr_icempl=9
@@ -161,9 +162,9 @@ integer, parameter :: I3POINT=1
 !               heterogeneous nucleation (KC1999)
 !               -define aerosol size distribution parameters
 !       NOTE MKS units
-                                                                                                           
+
 !       =========================================================================
-                                                                                                           
+
 real, parameter :: qvaero=0.4    !aerosol solubility in terms of volume fraction (Qv)
 real, parameter :: betafr=0.5     !aerosol parameter describing composition
 real, parameter :: Ms2=0.132      !molecular weight of dry aerosol (g/mol) (NH4)2SO4 Ammonium Sulfate KC1999
@@ -172,7 +173,7 @@ real, parameter ::  wetcoef = 0.90 !wettability
 real, parameter :: alf = 0.1e-5   ! relative area of active sites
 real, parameter :: epsil = 2.5e-2 ! misfit strain parameter
 real :: fracin ! IN fraction
-                                                                                                           
+
 !       ==========================================================================
 !!! For ccn regeneration
 real :: ccnreg
