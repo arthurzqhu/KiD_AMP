@@ -28,7 +28,7 @@
 
 # Executables
 *.exe
-test.out
+*.out
 *.swp
 cu_2d.nml
 .DS_Store
