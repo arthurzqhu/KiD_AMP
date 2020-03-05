@@ -1,35 +1,34 @@
 # Prerequisites
-<<<<<<< HEAD
-#*.d
+*.d
 
 # Compiled Object files
-#*.slo
-#*.lo
-#*.o
-#*.obj
+*.slo
+*.lo
+*.o
+*.obj
 
 # Precompiled Headers
-#*.gch
-#*.pch
+*.gch
+*.pch
 
 # Compiled Dynamic libraries
-#*.so
-#*.dylib
-#*.dll
+*.so
+*.dylib
+*.dll
 
 # Fortran module files
-#*.mod
-#*.smod
+*.mod
+*.smod
 
 # Compiled Static libraries
-#*.lai
-#*.la
-#*.a
-#*.lib
+*.lai
+*.la
+*.a
+*.lib
 
 # Executables
-#*.exe
-test.out
+*.exe
+*.out
 *.swp
 cu_2d.nml
 .DS_Store
