@@ -101,7 +101,7 @@ REAL, PARAMETER :: BFREEZMAX=0.66E0
 
 !c other parameters and thresholds
 real, parameter :: AFREEZMY=0.3333E-04,BFREEZMY=0.6600E00
-real, parameter :: cloud_mr_th=1d-5, rain_mr_th=1d-7 !cloud/rain mixing ratio threshold
+real, parameter :: cloud_mr_th=1d-8, rain_mr_th=1d-10 !cloud/rain mixing ratio threshold, in units of kg/g
 
 !c Parameters are used in algorithm of diffusional growth
 !c NCOND determine timestep (DT/NCOND) with diffusional growth
