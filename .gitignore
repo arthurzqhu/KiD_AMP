@@ -30,5 +30,6 @@
 *.exe
 *.out
 *.swp
+KiD_AMP.o*
 cu_2d.nml
 .DS_Store
