@@ -22,7 +22,7 @@ num_h_moments= 3,3
 num_h_bins=1,1
 
 !AMP control - which moments to predict
-imomc1 = 4  !1st predicted cloud moment
+imomc1 = 0  !1st predicted cloud moment
 imomc2 = 6  !2nd predicted cloud moment (if 3M)
 imomr1 = 0  !1st predicted rain moment
 imomr2 = 6  !2nd predicted rain moment (if 3M)
