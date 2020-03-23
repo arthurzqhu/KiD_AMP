@@ -32,10 +32,10 @@ ia=300
 #do
 #	imc1=${mc1[imnum]}
 #	imc2=${mc2[imnum]}
-for ((imc1=0; imc1<8; imc1=imc1+2))
-do
-	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
-	do
+#for ((imc1=0; imc1<8; imc1=imc1+2))
+#do
+#	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
+#	do
 		echo $imc1 $imc2
 		for ((ic=0; ic<case_num; ic++))
 		do
@@ -126,12 +126,12 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='/glade/scratch/$USER/KiD_AMP_output/new/'
+KiD_outdir='/glade/scratch/$USER/KiD_AMP_output/'
 /
 END
 		./bin/KiD_1D.exe namelists/AMP.nml
 				#done
 			#done
-		done
-	done
+#		done
+#	done
 done

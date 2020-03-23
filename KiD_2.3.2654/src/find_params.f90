@@ -288,15 +288,15 @@ do while (idx_l < idx_r-1)
     idx_mm = (idx_l+idx_r)/2
     idx_mr = (idx_l+idx_r)/2+1 ! actually equals to idx_r
     pt_mm = (/x(idx_mm), y(idx_mm)/)
-    CALL getDist2D(pt, pt_mm, 'log', dist_mm)
+    CALL getDist2D(pt, pt_mm, 'lin', dist_mm)
   end if
   ! get the position of the middle points
   pt_ml = (/x(idx_ml), y(idx_ml)/)
   pt_mr = (/x(idx_mr), y(idx_mr)/)
 
   ! get the distance between pt and the middle points
-  CALL getDist2D(pt, pt_ml, 'log', dist_ml)
-  CALL getDist2D(pt, pt_mr, 'log', dist_mr)
+  CALL getDist2D(pt, pt_ml, 'lin', dist_ml)
+  CALL getDist2D(pt, pt_mr, 'lin', dist_mr)
 
   ! adjust the idx_ml and idx_mr by eliminating one of the 3 middle points
   if ( .not. last_three ) then
@@ -317,7 +317,7 @@ do while (idx_l < idx_r-1)
     elseif ( maxOf3 == 3 ) then
       idx_l = idx_ml ! no change
     else
-      print*, "these are not the last three. something's wrong!"
+      print*,dist_ml,dist_mm,dist_mr 
     end if
 
     idx_r = idx_l+1
