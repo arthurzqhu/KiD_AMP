@@ -60,7 +60,7 @@ contains
           !endif
           p2d(k,i) = p0*exner(k,i)**(1./r_on_cp)
 
-          if (imomc1.ne.3) then
+          if (num_h_bins(1)==1) then
              do imom=1,num_h_moments(1)
                 Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
          !       Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom) &
@@ -89,7 +89,7 @@ contains
 
    ! Initialise microphysics
    if (micro_unset)then
-      if (imomc1.ne.3) then
+      if (num_h_bins(1)==1) then
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
@@ -102,7 +102,7 @@ contains
    endif
 
    aer2d = 0.
-   if (imomc1 .ne. 3) then
+   if (num_h_bins(1)==1) then
       drops2d=0.
       dropsinit2d=0.
 !print*,'s',Mpc2d(18,1,:)
@@ -114,6 +114,7 @@ contains
    endif
 
   ! back out tendencies
+   
    dqv_mphys = 0.
    dtheta_mphys = 0.
    do imom=1,num_h_moments(1)
@@ -138,7 +139,7 @@ contains
          !if (l_advect) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_adv(k,i)
          !if (l_diverge) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_div(k,i)
 
-         if (imomc1.ne.3) then
+         if (num_h_bins(1)==1) then ! when bulk
             do imom=1,num_h_moments(1)
                dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
                     (Mpc2d(k,i,imom)-hydrometeors(k,i,1)%moments(1,imom))/dt
@@ -159,8 +160,9 @@ contains
             !                  dhydrometeors_mphys(k,i,2)%moments(1,imom) &
             !                  -dhydrometeors_div(k,i,2)%moments(1,imom)
             enddo
-         else
-            !do j=1,nkr
+
+         else ! when bin
+            do j=1,nkr
                dhydrometeors_mphys(k,i,1)%moments(j,1)= &
                     (drops2d(k,i,j)-hydrometeors(k,i,1)%moments(j,1))/dt
             !   if (l_advect) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
@@ -169,7 +171,7 @@ contains
             !   if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
             !                  dhydrometeors_mphys(k,i,1)%moments(j,1) &
             !                  -dhydrometeors_div(k,i,1)%moments(j,1)
-            !enddo
+            enddo
 
          endif
       enddo
@@ -177,27 +179,27 @@ contains
 
 ! Save some diagnostics
 !fitting flag
-if (imomc1.ne.3) then
-   field(:)=flag(:,nx,1,1)
-   call save_dg(field,'old_fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,1)
-   call save_dg(field,'old_fitting_flag_rain', i_dgtime,units='unitless', dim='z')
-
-   field(:)=flag(:,nx,1,2)
-   call save_dg(field,'fitting_flag_cloud_oob', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,2)
-   call save_dg(field,'fitting_flag_rain_oob', i_dgtime,units='unitless', dim='z')
-
-   field(:)=flag(:,nx,1,3)
-   call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,3)
-   call save_dg(field,'fitting_flag_rain_x_intol', i_dgtime,units='unitless', dim='z')
-
-   field(:)=flag(:,nx,1,4)
-   call save_dg(field,'fitting_flag_cloud_y_intol', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,4)
-   call save_dg(field,'fitting_flag_rain_y_intol', i_dgtime,units='unitless', dim='z')
-endif
+!if (imomc1.ne.3) then
+!   field(:)=flag(:,nx,1,1)
+!   call save_dg(field,'old_fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
+!   field(:)=flag(:,nx,2,1)
+!   call save_dg(field,'old_fitting_flag_rain', i_dgtime,units='unitless', dim='z')
+!
+!   field(:)=flag(:,nx,1,2)
+!   call save_dg(field,'fitting_flag_cloud_oob', i_dgtime,units='unitless', dim='z')
+!   field(:)=flag(:,nx,2,2)
+!   call save_dg(field,'fitting_flag_rain_oob', i_dgtime,units='unitless', dim='z')
+!
+!   field(:)=flag(:,nx,1,3)
+!   call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')
+!   field(:)=flag(:,nx,2,3)
+!   call save_dg(field,'fitting_flag_rain_x_intol', i_dgtime,units='unitless', dim='z')
+!
+!   field(:)=flag(:,nx,1,4)
+!   call save_dg(field,'fitting_flag_cloud_y_intol', i_dgtime,units='unitless', dim='z')
+!   field(:)=flag(:,nx,2,4)
+!   call save_dg(field,'fitting_flag_rain_y_intol', i_dgtime,units='unitless', dim='z')
+!endif
 
    ! if (imomc1.ne.3) then
    !       field(:)=flag(:,nx,1)
@@ -223,12 +225,12 @@ endif
   fielddp2d(:,:)=drops2d(:,nx,:)
   name='drops'
   units='kg/kg/ln(r)'
-  !call save_dg('bin',fielddp2d,name,i_dgtime,units)
+  call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
   fielddp2d(:,:)=dropsinit2d(:,nx,:)
   name='drops_init'
   units='kg/kg/ln(r)'
-  !call save_dg('bin',fielddp2d,name,i_dgtime,units)
+  call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
 !parameters
   field(:)=guessc2d(:,nx,1)

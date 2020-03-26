@@ -151,6 +151,7 @@ module stepfields
      !hydrometeors
      !------------
      ! Advective part
+     
      if (.not. l_noadv_hydrometeors)then
         do ih=1,nspecies
            do imom=1,num_h_moments(ih)
@@ -167,7 +168,12 @@ module stepfields
            end do
         end do
      end if
-     ! mphys part
+     field = dhydrometeors_adv(:,:,1)%moments(1,1)
+    ! print*, 'hydro adv bin1',maxval(field)
+     field = dhydrometeors_adv(:,:,1)%moments(2,1)
+     !print*, 'hydro adv bin2',maxval(field)
+
+    ! mphys part
      do ih=1,nspecies
         do imom=1,num_h_moments(ih)
            do ibin=1,num_h_bins(ih)
@@ -175,13 +181,19 @@ module stepfields
               do k=1,nz
                  hydrometeors(k,j,ih)%moments(ibin,imom)=              &
                       hydrometeors(k,j,ih)%moments(ibin,imom) + (      &
-                      + dhydrometeors_mphys(k,j,ih)%moments(ibin,imom) &
+                      dhydrometeors_mphys(k,j,ih)%moments(ibin,imom)   &
                       )*field_mask(k,j)*dt
               end do
               end do
            end do
         end do
      end do
+     field = dhydrometeors_mphys(:,:,1)%moments(1,1)
+     !print*, 'hydro mphys bin1',maxval(field)
+     field = dhydrometeors_mphys(:,:,1)%moments(2,1)
+     !print*, 'hydro mphys bin2',maxval(field)
+
+
      ! divergence part
      if (.not. l_nodiv_hydrometeors)then
         do ih=1,nspecies
@@ -191,7 +203,7 @@ module stepfields
                  do k=1,nz
                     hydrometeors(k,j,ih)%moments(ibin,imom)=            &
                          hydrometeors(k,j,ih)%moments(ibin,imom) + (    &
-                         + dhydrometeors_div(k,j,ih)%moments(ibin,imom) &
+                         dhydrometeors_div(k,j,ih)%moments(ibin,imom)   &
                          )*field_mask(k,j)*dt 
                  end do
                  end do

@@ -18,6 +18,7 @@ module advection_interface
   Use ultf2d_mod, only : ultf2d_interface 
   Use switches
 
+
   Implicit none
 
     real(wp), allocatable :: field_adv(:,:)
@@ -25,13 +26,12 @@ module advection_interface
 
  contains
 
-  subroutine advect_column(scheme_id)
-
+  subroutine advect_column(scheme_id) 
     integer, intent(in), optional :: scheme_id
     integer :: cscheme_id
 !    real(wp), allocatable :: field(:,:)
     integer :: ih, imom, ibin, k, j
-
+ 
     if (present(scheme_id))then
        cscheme_id=scheme_id
     else
@@ -114,16 +114,16 @@ module advection_interface
        end do
     end do    
 
-
     ! Hydrometeors
     do ih=1,nspecies
-       do ibin=1,num_h_bins(ih)
+       do ibin=1,2
           do imom=1,num_h_moments(ih)
              do j=1,nx
                 do k=1,nz
                    field(k,j)=hydrometeors(k,j,ih)%moments(ibin,imom)
                 end do
              enddo
+             !print*,ih, ibin, maxval(hydrometeors(:,:,ih)%moments(ibin,imom)) 
              call generic_advection(            &
                   &  field                      &
                   & ,field_adv                  &
@@ -134,10 +134,11 @@ module advection_interface
                    if (field(k,j)+dt*field_adv(k,j) < 0.0) &
                         field_adv(k,j)=-0.99999*(field(k,j)/dt)
                    dhydrometeors_adv(k,j,ih)%moments(ibin,imom)=field_adv(k,j)
-                 enddo
+                  
+		enddo
              end do
 
-          end do
+          end do 
        end do
     end do
 

@@ -102,7 +102,7 @@ contains
  ! an upstream method. Upstream in this case is above because the
  ! velocity is downwards.
  ! USE UPSTREAM METHOD (VFALL IS POSITIVE)
-
+       
        DO KR=1,NKR
         IFALL=0
         DO k = kts,kte
@@ -116,7 +116,7 @@ contains
            TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))
          END DO
          IF(TFALL.GE.1.E10)STOP
-         NSUB=(INT(2.0*DT/TFALL)+1)
+	 NSUB=(INT(2.0*DT/TFALL)+1)
          DTFALL=DT/NSUB
 
          DO N=1,NSUB

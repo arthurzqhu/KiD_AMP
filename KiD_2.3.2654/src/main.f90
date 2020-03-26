@@ -14,7 +14,7 @@
 Module main
  
   Use typeKind
-  Use parameters, only : dt, dg_dt, nx
+  Use parameters, only : dt, dg_dt, nx, nz
   Use namelists, only : read_namelist
   Use runtime, only : time, time_step, n_times
   Use switches
@@ -34,11 +34,12 @@ Module main
 contains
 
   subroutine main_loop
-    
+    real(8), allocatable :: temp_field(:,:) 
     integer :: itime      ! loop counter for time
     !
     ! Start by reading in namelists
     !
+    allocate(temp_field(nz,0:nx+1))
 
     if (l_namelists) call read_namelist
 
@@ -56,9 +57,8 @@ contains
     call interpolate_forcing
     endif
 
-
-
-    call calc_derived_fields
+ 
+    call calc_derived_fields 
 
     ! Do we want to do diagnostics on this timestep?
     call query_dgstep
@@ -67,9 +67,7 @@ contains
        call save_diagnostics_1d
     else 
        call save_diagnostics_2d
-    endif
-
-
+    endif 
 
     do itime=1,n_times
 
@@ -77,7 +75,7 @@ contains
        time=time+dt
        time_step=time_step+1
   
-       ! Do we want to do diagnostics on this timestep?
+       ! Do we want to do diagnostics on this timestep?        
        call query_dgstep
 
        if (icase .ne. 501) then
@@ -99,7 +97,12 @@ contains
        end if
 
        call step_column
-       
+ 
+       temp_field = hydrometeors(:,:,1)%moments(2,1)
+       !print*, itime, maxval(temp_field)
+
+
+      
        if ( nx == 1 ) then
           call save_diagnostics_1d
        else

@@ -60,7 +60,7 @@ contains
        end do
     end do
 
-    ! Initialize hydrometeors and their tendencies
+    ! Initialize hydrometeors and their tendencies 
     do ih=1,nspecies
        do j=0,nx+1
           do k=1,nz
@@ -79,7 +79,7 @@ contains
                   , num_h_moments(ih), num_h_bins(ih), ih &
                   , tend_init)
              do imom=1,num_h_moments(ih) 
-                hydrometeors(k,j,ih)%moments(:,imom)=mom_init(imom)
+                hydrometeors(k,j,ih)%moments(:,imom)=mom_init(imom) 
              end do
           end do
        end do
