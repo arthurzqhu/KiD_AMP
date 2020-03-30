@@ -69,7 +69,7 @@ contains
        call save_diagnostics_2d
     endif 
 
-    do itime=1,2!n_times
+    do itime=1,n_times
 
        !print*,itime, n_times
        time=time+dt

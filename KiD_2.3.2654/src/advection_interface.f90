@@ -116,7 +116,7 @@ module advection_interface
 
     ! Hydrometeors
     do ih=1,nspecies
-       do ibin=1,2
+       do ibin=1,num_h_bins(ih)
           do imom=1,num_h_moments(ih)
              do j=1,nx
                 do k=1,nz
