@@ -189,6 +189,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
 ! CONTACT HUGH MORRISON (morrison@ucar.edu) FOR FURTHER INFORMATION
 ! INUM=1 ONLY IN CURRENT VERSION
 
+print*,'morr init'
       INUM = 1
 
 ! FOR INUM = 1, SET CONSTANT DROPLET CONCENTRATION (UNITS OF CM-3)
@@ -576,7 +577,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    ! Initialize tendencies (all set to 0) and transfer
    ! array to local variables
    DT = DT_IN   
-
+   print*, shape(ni)
    DO I=ITS,ITE
    DO J=JTS,JTE
    DO K=KTS,KTE
