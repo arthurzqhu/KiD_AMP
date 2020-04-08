@@ -106,30 +106,30 @@ contains
                nr1d(k) = hydrometeors(k,i,2)%moments(1,2)& 
                + (dhydrometeors_adv(k,i,2)%moments(1,2) &
                + dhydrometeors_div(k,i,2)%moments(1,2))*dt
-          if (num_h_moments(3) >= 1) &
-               qi1d(k) = hydrometeors(k,i,3)%moments(1,1)& 
-               + (dhydrometeors_adv(k,i,3)%moments(1,1) &
-               + dhydrometeors_div(k,i,3)%moments(1,1))*dt
-          if (num_h_moments(3) >= 2) &
-               ni1d(k) = hydrometeors(k,i,3)%moments(1,2)& 
-               + (dhydrometeors_adv(k,i,3)%moments(1,2) &
-               + dhydrometeors_div(k,i,3)%moments(1,2))*dt
-          if (num_h_moments(4) >= 1) &
-               qs1d(k) = hydrometeors(k,i,4)%moments(1,1)& 
-               + (dhydrometeors_adv(k,i,4)%moments(1,1) &
-               + dhydrometeors_div(k,i,4)%moments(1,1))*dt
-          if (num_h_moments(4) >= 2) &
-               ns1d(k) = hydrometeors(k,i,4)%moments(1,2)& 
-               + (dhydrometeors_adv(k,i,4)%moments(1,2) &
-               + dhydrometeors_div(k,i,4)%moments(1,2))*dt
-          if (num_h_moments(5) >= 1) &
-               qg1d(k) = hydrometeors(k,i,5)%moments(1,1)& 
-               + (dhydrometeors_adv(k,i,5)%moments(1,1) &
-               + dhydrometeors_div(k,i,5)%moments(1,1))*dt
-          if (num_h_moments(5) >= 2) &
-               ng1d(k) = hydrometeors(k,i,5)%moments(1,2)& 
-               + (dhydrometeors_adv(k,i,5)%moments(1,2) &
-               + dhydrometeors_div(k,i,5)%moments(1,2))*dt
+!          if (num_h_moments(3) >= 1) &
+!               qi1d(k) = hydrometeors(k,i,3)%moments(1,1)& 
+!               + (dhydrometeors_adv(k,i,3)%moments(1,1) &
+!               + dhydrometeors_div(k,i,3)%moments(1,1))*dt
+!          if (num_h_moments(3) >= 2) &
+!               ni1d(k) = hydrometeors(k,i,3)%moments(1,2)& 
+!               + (dhydrometeors_adv(k,i,3)%moments(1,2) &
+!               + dhydrometeors_div(k,i,3)%moments(1,2))*dt
+!          if (num_h_moments(4) >= 1) &
+!               qs1d(k) = hydrometeors(k,i,4)%moments(1,1)& 
+!               + (dhydrometeors_adv(k,i,4)%moments(1,1) &
+!               + dhydrometeors_div(k,i,4)%moments(1,1))*dt
+!          if (num_h_moments(4) >= 2) &
+!               ns1d(k) = hydrometeors(k,i,4)%moments(1,2)& 
+!               + (dhydrometeors_adv(k,i,4)%moments(1,2) &
+!               + dhydrometeors_div(k,i,4)%moments(1,2))*dt
+!          if (num_h_moments(5) >= 1) &
+!               qg1d(k) = hydrometeors(k,i,5)%moments(1,1)& 
+!               + (dhydrometeors_adv(k,i,5)%moments(1,1) &
+!               + dhydrometeors_div(k,i,5)%moments(1,1))*dt
+!          if (num_h_moments(5) >= 2) &
+!               ng1d(k) = hydrometeors(k,i,5)%moments(1,2)& 
+!               + (dhydrometeors_adv(k,i,5)%moments(1,2) &
+!               + dhydrometeors_div(k,i,5)%moments(1,2))*dt
           
           
           wvar1d(k) = 0.5 ! hard-wired not coupled to forcing!
@@ -167,12 +167,12 @@ contains
           dhydrometeors_mphys(k,i,1)%moments(1,1)= qc_tend1d(k)
           dhydrometeors_mphys(k,i,2)%moments(1,1)= qr_tend1d(k)
           dhydrometeors_mphys(k,i,2)%moments(1,2)= nr_tend1d(k)
-          dhydrometeors_mphys(k,i,3)%moments(1,1)= qi_tend1d(k)
-          dhydrometeors_mphys(k,i,3)%moments(1,2)= ni_tend1d(k)
-          dhydrometeors_mphys(k,i,4)%moments(1,1)= qni_tend1d(k)
-          dhydrometeors_mphys(k,i,4)%moments(1,2)= ns_tend1d(k)
-          dhydrometeors_mphys(k,i,5)%moments(1,1)= qg_tend1d(k)
-          dhydrometeors_mphys(k,i,5)%moments(1,2)= ng_tend1d(k)
+!          dhydrometeors_mphys(k,i,3)%moments(1,1)= qi_tend1d(k)
+!          dhydrometeors_mphys(k,i,3)%moments(1,2)= ni_tend1d(k)
+!          dhydrometeors_mphys(k,i,4)%moments(1,1)= qni_tend1d(k)
+!          dhydrometeors_mphys(k,i,4)%moments(1,2)= ns_tend1d(k)
+!          dhydrometeors_mphys(k,i,5)%moments(1,1)= qg_tend1d(k)
+!          dhydrometeors_mphys(k,i,5)%moments(1,2)= ng_tend1d(k)
        end do
        
     end do
@@ -200,14 +200,14 @@ contains
        call save_dg(precprt2d(1:nx), name, i_dgtime,  units, dim='time')
     endif
     !ice ppt
-    ih=3
-    name='surface_ppt_for_snow'
-    units='kg/kg m'
-    if (nx == 1) then
-       call save_dg(snowrt1d, name, i_dgtime,  units, dim='time')
-    else
-       call save_dg(snowrt2d(1:nx), name, i_dgtime,  units, dim='time')
-    endif
+ !   ih=3
+ !   name='surface_ppt_for_snow'
+ !   units='kg/kg m'
+ !   if (nx == 1) then
+ !      call save_dg(snowrt1d, name, i_dgtime,  units, dim='time')
+ !   else
+ !      call save_dg(snowrt2d(1:nx), name, i_dgtime,  units, dim='time')
+ !   endif
 
   end Subroutine mphys_morrison_interface
 
