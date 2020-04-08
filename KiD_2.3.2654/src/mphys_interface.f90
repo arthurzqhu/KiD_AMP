@@ -9,9 +9,9 @@
 
 module mphys_interface
 
-!  Use mphys_thompson07, only: mphys_thompson07_interface
-!  Use mphys_thompson09, only: mphys_thompson09_interface
-!  Use mphys_morr_two_moment, only: mphys_morrison_interface
+  Use mphys_thompson07, only: mphys_thompson07_interface
+  Use mphys_thompson09, only: mphys_thompson09_interface
+  Use mphys_morr_two_moment, only: mphys_morrison_interface
   Use mphys_tau_bin, only: mphys_tau_bin_interface
 #if UM_MICRO ==1
   Use mphys_um7_3, only: mphys_um7_3_interface
@@ -29,12 +29,12 @@ contains
     integer, intent(in) :: scheme_id
 
     select case (scheme_id)
-!   case(imphys_thompson09) ! Greg Thompson's mphys scheme
-!       call mphys_thompson09_interface
-!    case(imphys_thompson07) ! Greg Thompson's mphys scheme
-!       call mphys_thompson07_interface
-!    case(imphys_morr_two_moment) ! Hugh Morrisons's mphys scheme
-!       call mphys_morrison_interface
+   case(imphys_thompson09) ! Greg Thompson's mphys scheme
+       call mphys_thompson09_interface
+    case(imphys_thompson07) ! Greg Thompson's mphys scheme
+       call mphys_thompson07_interface
+    case(imphys_morr_two_moment) ! Hugh Morrisons's mphys scheme
+       call mphys_morrison_interface
 #if UM_MICRO == 1
 
     case(imphys_um7_3)      ! mphys scheme from um version 7.3
