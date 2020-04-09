@@ -4,7 +4,7 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-! Module containing interface to hugh morrison's microphysics code 
+! Module containing interface to hugh morrison's microphysics code
 !
 module mphys_morr_two_moment
 
@@ -18,15 +18,15 @@ module mphys_morr_two_moment
 
   Implicit None
 
-  !Logical switches 
+  !Logical switches
   logical :: micro_unset=.True.
   integer:: ih, imom
   character(max_char_len) :: name, units
 
 contains
-  
+
   Subroutine mphys_morrison_interface
-    
+
     real :: t1d(nz), p1d(nz), dz1d(nz),qv1d(nz),qc1d(nz) &
          ,qr1d(nz), qi1d(nz), ni1d(nz), qs1d(nz)         &
          , qg1d(nz), ns1d(nz), nr1d(nz), ng1d(nz)        &
@@ -34,8 +34,8 @@ contains
 
     real :: wvar1d(nz)
 
-    real :: qc_tend1d(nz), qi_tend1d(nz), qni_tend1d(nz), & 
-         qr_tend1d(nz), ni_tend1d(nz), ns_tend1d(nz), & 
+    real :: qc_tend1d(nz), qi_tend1d(nz), qni_tend1d(nz), &
+         qr_tend1d(nz), ni_tend1d(nz), ns_tend1d(nz), &
          nr_tend1d(nz), t_tend1d(nz), qv_tend1d(nz), &
          qg_tend1d(nz), ng_tend1d(nz)
 
@@ -50,10 +50,10 @@ contains
          qnisten(nz), qcsten(nz)
 
     ! KiD_2D diag arrays
-    real :: qrsten_2d(nz,nx),precprt2d(nx), snowrt2d(nx) 
+    real :: qrsten_2d(nz,nx),precprt2d(nx), snowrt2d(nx)
 
     integer :: kts, kte, i, j, k
-    
+
     kts=1
     kte=nz
     j=1
@@ -93,50 +93,50 @@ contains
           p1d(k) = p0*exner(k,i)**(1./r_on_cp)
           dz1d(k) = dz(k)
           qv1d(k) = qv(k,i)+ (dqv_adv(k,i)+dqv_div(k,i))*dt
-          qc1d(k) = hydrometeors(k,i,1)%moments(1,1) & 
+          qc1d(k) = hydrometeors(k,i,1)%moments(1,1) &
                + (dhydrometeors_adv(k,i,1)%moments(1,1) &
                + dhydrometeors_div(k,i,1)%moments(1,1))*dt
 
 
           if (num_h_moments(2) >= 1) &
-               qr1d(k) = hydrometeors(k,i,2)%moments(1,1)& 
+               qr1d(k) = hydrometeors(k,i,2)%moments(1,1)&
                + (dhydrometeors_adv(k,i,2)%moments(1,1) &
                + dhydrometeors_div(k,i,2)%moments(1,1))*dt
           if (num_h_moments(2) >= 2) &
-               nr1d(k) = hydrometeors(k,i,2)%moments(1,2)& 
+               nr1d(k) = hydrometeors(k,i,2)%moments(1,2)&
                + (dhydrometeors_adv(k,i,2)%moments(1,2) &
                + dhydrometeors_div(k,i,2)%moments(1,2))*dt
 !          if (num_h_moments(3) >= 1) &
-!               qi1d(k) = hydrometeors(k,i,3)%moments(1,1)& 
+!               qi1d(k) = hydrometeors(k,i,3)%moments(1,1)&
 !               + (dhydrometeors_adv(k,i,3)%moments(1,1) &
 !               + dhydrometeors_div(k,i,3)%moments(1,1))*dt
 !          if (num_h_moments(3) >= 2) &
-!               ni1d(k) = hydrometeors(k,i,3)%moments(1,2)& 
+!               ni1d(k) = hydrometeors(k,i,3)%moments(1,2)&
 !               + (dhydrometeors_adv(k,i,3)%moments(1,2) &
 !               + dhydrometeors_div(k,i,3)%moments(1,2))*dt
 !          if (num_h_moments(4) >= 1) &
-!               qs1d(k) = hydrometeors(k,i,4)%moments(1,1)& 
+!               qs1d(k) = hydrometeors(k,i,4)%moments(1,1)&
 !               + (dhydrometeors_adv(k,i,4)%moments(1,1) &
 !               + dhydrometeors_div(k,i,4)%moments(1,1))*dt
 !          if (num_h_moments(4) >= 2) &
-!               ns1d(k) = hydrometeors(k,i,4)%moments(1,2)& 
+!               ns1d(k) = hydrometeors(k,i,4)%moments(1,2)&
 !               + (dhydrometeors_adv(k,i,4)%moments(1,2) &
 !               + dhydrometeors_div(k,i,4)%moments(1,2))*dt
 !          if (num_h_moments(5) >= 1) &
-!               qg1d(k) = hydrometeors(k,i,5)%moments(1,1)& 
+!               qg1d(k) = hydrometeors(k,i,5)%moments(1,1)&
 !               + (dhydrometeors_adv(k,i,5)%moments(1,1) &
 !               + dhydrometeors_div(k,i,5)%moments(1,1))*dt
 !          if (num_h_moments(5) >= 2) &
-!               ng1d(k) = hydrometeors(k,i,5)%moments(1,2)& 
+!               ng1d(k) = hydrometeors(k,i,5)%moments(1,2)&
 !               + (dhydrometeors_adv(k,i,5)%moments(1,2) &
 !               + dhydrometeors_div(k,i,5)%moments(1,2))*dt
-          
-          
+
+
           wvar1d(k) = 0.5 ! hard-wired not coupled to forcing!
           w1d(k) = w_half(k,i)
        end do
 
-       ! Initialise microphysics 
+       ! Initialise microphysics
        if (micro_unset)then
           call morr_two_moment_init
           micro_unset=.False.
@@ -154,14 +154,16 @@ contains
             qg_tend1d, ng_tend1d, qg1d, ng1d, effg1d,               &
             qrcu1d, qscu1d, qicu1d,                                 &
             qgsten, qrsten, qisten, qnisten, qcsten)
-       
+
        qrsten_2d(:,i)=qrsten(:)
        precprt2d(i) = precprt1d
        snowrt2d(i) = snowrt1d
 
-       
+
        ! save tendencies
        do k=1,nz
+          ! this is assigning the value of mass mixing ratio or number conc,
+          ! instead of actual moment values
           dtheta_mphys(k,i)=t_tend1d(k)/exner(k,i)
           dqv_mphys(k,i)=qv_tend1d(k)
           dhydrometeors_mphys(k,i,1)%moments(1,1)= qc_tend1d(k)
@@ -174,7 +176,7 @@ contains
 !          dhydrometeors_mphys(k,i,5)%moments(1,1)= qg_tend1d(k)
 !          dhydrometeors_mphys(k,i,5)%moments(1,2)= ng_tend1d(k)
        end do
-       
+
     end do
 
     ! Save some diagnostics
@@ -184,7 +186,7 @@ contains
     imom=1
     name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_sed'
     units=trim(mom_units(imom))//'/s'
-    if ( nx == 1 ) then 
+    if ( nx == 1 ) then
        call save_dg(qrsten(:), name, i_dgtime, units, dim='z')
     else
        call save_dg(qrsten_2d(1:nz, 1:nx), name, i_dgtime, units, dim='z')
