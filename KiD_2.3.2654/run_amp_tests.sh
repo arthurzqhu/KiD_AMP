@@ -8,8 +8,8 @@ icimm=0.0
 icinm=0.0
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
-imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
+#imc1=0 # II moment for cloud
+#imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 ia=300
@@ -32,11 +32,12 @@ ia=300
 #do
 #	imc1=${mc1[imnum]}
 #	imc2=${mc2[imnum]}
-#for ((imc1=0; imc1<8; imc1=imc1+2))
-#do
-#	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
-#	do
-#		echo $imc1 $imc2
+for ((imc1=0; imc1<8; imc1=imc1+2))
+do
+	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
+	do
+		echo $imc1 $imc2
+		outdir=/glade/scratch/$USER/KiD_AMP_output/AMP/$(date +'%Y-%m-%d')/c${imc1}${imc2}r${imr1}${imr2}/
 		for ((ic=0; ic<case_num; ic++))
 		do
 			if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
@@ -45,8 +46,11 @@ ia=300
 			else
 				zc="3000.,600.,900."
 			fi
+			if [ ! -d $outdir ]; then
+			    mkdir -p $outdir 
+			fi
 			echo “${caselist[ic]}”
-			cat > namelists/AMP.nml <<END
+			cat > namelists/AMP.nml << END
 
 &mphys
 ! hydrometeor names
@@ -71,10 +75,10 @@ num_h_moments= 3,3
 num_h_bins=1,1
 
 !AMP control - which moments to predict
-imomc1 = 0  !1st predicted cloud moment
-imomc2 = 6  !2nd predicted cloud moment (if 3M)
-imomr1 = 0  !1st predicted rain moment
-imomr2 = 6  !2nd predicted rain moment (if 3M)
+imomc1 = $imc1  !1st predicted cloud moment
+imomc2 = $imc2  !2nd predicted cloud moment (if 3M)
+imomr1 = $imr1  !1st predicted rain moment
+imomr2 = $imr2  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
 donucleation = .true.
@@ -126,12 +130,12 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='/glade/scratch/$USER/KiD_AMP_output/'
+KiD_outdir='$outdir'
 /
 END
 		./bin/KiD_1D.exe namelists/AMP.nml
 				#done
 			#done
 		done
-#	done
-#done
+	done
+done
