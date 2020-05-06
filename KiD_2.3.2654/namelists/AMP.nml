@@ -22,8 +22,8 @@ num_h_moments= 3,3
 num_h_bins=1,1
 
 !AMP control - which moments to predict
-imomc1 = 0  !1st predicted cloud moment
-imomc2 = 6  !2nd predicted cloud moment (if 3M)
+imomc1 = 6  !1st predicted cloud moment
+imomc2 = 8  !2nd predicted cloud moment (if 3M)
 imomr1 = 0  !1st predicted rain moment
 imomr2 = 6  !2nd predicted rain moment (if 3M)
 
@@ -77,5 +77,5 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/'
+KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/AMP_cp/2020-04-15/c68r06/'
 /
