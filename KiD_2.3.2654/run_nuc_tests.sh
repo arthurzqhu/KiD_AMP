@@ -29,6 +29,13 @@ ia=300
 #mnum=${#mc1[@]}
 
 #for ((imnum=0; imnum<mnum; imnum++))
+<<<<<<< HEAD
+=======
+#do
+#	imc1=${mc1[imnum]}
+#	imc2=${mc2[imnum]}
+#for ((imc1=0; imc1<8; imc1=imc1+2))
+>>>>>>> 81c3fc0730208476825c118eb9329475fe129e7b
 #do
 #	imc1=${mc1[imnum]}
 #	imc2=${mc2[imnum]}
@@ -132,12 +139,21 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
+<<<<<<< HEAD
 KiD_outdir='$outdir'
+=======
+KiD_outdir='/glade/scratch/$USER/KiD_AMP_output/'
+>>>>>>> 81c3fc0730208476825c118eb9329475fe129e7b
 /
 END
 		./bin/KiD_1D.exe namelists/AMP.nml
 				#done
 			#done
+<<<<<<< HEAD
 		done
 	done
+=======
+#		done
+#	done
+>>>>>>> 81c3fc0730208476825c118eb9329475fe129e7b
 done
