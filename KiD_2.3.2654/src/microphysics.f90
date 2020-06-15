@@ -1,5 +1,5 @@
 !A. Igel - 5/2013 - Adapting for CLOUD model
-! This module adapts the SBM from wrf, originally from A. Khain. 
+! This module adapts the SBM from wrf, originally from A. Khain.
 
 Subroutine micro_proc(press,tempk,qv,fncn,ffcd)
 
@@ -9,7 +9,7 @@ use parameters, only: nx,nz,dt,aero_N_init
 use column_variables, only:z_half
 
 IMPLICIT NONE
-                     
+
 REAL::pcgs,rhocgs
 REAL, DIMENSION(nz,nx)::tempk,press,qv
 REAL, DIMENSION(nz,nx,nkr)::ffcd,fncn
@@ -20,7 +20,7 @@ REAL,DIMENSION (nkr,icemax) :: FF2IN,FF2R
 REAL, DIMENSION(nz) :: rhocgs_z,pcgs_z,zcgs_z
 REAL, DIMENSION(nz,nkr) :: vr1z,ff1z
 
-REAL :: SUP2_OLD,dthalf 
+REAL :: SUP2_OLD,dthalf
 DOUBLE PRECISION :: ss_max=0.003d0
 double precision del1in_limit
 DOUBLE PRECISION DEL1NR,DEL2NR,DEL12R,DEL12RD,ES1N,ES2N,EW1N,EW1PN
@@ -39,7 +39,7 @@ real :: ndrop, subtot  ! for diagnostic CCN
 !Functions
 real :: sum_pris, sum_snow
 INTEGER :: k,i,j
-integer itimestep, kr, ikl,myflag   
+integer itimestep, kr, ikl,myflag
 
 !Zero Out Budgets
 CALL zero_budgets()
@@ -67,17 +67,17 @@ do i=1,nx
          ! LIQUID
          DO KR=1,NKR
             FF1R(KR)=ffcd(k,i,kr)*rhocgs/xl(kr)/xl(kr)/3.0
-         END DO   
-         
-         FF2R=0.;FF3R=0.;FF4R=0.;FF5R=0. 
+         END DO
+
+         FF2R=0.;FF3R=0.;FF4R=0.;FF5R=0.
          ! ICE
          !IF (ICEPROCS.EQ.1)THEN
          !   DO KR=1,NKR
-               ! COLUMNS 
+               ! COLUMNS
          !      IF (IPRIS == 1 .or. IPRIS >= 4) THEN
          !         FF2R(KR,1)=ffic(kr)*rhocgs/xi(kr,1)/xi(kr,1)/3.0
          !      ENDIF
-               ! PLATES   
+               ! PLATES
          !      IF (IPRIS == 2 .or. IPRIS >= 4) THEN
          !         FF2R(KR,2)=ffip(kr)*rhocgs/xi(kr,2)/xi(kr,2)/3.0
          !      ENDIF
@@ -128,7 +128,7 @@ do i=1,nx
                     ff1in(1)=ff1in(1)+(concccn-concdrop)/(3.0*col*xl(1))
                  ENDIF
               ENDIF
-                 
+
            !  IF (DEL1IN.GT.0.OR.(ICEPROCS.EQ.1.and.DEL2IN.GT.0))THEN !If supersat wrt liq or ice
            !  !mo Limit SS for the droplet nucleation
            !  del1in_limit = min(DEL1IN,ss_max)
@@ -156,7 +156,7 @@ do i=1,nx
                !   if(any(FF4R.gt.1.e-6))ISYM4=1
                !   if(any(FF5R.gt.1.e-6))ISYM5=1
                !endif
-    
+
                !CALL VAP_BUDGET(FF1R,FF2R,FF3R,FF4R,FF5R,RHOCGS,'beg')
 
                !If liquid
@@ -212,7 +212,7 @@ do i=1,nx
        IF (docollisions) then
             IF ((iceprocs.eq.0 .and. any(FF1R>0.)) &
                  .or. any(FF1R>0.).or.any(FF2R>0.).or.any(FF3R>0.))  THEN
-               !Graupel and hail do not self-collect, so don't need to call collection if they 
+               !Graupel and hail do not self-collect, so don't need to call collection if they
                !are the only species present
                cld2raint=0.
                CALL COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
@@ -259,7 +259,7 @@ do i=1,nx
         fncn(k,i,KR)=0.
         !fncn(k,i,KR)=FCCN(KR)/rhocgs*xccn(kr)
         ffcd(k,i,KR)=ff1z(k,kr)*xl(kr)*xl(kr)*3.0
-     END DO 
+     END DO
      !IF (ICEPROCS.EQ.1)THEN
      !   DO KR=1,NKR
      !     if (ipris == 1 .or. ipris >= 4) &
@@ -293,8 +293,8 @@ integer :: kr
 REAL PI, rhocgs, x0ccn
 data pi/3.141592654/
 ! dtime - timestep of integration (calculated in main program) :
-! ax - coefficient used for masses calculation 
-! ima(i,j) - k-category number, c(i,j) - courant number 
+! ax - coefficient used for masses calculation
+! ima(i,j) - k-category number, c(i,j) - courant number
 
 dlnr=dlog(2.d0)/(3.d0*scal)
 
@@ -304,7 +304,7 @@ dlnr=dlog(2.d0)/(3.d0*scal)
 ! MASSES :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/masses.asc", &
      FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,900) XL,XI,XS,XG,XH          
+READ(hujisbm_unit1,900) XL,XI,XS,XG,XH
 CLOSE(hujisbm_unit1)
 
 ! BULKRADIUS
@@ -345,7 +345,7 @@ ENDDO
 !DO KR=1,NKR
 !   ROCCN(KR)=ROCCN0
 !   XCCN(KR)=X0CCN*2.**(KR-1)
-!   RCCN(KR)=(3.*XCCN(KR)/4./3.141593/ROCCN(KR))**(1./3.)    
+!   RCCN(KR)=(3.*XCCN(KR)/4./3.141593/ROCCN(KR))**(1./3.)
 !ENDDO
 
 ! Functional form
@@ -392,14 +392,14 @@ CLOSE(hujisbm_unit1)
 ! MASSES :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/masses.asc", &
      FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,900) XL,XI,XS,XG,XH          
+READ(hujisbm_unit1,900) XL,XI,XS,XG,XH
 CLOSE(hujisbm_unit1)
 
 
 ! TERMINAL VELOCITY :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/termvels.asc", &
      FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,*) VR1,VR2,VR3,VR4,VR5     
+READ(hujisbm_unit1,*) VR1,VR2,VR3,VR4,VR5
 CLOSE(hujisbm_unit1)
 
 ! KERNELS DEPENDING ON PRESSURE :
@@ -444,7 +444,7 @@ enddo
 !Initialize some other parameters
 DTCOND=dt/REAL(NCOND)
 
-call courant_bott 
+call courant_bott
 
 CALL BREAKINIT
 !  collision was called every NDTCOLL*dt
@@ -528,7 +528,7 @@ endif
          if (igraup > 0) vapgraut = 0.
          if (ihail > 0) vaphailt = 0.
       endif
-   endif 
+   endif
 END SUBROUTINE zero_budgets
 
 !-------------------------------------------------------------------
@@ -619,12 +619,12 @@ endif
 
 if (imbudget >= 1) then
    latheatvap = latheatvap + &
-      plusminus * alvl * fac * sum_mass(ff1r,xl(:),dens,1,nkr) 
+      plusminus * alvl * fac * sum_mass(ff1r,xl(:),dens,1,nkr)
 
    if(iceprocs.eq.1) &
       latheatvap = latheatvap + &
          plusminus * alvi * fac * &
-         sum_mass(ff2r(:,1)+ff2r(:,2)+ff2r(:,3)+ff3r+ff4r+ff5r,xs,dens,1,nkr) 
+         sum_mass(ff2r(:,1)+ff2r(:,2)+ff2r(:,3)+ff3r+ff4r+ff5r,xs,dens,1,nkr)
 endif
 
 if (plusminus .eq. 1) then
@@ -663,7 +663,7 @@ endif
 
 if (imbudget >= 1) then
    latheatfrz = latheatfrz + &
-      plusminus * (-1.) * alli * fac * sum_mass(ff1r,xl(:),dens,1,nkr) 
+      plusminus * (-1.) * alli * fac * sum_mass(ff1r,xl(:),dens,1,nkr)
 endif
 
 if (plusminus .eq. 1) then
@@ -692,7 +692,7 @@ real(8), dimension(33) :: ffcd,diams
   do kr=1,nkr
     if (rxc>0.) then
       exptermc=exp(-1.*diams(kr)/dnc)
-      ffcd(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3) 
+      ffcd(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
     endif
     if (rxr>0.) then
        exptermr=exp(-1.*diams(kr)/dnr)
@@ -729,5 +729,5 @@ return
 !    if (xx<=1.) xx=1.01
 !    xa=(729.*xx**2.+sqrt(4.*(-3.*xx**2.-75.*xx-3.)**3.+(729.*xx**2.+729.*xx)**2.)+729.*xx)**(1./3.)
 !    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
-!  endif  
+!  endif
 END SUBROUTINE init_distribution
