@@ -15,7 +15,6 @@ module mphys_amp
 
   Use module_hujisbm
   Use micro_prm
-  Use module_bin_init
   Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
   Use switches, only: l_advect,l_diverge
 
@@ -96,10 +95,8 @@ contains
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
          guessr2d(:,:,2) = 0.001
          call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
-      else if ( num_h_bins(1)==33 ) then
-        call sbm_init(aer2d,drops2d)
-      else if ( num_h_bins(1)==34 ) then
-         ! tau_init
+      else
+         call sbm_init(aer2d,drops2d)
       endif
       micro_unset=.False.
    endif
@@ -112,16 +109,12 @@ contains
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,drops2d,mc,mr,flag,dropsinit2d)
 !print*,'e',Mpc2d(18,1,:)
-    else if ( num_h_bins(1)==33 ) then
+   else
       call mp_sbm(drops2d,p2d,t2d,qv2d,aer2d,mc,mr)
-    else if ( num_h_bins(1)==34 ) then
-      ! mp_tau
-    end if
-
    endif
 
   ! back out tendencies
-
+   
    dqv_mphys = 0.
    dtheta_mphys = 0.
    do imom=1,num_h_moments(1)
