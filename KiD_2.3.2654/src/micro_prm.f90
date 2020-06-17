@@ -1,5 +1,6 @@
 module micro_prm
 
+Use namelists, only: huORtau
 !use parameters, only:nx,nz,num_h_moments
 implicit none
 
@@ -29,7 +30,7 @@ real :: inuchomrt,inuccontrt,inucifnrt,inucifnct,inuchazrt   &
 !******Variables for SBM*******!
 logical :: iprint
 ! number of bins
-integer, parameter :: nkr=33
+integer, parameter :: nkr
 
 ! for bulk nucleation
 integer, parameter :: BULKNUC=0
@@ -215,4 +216,11 @@ DOUBLE PRECISION,PARAMETER::RW_PW_RI_PI_MIN = 1.0D-10
 DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
 
 REAL (KIND=R4SIZE) :: FR_LIM(NKR), FRH_LIM(NKR)
+
+if ( huORtau .eq. 'hu' ) then
+  nkr=33
+elseif (huORtau .eq. 'tau') then
+  nkr=34
+end if
+
 end module micro_prm

@@ -1,5 +1,6 @@
 subroutine amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
 
+Use namelists, only: huORtau
 use switches, only: zctrl
 use parameters, only:nx,nz,num_h_moments,h_shape
 use column_variables, only: z
@@ -20,8 +21,8 @@ real, dimension(nz,nx,nkr) :: aer2d
 integer :: i,k
 
 !Set some parameters
-ndtcoll=1
-ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
+ndtcoll=1 !collision?
+ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1 !ice mass budget?
 
 pmomsc=(/3,imomc1,imomc2/)
 pmomsr=(/3,imomr1,imomr2/)
@@ -75,9 +76,13 @@ else !Run AMP
 endif
 
 !call microphysics initialization routines
-CALL micro_init()
-CALL micro_init2()
-CALL kernalsdt()
+if ( huORtau .eq. 'hu' ) then ! when the underlying is HU-SBM
+  CALL micro_init()
+  CALL micro_init2()
+  CALL kernalsdt()
+else if ( huORtau .eq. 'tau' ) then
+  ! initialize tau
+end if
 
 !Set up initial distribution and set moment values and parameter guesses
 if (npm==3) then
@@ -156,6 +161,49 @@ do i=1,nx
 enddo
 
 end subroutine sbm_init
+! !------------------------------------------------------------
+! subroutine tau_init(aer2d,drops2d)
+!
+! use switches, only: zctrl
+! use parameters, only:nx,nz,num_h_moments,h_shape
+! use column_variables, only: z
+! use module_mp_tau_bin
+! use micro_prm
+!
+! implicit none
+! real(8),dimension(nkr) :: ffcd
+! real :: dnc,dnr
+! real, dimension(nz,nx,nkr) :: aer2d,drops2d
+! integer :: i,k
+!
+! !Set some parameters
+! ndtcoll=1
+! ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
+!
+! !call microphysics initialization routines
+! CALL micro_init()
+! CALL micro_init2()
+! CALL kernalsdt()
+!
+! !Set up initial distribution and set moment values and parameter guesses
+! dnc=0.;dnr=0.
+! if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
+!                           /cloud_init(2)*gamma(h_shape(1)) &
+!                           /gamma(h_shape(1)+3))**(1./3.)
+! if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
+!                          /rain_init(2)*gamma(h_shape(2)) &
+!                          /gamma(h_shape(2)+3))**(1./3.)
+! CALL init_distribution(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+!
+! do i=1,nx
+!    do k=1,nz
+!       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+!          drops2d(k,i,:)=ffcd
+!       endif
+!    enddo
+! enddo
+!
+! end subroutine tau_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,ffcdinit)
 

@@ -78,4 +78,5 @@ l_periodic_bound=.False.
 
 &addcontrol
 KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/SBM/'
+huORtau='hu'
 /
