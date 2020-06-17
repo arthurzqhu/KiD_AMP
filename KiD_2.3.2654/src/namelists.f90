@@ -12,9 +12,9 @@ module namelists
   Use header_data, only : mphys_id
   Use switches
   Use switches_bin
-  Use micro_prm, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
-                      docondensation,docollisions,dosedimentation, &
-                      cloud_init,rain_init
+  ! Use micro_prm, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
+  !                     docondensation,docollisions,dosedimentation, &
+  !                     cloud_init,rain_init
 
 #if SHIPWAY_MICRO == 1
   ! Temporary for adding in 4a switches
@@ -29,6 +29,9 @@ module namelists
 #endif
 
   implicit none
+  integer :: imomc1,imomc2,imomr1,imomr2
+  logical :: docollisions, docondensation, donucleation, dosedimentation
+  real, dimension(2):: cloud_init,rain_init
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
@@ -54,9 +57,9 @@ module namelists
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
   real(8) :: ovc_factor=0.0
-  character(200) :: huORtau=''
+  integer :: binnum
 
-  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, huORtau &
+  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, binnum &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &
