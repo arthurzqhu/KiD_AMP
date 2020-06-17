@@ -22,7 +22,6 @@ module parameters
 
 
   Use typeKind
-  Use namelists, only: num_h_bins
   Implicit None
 
   ! control parameters

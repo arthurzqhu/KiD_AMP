@@ -2,7 +2,7 @@
 
 ../obj/input_variables.o: input_variables.f90 ../obj/typeKind.o 
 
-../obj/parameters.o: parameters.f90 ../obj/typeKind.o ../obj/namelists.o 
+../obj/parameters.o: parameters.f90 ../obj/typeKind.o 
 
 ../obj/switches_bin.o: switches_bin.f90 
 
