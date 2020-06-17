@@ -152,7 +152,6 @@ contains
 
 
   subroutine save_diagnostics_1d
-
     real(wp), allocatable :: field(:)
     real(wp), allocatable :: field_flag(:,:)
     real(wp), allocatable :: field_nx(:)
@@ -195,6 +194,7 @@ contains
     !temperature(K)
     field(:)=TdegK(:,nx)
     call save_dg(field, 'temperature', i_dgtime, units='K',dim=dims)
+
     ! aerosol
     do ih=1,naerosol
        do imom=1,num_aero_moments(ih)
@@ -279,6 +279,7 @@ contains
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
+
     !
     !-----------
     !
@@ -315,6 +316,7 @@ contains
           end do
        end do
     end if
+
     !-------------
     !
     ! Microphysics
@@ -349,6 +351,7 @@ contains
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
+
     !----------------
     !
     ! Imposed forcing
@@ -400,6 +403,7 @@ contains
      call save_dg(field(:)*field_mask(:,nx), 'RH_ice', i_dgtime, units, dims)
 
 
+
     !-------------------------
     !
     ! Instantaneous scalars
@@ -412,6 +416,7 @@ contains
     ! Column integrated values
     !
     !-------------------------
+
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -831,7 +836,6 @@ contains
 
     type(diag2DTS), intent(inout) :: dgStore
     integer :: n_offset, n_dgtimes
-
     n_offset = dgstart/dt-1
     n_dgtimes = n_times - n_offset
 
@@ -876,11 +880,10 @@ contains
 
     n_offset = dgstart/dt-1
     n_dgtimes = n_times - n_offset
-
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(maxn_dgtimes))
     dgStore%data=unset_real
-
+!print*,'EOA'
   end subroutine allocate_dgs_ScalarTS
 
   subroutine allocate_dgs_bindata(dgStore)
@@ -942,8 +945,7 @@ contains
 
     ! We're assuming diagnostics are instant for now
     ! could put in an optional argument later to do
-    ! averaged, accumulated, etc. later.
-
+    ! averaged, accumulated, etc. later. 
     dg=>instant_column
     dg_index=>ID_instant_column
 
@@ -1242,7 +1244,7 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(itime)=value
-
+ 
   end subroutine save_dg_scalar_sp
 
   subroutine save_dg_1d_dp(field, name, itime, units, dim, longname)

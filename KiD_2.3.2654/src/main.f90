@@ -101,8 +101,6 @@ contains
        temp_field = hydrometeors(:,:,1)%moments(2,1)
        !print*, itime, maxval(temp_field)
 
-
-      
        if ( nx == 1 ) then
           call save_diagnostics_1d
        else

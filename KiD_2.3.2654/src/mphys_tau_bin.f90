@@ -135,7 +135,6 @@ contains
        call set_micro
     end if
 
-
     do j=jminp,jmaxp
        q_lem (j, 2:kkp, iqv) = qv(1:kkp-1, j)
        q_lem (j, 2:kkp, iqss) = ss(1:kkp-1, j)
@@ -230,6 +229,7 @@ contains
           end do
        end do
      end do
+
 ! test if the transport has moved mass and number around
      DO K = 2, nz
         DO J = jminp,jmaxp
@@ -242,7 +242,6 @@ contains
      ENDDO
 
      call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
-
 
      do j=jminp,jmaxp
         sth_lem(j,2:kkp)=sth_lem(j,2:kkp)-(dtheta_adv(1:kkp-1,j)+dtheta_div(1:kkp-1,j))
@@ -274,7 +273,7 @@ contains
                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
            end do
         end do
-        
+
         ! For now set no microphysics on the bottom level - this would be 
        ! better done by having a subterranian level 0 in column variables
         sq_lem(j,1,1)=0
@@ -312,7 +311,7 @@ contains
            end do
         end do
      end do
-     
+
    end subroutine mphys_tau_bin_interface
 
 !DECK ADVcheck

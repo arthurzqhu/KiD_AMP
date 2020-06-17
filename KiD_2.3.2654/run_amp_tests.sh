@@ -8,10 +8,10 @@ icimm=0.0
 icinm=0.0
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
-#imc1=0 # II moment for cloud
-#imc2=6 # III moment for cloud
+imc1=0 # II moment for cloud
+imc2=0 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+imr2=0 # III moment for rain
 ia=300
 
 #for icimm in 0.0 0.0003 0.001 0.003 #initial cloud mass mixing ratio
@@ -32,10 +32,10 @@ ia=300
 #do
 #	imc1=${mc1[imnum]}
 #	imc2=${mc2[imnum]}
-for ((imc1=0; imc1<8; imc1=imc1+2))
-do
-	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
-	do
+#for ((imc1=0; imc1<8; imc1=imc1+2))
+#do
+#	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
+#	do
 		echo $imc1 $imc2
 		outdir=/glade/scratch/$USER/KiD_AMP_output/AMP/$(date +'%Y-%m-%d')/c${imc1}${imc2}r${imr1}${imr2}/
 		for ((ic=0; ic<case_num; ic++))
@@ -71,7 +71,7 @@ rain_init=0.0,0.0
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
-num_h_moments= 3,3
+num_h_moments= 2,2
 num_h_bins=1,1
 
 !AMP control - which moments to predict
@@ -136,6 +136,6 @@ END
 		./bin/KiD_1D.exe namelists/AMP.nml
 				#done
 			#done
-		done
-	done
+#		done
+#	done
 done

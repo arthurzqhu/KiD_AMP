@@ -100,7 +100,7 @@ icase=${caselist[ic]}
 /
 
 &control
-mphys_scheme='morr_two_moment'
+mphys_scheme='thompson09'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output

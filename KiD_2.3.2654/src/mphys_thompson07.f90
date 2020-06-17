@@ -58,21 +58,21 @@ contains
                + (dhydrometeors_adv(k,i,2)%moments(1,1) &
                + dhydrometeors_div(k,i,2)%moments(1,1))*dt 
           
-          qi1d(k) = hydrometeors(k,i,3)%moments(1,1) & 
-               + (dhydrometeors_adv(k,i,3)%moments(1,1) &
-               + dhydrometeors_div(k,i,3)%moments(1,1))*dt 
-          
-          ni1d(k) = hydrometeors(k,i,3)%moments(1,2) & 
-               + (dhydrometeors_adv(k,i,3)%moments(1,2) &
-               + dhydrometeors_div(k,i,3)%moments(1,2))*dt 
-          
-          qs1d(k) = hydrometeors(k,i,4)%moments(1,1) & 
-               + (dhydrometeors_adv(k,i,4)%moments(1,1) &
-               + dhydrometeors_div(k,i,4)%moments(1,1))*dt 
-          
-          qg1d(k) = hydrometeors(k,i,5)%moments(1,1) & 
-               + (dhydrometeors_adv(k,i,5)%moments(1,1) &
-               + dhydrometeors_div(k,i,5)%moments(1,1))*dt 
+!          qi1d(k) = hydrometeors(k,i,3)%moments(1,1) & 
+!               + (dhydrometeors_adv(k,i,3)%moments(1,1) &
+!               + dhydrometeors_div(k,i,3)%moments(1,1))*dt 
+!          
+!          ni1d(k) = hydrometeors(k,i,3)%moments(1,2) & 
+!               + (dhydrometeors_adv(k,i,3)%moments(1,2) &
+!               + dhydrometeors_div(k,i,3)%moments(1,2))*dt 
+!          
+!          qs1d(k) = hydrometeors(k,i,4)%moments(1,1) & 
+!               + (dhydrometeors_adv(k,i,4)%moments(1,1) &
+!               + dhydrometeors_div(k,i,4)%moments(1,1))*dt 
+!          
+!          qg1d(k) = hydrometeors(k,i,5)%moments(1,1) & 
+!               + (dhydrometeors_adv(k,i,5)%moments(1,1) &
+!               + dhydrometeors_div(k,i,5)%moments(1,1))*dt 
           
        end do
 
@@ -142,25 +142,25 @@ contains
                - (dhydrometeors_adv(k,i,2)%moments(1,1)  &
                + dhydrometeors_div(k,i,2)%moments(1,1))
 
-          dhydrometeors_mphys(k,i,3)%moments(1,1)= &
-               (qi1d(k)-hydrometeors(k,i,3)%moments(1,1))/dt & 
-               - (dhydrometeors_adv(k,i,3)%moments(1,1)  &
-               + dhydrometeors_div(k,i,3)%moments(1,1))
-
-          dhydrometeors_mphys(k,i,3)%moments(1,2)= &
-               (ni1d(k)-hydrometeors(k,i,3)%moments(1,2))/dt & 
-               - (dhydrometeors_adv(k,i,3)%moments(1,2)  &
-               + dhydrometeors_div(k,i,3)%moments(1,2))
-          
-          dhydrometeors_mphys(k,i,4)%moments(1,1)= &
-               (qs1d(k)-hydrometeors(k,i,4)%moments(1,1))/dt & 
-               - (dhydrometeors_adv(k,i,4)%moments(1,1)  &
-               + dhydrometeors_div(k,i,4)%moments(1,1))
-          
-          dhydrometeors_mphys(k,i,5)%moments(1,1)= &
-               (qg1d(k)-hydrometeors(k,i,5)%moments(1,1))/dt & 
-               - (dhydrometeors_adv(k,i,5)%moments(1,1)  &
-               + dhydrometeors_div(k,i,5)%moments(1,1))
+!          dhydrometeors_mphys(k,i,3)%moments(1,1)= &
+!               (qi1d(k)-hydrometeors(k,i,3)%moments(1,1))/dt & 
+!               - (dhydrometeors_adv(k,i,3)%moments(1,1)  &
+!               + dhydrometeors_div(k,i,3)%moments(1,1))
+!
+!          dhydrometeors_mphys(k,i,3)%moments(1,2)= &
+!               (ni1d(k)-hydrometeors(k,i,3)%moments(1,2))/dt & 
+!               - (dhydrometeors_adv(k,i,3)%moments(1,2)  &
+!               + dhydrometeors_div(k,i,3)%moments(1,2))
+!          
+!          dhydrometeors_mphys(k,i,4)%moments(1,1)= &
+!               (qs1d(k)-hydrometeors(k,i,4)%moments(1,1))/dt & 
+!               - (dhydrometeors_adv(k,i,4)%moments(1,1)  &
+!               + dhydrometeors_div(k,i,4)%moments(1,1))
+!          
+!          dhydrometeors_mphys(k,i,5)%moments(1,1)= &
+!               (qg1d(k)-hydrometeors(k,i,5)%moments(1,1))/dt & 
+!               - (dhydrometeors_adv(k,i,5)%moments(1,1)  &
+!               + dhydrometeors_div(k,i,5)%moments(1,1))
        end do
 
     end do

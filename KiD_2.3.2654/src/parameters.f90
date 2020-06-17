@@ -22,6 +22,7 @@ module parameters
 
 
   Use typeKind
+  Use namelists, only: num_h_bins
   Implicit None
 
   ! control parameters
@@ -31,7 +32,7 @@ module parameters
 
   ! microphysics specific parameters
   integer, parameter :: max_nmoments=3
-  integer, parameter :: max_nbins=33
+  integer, parameter :: max_nbins=34
   integer, parameter :: flag_count=4
   integer, parameter :: nspecies=2
 #if SHIPWAY_MICRO == 1
