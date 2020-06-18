@@ -1096,8 +1096,8 @@ RETURN
 END  SUBROUTINE CCNLOOP
 !##################################################################
 SUBROUTINE ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACTMAX,NKR)
-IMPLICIT NONE
 use parameters, only: max_nbins
+IMPLICIT NONE
 INTEGER IMIN,IMAX,NKR
 INTEGER I,I0,I1
 REAL RCCN(max_nbins)
@@ -1169,8 +1169,8 @@ RETURN
 END SUBROUTINE ACTIVATE
 !-----------------------------------------------------------
 SUBROUTINE DROPMAX(DROPRADII,RACTMAX,NDROPMAX,NKR)
-IMPLICIT NONE
 use parameters, only: max_nbins
+IMPLICIT NONE
 INTEGER IDROP,NKR,NDROPMAX
 REAL RACTMAX,DROPRADII(max_nbins)
 ! calculation of NDROPMAX - maximal number of drop bin which
@@ -2864,7 +2864,7 @@ use parameters, only: max_nbins
 use parameters, only: max_nbins
 IMPLICIT NONE
 ! ... Interface
-INTEGER,INTENT(IN) :: ID, IN, max_nbins, ICEMAX
+INTEGER,INTENT(IN) :: ID, IN, NKR, ICEMAX
   REAL(KIND=r4size),INTENT(IN) :: RO1BL(max_nbins,ID),RIEC(max_nbins,ID),FL1(max_nbins)
   REAL(KIND=r4size),INTENT(INOUT) :: B11_MY(max_nbins,ID)
   REAL(KIND=r8size),INTENT(IN) :: PP, TP, xlS(max_nbins,ID),Vxl(max_nbins,ID)
@@ -3434,7 +3434,7 @@ ELSE
 use parameters, only: max_nbins
  IMPLICIT NONE
 ! ... Interface
- INTEGER,INTENT(IN) :: ISYM2, IND, ITYPE, max_nbins, ICEMAX, Ihydro, Iin, Jin ,Kin, Itimestep
+ INTEGER,INTENT(IN) :: ISYM2, IND, ITYPE, NKR, ICEMAX, Ihydro, Iin, Jin ,Kin, Itimestep
  INTEGER,INTENT(INOUT) :: IDROP
  REAL(kind=R4SIZE),INTENT(IN) :: B21_MY(:), FI2(:), FR_LIM(:), FRH_LIM(:), &
             DEL2N, COL
