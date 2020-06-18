@@ -1,20 +1,20 @@
 module module_hujisbm
 
 use micro_prm
-
+use parameters, only: max_nbins
 ! YWLL_1000MB(nkr,nkr) - input array of kernels for pressure 1000mb
 ! YWLL_750MB(nkr,nkr) - input array of kernels for pressure 750mb
 ! YWLL_500MB(nkr,nkr) - input array of kernels for pressure 500mb
 REAL, SAVE :: &
-! CRYSTALS 
-   YWLI(NKR,NKR,ICEMAX) &
+! CRYSTALS
+   YWLI(max_nbins,max_nbins,ICEMAX) &
 ! MIXTURES
-   ,YWIL(NKR,NKR,ICEMAX),YWII(NKR,NKR,ICEMAX,ICEMAX) &
-   ,YWIS(NKR,NKR,ICEMAX),YWIG(NKR,NKR,ICEMAX) &
-   ,YWIH(NKR,NKR,ICEMAX),YWSI(NKR,NKR,ICEMAX) &
-   ,YWGI(NKR,NKR,ICEMAX),YWHI(NKR,NKR,ICEMAX)
+   ,YWIL(max_nbins,max_nbins,ICEMAX),YWII(max_nbins,max_nbins,ICEMAX,ICEMAX) &
+   ,YWIS(max_nbins,max_nbins,ICEMAX),YWIG(max_nbins,max_nbins,ICEMAX) &
+   ,YWIH(max_nbins,max_nbins,ICEMAX),YWSI(max_nbins,max_nbins,ICEMAX) &
+   ,YWGI(max_nbins,max_nbins,ICEMAX),YWHI(max_nbins,max_nbins,ICEMAX)
 !
-REAL, DIMENSION(NKR,NKR),SAVE :: &
+REAL, DIMENSION(max_nbins,max_nbins),SAVE :: &
     YWLL_1000MB,YWLL_750MB,YWLL_500MB,YWLL,YWLS,YWLG,YWLH &
 ! SNOW :
     ,YWSL,YWSS,YWSG,YWSH &
@@ -23,50 +23,50 @@ REAL, DIMENSION(NKR,NKR),SAVE :: &
 ! HAIL :
     ,YWHL,YWHS,YWHG,YWHH
 REAL,SAVE :: &
-       XI(NKR,ICEMAX) &
-      ,RADXX(NKR,NHYDR-1),MASSXX(NKR,NHYDR-1),DENXX(NKR,NHYDR-1) &
-      ,RADXXO(NKR,NHYDRO),MASSXXO(NKR,NHYDRO),DENXXO(NKR,NHYDRO) &
-      ,RIEC(NKR,ICEMAX),COEFIN(NKR),SLIC(NKR,6),TLIC(NKR,2) &
-      ,RO2BL(NKR,ICEMAX)
-REAL, SAVE :: VR1(NKR),VR2(NKR,ICEMAX),VR3(NKR) &
-      ,VR4(NKR),VR5(NKR),VRX(NKR)
-REAL,DIMENSION(NKR),SAVE ::  &
+       XI(max_nbins,ICEMAX) &
+      ,RADXX(max_nbins,NHYDR-1),MASSXX(max_nbins,NHYDR-1),DENXX(max_nbins,NHYDR-1) &
+      ,RADXXO(max_nbins,NHYDRO),MASSXXO(max_nbins,NHYDRO),DENXXO(max_nbins,NHYDRO) &
+      ,RIEC(max_nbins,ICEMAX),COEFIN(max_nbins),SLIC(max_nbins,6),TLIC(max_nbins,2) &
+      ,RO2BL(max_nbins,ICEMAX)
+REAL, SAVE :: VR1(max_nbins),VR2(max_nbins,ICEMAX),VR3(max_nbins) &
+      ,VR4(max_nbins),VR5(max_nbins),VRX(max_nbins)
+REAL,DIMENSION(max_nbins),SAVE ::  &
        XL,RLEC,XX,XCCN,XS,RSEC &
       ,XG,RGEC,XH,RHEC,RO1BL,RO3BL,RO4BL,RO5BL &
       ,ROCCN,RCCN,DROPRADII
-REAL, SAVE ::  ICEN(NKR)
-REAL, SAVE ::  FCCNR0(NKR), FCCNR_mp(NKR)
+REAL, SAVE ::  ICEN(max_nbins)
+REAL, SAVE ::  FCCNR0(max_nbins), FCCNR_mp(max_nbins)
 
 REAL :: C2,C3,C4
-double precision,save ::  cwll(nkr,nkr)
+double precision,save ::  cwll(max_nbins,max_nbins)
 double precision,save::  &
-      xl_mg(0:nkr),xs_mg(0:nkr),xg_mg(0:nkr),xh_mg(0:nkr) &
-     ,xi1_mg(0:nkr),xi2_mg(0:nkr),xi3_mg(0:nkr) &
-     ,chucm(nkr,nkr),ima(nkr,nkr) &
-     ,cwll_1000mb(nkr,nkr),cwll_750mb(nkr,nkr),cwll_500mb(nkr,nkr) &
-     ,cwli_1(nkr,nkr),cwli_2(nkr,nkr),cwli_3(nkr,nkr) &
-     ,cwls(nkr,nkr),cwlg(nkr,nkr),cwlh(nkr,nkr) &
+      xl_mg(0:max_nbins),xs_mg(0:max_nbins),xg_mg(0:max_nbins),xh_mg(0:max_nbins) &
+     ,xi1_mg(0:max_nbins),xi2_mg(0:max_nbins),xi3_mg(0:max_nbins) &
+     ,chucm(max_nbins,max_nbins),ima(max_nbins,max_nbins) &
+     ,cwll_1000mb(max_nbins,max_nbins),cwll_750mb(max_nbins,max_nbins),cwll_500mb(max_nbins,max_nbins) &
+     ,cwli_1(max_nbins,max_nbins),cwli_2(max_nbins,max_nbins),cwli_3(max_nbins,max_nbins) &
+     ,cwls(max_nbins,max_nbins),cwlg(max_nbins,max_nbins),cwlh(max_nbins,max_nbins) &
 
-     ,cwil_1(nkr,nkr),cwil_2(nkr,nkr),cwil_3(nkr,nkr) &
+     ,cwil_1(max_nbins,max_nbins),cwil_2(max_nbins,max_nbins),cwil_3(max_nbins,max_nbins) &
 
-     ,cwii_1_1(nkr,nkr),cwii_1_2(nkr,nkr),cwii_1_3(nkr,nkr) &
-     ,cwii_2_1(nkr,nkr),cwii_2_2(nkr,nkr),cwii_2_3(nkr,nkr) &
-     ,cwii_3_1(nkr,nkr),cwii_3_2(nkr,nkr),cwii_3_3(nkr,nkr) &
+     ,cwii_1_1(max_nbins,max_nbins),cwii_1_2(max_nbins,max_nbins),cwii_1_3(max_nbins,max_nbins) &
+     ,cwii_2_1(max_nbins,max_nbins),cwii_2_2(max_nbins,max_nbins),cwii_2_3(max_nbins,max_nbins) &
+     ,cwii_3_1(max_nbins,max_nbins),cwii_3_2(max_nbins,max_nbins),cwii_3_3(max_nbins,max_nbins) &
 
-     ,cwis_1(nkr,nkr),cwis_2(nkr,nkr),cwis_3(nkr,nkr) &
-     ,cwig_1(nkr,nkr),cwig_2(nkr,nkr),cwig_3(nkr,nkr) &
-     ,cwih_1(nkr,nkr),cwih_2(nkr,nkr),cwih_3(nkr,nkr) &
+     ,cwis_1(max_nbins,max_nbins),cwis_2(max_nbins,max_nbins),cwis_3(max_nbins,max_nbins) &
+     ,cwig_1(max_nbins,max_nbins),cwig_2(max_nbins,max_nbins),cwig_3(max_nbins,max_nbins) &
+     ,cwih_1(max_nbins,max_nbins),cwih_2(max_nbins,max_nbins),cwih_3(max_nbins,max_nbins) &
 
-     ,cwsl(nkr,nkr) &
-     ,cwsi_1(nkr,nkr),cwsi_2(nkr,nkr),cwsi_3(nkr,nkr)&
-     ,cwss(nkr,nkr),cwsg(nkr,nkr),cwsh(nkr,nkr) &
-     ,cwgl(nkr,nkr)&
-     ,cwgi_1(nkr,nkr),cwgi_2(nkr,nkr),cwgi_3(nkr,nkr)&
-     ,cwgs(nkr,nkr),cwgg(nkr,nkr),cwgh(nkr,nkr) &
+     ,cwsl(max_nbins,max_nbins) &
+     ,cwsi_1(max_nbins,max_nbins),cwsi_2(max_nbins,max_nbins),cwsi_3(max_nbins,max_nbins)&
+     ,cwss(max_nbins,max_nbins),cwsg(max_nbins,max_nbins),cwsh(max_nbins,max_nbins) &
+     ,cwgl(max_nbins,max_nbins)&
+     ,cwgi_1(max_nbins,max_nbins),cwgi_2(max_nbins,max_nbins),cwgi_3(max_nbins,max_nbins)&
+     ,cwgs(max_nbins,max_nbins),cwgg(max_nbins,max_nbins),cwgh(max_nbins,max_nbins) &
 
-     ,cwhl(nkr,nkr) &
-     ,cwhi_1(nkr,nkr),cwhi_2(nkr,nkr),cwhi_3(nkr,nkr) &
-     ,cwhs(nkr,nkr),cwhg(nkr,nkr),cwhh(nkr,nkr) &
+     ,cwhl(max_nbins,max_nbins) &
+     ,cwhi_1(max_nbins,max_nbins),cwhi_2(max_nbins,max_nbins),cwhi_3(max_nbins,max_nbins) &
+     ,cwhs(max_nbins,max_nbins),cwhg(max_nbins,max_nbins),cwhh(max_nbins,max_nbins) &
      ,dlnr &
      ,CTURBLL(KRMAX_LL,KRMAX_LL)&
      ,CTURB_LL(K0_LL,K0_LL)&
@@ -75,7 +75,7 @@ double precision,save::  &
 
 DOUBLE PRECISION, save :: &
      BRKWEIGHT(JBREAK),PKIJ(JBREAK,JBREAK,JBREAK), &
-     QKJ(JBREAK,JBREAK),ECOALMASSM(NKR,NKR)
+     QKJ(JBREAK,JBREAK),ECOALMASSM(max_nbins,max_nbins)
 
 contains
  ! +-------------------------------------------------------------+
@@ -102,7 +102,7 @@ contains
  ! an upstream method. Upstream in this case is above because the
  ! velocity is downwards.
  ! USE UPSTREAM METHOD (VFALL IS POSITIVE)
-       
+
        DO KR=1,NKR
         IFALL=0
         DO k = kts,kte
@@ -143,11 +143,11 @@ contains
 FUNCTION sum_mass(speciesbin,xbin,dens,krs,kre)
 
 use micro_prm, only:nkr,col
-
+use parameters, only: max_nbins
 implicit none
 
 integer :: krs,kre
-real, dimension(nkr) :: speciesbin,xbin
+real, dimension(max_nbins) :: speciesbin,xbin
 real :: sum_mass,dens
 
 sum_mass = col3/dens*sum(speciesbin(krs:kre)*xbin(krs:kre)*xbin(krs:kre))
@@ -156,18 +156,18 @@ END FUNCTION
 !-------------------------------------------------
 SUBROUTINE JERNUCL01(PSI1,PSI2,FCCNR,DTT,ROR,DSUP1,DSUP2 &
  ,SUP2_OLD,DT,finr &
- ,nuccldrt,nuccldct,nucicert,nucicect,inucifnrt,inucifnct)   
-
-IMPLICIT NONE 
+ ,nuccldrt,nuccldct,nucicert,nucicect,inucifnrt,inucifnct)
+use parameters, only: max_nbins
+IMPLICIT NONE
 
 REAL SUP2_OLD, &
-     FCCNR(NKR),FINR(NKR)
+     FCCNR(max_nbins),FINR(max_nbins)
 DOUBLE PRECISION DTT,DSUP1,DSUP2
 REAL TT,ROR, &
      TPC,SUP1,SUP2,DEL1N,DEL2N,AL1,AL2, &
      TEMP1,TEMP2,TEMP3,A1,B1,A2,B2,DT
 real nucicert,nucicect,inucifnrt,inucifnct,nuccldrt,nuccldct
-REAL PSI1(NKR),PSI2(NKR,ICEMAX)
+REAL PSI1(max_nbins),PSI2(max_nbins,ICEMAX)
 REAL alwc
 DATA A1,B1,A2,B2/-0.639,0.1296,-2.8,0.262/
 DATA TEMP1,TEMP2,TEMP3/-5.,-2.,-20./
@@ -196,16 +196,16 @@ ENDIF
 
 RETURN
 END SUBROUTINE JERNUCL01
-!======================================================================   
+!======================================================================
 SUBROUTINE WATER_NUCL (PSI1,FCCNR,X1,TT,SUP1 &
 ,RCCN,DROPRADII,NKR,nuccldrt,nuccldct,dens)
-
+use parameters, only: max_nbins
 USE MICRO_PRM, ONLY:IMBUDGET
 IMPLICIT NONE
 INTEGER NDROPMAX,KR,NKR
-REAL PSI1(NKR),FCCNR(NKR),X1(NKR)
-REAL DROPCONCN(NKR)
-REAL RCCN(NKR),DROPRADII(NKR)
+REAL PSI1(max_nbins),FCCNR(max_nbins),X1(max_nbins)
+REAL DROPCONCN(max_nbins)
+REAL RCCN(max_nbins),DROPRADII(max_nbins)
 REAL TT,SUP1,DX
 real nuccldrt,nuccldct,dens
 
@@ -235,18 +235,19 @@ END SUBROUTINE WATER_NUCL
 SUBROUTINE ICE_NUCL (PSI2,X2,TT,ROR,SUP2,SUP2_OLD &
                      ,SUP1,DT,finr &
                      ,nucicect,nucicert,inucifnct,inucifnrt)
+  use parameters, only: max_nbins
   IMPLICIT NONE
   INTEGER ITYPE,KR,ICE,NRGI,K1,ki
   REAL DEL2N,SUP1,SUP2,C1,C2,TPC,TT,ROR
   REAL DX
   REAL HELEK1,HELEK2,TPCC,DEL2NN,FF1BN
   REAL FACT,DSUP2N,SUP2_OLD,DELTACD,DELTAF,ADDF
-  REAL X2(NKR,ICEMAX),PSI2(NKR,ICEMAX)
-  REAL DT,finr(NKR)
-  REAL QHET(NKR),NUMHET(NKR)
+  REAL X2(max_nbins,ICEMAX),PSI2(max_nbins,ICEMAX)
+  REAL DT,finr(max_nbins)
+  REAL QHET(max_nbins),NUMHET(max_nbins)
 
-  real rcn(nkr)
-  real inic(nkr)
+  real rcn(max_nbins)
+  real inic(max_nbins)
   real nucicert,nucicect,inucifnrt,inucifnct
 
   REAL A1,B1,A2,B2
@@ -330,7 +331,7 @@ SUBROUTINE ICE_NUCL (PSI2,X2,TT,ROR,SUP2,SUP2_OLD &
       DO KR=1,NKR
          rcn(kr) = rccn(kr)*1.e-2              ! transform to m from cm
       ENDDO
-          
+
       DO KR=1,NKR
          inic(kr) = finr(kr)*col*1.e6  ! m-3
       ENDDO
@@ -361,7 +362,7 @@ SUBROUTINE ICE_NUCL (PSI2,X2,TT,ROR,SUP2,SUP2_OLD &
                 inucifnrt = inucifnrt + numhet(ki)/DX*COL3*X2(k1,ICE)*X2(k1,ICE)/ROR*1.e-6
                 inucifnct = inucifnct + numhet(ki)/DX*COL3*X2(k1,ICE)/ROR*1.e-3
              ENDIF
-              
+
           enddo
        endif
    ENDIF
@@ -854,17 +855,17 @@ SUBROUTINE NUCLEATION (SUP1,TT,FCCNR,DROPCONCN  &
 ! DROPCONCN(KR), 1/cm^3 - drop bin concentrations, KR=1,...,NKR
 
 ! determination of new size spectra due to drop nucleation
-
+use parameters, only: max_nbins
 IMPLICIT NONE
 INTEGER NDROPMAX,IDROP,INEXT,ISMALL,KR,NCRITI
 INTEGER IMIN,IMAX,NKR,I
 REAL &
  SUP1,TT,RACTMAX,RCRITI,BKOE, &
  AKOE,DEG01
-REAL CCNCONC(NKR)
+REAL CCNCONC(max_nbins)
 REAL CCNCONC_BFNUCL,CCNCONC_AFNUCL, DEl_CCNCONC
-REAL RCCN(NKR),DROPRADII(NKR),FCCNR(NKR)
-REAL RACT(NKR),DROPCONCN(NKR)
+REAL RCCN(max_nbins),DROPRADII(max_nbins),FCCNR(max_nbins)
+REAL RACT(max_nbins),DROPCONCN(max_nbins)
 
   DEG01=1./3.
 
@@ -896,12 +897,12 @@ REAL RACT(NKR),DROPCONCN(NKR)
   CCNCONC_BFNUCL=CCNCONC_BFNUCL*COL
 
   IF(CCNCONC_BFNUCL.EQ.0.) THEN
-     RETURN    
+     RETURN
   ELSE
      CALL BOUNDARY(IMIN,IMAX,FCCNR,NKR)
      CALL CRITICAL (AKOE,BKOE,TT,RCRITI,SUP1,DEG01)
 !     print*, 'rcriti',RCRITI,imax,RCCN(IMAX)
- 
+
      IF(RCRITI.GE.RCCN(IMAX))  RETURN
   END IF
 
@@ -954,9 +955,10 @@ END SUBROUTINE NUCLEATION
 !########################################################################
 SUBROUTINE BOUNDARY(IMIN,IMAX,FCCNR,NKR)
 ! IMIN - left CCN spectrum boundary
+use parameters, only: max_nbins
 IMPLICIT NONE
 INTEGER I,IMIN,IMAX,NKR
-REAL FCCNR(NKR)
+REAL FCCNR(max_nbins)
 
 IMIN=0
 
@@ -986,7 +988,7 @@ REAL AKOE,BKOE,TT,RCRITI,SUP1,DEG01
 
   AKOE=3.3E-05/TT
   BKOE=ions*4.3/mwaero
-  BKOE=BKOE*(4./3.)*3.141593*RO_SOLUTE                  
+  BKOE=BKOE*(4./3.)*3.141593*RO_SOLUTE
 
 ! RCRITI, cm - critical radius of "dry" aerosol
 
@@ -996,11 +998,11 @@ END  SUBROUTINE CRITICAL
 !#######################################################################
 SUBROUTINE CCNIMIN(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC, &
       FCCNR,NKR)
-
+use parameters, only: max_nbins
 IMPLICIT NONE
 INTEGER IMIN,II,IMAX,NCRITI,NKR
 REAL RCRITI
-REAL RCCN(NKR),FCCNR(NKR),CCNCONC(NKR)
+REAL RCCN(max_nbins),FCCNR(max_nbins),CCNCONC(max_nbins)
 REAL RCCN_MIN
 REAL DLN1,DLN2
 ! rccn_min - minimum aerosol(ccn) radius
@@ -1010,14 +1012,14 @@ REAL DLN1,DLN2
 !                                            ii=imin,...,imax
 ! determination of ncriti   - number bin in which is located rcriti
 ! calculation of ccnconc(ncriti)=fccnr(ncriti)*dln1/(dln1+dln2),
-! where,    
+! where,
 ! dln1=Ln(rcriti)-Ln(rccn_min)
 ! dln2=Ln(rccn(1)-Ln(rcriti)
 
 IF(RCRITI.LE.RCCN_MIN) THEN
    NCRITI=1
    DO II=NCRITI+1,IMAX
-      CCNCONC(II)=COL*FCCNR(II)     
+      CCNCONC(II)=COL*FCCNR(II)
       FCCNR(II)=0.
    ENDDO
 ELSEIF(RCRITI.GT.RCCN_MIN.AND.RCRITI.LT.RCCN(IMIN)) THEN
@@ -1036,9 +1038,10 @@ END SUBROUTINE CCNIMIN
 !####################################################################
 SUBROUTINE CCNLOOP(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC, &
                    FCCNR,NKR)
+use parameters, only: max_nbins
 IMPLICIT NONE
 INTEGER I,IMIN,IMAX,NKR,II,NCRITI
-REAL RCRITI,RCCN(NKR),CCNCONC(NKR),FCCNR(NKR)
+REAL RCRITI,RCCN(max_nbins),CCNCONC(max_nbins),FCCNR(max_nbins)
 REAL DLN1,DLN2
 
   IF(IMIN.GT.1) THEN
@@ -1052,7 +1055,7 @@ REAL DLN1,DLN2
     ENDIF
     IF(RCRITI.LT.RCCN(IMIN).AND.RCRITI.GT.RCCN(IMIN-1)) THEN
        NCRITI=IMIN
-      
+
        DO II=NCRITI+1,IMAX
           CCNCONC(II)=COL*FCCNR(II)
           FCCNR(II)=0.
@@ -1094,14 +1097,14 @@ END  SUBROUTINE CCNLOOP
 !##################################################################
 SUBROUTINE ACTIVATE(IMIN,IMAX,AKOE,BKOE,RCCN,RACTMAX,NKR)
 IMPLICIT NONE
-
+use parameters, only: max_nbins
 INTEGER IMIN,IMAX,NKR
 INTEGER I,I0,I1
-REAL RCCN(NKR)
-REAL  R03,SUPCRITI,RACT(NKR),XKOE
+REAL RCCN(max_nbins)
+REAL  R03,SUPCRITI,RACT(max_nbins),XKOE
 REAL AKOE,BKOE,AKOE23,RACTMAX
 
-! Spectrum of activated drops                                 (begin) 
+! Spectrum of activated drops                                 (begin)
   DO I=IMIN,IMAX
   ! critical water supersaturations appropriating CCN radii
      XKOE=(4./27.)*(AKOE**3./BKOE)
@@ -1167,8 +1170,9 @@ END SUBROUTINE ACTIVATE
 !-----------------------------------------------------------
 SUBROUTINE DROPMAX(DROPRADII,RACTMAX,NDROPMAX,NKR)
 IMPLICIT NONE
+use parameters, only: max_nbins
 INTEGER IDROP,NKR,NDROPMAX
-REAL RACTMAX,DROPRADII(NKR)
+REAL RACTMAX,DROPRADII(max_nbins)
 ! calculation of NDROPMAX - maximal number of drop bin which
 ! is activated
 
@@ -1193,13 +1197,13 @@ END SUBROUTINE DROPMAX
  & ,C1_MEY,C2_MEY &
  & ,COL,DTCOND,ICEMAX,NKR,ISYM1 &
    ,ISYM2,ISYM3,ISYM4,ISYM5,Iin,Jin,Kin,W_in,DX_in,Itimestep)
-
+use parameters, only: max_nbins
         IMPLICIT NONE
 
 
  INTEGER NKR,ICEMAX, ISYM1, ISYM2(ICEMAX),ISYM3,ISYM4,ISYM5, Iin, Jin, Kin, &
  sea_spray_no_temp_change_per_grid, Itimestep
- REAL    COL,VR1(NKR),PSINGLE &
+ REAL    COL,VR1(max_nbins),PSINGLE &
       &       ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
       &       ,DTCOND, W_in,DX_in
 
@@ -1227,8 +1231,8 @@ END SUBROUTINE DROPMAX
  INTEGER K
  ! NEW ALGORITHM OF CONDENSATION (12.01.00)
 
- REAL  FF1_OLD(NKR),SUPINTW(NKR)
-       DOUBLE PRECISION DSUPINTW(NKR),DD1N,DB11_MY,DAL1,DAL2
+ REAL  FF1_OLD(max_nbins),SUPINTW(max_nbins)
+       DOUBLE PRECISION DSUPINTW(max_nbins),DD1N,DB11_MY,DAL1,DAL2
        DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
       &                  ,FI1_K,FI2_K,FI3_K,FI4_K,FI5_K &
       &                  ,R1_K,R2_K,R3_K,R4_K,R5_K &
@@ -1243,24 +1247,24 @@ END SUBROUTINE DROPMAX
 
  ! DROPLETS
 
-         REAL R1(NKR) &
-      &           ,RLEC(NKR),RO1BL(NKR) &
-      &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
-      &           ,B11_MY(NKR),B12_MY(NKR)
+         REAL R1(max_nbins) &
+      &           ,RLEC(max_nbins),RO1BL(max_nbins) &
+      &           ,FI1(max_nbins),FF1(max_nbins),PSI1(max_nbins) &
+      &           ,B11_MY(max_nbins),B12_MY(max_nbins)
 
  ! WORK ARRAYS
 
  ! NEW ALGORITHM OF MIXED PHASE FOR EVAPORATION
 
 
-  REAL DTIMEO(NKR),DTIMEL(NKR) &
-      &           ,TIMESTEPD(NKR)
+  REAL DTIMEO(max_nbins),DTIMEL(max_nbins) &
+      &           ,TIMESTEPD(max_nbins)
 
  ! NEW ALGORITHM (NO TYPE OF ICE)
 
-  REAL :: FL1(NKR), sfndummy(3), R1N(NKR)
+  REAL :: FL1(max_nbins), sfndummy(3), R1N(max_nbins)
  INTEGER :: IDROP
-DOUBLE PRECISION :: R1D(NKR),R1ND(NKR)
+DOUBLE PRECISION :: R1D(max_nbins),R1ND(max_nbins)
 
 OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
 OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
@@ -1283,7 +1287,7 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
   DATA DT0L, DT0I /1.E20,1.E20/
 
   DOUBLE PRECISION :: DEL1_d , DEL2_d, RW_d , PW_d, RI_d, PI_d, D1N_d, D2N_d, &
-       VR1_d(NKR)
+       VR1_d(max_nbins)
 
  sfndummy = 0.0
  B12_MY = 0.0
@@ -1645,12 +1649,12 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
        & ,COL,DTCOND,ICEMAX,NKR &
        & ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5, &
         Iin,Jin,Kin,W_in,DX_in,Itimestep)
-
+use parameters, only: max_nbins
     IMPLICIT NONE
 
        INTEGER NKR,ICEMAX,ISYM1, Iin, Jin, Kin, Itimestep
-       REAL    COL,VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
-      &           ,VR5(NKR),PSINGLE &
+       REAL    COL,VR2(max_nbins,ICEMAX),VR3(max_nbins),VR4(max_nbins) &
+      &           ,VR5(max_nbins),PSINGLE &
       &       ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
       &       ,DTCOND,W_in,DX_in
 
@@ -1700,51 +1704,51 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
 
  ! CRYSTALS
 
-  REAL R2(NKR,ICEMAX) &
-      &           ,RIEC(NKR,ICEMAX) &
-      &           ,RO2BL(NKR,ICEMAX) &
-      &           ,FI2(NKR,ICEMAX),PSI2(NKR,ICEMAX) &
-      &           ,FF2(NKR,ICEMAX) &
-      &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX)
+  REAL R2(max_nbins,ICEMAX) &
+      &           ,RIEC(max_nbins,ICEMAX) &
+      &           ,RO2BL(max_nbins,ICEMAX) &
+      &           ,FI2(max_nbins,ICEMAX),PSI2(max_nbins,ICEMAX) &
+      &           ,FF2(max_nbins,ICEMAX) &
+      &           ,B21_MY(max_nbins,ICEMAX),B22_MY(max_nbins,ICEMAX)
 
  ! SNOW
-         REAL R3(NKR) &
-      &           ,RSEC(NKR),RO3BL(NKR) &
-      &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
-      &           ,B31_MY(NKR),B32_MY(NKR)
+         REAL R3(max_nbins) &
+      &           ,RSEC(max_nbins),RO3BL(max_nbins) &
+      &           ,FI3(max_nbins),FF3(max_nbins),PSI3(max_nbins) &
+      &           ,B31_MY(max_nbins),B32_MY(max_nbins)
 
  ! GRAUPELS
 
-         REAL R4(NKR) &
-      &           ,RGEC(NKR),RO4BL(NKR) &
-      &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
-      &           ,B41_MY(NKR),B42_MY(NKR)
+         REAL R4(max_nbins) &
+      &           ,RGEC(max_nbins),RO4BL(max_nbins) &
+      &           ,FI4(max_nbins),FF4(max_nbins),PSI4(max_nbins) &
+      &           ,B41_MY(max_nbins),B42_MY(max_nbins)
 
  ! HAIL
-         REAL R5(NKR) &
-      &           ,RHEC(NKR),RO5BL(NKR) &
-      &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
-      &           ,B51_MY(NKR),B52_MY(NKR)
+         REAL R5(max_nbins) &
+      &           ,RHEC(max_nbins),RO5BL(max_nbins) &
+      &           ,FI5(max_nbins),FF5(max_nbins),PSI5(max_nbins) &
+      &           ,B51_MY(max_nbins),B52_MY(max_nbins)
 
  ! CCN
 
-  REAL DTIMEG(NKR),DTIMEH(NKR)
+  REAL DTIMEG(max_nbins),DTIMEH(max_nbins)
 
-  REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
+  REAL DEL2D(ICEMAX),DTIMEO(max_nbins),DTIMEL(max_nbins) &
 
-      &           ,DTIMEI_1(NKR),DTIMEI_2(NKR),DTIMEI_3(NKR) &
+      &           ,DTIMEI_1(max_nbins),DTIMEI_2(max_nbins),DTIMEI_3(max_nbins) &
       &           ,SFNI1(ICEMAX),SFNI2(ICEMAX) &
-      &           ,TIMESTEPD(NKR) &
-      &           ,FI1REF(NKR),PSI1REF(NKR) &
-      &           ,FI2REF(NKR,ICEMAX),PSI2REF(NKR,ICEMAX)&
-      &           ,FCCNRREF(NKR)
+      &           ,TIMESTEPD(max_nbins) &
+      &           ,FI1REF(max_nbins),PSI1REF(max_nbins) &
+      &           ,FI2REF(max_nbins,ICEMAX),PSI2REF(max_nbins,ICEMAX)&
+      &           ,FCCNRREF(max_nbins)
 
-  REAL :: FL1(NKR), sfndummy(3), FL3(NKR), FL4(NKR), FL5(NKR), &
-      R2N(NKR,ICEMAX), R3N(NKR), R4N(NKR), R5N(NKR)
+  REAL :: FL1(max_nbins), sfndummy(3), FL3(max_nbins), FL4(max_nbins), FL5(max_nbins), &
+      R2N(max_nbins,ICEMAX), R3N(max_nbins), R4N(max_nbins), R5N(max_nbins)
   INTEGER :: IDROP, ISYMICE
-  DOUBLE PRECISION :: R2D(NKR,ICEMAX),R3D(NKR), R4D(NKR), R5D(NKR), &
-        R2ND(NKR,ICEMAX),R3ND(NKR), R4ND(NKR), R5ND(NKR), &
-        VR2_d(NKR,ICEMAX), VR3_d(NKR), VR4_d(NKR), VR5_d(NKR)
+  DOUBLE PRECISION :: R2D(max_nbins,ICEMAX),R3D(max_nbins), R4D(max_nbins), R5D(max_nbins), &
+        R2ND(max_nbins,ICEMAX),R3ND(max_nbins), R4ND(max_nbins), R5ND(max_nbins), &
+        VR2_d(max_nbins,ICEMAX), VR3_d(max_nbins), VR4_d(max_nbins), VR5_d(max_nbins)
 
   OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
   OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
@@ -2240,57 +2244,57 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
         & ,COL,DTCOND,ICEMAX,NKR &
         & ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5, &
          Iin,Jin,Kin,W_in,DX_in, Itimestep)
-
+use parameters, only: max_nbins
         IMPLICIT NONE
         INTEGER ICEMAX,NKR,KR,ITIME,ICE,KCOND,K &
       &           ,ISYM1,ISYM2(ICEMAX),ISYM3,ISYM4,ISYM5, Kin, Iin, Jin, Itimestep
         INTEGER KLIMITL,KLIMITG,KLIMITH,KLIMITI_1, &
       &  KLIMITI_2,KLIMITI_3
         INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON
-        REAL ROR,VR1(NKR),VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
-      &           ,VR5(NKR),PSINGLE &
+        REAL ROR,VR1(max_nbins),VR2(max_nbins,ICEMAX),VR3(max_nbins),VR4(max_nbins) &
+      &           ,VR5(max_nbins),PSINGLE &
       &           ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
       &           ,C1_MEY,C2_MEY &
       &           ,COL,DTCOND,W_in,DX_in
 
  ! DROPLETS
 
-         REAL R1(NKR)&
-      &           ,RLEC(NKR),RO1BL(NKR) &
-      &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
-      &           ,B11_MY(NKR),B12_MY(NKR)
+         REAL R1(max_nbins)&
+      &           ,RLEC(max_nbins),RO1BL(max_nbins) &
+      &           ,FI1(max_nbins),FF1(max_nbins),PSI1(max_nbins) &
+      &           ,B11_MY(max_nbins),B12_MY(max_nbins)
 
  ! CRYSTALS
 
-  REAL R2(NKR,ICEMAX) &
-      &           ,RIEC(NKR,ICEMAX) &
-      &           ,RO2BL(NKR,ICEMAX) &
-      &           ,FI2(NKR,ICEMAX),PSI2(NKR,ICEMAX) &
-      &           ,FF2(NKR,ICEMAX) &
-      &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX) &
-      &           ,RATE2(NKR,ICEMAX),DEL_R2M(NKR,ICEMAX)
+  REAL R2(max_nbins,ICEMAX) &
+      &           ,RIEC(max_nbins,ICEMAX) &
+      &           ,RO2BL(max_nbins,ICEMAX) &
+      &           ,FI2(max_nbins,ICEMAX),PSI2(max_nbins,ICEMAX) &
+      &           ,FF2(max_nbins,ICEMAX) &
+      &           ,B21_MY(max_nbins,ICEMAX),B22_MY(max_nbins,ICEMAX) &
+      &           ,RATE2(max_nbins,ICEMAX),DEL_R2M(max_nbins,ICEMAX)
 
  ! SNOW
-         REAL R3(NKR) &
-      &           ,RSEC(NKR),RO3BL(NKR) &
-      &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
-      &           ,B31_MY(NKR),B32_MY(NKR) &
-      &           ,DEL_R3M(NKR)
+         REAL R3(max_nbins) &
+      &           ,RSEC(max_nbins),RO3BL(max_nbins) &
+      &           ,FI3(max_nbins),FF3(max_nbins),PSI3(max_nbins) &
+      &           ,B31_MY(max_nbins),B32_MY(max_nbins) &
+      &           ,DEL_R3M(max_nbins)
 
  ! GRAUPELS
 
-         REAL R4(NKR) &
-      &           ,RGEC(NKR),RO4BL(NKR) &
-      &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
-      &           ,B41_MY(NKR),B42_MY(NKR) &
-      &           ,DEL_R4M(NKR)
+         REAL R4(max_nbins) &
+      &           ,RGEC(max_nbins),RO4BL(max_nbins) &
+      &           ,FI4(max_nbins),FF4(max_nbins),PSI4(max_nbins) &
+      &           ,B41_MY(max_nbins),B42_MY(max_nbins) &
+      &           ,DEL_R4M(max_nbins)
 
  ! HAIL
-         REAL R5(NKR) &
-      &           ,RHEC(NKR),RO5BL(NKR) &
-      &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
-      &           ,B51_MY(NKR),B52_MY(NKR) &
-      &           ,DEL_R5M(NKR)
+         REAL R5(max_nbins) &
+      &           ,RHEC(max_nbins),RO5BL(max_nbins) &
+      &           ,FI5(max_nbins),FF5(max_nbins),PSI5(max_nbins) &
+      &           ,B51_MY(max_nbins),B52_MY(max_nbins) &
+      &           ,DEL_R5M(max_nbins)
 
        DOUBLE PRECISION DD1N,DB11_MY,DAL1,DAL2
        DOUBLE PRECISION COL3,RORI,TPN,TPS,QPN,QPS,TOLD,QOLD &
@@ -2316,32 +2320,32 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
       &  SFN52
         REAL DEL1,DEL2
         REAL  TIMEREV,DT,DTT,TIMENEW
-        REAL DTIMEG(NKR),DTIMEH(NKR),totccn_before,totccn_after
+        REAL DTIMEG(max_nbins),DTIMEH(max_nbins),totccn_before,totccn_after
 
-        REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
-      &           ,DTIMEI_1(NKR),DTIMEI_2(NKR),DTIMEI_3(NKR)
+        REAL DEL2D(ICEMAX),DTIMEO(max_nbins),DTIMEL(max_nbins) &
+      &           ,DTIMEI_1(max_nbins),DTIMEI_2(max_nbins),DTIMEI_3(max_nbins)
         REAL DT_WATER_COND,DT_WATER_EVAP,DT_ICE_COND,DT_ICE_EVAP, &
       &  DT_MIX_COND,DT_MIX_EVAP,DT_MIX_BERGERON,DT_MIX_ANTIBERGERON
         REAL DTNEWL0,DTNEWL1,DTNEWI1,DTNEWI2_1,DTNEWI2_2,DTNEWI2_3, &
       & DTNEWI2,DTNEWI_1,DTNEWI_2,DTNEWI3,DTNEWI4,DTNEWI5, &
       & DTNEWL,DTNEWL2,DTNEWG1,DTNEWH1
-        REAL TIMESTEPD(NKR)
+        REAL TIMESTEPD(max_nbins)
 
         DATA AL1 /2500./, AL2 /2834./
         REAL EPSDEL,EPSDEL2
         DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/
 
-     REAL :: FL1(NKR), FL2(NKR,ICEMAX), FL3(NKR), FL4(NKR), FL5(NKR), SFNDUMMY(3), &
-          R1N(NKR), R2N(NKR,ICEMAX), R3N(NKR), R4N(NKR), R5N(NKR)
+     REAL :: FL1(max_nbins), FL2(max_nbins,ICEMAX), FL3(max_nbins), FL4(max_nbins), FL5(max_nbins), SFNDUMMY(3), &
+          R1N(max_nbins), R2N(max_nbins,ICEMAX), R3N(max_nbins), R4N(max_nbins), R5N(max_nbins)
      INTEGER :: IDROP, ICM, ISYMICE
-     DOUBLE PRECISION :: R1D(NKR),R2D(NKR,ICEMAX),R3D(NKR), R4D(NKR), R5D(NKR), &
-           R1ND(NKR),R2ND(NKR,ICEMAX),R3ND(NKR), R4ND(NKR), R5ND(NKR)
+     DOUBLE PRECISION :: R1D(max_nbins),R2D(max_nbins,ICEMAX),R3D(max_nbins), R4D(max_nbins), R5D(max_nbins), &
+           R1ND(max_nbins),R2ND(max_nbins,ICEMAX),R3ND(max_nbins), R4ND(max_nbins), R5ND(max_nbins)
 
 
      DATA DT0L, DT0I /1.E20,1.E20/
 
      DOUBLE PRECISION :: DEL1_d, DEL2_d , RW_d, PW_d , RI_d , PI_d , D1N_d, D2N_d, &
-     VR1_d(NKR), VR2_d(NKR,ICEMAX), VR3_d(NKR), VR4_d(NKR), VR5_d(NKR), &
+     VR1_d(max_nbins), VR2_d(max_nbins,ICEMAX), VR3_d(max_nbins), VR4_d(max_nbins), VR5_d(max_nbins), &
      TTinput,QQinput,DEL1Ninput,DEL2Ninput
 
         OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
@@ -2857,17 +2861,17 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
         Vxl,RIEC,RO1BL, &
         B11_MY, &
         ID,IN,fl1,NKR,ICEMAX)
-
+use parameters, only: max_nbins
 IMPLICIT NONE
 ! ... Interface
-INTEGER,INTENT(IN) :: ID, IN, NKR, ICEMAX
-  REAL(KIND=r4size),INTENT(IN) :: RO1BL(NKR,ID),RIEC(NKR,ID),FL1(NKR)
-  REAL(KIND=r4size),INTENT(INOUT) :: B11_MY(NKR,ID)
-  REAL(KIND=r8size),INTENT(IN) :: PP, TP, xlS(NKR,ID),Vxl(NKR,ID)
+INTEGER,INTENT(IN) :: ID, IN, max_nbins, ICEMAX
+  REAL(KIND=r4size),INTENT(IN) :: RO1BL(max_nbins,ID),RIEC(max_nbins,ID),FL1(max_nbins)
+  REAL(KIND=r4size),INTENT(INOUT) :: B11_MY(max_nbins,ID)
+  REAL(KIND=r8size),INTENT(IN) :: PP, TP, xlS(max_nbins,ID),Vxl(max_nbins,ID)
 ! ... Interface
 ! ... Locals
-INTEGER :: KR, nskin(nkr), ICE
-REAL(KIND=r4size) :: VENTPLM(NKR), FD1(NKR,ICEMAX),FK1(NKR,ICEMAX), xl_MY1(NKR,ICEMAX), &
+INTEGER :: KR, nskin(max_nbins), ICE
+REAL(KIND=r4size) :: VENTPLM(max_nbins), FD1(max_nbins,ICEMAX),FK1(max_nbins,ICEMAX), xl_MY1(max_nbins,ICEMAX), &
               AL1_MY(2),ESAT1(2), TPreal
 REAL(KIND=r8size) :: PZERO, TZERO, CONST, D_MY, COEFF_VISCOUS, SHMIDT_NUMBER,     &
         A, B, RVT, SHMIDT_NUMBER03, XLS_KR_ICE, RO1BL_KR_ICE, VXL_KR_ICE, REINOLDS_NUMBER, &
@@ -3035,13 +3039,13 @@ END SUBROUTINE JERRATE_KS
 ! ................................................................................
 SUBROUTINE JERTIMESC_KS (FI1,X1,SFN11, &
        B11_MY,CF,ID,NKR,ICEMAX,COL)
-
+use parameters, only: max_nbins
 IMPLICIT NONE
 
 ! ... Interface
 INTEGER,INTENT(IN) :: ID,NKR,ICEMAX
- REAL(KIND=r4size),INTENT(in) :: B11_MY(NKR,ID), FI1(NKR,ID), COL, CF
- REAL(KIND=r8size),INTENT(in) :: X1(NKR,ID)
+ REAL(KIND=r4size),INTENT(in) :: B11_MY(max_nbins,ID), FI1(max_nbins,ID), COL, CF
+ REAL(KIND=r8size),INTENT(in) :: X1(max_nbins,ID)
  REAL(KIND=r4size),INTENT(out) :: SFN11(ID)
 ! ... Interface
 
@@ -3427,10 +3431,10 @@ ELSE
                     FI2,PSI2,fl2,DEL2N, &
                     ISYM2,IND,ITYPE,TPN,IDROP, &
                     FR_LIM,FRH_LIM,ICEMAX,NKR,COL,Ihydro,Iin,Jin,Kin,Itimestep)
-
+use parameters, only: max_nbins
  IMPLICIT NONE
 ! ... Interface
- INTEGER,INTENT(IN) :: ISYM2, IND, ITYPE, NKR, ICEMAX, Ihydro, Iin, Jin ,Kin, Itimestep
+ INTEGER,INTENT(IN) :: ISYM2, IND, ITYPE, max_nbins, ICEMAX, Ihydro, Iin, Jin ,Kin, Itimestep
  INTEGER,INTENT(INOUT) :: IDROP
  REAL(kind=R4SIZE),INTENT(IN) :: B21_MY(:), FI2(:), FR_LIM(:), FRH_LIM(:), &
             DEL2N, COL
@@ -3441,8 +3445,8 @@ ELSE
 
 ! ... Locals
  INTEGER :: ITYP, KR, NR, ICE, K, IDSD_Negative
- REAL(kind=R8SIZE) :: FL2_NEW(NKR), FI2R(NKR), PSI2R(NKR), C, DEGREE1, DEGREE2, DEGREE3, D, RATEXI, &
-                 B, A, xiR(NKR),xiNR(NKR), FR_LIM_KR
+ REAL(kind=R8SIZE) :: FL2_NEW(max_nbins), FI2R(max_nbins), PSI2R(max_nbins), C, DEGREE1, DEGREE2, DEGREE3, D, RATEXI, &
+                 B, A, xiR(max_nbins),xiNR(max_nbins), FR_LIM_KR
 ! ... Locals
 
 
@@ -3852,7 +3856,7 @@ ELSE
            (xi,xiN,B21_MY, &
            FI2,PSI2, &
            TPN,IDROP,FR_LIM,NKR,COL,Ihydro,Iin,Jin,Kin,Itimestep)
-
+ use parameters, only: max_nbins
  IMPLICIT NONE
 
 ! ... Interface
@@ -3867,7 +3871,7 @@ ELSE
 ! ... Locals
  INTEGER :: NR, KR, IDSD_Negative
  REAL(kind=R8SIZE) :: C, DEGREE1, DEGREE2, DEGREE3, D, RATEXI, B, A, &
-                 xiR(NKR),FI2R(NKR),PSI2R(NKR),xiNR(NKR)
+                 xiR(max_nbins),FI2R(max_nbins),PSI2R(max_nbins),xiNR(max_nbins)
 ! ... Locals
 
  C=2.0D0/3.0D0
@@ -3932,16 +3936,16 @@ ELSE
                       R4,VR4,FF4in,RGEC,RO4BL, &
                       R5,VR5,FF5in,RHEC,RO5BL, &
                       NKR,ICEMAX,COL,DTdyn,NCOND,DTCOND)
-
+ use parameters, only: max_nbins
  implicit none
 ! ... Interface
  integer,intent(in) :: NKR,ICEMAX
  integer,intent(out) :: NCOND
  real(kind=R4SIZE),intent(in) :: R1(:),FF1in(:),RLEC(:),RO1BL(:), &
         R2(:,:),FF2in(:,:),RIEC(:,:),RO2BL(:,:), &
-        R3(NKR),FF3in(:),RSEC(:),RO3BL(:), &
-        R4(NKR),FF4in(:),RGEC(:),RO4BL(:), &
-        R5(NKR),FF5in(:),RHEC(:),RO5BL(:), &
+        R3(max_nbins),FF3in(:),RSEC(:),RO3BL(:), &
+        R4(max_nbins),FF4in(:),RGEC(:),RO4BL(:), &
+        R5(max_nbins),FF5in(:),RHEC(:),RO5BL(:), &
         ROR,COL,DTdyn,VR1(:),VR2(:,:),VR3(:),VR4(:),VR5(:)
   real(kind=R8SIZE),intent(in) :: TPS,QPS,PP,DEL1S,DEL2S
   real(kind=R4SIZE),intent(out) :: DTCOND
@@ -3952,10 +3956,10 @@ ELSE
                                  BB2_MY = 6.13E3, AL1 = 2500.0, AL2 = 2834.0
  real(kind=R8SIZE),parameter :: TAU_Min = 0.1 ! [s]
  real(kind=R8SIZE) :: OPER2, AR1, TAU_RELAX, B5L, B5I, &
-                 R1D(NKR), R2D(NKR,ICEMAX), R3D(NKR), R4D(NKR), R5D(NKR), &
-                       VR1_d(nkr),VR2_d(nkr,icemax),VR3_d(nkr),VR4_d(nkr),VR5_d(nkr)
- real(kind=R4SIZE) :: B11_MY(NKR), B21_MY(NKR,ICEMAX), B31_MY(NKR), &
-                    B41_MY(NKR), B51_MY(NKR), FL1(NKR), FL3(NKR), FL4(NKR), FL5(NKR), &
+                 R1D(max_nbins), R2D(max_nbins,ICEMAX), R3D(max_nbins), R4D(max_nbins), R5D(max_nbins), &
+                       VR1_d(max_nbins),VR2_d(max_nbins,icemax),VR3_d(max_nbins),VR4_d(max_nbins),VR5_d(max_nbins)
+ real(kind=R4SIZE) :: B11_MY(max_nbins), B21_MY(max_nbins,ICEMAX), B31_MY(max_nbins), &
+                    B41_MY(max_nbins), B51_MY(max_nbins), FL1(max_nbins), FL3(max_nbins), FL4(max_nbins), FL5(max_nbins), &
                        SFNDUMMY(3), SFN11, SFNI1(ICEMAX), SFNII1, SFN21, SFN31, SFN41, SFN51, SFNI, SFNL, B8L, B8I, RI, PW, &
                       DOPL, DOPI, TAU_w, TAU_i, phi, RW, PI
 ! ... Local
@@ -4237,9 +4241,9 @@ Q = (RKL * RGR)**0.5
 Q = 0.5 * (RKL + RGR)
 
 qmin = 250e-4
-qmax = 400e-4  
+qmax = 400e-4
 if (q.lt.qmin) then
-   e = max(ecoalOchs(Dgr,Dkl),ecoalBeard(Dgr,Dkl)) 
+   e = max(ecoalOchs(Dgr,Dkl),ecoalBeard(Dgr,Dkl))
 elseif (q.ge.qmin.and.q.lt.qmax) then
    x = (q - qmin) / (qmax - qmin)
    e = sin(pi/2.0*x)**2 * ecoalLowList(Dgr,Dkl) &
@@ -4432,18 +4436,18 @@ VTBEARD = VT
 RETURN
 END FUNCTION VTBEARD
 !########################################################################
-!-------------------------------------------------- 
-!     Function f. Coalescence-Efficiency 
+!--------------------------------------------------
+!     Function f. Coalescence-Efficiency
 !     Eq. (7) of Beard and Ochs (1995)
 !--------------------------------------------------
-REAL FUNCTION ecoalBeard(D_l,D_s) 
- 
-IMPLICIT NONE 
+REAL FUNCTION ecoalBeard(D_l,D_s)
+
+IMPLICIT NONE
 REAL D_l,D_s
 REAL R_s,R_l
 REAL rcoeff
 REAL epsf
-PARAMETER (epsf  = 1.e-30) 
+PARAMETER (epsf  = 1.e-30)
 INTEGER its
 COMPLEX acoeff(4),x
 
@@ -4463,8 +4467,8 @@ CALL LAGUER(acoeff,3,x,its)
 
 EcoalBeard = REAL(x)
 
-RETURN 
-END FUNCTION ecoalBeard 
+RETURN
+END FUNCTION ecoalBeard
 !######################################################################
 
 SUBROUTINE laguer(a,m,x,its)
@@ -4561,18 +4565,18 @@ REAL PI
 !******************************************************************
 data pi/3.141592654/
 ! dtime - timestep of integration (calculated in main program) :
-!Adele - dtime is now the number of time steps between calls to 
+!Adele - dtime is now the number of time steps between calls to
 !COAL_BOTT_NEW. Kernals are multiplied by the timestep length
 !in KERNALSDT
 ! dlnr - logarithmic grid distance
-! ima(i,j) - k-category number, c(i,j) - courant number 
-! cw*(i,j) (in cm**3) - multiply help kernel with constant 
+! ima(i,j) - k-category number, c(i,j) - courant number
+! cw*(i,j) (in cm**3) - multiply help kernel with constant
 ! timestep(dt) and logarithmic grid distance(dlnr) :
 REAL DTIME
 ! logarithmic grid distance(dlnr) :
 ! dlnr=dlog(2.d0)/(3.d0*scal)
 ! scal is micro.prm file parameter(scal=1.d0 for x(k+1)=x(k)*2)
-! calculation of cw*(i,j) (in cm**3) - multiply help kernel 
+! calculation of cw*(i,j) (in cm**3) - multiply help kernel
 ! with constant timestep(dtime) and logarithmic grid distance(dlnr) :
 !     print*,'dlnr in kernal = ',dlnr,dtime
   DO I=1,NKR
@@ -4614,7 +4618,7 @@ REAL DTIME
         CWLI_1(I,J)=DTIME*DLNR*YWLI(I,J,1)
         CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
         CWLI_3(I,J)=DTIME*DLNR*YWLI(I,J,3)
-        
+
         CWIL_1(I,J)=DTIME*DLNR*YWIL(I,J,1)
         CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
         CWIL_3(I,J)=DTIME*DLNR*YWIL(I,J,3)
@@ -4715,7 +4719,7 @@ implicit none
   CWLI_1=CWLI_1*DT
   CWLI_2=CWLI_2*DT
   CWLI_3=CWLI_3*DT
-  
+
   CWIL_1=CWIL_1*DT
   CWIL_2=CWIL_2*DT
   CWIL_3=CWIL_3*DT
@@ -4775,7 +4779,7 @@ DO J=1,K0_LL
    DO I=1,K0_LL
       CTURB_LL(I,J)=1.0D0
    ENDDO
-ENDDO 
+ENDDO
   CTURB_LL(1,1)=4.50D0
   CTURB_LL(1,2)=4.50D0
   CTURB_LL(1,3)=3.00D0
@@ -4860,16 +4864,16 @@ ENDDO
 DO I=KRMIN_LL,KRMAX_LL
    X_KERN=RADXXO(I,1)*1.0D4
    IF(X_KERN.LT.RL_LL(1)) X_KERN=RL_LL(1)
-   IF(X_KERN.GT.RL_LL(K0_LL)) X_KERN=RL_LL(K0_LL) 
+   IF(X_KERN.GT.RL_LL(K0_LL)) X_KERN=RL_LL(K0_LL)
    DO J=KRMIN_LL,KRMAX_LL
       Y_KERN=RADXXO(J,1)*1.0D4
       IF(Y_KERN.LT.RL_LL(1)) Y_KERN=RL_LL(1)
       IF(Y_KERN.GT.RL_LL(K0_LL)) Y_KERN=RL_LL(K0_LL)
       CTURBLL(I,J)=F(X_KERN,Y_KERN,RL_LL,RL_LL,CTURB_LL &
-                     ,K0_LL,K0_LL) 
+                     ,K0_LL,K0_LL)
    ENDDO
 ENDDO
-  RL_GL(1) = RADXXO(1,1)*1.E4 
+  RL_GL(1) = RADXXO(1,1)*1.E4
   RL_GL(2) = 8.0D0
   RL_GL(3) = 10.0D0
   RL_GL(4) = 16.0D0
@@ -4886,11 +4890,11 @@ ENDDO
   RL_GL(15)=300.0D0
   RL_GL(16)=RADXXO(24,1)*1.0D4
 ! TURBULENCE GRAUPEL BULK RADII IN MKM
-  RG_GL(1) = RADXXO(1,6)*1.0D4 
-  RG_GL(2) = 30.0D0  
-  RG_GL(3) = 60.0D0 
-  RG_GL(4) = 100.0D0 
-  RG_GL(5) = 200.0D0 
+  RG_GL(1) = RADXXO(1,6)*1.0D4
+  RG_GL(2) = 30.0D0
+  RG_GL(3) = 60.0D0
+  RG_GL(4) = 100.0D0
+  RG_GL(5) = 200.0D0
   RG_GL(6) = 300.0D0
   RG_GL(7) = 400.0D0
   RG_GL(8) = 500.0D0
@@ -4911,7 +4915,7 @@ DO I=1,K0G_GL
    DO J=1,K0L_GL
       CTURB_GL(I,J)=1.0D0
    ENDDO
-ENDDO 
+ENDDO
 IF(IEPS_400.EQ.1) THEN
     CTURB_GL(1,1)=0.0D0
     CTURB_GL(1,2)=0.0D0
@@ -4958,7 +4962,7 @@ IF(IEPS_400.EQ.1) THEN
     CTURB_GL(3,12)=1.5D0
     CTURB_GL(3,13)=1.3D0
     CTURB_GL(3,14)=1.0D0
-    
+
     CTURB_GL(4,1)=5.5D0
     CTURB_GL(4,2)=5.5D0
     CTURB_GL(4,3)=4.5D0
@@ -4973,7 +4977,7 @@ IF(IEPS_400.EQ.1) THEN
     CTURB_GL(4,12)=1.5D0
     CTURB_GL(4,13)=1.35D0
     CTURB_GL(4,14)=1.0D0
- 
+
     CTURB_GL(5,1)=4.5D0
     CTURB_GL(5,2)=4.5D0
     CTURB_GL(5,3)=3.3D0
@@ -4988,7 +4992,7 @@ IF(IEPS_400.EQ.1) THEN
     CTURB_GL(5,12)=2.0D0
     CTURB_GL(5,13)=1.4D0
     CTURB_GL(5,14)=1.0D0
- 
+
     CTURB_GL(6,1)=4.0D0
     CTURB_GL(6,2)=4.0D0
     CTURB_GL(6,3)=2.8D0
@@ -5090,7 +5094,7 @@ IF(IEPS_400.EQ.1) THEN
     CTURB_GL(12,9)=2.1D0
     CTURB_GL(12,10)=2.1D0
     CTURB_GL(12,11)=1.9D0
-    CTURB_GL(12,12)=1.8D0 
+    CTURB_GL(12,12)=1.8D0
     CTURB_GL(12,13)=1.3D0
     CTURB_GL(12,14)=1.1D0
 
@@ -5222,7 +5226,7 @@ IF(IEPS_800.EQ.1) THEN
     CTURB_GL(4,14)=2.00D0
     CTURB_GL(4,15)=1.30D0
     CTURB_GL(4,16)=1.00D0
-    
+
     CTURB_GL(5,1) =5.50D0
     CTURB_GL(5,2) =5.50D0
     CTURB_GL(5,3) =5.50D0
@@ -5239,7 +5243,7 @@ IF(IEPS_800.EQ.1) THEN
     CTURB_GL(5,14)=2.00D0
     CTURB_GL(5,15)=1.35D0
     CTURB_GL(5,16)=1.00D0
- 
+
     CTURB_GL(6,1) =4.50D0
     CTURB_GL(6,2) =4.50D0
     CTURB_GL(6,3) =4.50D0
@@ -5256,7 +5260,7 @@ IF(IEPS_800.EQ.1) THEN
     CTURB_GL(6,14)=2.00D0
     CTURB_GL(6,15)=1.40D0
     CTURB_GL(6,16)=1.00D0
- 
+
     CTURB_GL(7,1) =4.00D0
     CTURB_GL(7,2) =4.00D0
     CTURB_GL(7,3) =4.00D0
@@ -5307,7 +5311,7 @@ IF(IEPS_800.EQ.1) THEN
     CTURB_GL(9,14)=2.00D0
     CTURB_GL(9,15)=1.30D0
     CTURB_GL(9,16)=1.10D0
-    
+
     CTURB_GL(10,1) =3.00D0
     CTURB_GL(10,2) =3.00D0
     CTURB_GL(10,3) =3.00D0
@@ -5432,7 +5436,7 @@ IF(IEPS_800.EQ.1.AND.IEPS_1600.EQ.1) THEN
       DO J=1,K0L_GL
          CTURB_GL(I,J)=CTURB_GL(I,J)*1.7D0
       ENDDO
-    ENDDO 
+    ENDDO
 ENDIF
 DO J=1,K0L_GL
    DO I=1,K0G_GL
@@ -5444,10 +5448,10 @@ DO I=KRMING_GL,KRMAXG_GL
       CTURBGL(I,J)=1.
    ENDDO
 ENDDO
-DO I=KRMING_GL,KRMAXG_GL 
+DO I=KRMING_GL,KRMAXG_GL
    X_KERN=RADXXO(I,6)*1.0D4
    IF(X_KERN.LT.RG_GL(1)) X_KERN=RG_GL(1)
-   IF(X_KERN.GT.RG_GL(K0G_GL)) X_KERN=RG_GL(K0G_GL) 
+   IF(X_KERN.GT.RG_GL(K0G_GL)) X_KERN=RG_GL(K0G_GL)
    DO J=KRMINL_GL,KRMAXL_GL
       Y_KERN=RADXXO(J,1)*1.0D4
       IF(Y_KERN.LT.RL_GL(1)) Y_KERN=RL_GL(1)
@@ -5475,7 +5479,7 @@ DO I=1,33
       IF(I.LE.14.AND.J.EQ.8) CTURBGL(I,J)=1.0D0
       IF(I.GT.14.AND.J.LE.8) CTURBGL(I,J)=1.2D0
    ENDDO
-ENDDO     
+ENDDO
 RETURN
 END SUBROUTINE TURBCOEF
 !===================================================================
@@ -5490,7 +5494,7 @@ END SUBROUTINE TURBCOEF
 
 do k=2,k0
    if(x.le.x0(k).and.x.ge.x0(k-1)) then
-      ir=k     
+      ir=k
    elseif(x.gt.x0(k0)) then
       ir=k0+1
    elseif(x.lt.x0(1)) then
@@ -5507,15 +5511,15 @@ if(ir.lt.k0+1) then
       ec=(1.d0-p)*(1.d0-q)*table(ir-1,iq-1)+ &
              p*(1.d0-q)*table(ir,iq-1)+ &
              q*(1.d0-p)*table(ir-1,iq)+ &
-                  p*q*table(ir,iq)    
+                  p*q*table(ir,iq)
     else
       q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
-      ec=(1.d0-q)*table(1,iq-1)+q*table(1,iq)    
+      ec=(1.d0-q)*table(1,iq-1)+q*table(1,iq)
     endif
   else
     q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
     ek=(1.d0-q)*table(k0,iq-1)+q*table(k0,iq)
-    ec=min(ek,1.d0) 
+    ec=min(ek,1.d0)
   endif
   f=ec
   return
@@ -5526,20 +5530,20 @@ SUBROUTINE COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
    cld2raint,rimecldt,aggregatet,rimecldsnowt,rimecldaggrt, &
    rimecldgraut,rimecldhailt,rain2icet,rain2snowt,rain2agt,&
    rain2grt,rain2hat)
-
+use parameters, only: max_nbins
 use micro_prm, only:ipris
 
 IMPLICIT NONE
 INTEGER KR,ICE
 INTEGER icol_drop,icol_snow,icol_graupel,icol_hail, &
  icol_column,icol_plate,icol_dendrite,icol_drop_brk
-double precision  g1(nkr),g2(nkr,icemax),g3(nkr),g4(nkr),g5(nkr)
-double precision gdumb(nkr),xl_dumb(0:nkr)
-double precision g2_1(nkr),g2_2(nkr),g2_3(nkr)
+double precision  g1(max_nbins),g2(max_nbins,icemax),g3(max_nbins),g4(max_nbins),g5(max_nbins)
+double precision gdumb(max_nbins),xl_dumb(0:max_nbins)
+double precision g2_1(max_nbins),g2_2(max_nbins),g2_3(max_nbins)
 real cont_fin_drop,dconc,conc_icempl,deldrop,t_new, &
  cont_fin_ice,conc_old,conc_new,cont_init_ice, &
  cont_init_drop,ALWC
-REAL    FF1R(NKR),FF2R(NKR,ICEMAX),FF3R(NKR),FF4R(NKR),FF5R(NKR)
+REAL    FF1R(max_nbins),FF2R(max_nbins,ICEMAX),FF3R(max_nbins),FF4R(max_nbins),FF5R(max_nbins)
 REAL DTHALF
 REAL TCRIT,TTCOAL
 INTEGER I,J,IT,NDIV
@@ -5597,7 +5601,7 @@ DO KR=1,NKR
    if(g3(kr).gt.1.e-10)icol_snow=1
    if(g4(kr).gt.1.e-10)icol_graupel=1
    if(g5(kr).gt.1.e-10)icol_hail=1
-ENDDO 
+ENDDO
 !Adele
 mytotal=sum(g1)
 ! calculation of initial hydromteors content in g/cm**3 :
@@ -5618,15 +5622,15 @@ alwc=cont_init_drop*1.e6
 
 !----------LIQUID-LIQUID INTERACTIONS-----------------------
 totalcloud = sum(g1(1:krdrop-1))*col*1e-3/rho
-if (icol_drop.eq.1)then 
+if (icol_drop.eq.1)then
   if (imbudget >= 1) then
-     cld2raint = cld2raint - totalcloud 
+     cld2raint = cld2raint - totalcloud
   endif
   call coll_xxx (G1,CWLL,XL_MG,CHUCM,IMA,NKR)
 !print*,'after cc',sum(g1)-mytotal
   if (imbudget >= 1) then
      totalcloud = sum(g1(1:krdrop-1))*col*1e-3/rho
-     cld2raint = cld2raint + totalcloud 
+     cld2raint = cld2raint + totalcloud
   endif
 !-----------RAINDROP BREAKUP------------------------------
 !Adele - turned breakup off
@@ -5672,9 +5676,9 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
      rimecldt = rimecldt - totalcloud
      rain2icet = rain2icet - totalrain
   endif
-  if (icol_snow.eq.1)then 
+  if (icol_snow.eq.1)then
      if (imbudget >= 2) then
-        rimecldaggrt = rimecldaggrt - totalcloud 
+        rimecldaggrt = rimecldaggrt - totalcloud
         rain2agt = rain2agt - totalrain
      endif
      if(tt.lt.tcrit) then
@@ -5695,7 +5699,7 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
      endif
      if (imbudget >= 2) then
         totalcloud = sum(g1(1:krdrop-1))*col*1e-3/rho
-        rimecldaggrt = rimecldaggrt + totalcloud 
+        rimecldaggrt = rimecldaggrt + totalcloud
         totalrain = sum(g1(krdrop:nkr))*col*1e-3/rho
         rain2agt = rain2agt + totalrain
      endif
@@ -5705,9 +5709,9 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
 ! graupel - water = graupel (t < tcrit ; xg_mg > xl_mg)
 ! water - graupel = hail (t ge tcrit ; xl_mg ge xg_mg)
 ! graupel - water = hail (t ge tcrit ; xg_mg > xl_mg)
-  if (icol_graupel.eq.1)then 
+  if (icol_graupel.eq.1)then
      if (imbudget >= 2) then
-        rimecldgraut = rimecldgraut - totalcloud 
+        rimecldgraut = rimecldgraut - totalcloud
         rain2grt = rain2grt - totalrain
      endif
      if (alwc.lt.alcr_hail) then
@@ -5733,7 +5737,7 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
      endif
      if (imbudget >= 2) then
          totalcloud = sum(g1(1:krdrop-1))*col*1e-3/rho
-         rimecldgraut = rimecldgraut + totalcloud 
+         rimecldgraut = rimecldgraut + totalcloud
          totalrain = sum(g1(krdrop:nkr))*col*1e-3/rho
          rain2grt = rain2grt + totalrain
      endif
@@ -5758,7 +5762,7 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
 ! hail - water = hail (xh_mg > xl_mg)     (kxyx=3)
   if(icol_hail.eq.1) then
     if (imbudget >= 2) then
-       rimecldhailt = rimecldhailt - totalcloud 
+       rimecldhailt = rimecldhailt - totalcloud
        rain2hat = rain2hat - totalrain
     endif
     call coll_xyy (g1,g5,cwlh,xl_mg,xh_mg, &
@@ -5767,7 +5771,7 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
                        chucm,ima,prdkrn1,nkr,1)
     if (imbudget >= 2) then
        totalcloud = sum(g1(1:krdrop-1))*col*1e-3/rho
-       rimecldhailt = rimecldhailt + totalcloud 
+       rimecldhailt = rimecldhailt + totalcloud
        totalrain = sum(g1(krdrop:nkr))*col*1e-3/rho
        rain2hat = rain2hat + totalrain
     endif
@@ -5780,7 +5784,7 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
 ! columns - water = columns/graupel (xi_mg > xl_mg)             (kxyx=4); kxyxz=2)
 ! now: columns - water = columns (xi_mg > xl_mg)             (kxyx=4); kxyxz=2)
   if (imbudget >= 2 .and. ipris > 0) then
-     rimecldsnowt = rimecldsnowt - totalcloud 
+     rimecldsnowt = rimecldsnowt - totalcloud
      rain2snowt = rain2snowt - totalrain
   endif
   if(icol_column.eq.1) then
@@ -5832,11 +5836,11 @@ print*,break_drop_per,mytotal-sum(g1),mytotal,sum(g1),break_drop_aft,break_drop_
   if (imbudget >= 1) then
      totalcloud = sum(g1(1:krdrop-1))*col*1e-3/rho
      totalrain = sum(g1(krdrop:nkr))*col*1e-3/rho
-     rimecldt = rimecldt + totalcloud 
+     rimecldt = rimecldt + totalcloud
      rain2icet = rain2icet + totalrain
   endif
   if (imbudget >= 2 .and. ipris > 0) then
-     rimecldsnowt = rimecldsnowt + totalcloud 
+     rimecldsnowt = rimecldsnowt + totalcloud
      rain2snowt = rain2snowt + totalrain
   endif
  endif !endif ice present
@@ -5847,7 +5851,7 @@ endif !endif liquid collisions
 if(tt.gt.TTCOAL .and. iceprocs == 1) then
   if (imbudget >= 1) then
      totalprissnow = sum(g2)*col*1e-3/rho
-     aggregatet = rimecldt - totalcloud 
+     aggregatet = rimecldt - totalcloud
   endif
 !------------COLUMN-ICE COLLISIONS--------------------------------
 if(icol_column.eq.1) then
@@ -5856,7 +5860,7 @@ if(icol_column.eq.1) then
      chucm,ima,prdkrn,nkr)
   ! columns - plates = snow (xi1_mg ge xi2_mg)                (kxyz=12)
   ! plates - columns = snow (xi2_mg > xi1_mg)                 (kxyz=13)
-  if(icol_plate.eq.1) then     
+  if(icol_plate.eq.1) then
    call coll_xyz (g2_1,g2_2,g3,cwii_1_2,xi1_mg,xi2_mg, &
      chucm,ima,prdkrn,nkr,0)
    call coll_xyz (g2_2,g2_1,g3,cwii_2_1,xi2_mg,xi1_mg, &
@@ -5877,7 +5881,7 @@ if(icol_column.eq.1) then
 !                      chucm,ima,prdkrn,nkr,0)
    call coll_xyx (g3,g2_1,cwsi_1,xs_mg,xi1_mg, &
      chucm,ima,prdkrn,nkr,1)
-  endif          
+  endif
 endif
 !-----------------PLATES-ICE COLLISIONS-------------------------
  ! plates - plates = snow
@@ -5931,7 +5935,7 @@ endif
   endif
   if (imbudget >= 1) then
      totalprissnow = sum(g2)*col*1e-3/rho
-     aggregatet = rimecldt + totalcloud 
+     aggregatet = rimecldt + totalcloud
   endif
 endif
 
@@ -5970,7 +5974,7 @@ if(t_new.le.273.15) then
   endif
 endif
 
-! recalculation of density function f1,f2,f3,f4,f5 in 1/(g*cm**3) :  
+! recalculation of density function f1,f2,f3,f4,f5 in 1/(g*cm**3) :
 DO KR=1,NKR
    FF1R(KR)=G1(KR)/(3.*XL(KR)*XL(KR)*1.E3)
    FF2R(KR,1)=G2(KR,1)/(3*xi(KR,1)*XI(KR,1)*1.e3)
@@ -5986,12 +5990,13 @@ RETURN
 END SUBROUTINE COAL_BOTT_NEW
 !--------------------------------------------------------------
 SUBROUTINE MISC1(PP,cwll_1000mb,cwll_750mb,cwll_500mb,cwll,nkr)
+use parameters, only: max_nbins
 IMPLICIT NONE
 INTEGER kr1,kr2,NKR
 DOUBLE PRECISION PP
 REAL P_Z
-double precision cwll(nkr,nkr),cwll_1,cwll_2,cwll_3 &
-     ,cwll_1000mb(nkr,nkr),cwll_750mb(nkr,nkr),cwll_500mb(nkr,nkr)
+double precision cwll(max_nbins,max_nbins),cwll_1,cwll_2,cwll_3 &
+     ,cwll_1000mb(max_nbins,max_nbins),cwll_750mb(max_nbins,max_nbins),cwll_500mb(max_nbins,max_nbins)
 
 P_Z=PP
 do kr1=1,nkr
@@ -6004,7 +6009,7 @@ do kr1=1,nkr
       if(p_z.eq.p3) cwll(kr1,kr2)=cwll_3
       if(p_z.lt.p1.and.p_z.gt.p2) &
          cwll(kr1,kr2)=cwll_2+ &
-         (cwll_1-cwll_2)*(p_z-p2)/(p1-p2) 
+         (cwll_1-cwll_2)*(p_z-p2)/(p1-p2)
       if(p_z.lt.p2.and.p_z.gt.p3) &
          cwll(kr1,kr2)=cwll_3+ &
          (cwll_2-cwll_3)*(p_z-p3)/(p2-p3)
@@ -6015,10 +6020,11 @@ RETURN
 END SUBROUTINE  MISC1
 !----------------------------------------------------------
 subroutine coll_xxx (g,ckxx,x,chucm,ima,nkr)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension g(nkr),ckxx(nkr,nkr),x(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension g(max_nbins),ckxx(max_nbins,max_nbins),x(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 gmin=1.d-60
 ! lower and upper integration limit ix0,ix1
 do i=1,nkr-1
@@ -6058,7 +6064,7 @@ do i=ix0,ix1
       if(gk.gt.gmin) then
          x1=dlog(g(kp)/gk+1.d-15)
          if (x1.eq.0)then
-            flux=0  
+            flux=0
          else
             flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
             flux=min(flux,gsk)
@@ -6074,10 +6080,11 @@ end do
 end subroutine coll_xxx
 !-------------------------------------------------------------
 subroutine coll_xxx_prd (g,ckxx,x,chucm,ima,prdkrn,nkr)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension g(nkr),ckxx(nkr,nkr),x(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension g(max_nbins),ckxx(max_nbins,max_nbins),x(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 
 gmin=1.d-60
 ! lower and upper integration limit ix0,ix1
@@ -6118,7 +6125,7 @@ do i=ix0,ix1
       if(gk.gt.gmin) then
          x1=dlog(g(kp)/gk+1.d-15)
          if (x1.eq.0)then
-            flux=0  
+            flux=0
          else
             flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
             flux=min(flux,gsk)
@@ -6132,7 +6139,7 @@ do i=ix0,ix1
    enddo
 enddo
 return
-end subroutine coll_xxx_prd 
+end subroutine coll_xxx_prd
 !-------------------------------------------------------------------
 subroutine modkrn(TT,QQ,PP,PRDKRN,TTCOAL)
 implicit none
@@ -6160,7 +6167,7 @@ if(tc.le.0) then
     factor = dele
     if(factor.lt.epsf) factor=epsf
     if(factor.gt.1.) factor=1.
-  endif                        
+  endif
   factor_t=factor
   if(tc.ge.-12.5.and.tc.lt.-6.) factor_t=0.5
   if(tc.ge.-17.0.and.tc.lt.-12.5) factor_t=1.
@@ -6180,13 +6187,14 @@ else
   prdkrn=1.d0
 end if
 RETURN
-END SUBROUTINE modkrn 
+END SUBROUTINE modkrn
 !-------------------------------------------------------------
 subroutine coll_xxy(gx,gy,ckxx,x,chucm,ima,prdkrn,nkr)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
-dimension  gx(nkr),gy(nkr),ckxx(nkr,nkr),x(0:nkr)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
+dimension  gx(max_nbins),gy(max_nbins),ckxx(max_nbins,max_nbins),x(0:max_nbins)
 
 gmin=1.d-60
 ! lower and upper integration limit ix0,ix1
@@ -6222,7 +6230,7 @@ do i=ix0,ix1
       if(gk.gt.gmin) then
          x1=dlog(gy(kp)/gk+1.d-15)
          if (x1.eq.0)then
-            flux=0  
+            flux=0
          else
             flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
             flux=min(flux,gsk)
@@ -6239,10 +6247,11 @@ end subroutine coll_xxy
 !====================================================================
 subroutine coll_xyy(gx,gy,ckxy,x,y,chucm,ima, &
   prdkrn,nkr,indc)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension gy(nkr),gx(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension gy(max_nbins),gx(max_nbins),ckxy(max_nbins,max_nbins),x(0:max_nbins),y(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 
 gmin=1.d-60
 ! lower and upper integration limit ix0,ix1
@@ -6276,7 +6285,7 @@ do i=iy0,iy1
    jmin=i
    if(jmin.eq.(nkr-1)) return
    if(i.lt.ix0) jmin=ix0-indc
-   do j=jmin+indc,ix1         
+   do j=jmin+indc,ix1
       k=ima(i,j)
       kp=k+1
       x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
@@ -6294,7 +6303,7 @@ do i=iy0,iy1
       if(gk.gt.gmin) then
         x1=dlog(gy(kp)/gk+1.d-15)
         if (x1.eq.0)then
-           flux=0  
+           flux=0
         else
            flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
            flux=min(flux,gsk)
@@ -6311,10 +6320,11 @@ end subroutine coll_xyy
 !=================================================================
 subroutine coll_xyx(gx,gy,ckxy,x,y,chucm,ima, &
  prdkrn,nkr,indc)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension gy(nkr),gx(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension gy(max_nbins),gx(max_nbins),ckxy(max_nbins,max_nbins),x(0:max_nbins),y(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 
 gmin=1.d-60
 ! lower and upper integration limit ix0,ix1
@@ -6367,11 +6377,11 @@ do i=iy0,iy1
          gx(j)=0.d0
          gx(k)=gx(k)+gsi
       endif
-      flux=0.d0            
+      flux=0.d0
       if(gk.gt.gmin) then
          x1=dlog(gx(kp)/gk+1.d-15)
          if (x1.eq.0)then
-             flux=0  
+             flux=0
          else
              flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
              flux=min(flux,gsk)
@@ -6389,10 +6399,11 @@ end subroutine coll_xyx
 !=====================================================================
 subroutine coll_xyxz(gx,gy,gz,ckxy,x,y,chucm,ima, &
  prdkrn,nkr,indc, kp_bound)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension gy(nkr),gx(nkr),gz(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension gy(max_nbins),gx(max_nbins),gz(max_nbins),ckxy(max_nbins,max_nbins),x(0:max_nbins),y(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 integer kp_bound
 
 gmin=1.d-60
@@ -6452,7 +6463,7 @@ do i=iy0,iy1
       if(gk.gt.gmin) then
          x1=dlog(gkp/gk+1.d-15)
          if (x1.eq.0)then
-            flux=0  
+            flux=0
          else
             flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
             flux=min(flux,gsk)
@@ -6472,10 +6483,11 @@ end subroutine coll_xyxz
 !=====================================================================
 subroutine coll_xyz(gx,gy,gz,ckxy,x,y,chucm,ima, &
                     prdkrn,nkr,indc)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension gx(nkr),gy(nkr),gz(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension gx(max_nbins),gy(max_nbins),gz(max_nbins),ckxy(max_nbins,max_nbins),x(0:max_nbins),y(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 
 gmin=1.d-60
 ! lower and upper integration limit ix0,ix1
@@ -6508,7 +6520,7 @@ do i=iy0,iy1
    jmin=i
    if(jmin.eq.(nkr-1)) return
    if(i.lt.ix0) jmin=ix0-indc
-    do j=jmin+indc,ix1         
+    do j=jmin+indc,ix1
       k=ima(i,j)
       kp=k+1
       x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
@@ -6526,7 +6538,7 @@ do i=iy0,iy1
       if(gk.gt.gmin) then
          x1=dlog(gz(kp)/gk+1.d-15)
          if (x1.eq.0)then
-            flux=0  
+            flux=0
          else
             flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
             flux=min(flux,gsk)
@@ -6545,10 +6557,11 @@ end subroutine coll_xyz
 !========================================================================
 subroutine coll_xyyz(gx,gy,gz,ckxy,x,y,chucm,ima, &
                      prdkrn,nkr,indc, kp_bound)
+use parameters, only: max_nbins
 implicit double precision (a-h,o-z)
-dimension gy(nkr),gx(nkr),gz(nkr),ckxy(nkr,nkr),x(0:nkr),y(0:nkr)
-dimension chucm(nkr,nkr)
-double precision ima(nkr,nkr)
+dimension gy(max_nbins),gx(max_nbins),gz(max_nbins),ckxy(max_nbins,max_nbins),x(0:max_nbins),y(0:max_nbins)
+dimension chucm(max_nbins,max_nbins)
+double precision ima(max_nbins,max_nbins)
 integer kp_bound
 
 gmin=1.d-60
@@ -6610,7 +6623,7 @@ do i=iy0,iy1
       if(gk.gt.gmin) then
         x1=dlog(gkp/gk+1.d-15)
         if (x1.eq.0)then
-           flux=0  
+           flux=0
         else
            flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
            flux=min(flux,gsk)
@@ -6728,5 +6741,5 @@ ENDIF
 ENDDO
 RETURN
 END SUBROUTINE BREAKUP
-  
+
 END MODULE module_hujisbm

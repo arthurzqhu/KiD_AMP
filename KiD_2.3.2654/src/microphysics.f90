@@ -5,20 +5,20 @@ Subroutine micro_proc(press,tempk,qv,fncn,ffcd)
 
 use module_hujisbm
 use micro_prm
-use parameters, only: nx,nz,dt,aero_N_init
+use parameters, only: nx,nz,dt,aero_N_init,max_nbins
 use column_variables, only:z_half
 
 IMPLICIT NONE
 
 REAL::pcgs,rhocgs
 REAL, DIMENSION(nz,nx)::tempk,press,qv
-REAL, DIMENSION(nz,nx,nkr)::ffcd,fncn
+REAL, DIMENSION(nz,nx,max_nbins)::ffcd,fncn
 ! SBM VARIABLES
-REAL,DIMENSION (nkr) :: FF1IN,FF3IN,FF4IN,FF5IN,&
+REAL,DIMENSION (max_nbins) :: FF1IN,FF3IN,FF4IN,FF5IN,&
                         FF1R,FF3R,FF4R,FF5R,FCCN,FIN
-REAL,DIMENSION (nkr,icemax) :: FF2IN,FF2R
+REAL,DIMENSION (max_nbins,icemax) :: FF2IN,FF2R
 REAL, DIMENSION(nz) :: rhocgs_z,pcgs_z,zcgs_z
-REAL, DIMENSION(nz,nkr) :: vr1z,ff1z
+REAL, DIMENSION(nz,max_nbins) :: vr1z,ff1z
 
 REAL :: SUP2_OLD,dthalf
 DOUBLE PRECISION :: ss_max=0.003d0
@@ -34,7 +34,7 @@ INTEGER ISYM1,ISYM3,ISYM4,ISYM5
 INTEGER, DIMENSION (3):: ISYM2
 INTEGER DIFFU
 !!! For CCN regeneration
-real fccn0(nkr)
+real fccn0(max_nbins)
 real :: ndrop, subtot  ! for diagnostic CCN
 !Functions
 real :: sum_pris, sum_snow
@@ -457,11 +457,12 @@ END SUBROUTINE micro_init2
 FUNCTION sum_pris(ff2r,rhocgs)
 
 use micro_prm, only:nkr, icemax, col3, krpris, ipris
+use parameters, only: max_nbins
 use module_hujisbm, only:xi,sum_mass
 
 implicit none
 real :: sum_pris,rhocgs
-real, dimension(nkr,icemax)::ff2r
+real, dimension(max_nbins,icemax)::ff2r
 
 IF (IPRIS >=4) THEN
     sum_pris = sum_mass(ff2r(:,1),XI(:,1),rhocgs,1,KRPRIS(1)-1) &
@@ -480,10 +481,10 @@ FUNCTION sum_snow(ff2r,rhocgs)
 
 use micro_prm, only:nkr, icemax, col3, krpris, ipris
 use module_hujisbm, only:xi,sum_mass
-
+use parameters, only: max_nbins
 implicit none
 real:: sum_snow,rhocgs
-real, dimension(nkr,icemax)::ff2r
+real, dimension(max_nbins,icemax)::ff2r
 
 IF (IPRIS >=4) THEN
     sum_snow = sum_mass(ff2r(:,1),XI(:,1),rhocgs,KRPRIS(1),NKR) &
@@ -536,11 +537,11 @@ Subroutine vap_budget(ff1r,ff2r,ff3r,ff4r,ff5r,dens,str)
 
 use micro_prm
 use module_hujisbm, only:xl,xs,xg,xh,sum_mass
-
+use parameters, only: max_nbins
 implicit none
 
-real, dimension(nkr) :: ff1r,ff3r,ff4r,ff5r
-real, dimension(nkr,icemax) :: ff2r
+real, dimension(max_nbins) :: ff1r,ff3r,ff4r,ff5r
+real, dimension(max_nbins,icemax) :: ff2r
 real :: dens,plusminus,sum_pris,sum_snow
 character(len=3) :: str
 
@@ -593,11 +594,11 @@ Subroutine lhv_budget(ff1r,ff2r,ff3r,ff4r,ff5r, &
 
 use micro_prm
 use module_hujisbm, only:xl,xs,sum_mass
-
+use parameters, only: max_nbins
 implicit none
 
-real, dimension(nkr) :: ff1r,ff3r,ff4r,ff5r
-real, dimension(nkr,icemax) :: ff2r
+real, dimension(max_nbins) :: ff1r,ff3r,ff4r,ff5r
+real, dimension(max_nbins,icemax) :: ff2r
 real :: pitot,dens,fac,plusminus
 character(len=3) :: str
 
@@ -638,10 +639,10 @@ Subroutine lhf_budget(ff1r,pitot,dens,str)
 
 use micro_prm
 use module_hujisbm, only:xl,sum_mass
-
+use parameters, only: max_nbins
 implicit none
 
-real, dimension(nkr) :: ff1r
+real, dimension(max_nbins) :: ff1r
 real :: pitot,dens,fac,plusminus
 character(len=3) :: str
 
@@ -676,6 +677,7 @@ END SUBROUTINE lhf_budget
 Subroutine init_distribution(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
 
 use micro_prm, only:nkr
+use parameters, only: max_nbins
 implicit none
 
 integer :: kr

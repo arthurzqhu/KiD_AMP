@@ -28,18 +28,18 @@ module mphys_amp
 contains
 
   Subroutine mphys_amp_interface
-    use parameters, only: flag_count
+    use parameters, only: flag_count,max_nbins
     integer :: i, j, k, imom
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
-    real, dimension(nz,nx,nkr) :: aer2d,drops2d,dropsinit2d
+    real, dimension(nz,nx,max_nbins) :: aer2d,drops2d,dropsinit2d
     real, dimension(nz) :: field
     real(8),dimension(nz,flag_count) :: fieldflag
     real(8), dimension(nz) :: fielddp
-    real(8), dimension(nz,nkr) :: fielddp2d
+    real(8), dimension(nz,max_nbins) :: fielddp2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
     character(1) :: Mnum
 
@@ -114,7 +114,7 @@ contains
    endif
 
   ! back out tendencies
-   
+
    dqv_mphys = 0.
    dtheta_mphys = 0.
    do imom=1,num_h_moments(1)

@@ -1,5 +1,5 @@
 module micro_prm
-
+use parameters, only: max_nbins
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init
@@ -32,7 +32,7 @@ real :: inuchomrt,inuccontrt,inucifnrt,inucifnct,inuchazrt   &
 !******Variables for SBM*******!
 logical :: iprint
 ! number of bins
-integer, parameter :: nkr=33
+integer :: nkr=33
 
 ! for bulk nucleation
 integer, parameter :: BULKNUC=0
@@ -204,7 +204,7 @@ double precision, dimension(ntab,ntab,2) :: nutab,dntab
 double precision, dimension(2,10,2) :: minmaxmx
 double precision, dimension(ntab,2) :: mintab,maxtab
 double precision, dimension(2,2) :: nubounds, dnbounds
-real(8),dimension(nkr) :: diams
+real(8),dimension(max_nbins) :: diams
 
 integer, parameter :: r4size = 4, r8size = 8
 INTEGER,PARAMETER :: ISIGN_KO_1 = 0, ISIGN_KO_2 = 0,  ISIGN_3POINT = 1,  &
@@ -217,5 +217,5 @@ DOUBLE PRECISION,PARAMETER::RI_PI_MIN = 1.0D-10
 DOUBLE PRECISION,PARAMETER::RW_PW_RI_PI_MIN = 1.0D-10
 DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
 
-REAL (KIND=R4SIZE) :: FR_LIM(NKR), FRH_LIM(NKR)
+REAL (KIND=R4SIZE) :: FR_LIM(max_nbins), FRH_LIM(max_nbins)
 end module micro_prm

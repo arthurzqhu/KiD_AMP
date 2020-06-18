@@ -1,12 +1,13 @@
 subroutine fcn_2p(n,x,fvec,iflag)
 use micro_prm, only:ihyd,nubounds,dnbounds,nkr,diams,M3p,Mxp,Myp,momx,momy,skr,ekr,relax
 use module_hujisbm, only:xl
+use parameters, only: max_nbins
 implicit none
 integer n,iflag
 double precision x(n),fvec(n)
 
 double precision rx, nu, dn, m3, mx, my
-double precision, dimension(nkr):: md
+double precision, dimension(max_nbins):: md
 
 !The purpose of this routine is to calculate the number/mass distribution
 !of drops given parameters of the gamma distribution
@@ -52,12 +53,13 @@ End subroutine fcn_2p
 subroutine fcn_1p(n,x,fvec,iflag)
 use micro_prm, only:nkr,diams,Mxp,M3p,skr,ekr,nug,momx
 use module_hujisbm, only:xl
+use parameters, only: max_nbins
 implicit none
 integer n,iflag
 double precision x(n),fvec(n)
 
 double precision rx, nu, dn, m3, mx
-double precision, dimension(nkr):: md
+double precision, dimension(max_nbins):: md
 
 !The purpose of this routine is to calculate the number/mass distribution
 !of drops given parameters of the gamma distribution
@@ -97,9 +99,9 @@ End subroutine fcn_1p
 subroutine calcerr(rx,nu,dn,error)
 use micro_prm, only:diams,M3p,Mxp,Myp,col,nkr,skr,ekr,relax,momx,momy
 use module_hujisbm, only:xl
-
+use parameters, only: max_nbins
 implicit none
-double precision :: ratio,m3,mx,my,md(nkr),error(2),rx,nu,dn
+double precision :: ratio,m3,mx,my,md(max_nbins),error(2),rx,nu,dn
 
   md = 0.
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
@@ -123,9 +125,10 @@ End subroutine calcerr
 !------------------------------------------------------------------------
 subroutine incgamma(rx,nu,dn,ia,iz,md)
 use micro_prm, only:diams,nkr
+use parameters, only: max_nbins
 implicit none
 
-double precision :: rx,nu,dn,n0,expterm,md(nkr)
+double precision :: rx,nu,dn,n0,expterm,md(max_nbins)
 integer :: ia,iz,kr
 
   n0=rx/gamma(nu+3)
@@ -142,9 +145,10 @@ End subroutine incgamma
 !------------------------------------------------------------------------
 subroutine incgamma_norm(rx,nu,dn,ia,iz,md)
 use micro_prm, only:diams,nkr
+use parameters, only: max_nbins
 implicit none
 
-double precision :: rx,nu,dn,n0,expterm,md(nkr)
+double precision :: rx,nu,dn,n0,expterm,md(max_nbins)
 integer :: ia,iz,kr
 
   n0=rx
@@ -161,13 +165,14 @@ End subroutine incgamma_norm
 !------------------------------------------------------------------------
 subroutine incjohnsonsb(s1,s2,ia,iz,md)
 use micro_prm, only:diams,nkr
+use parameters, only: max_nbins
 implicit none
 
-double precision :: s1,s2,minx,ranx,z,expterm,md(nkr)
+double precision :: s1,s2,minx,ranx,z,expterm,md(max_nbins)
 integer :: ia,iz,kr
 
 minx=0.
-ranx=diams(nkr)*2.
+ranx=diams(nkr)*2. ! might need to change it based on sbm or tau -ahu
 
   do kr=ia,iz !Loop over bins
     z=(diams(kr)-minx)/ranx
@@ -184,12 +189,13 @@ End subroutine incjohnsonsb
 subroutine calcdist(x,md)
 use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds
 use module_hujisbm, only:xl
+use parameters, only: max_nbins
 implicit none
 double precision x(2)
 integer n
 
 double precision rx, nu, dn, m3
-double precision, dimension(nkr):: md
+double precision, dimension(max_nbins):: md
 
 !Use this function to force correct 3rd moment
 !Very similar to fcn_2p
@@ -233,11 +239,11 @@ End subroutine calcdist
 Subroutine searchparamsG(guess,ihyd,md,flag)
 
 use micro_prm, only:nkr,npm
-use parameters, only:flag_count
+use parameters, only:flag_count, max_nbins
 
 implicit none
 real(8) :: guess(2)
-real(8) :: md(nkr)
+real(8) :: md(max_nbins)
 integer :: ihyd
 real(8),dimension(flag_count) :: flag
 
@@ -254,7 +260,7 @@ Subroutine searchparams3M(guess,ihyd,md,flag)
 use micro_prm, only:relax,Mp,M3p,Mxp,Myp,momx,nkr, &
                nutab,dntab,minmaxmx,mintab,maxtab,ntab, &
                cloud_mr_th, rain_mr_th
-use parameters, only:flag_count
+use parameters, only:flag_count, max_nbins
 use namelists, only:ovc_factor
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
@@ -262,7 +268,7 @@ use, intrinsic :: iso_fortran_env, only: real32
 implicit none
 real(8) :: guess(2),oguess(2),vals(2),ovals(2),tol
 real(8) :: MxM3,MyM3,irm,iry,wgtm,wgty1,wgty2
-real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(nkr),min12,max12
+real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(max_nbins),min12,max12
 real(8) :: minMx3,maxMx3,oMxM3,oMyM3
 integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
 real(8), dimension(flag_count) :: flag
@@ -459,11 +465,11 @@ End subroutine searchparams3M
 Subroutine searchparams2M(guess,md,flag)
 
 use micro_prm, only:Mp,M3p,Mxp,ntab,skr,ekr,nkr,momx,nug,diams
-
+use parameters, only: max_nbins
 implicit none
 real(8) :: guess(2),oguess(2),vals,tol,guessin(1)
 real(8) :: MxM3,minmxm3,maxmxm3
-real(8) :: md(nkr)
+real(8) :: md(max_nbins)
 integer :: info,n,flag
 integer, parameter :: lwa=33
 real(8),dimension(lwa) :: wa
