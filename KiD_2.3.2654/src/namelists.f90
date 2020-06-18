@@ -27,10 +27,7 @@ module namelists
   Use mphys_parameters, only: p1, p2, p3, sp1, sp2, sp3             &
      , max_step_length, max_sed_length
 #endif
-  integer:: imomc1,imomc2,imomr1,imomr2
-  real, dimension(2):: cloud_init,rain_init
-  logical :: docollisions, docondensation, donucleation, dosedimentation
-  
+
   implicit none
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
