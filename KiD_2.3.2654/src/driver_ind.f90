@@ -1,7 +1,7 @@
 subroutine amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
 
 use switches, only: zctrl
-use parameters, only:nx,nz,num_h_moments,h_shape
+use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
 use column_variables, only: z
 use module_hujisbm
 use micro_prm
@@ -12,11 +12,11 @@ character(len=100)::lutfolder
 real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
-real(8),dimension(nkr) :: ffcd
+real(8),dimension(max_nbins) :: ffcd
 real(8),dimension(num_h_moments(1)) :: mc
 real(8),dimension(num_h_moments(2)) :: mr
 real :: dnc,dnr
-real, dimension(nz,nx,nkr) :: aer2d
+real, dimension(nz,nx,max_nbins) :: aer2d
 integer :: i,k
 
 !Set some parameters
@@ -123,9 +123,9 @@ use module_hujisbm
 use micro_prm
 
 implicit none
-real(8),dimension(nkr) :: ffcd
+real(8),dimension(max_nbins) :: ffcd
 real :: dnc,dnr
-real, dimension(nz,nx,nkr) :: aer2d,drops2d
+real, dimension(nz,nx,max_nbins) :: aer2d,drops2d
 integer :: i,k
 
 !Set some parameters
@@ -170,12 +170,12 @@ integer:: i,j,k,ip
 real(8),dimension(nz,nx,2,flag_count)::flag
 
 real, dimension(nz,nx)::tempk,press,qv
-real, dimension(nz,nx,nkr)::ffcd,fncn,ffcdinit
+real, dimension(nz,nx,max_nbins)::ffcd,fncn,ffcdinit
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,10) :: mc,mr,mc0,mr0
-real(8),dimension(nkr) :: ffcloud,ffrain
+real(8),dimension(max_nbins) :: ffcloud,ffrain
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
 
@@ -324,7 +324,7 @@ implicit none
 integer:: i,j,k,ip
 
 real, dimension(nz,nx)::tempk,press,qv
-real, dimension(nz,nx,nkr)::ffcd,fncn
+real, dimension(nz,nx,max_nbins)::ffcd,fncn
 real(8),dimension(nz,nx,10) :: mc,mr
 
 !------CALL MICROPHYSICS--------------------
