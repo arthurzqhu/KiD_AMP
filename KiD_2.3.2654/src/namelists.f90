@@ -12,9 +12,9 @@ module namelists
   Use header_data, only : mphys_id
   Use switches
   Use switches_bin
-  Use micro_prm, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
-                      docondensation,docollisions,dosedimentation, &
-                      cloud_init,rain_init
+  ! Use micro_prm, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
+  !                     docondensation,docollisions,dosedimentation, &
+  !                     cloud_init,rain_init
 
 #if SHIPWAY_MICRO == 1
   ! Temporary for adding in 4a switches
@@ -50,6 +50,9 @@ module namelists
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
        , l_force_positive
 
+  integer:: imomc1,imomc2,imomr1,imomr2
+  real, dimension(2):: cloud_init,rain_init
+  logical :: docollisions, docondensation, donucleation, dosedimentation
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''

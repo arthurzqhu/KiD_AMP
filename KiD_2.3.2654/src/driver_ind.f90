@@ -117,7 +117,7 @@ end subroutine amp_init
 subroutine sbm_init(aer2d,drops2d)
 
 use switches, only: zctrl
-use parameters, only:nx,nz,num_h_moments,h_shape
+use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
 use column_variables, only: z
 use module_hujisbm
 use micro_prm
@@ -161,7 +161,7 @@ subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,ffcd
 
 use module_hujisbm
 use micro_prm
-use parameters, only: nx,nz,num_h_moments,flag_count
+use parameters, only: nx,nz,num_h_moments,flag_count,max_nbins
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
@@ -318,7 +318,7 @@ subroutine mp_sbm(ffcd,press,tempk,qv,fncn,mc,mr)
 
 use module_hujisbm
 use micro_prm
-use parameters, only: nx,nz,num_h_moments
+use parameters, only: nx,nz,num_h_moments,max_nbins
 
 implicit none
 integer:: i,j,k,ip
