@@ -77,5 +77,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
+bintype='sbm'
+ampORbin='amp'
 KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/AMP/'
 /

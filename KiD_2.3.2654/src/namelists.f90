@@ -29,7 +29,10 @@ module namelists
 #endif
 
   implicit none
-
+  integer:: imomc1,imomc2,imomr1,imomr2
+  real, dimension(2):: cloud_init,rain_init
+  logical :: docollisions, docondensation, donucleation, dosedimentation
+  
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
        aero_mom_init, aero_N_init, aero_sig_init, aero_rd_init, aero_names, &
@@ -50,15 +53,14 @@ module namelists
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
        , l_force_positive
 
-  integer:: imomc1,imomc2,imomr1,imomr2
-  real, dimension(2):: cloud_init,rain_init
-  logical :: docollisions, docondensation, donucleation, dosedimentation
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
-  real(8) :: ovc_factor=0.0
+  real(8) :: ovc_factor=0.0 ! overcorrection factor
+  character(200) :: bintype='' ! underlying 'sbm' or 'tau'
+  character(200) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
 
-  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor &
+  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, bintype, ampORbin &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &

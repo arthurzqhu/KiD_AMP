@@ -1,8 +1,8 @@
 module micro_prm
 use parameters, only: max_nbins
-! use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
-!                     docondensation,docollisions,dosedimentation, &
-!                     cloud_init,rain_init
+use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
+                    docondensation,docollisions,dosedimentation, &
+                    cloud_init,rain_init
 !use parameters, only:nx,nz,num_h_moments
 implicit none
 
@@ -190,14 +190,14 @@ real :: sig_g, rp_g !cm
 !    real, dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 !    real, dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 !    real, dimension(nz,nx,2) :: guessc2d,guessr2d
-integer:: imomc1,imomc2,imomr1,imomr2
+!integer:: imomc1,imomc2,imomr1,imomr2
 integer, dimension(3):: pmomsc,pmomsr
-real, dimension(2):: cloud_init,rain_init
+!real, dimension(2):: cloud_init,rain_init
 double precision :: aeromedrad, naero=0., relax, nug
 integer :: aerotype=1,npm
 real :: dtlt
 double precision :: Mp(3),M3p,Mxp,Myp,rxfinal
-logical :: parcel, docollisions, docondensation, donucleation, dosedimentation
+logical :: parcel!, docollisions, docondensation, donucleation, dosedimentation
 integer :: skr,ekr,momx,momy,ihyd
 integer, parameter :: ntab=100
 double precision, dimension(ntab,ntab,2) :: nutab,dntab

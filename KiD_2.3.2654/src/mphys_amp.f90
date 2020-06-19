@@ -17,6 +17,7 @@ module mphys_amp
   Use micro_prm
   Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
   Use switches, only: l_advect,l_diverge
+  Use namelists, only: bintype, ampORbin
 
   Implicit None
 
@@ -89,28 +90,32 @@ contains
 
    ! Initialise microphysics
    if (micro_unset)then
-      if (num_h_bins(1)==1) then
+      if (ampORbin .eq. 'amp') then
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
          guessr2d(:,:,2) = 0.001
          call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
-      else
-         call sbm_init(aer2d,drops2d)
+      elseif (ampORbin .eq. 'bin') then
+         if (bintype .eq. 'sbm') then
+            call sbm_init(aer2d,drops2d)
+         endif
       endif
       micro_unset=.False.
    endif
 
    aer2d = 0.
-   if (num_h_bins(1)==1) then
+   if (ampORbin .eq. 'amp') then
       drops2d=0.
       dropsinit2d=0.
 !print*,'s',Mpc2d(18,1,:)
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,drops2d,mc,mr,flag,dropsinit2d)
 !print*,'e',Mpc2d(18,1,:)
-   else
-      call mp_sbm(drops2d,p2d,t2d,qv2d,aer2d,mc,mr)
+   elseif (ampORbin .eq. 'bin') then
+      if (bintype .eq. 'sbm') then
+         call mp_sbm(drops2d,p2d,t2d,qv2d,aer2d,mc,mr)
+      endif
    endif
 
   ! back out tendencies

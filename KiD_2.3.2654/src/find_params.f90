@@ -187,9 +187,10 @@ return
 End subroutine incjohnsonsb
 !----------------------------------------------------------------------
 subroutine calcdist(x,md)
-use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds
+use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds,otn
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
+use namelists, only:bintype 
 implicit none
 double precision x(2)
 integer n
@@ -208,8 +209,14 @@ double precision, dimension(max_nbins):: md
   md=0.
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
   !call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
+  if (bintype .eq. 'sbm') then
+    m3=sum(md(otn)/xl(otn)*diams(otn)**3)*col*1000.
+  elseif (bintype .eq. 'tau') then
+    m3=sum(md/xl*diams**3)*col*1000.
+  endif
+!print*, m3
 
-  m3=sum(md/xl*diams**3)*col*1000.
+!print*,md/xl*diams**3
 
   if ((m3==0. .or. dn==0.) .and. M3p<1.e-20) then
     rxfinal=0.
