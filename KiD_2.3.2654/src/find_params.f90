@@ -1,5 +1,5 @@
 subroutine fcn_2p(n,x,fvec,iflag)
-use micro_prm, only:ihyd,nubounds,dnbounds,nkr,diams,M3p,Mxp,Myp,momx,momy,skr,ekr,relax
+use micro_prm, only:ihyd,nubounds,dnbounds,nkr,diams,M3p,Mxp,Myp,momx,momy,skr,ekr,relax,nkr
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
 implicit none
@@ -35,9 +35,13 @@ else
 !  call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
 
   !Calculate the moments - 0th, 3rd, and xth
-  m3=sum(md/xl*diams**3)! don't need this part since will cancel in ratio *col*1000.
-  mx=sum(md/xl*diams**momx)!*col*1000.
-  my=sum(md/xl*diams**momy)!*col*1000.
+  if (bintype .eq. 'tau') then
+    nkr=34
+  end if
+
+    m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)! don't need this part since will cancel in ratio *col*1000.
+    mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
+    my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)!*col*1000.
 
   !Calculate the errors in the moments
   if (m3>0.) then
@@ -51,7 +55,7 @@ return
 End subroutine fcn_2p
 !-----------------------------------------------
 subroutine fcn_1p(n,x,fvec,iflag)
-use micro_prm, only:nkr,diams,Mxp,M3p,skr,ekr,nug,momx
+use micro_prm, only:nkr,diams,Mxp,M3p,skr,ekr,nug,momx,nkr
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
 implicit none
@@ -83,8 +87,11 @@ else
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
 
   !Calculate the moments - xth and 3rd
-  m3=sum(md/xl*diams**3)!*col*1000.
-  mx=sum(md/xl*diams**momx)!*col*1000.
+  if (bintype .eq. 'tau') then
+    nkr=34
+  end if
+  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)!*col*1000.
+  mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
 
   !Calculate the errors in the moments
   if (m3>0.) then
@@ -108,9 +115,13 @@ double precision :: ratio,m3,mx,my,md(max_nbins),error(2),rx,nu,dn
 !  call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
 
   !Calculate the moments - 3rd, xth, and yth
-  m3=sum(md/xl*diams**3.)*col*1000.
-  mx=sum(md/xl*diams**momx)*col*1000.
-  my=sum(md/xl*diams**momy)*col*1000.
+  if (bintype .eq. 'tau') then
+    nkr=34
+  end if
+
+  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3.)*col*1000.
+  mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)*col*1000.
+  my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)*col*1000.
 
   !Calculate the errors in the moments
   ratio = (Mxp/mx)*(m3/M3p)
@@ -187,10 +198,10 @@ return
 End subroutine incjohnsonsb
 !----------------------------------------------------------------------
 subroutine calcdist(x,md)
-use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds,otn
+use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
-use namelists, only:bintype 
+use namelists, only:bintype
 implicit none
 double precision x(2)
 integer n
@@ -209,11 +220,10 @@ double precision, dimension(max_nbins):: md
   md=0.
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
   !call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
-  if (bintype .eq. 'sbm') then
-    m3=sum(md(otn)/xl(otn)*diams(otn)**3)*col*1000.
-  elseif (bintype .eq. 'tau') then
-    m3=sum(md/xl*diams**3)*col*1000.
-  endif
+  if (bintype .eq. 'tau') then
+    nkr=34
+  end if
+  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)*col*1000.
 !print*, m3
 
 !print*,md/xl*diams**3
