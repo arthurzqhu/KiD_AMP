@@ -218,4 +218,12 @@ DOUBLE PRECISION,PARAMETER::RW_PW_RI_PI_MIN = 1.0D-10
 DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
 
 REAL (KIND=R4SIZE) :: FR_LIM(max_nbins), FRH_LIM(max_nbins)
+
+!******* for operating SBM when max_nbins is set to 34 *******
+integer :: idx &
+           ,otn(33) = (/(idx,idx=1,33,1)/) & !an array of consecutive integer from one to nkr
+           ! had to hard code the array size to 33 since nkr is not a parameter -ahu
+           ,oti(icemax) = (/(idx,idx=1,icemax,1)/) &
+           ,oth(nhydro) = (/(idx,idx=1,nhydro,1)/)
+
 end module micro_prm

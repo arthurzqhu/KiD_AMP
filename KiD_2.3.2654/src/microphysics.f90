@@ -303,15 +303,17 @@ dlnr=dlog(2.d0)/(3.d0*scal)
 900   FORMAT(6E13.5)
 ! MASSES :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/masses.asc", &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,900) XL,XI,XS,XG,XH
+     FORM="FORMATTED")
+READ(hujisbm_unit1,900) XL(otn),XI(otn,oti),XS(otn),XG(otn),XH(otn)
+CLOSE(hujisbm_unit1)
+!print*, XL
+! BULKRADIUS
+
+OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkradii.asc_s_0_03_0_9", &
+     FORM="FORMATTED")
+READ(hujisbm_unit1,*) RADXXO(otn,oth)
 CLOSE(hujisbm_unit1)
 
-! BULKRADIUS
-OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkradii.asc_s_0_03_0_9", &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,*) RADXXO
-CLOSE(hujisbm_unit1)
 
 DO KR=1,NKR
    DIAMS(KR)=RADXXO(KR,1)*2.*0.01
@@ -384,51 +386,51 @@ data PI/3.141592654/
 ! CAPACITIES :
 ! Capacities are used for the condensation rates
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/capacity.asc",  &
-    FORM="FORMATTED",STATUS="OLD")
+    FORM="FORMATTED")
 900   FORMAT(6E13.5)
-READ(hujisbm_unit1,900) RLEC,RIEC,RSEC,RGEC,RHEC
+READ(hujisbm_unit1,900) RLEC(otn),RIEC(otn,oti),RSEC(otn),RGEC(otn),RHEC(otn)
 CLOSE(hujisbm_unit1)
 
 ! MASSES :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/masses.asc", &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,900) XL,XI,XS,XG,XH
+     FORM="FORMATTED")
+READ(hujisbm_unit1,900) XL(otn),XI(otn,oti),XS(otn),XG(otn),XH(otn)
 CLOSE(hujisbm_unit1)
 
 
 ! TERMINAL VELOCITY :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/termvels.asc", &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,*) VR1,VR2,VR3,VR4,VR5
+     FORM="FORMATTED")
+READ(hujisbm_unit1,*) VR1(otn),VR2(otn,oti),VR3(otn),VR4(otn),VR5(otn)
 CLOSE(hujisbm_unit1)
 
 ! KERNELS DEPENDING ON PRESSURE :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/kernels_z.asc",  &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,900) YWLL_1000MB,YWLL_750MB,YWLL_500MB
+     FORM="FORMATTED")
+READ(hujisbm_unit1,900) YWLL_1000MB(otn,otn),YWLL_750MB(otn,otn),YWLL_500MB(otn,otn)
 CLOSE(hujisbm_unit1)
 
 ! KERNELS NOT DEPENDING ON PRESSURE :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/kernels.asc_s_0_03_0_9",  &
-     FORM="FORMATTED",STATUS="OLD")
+     FORM="FORMATTED")
 READ(hujisbm_unit1,900) &
-   YWLL,YWLI,YWLS,YWLG,YWLH, &
-   YWIL,YWII,YWIS,YWIG,YWIH, &
-   YWSL,YWSI,YWSS,YWSG,YWSH, &
-   YWGL,YWGI,YWGS,YWGG,YWGH, &
-   YWHL,YWHI,YWHS,YWHG,YWHH
+   YWLL(otn,otn),YWLI(otn,otn,oti),YWLS(otn,otn),YWLG(otn,otn),YWLH(otn,otn), &
+   YWIL(otn,otn,oti),YWII(otn,otn,oti,oti),YWIS(otn,otn,oti),YWIG(otn,otn,oti),YWIH(otn,otn,oti), &
+   YWSL(otn,otn),YWSI(otn,otn,oti),YWSS(otn,otn),YWSG(otn,otn),YWSH(otn,otn), &
+   YWGL(otn,otn),YWGI(otn,otn,oti),YWGS(otn,otn),YWGG(otn,otn),YWGH(otn,otn), &
+   YWHL(otn,otn),YWHI(otn,otn,oti),YWHS(otn,otn),YWHG(otn,otn),YWHH(otn,otn)
 close (hujisbm_unit1)
 
 ! BULKDENSITY :
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkdens.asc_s_0_03_0_9", &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,900) RO1BL,RO2BL,RO3BL,RO4BL,RO5BL
+     FORM="FORMATTED")
+READ(hujisbm_unit1,900) RO1BL(otn),RO2BL(otn,oti),RO3BL(otn),RO4BL(otn),RO5BL(otn)
 CLOSE(hujisbm_unit1)
 
 ! BULKRADIUS
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkradii.asc_s_0_03_0_9", &
-     FORM="FORMATTED",STATUS="OLD")
-READ(hujisbm_unit1,*) RADXXO
+     FORM="FORMATTED")
+READ(hujisbm_unit1,*) RADXXO(otn,oth)
 CLOSE(hujisbm_unit1)
 
 do kr=1,nkr
@@ -677,7 +679,6 @@ END SUBROUTINE lhf_budget
 Subroutine init_distribution(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
 
 use micro_prm, only:nkr
-use parameters, only: max_nbins
 implicit none
 
 integer :: kr
