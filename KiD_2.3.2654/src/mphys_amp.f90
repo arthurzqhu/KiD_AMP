@@ -99,6 +99,8 @@ contains
       elseif (ampORbin .eq. 'bin') then
          if (bintype .eq. 'sbm') then
             call sbm_init(aer2d,drops2d)
+         elseif (bintype .eq. 'tau') then
+            !call tau_init(aer2d,drops2d)
          endif
       endif
       micro_unset=.False.
@@ -115,6 +117,8 @@ contains
    elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
          call mp_sbm(drops2d,p2d,t2d,qv2d,aer2d,mc,mr)
+      elseif (bintype .eq. 'tau') then
+         !call mp_tau(drops2d,p2d,t2d,qv2d,aer2d,mc,mr)
       endif
    endif
 
