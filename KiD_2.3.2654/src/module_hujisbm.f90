@@ -4763,6 +4763,7 @@ implicit none
 END SUBROUTINE KERNALSDT
 !#############################################################3
 SUBROUTINE TURBCOEF
+use micro_prm, only: nkr
 IMPLICIT NONE
 INTEGER I,J
 DOUBLE PRECISION X_KERN,Y_KERN
@@ -5474,7 +5475,7 @@ IF(IEPS_1600.EQ.1) THEN
       ENDDO
    ENDDO
 ENDIF
-DO I=1,33
+DO I=1,NKR
    DO J=1,24
       IF(I.LE.14.AND.J.EQ.8) CTURBGL(I,J)=1.0D0
       IF(I.GT.14.AND.J.LE.8) CTURBGL(I,J)=1.2D0

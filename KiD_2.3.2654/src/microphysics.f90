@@ -679,12 +679,13 @@ END SUBROUTINE lhf_budget
 Subroutine init_distribution(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
 
 use micro_prm, only:nkr
+use parameters, only: max_nbins
 implicit none
 
 integer :: kr
 real:: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
-real(8), dimension(33) :: ffcd,diams
+real(8), dimension(max_nbins) :: ffcd,diams
 
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution

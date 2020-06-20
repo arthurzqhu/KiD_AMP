@@ -40,7 +40,7 @@
 
 ../obj/KiD.o: KiD.f90 ../obj/main.o 
 
-../obj/microphysics.o: microphysics.f90 ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o 
+../obj/microphysics.o: microphysics.f90 ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o 
 
 ../obj/runtime.o: runtime.f90 ../obj/typeKind.o 
 
@@ -72,7 +72,7 @@
 
 ../obj/namelists.o: namelists.f90 ../obj/parameters.o ../obj/header_data.o ../obj/switches.o ../obj/switches_bin.o 
 
-../obj/module_hujisbm.o: module_hujisbm.f90 ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o 
+../obj/module_hujisbm.o: module_hujisbm.f90 ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o 
 
 ../obj/module_mp_thompson07.o: module_mp_thompson07.f90 ../obj/typeKind.o ../obj/switches.o ../obj/diagnostics.o ../obj/namelists.o ../obj/parameters.o 
 

@@ -292,7 +292,7 @@ real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,minsqval,md(max_nbins),min12
 real(8) :: minMx3,maxMx3,oMxM3,oMyM3
 integer :: i,info,n,ihyd,im1,im2,iy1a,iy2a,ix1b,ix2b!,flag
 real(8), dimension(flag_count) :: flag
-integer, parameter :: lwa=33
+integer, parameter :: lwa=max_nbins
 real(8),dimension(lwa) :: wa
 external :: fcn_2p
 real(real32) :: nan
@@ -491,7 +491,7 @@ real(8) :: guess(2),oguess(2),vals,tol,guessin(1)
 real(8) :: MxM3,minmxm3,maxmxm3
 real(8) :: md(max_nbins)
 integer :: info,n,flag
-integer, parameter :: lwa=33
+integer, parameter :: lwa=max_nbins
 real(8),dimension(lwa) :: wa
 external :: fcn_1p
 
