@@ -75,8 +75,8 @@ else !Run AMP
 endif
 
 !call microphysics initialization routines
-CALL micro_init()
-CALL micro_init2()
+CALL micro_init_sbm()
+CALL micro_init_sbm2()
 CALL kernalsdt()
 
 !Set up initial distribution and set moment values and parameter guesses
@@ -133,8 +133,8 @@ ndtcoll=1
 ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
 
 !call microphysics initialization routines
-CALL micro_init()
-CALL micro_init2()
+CALL micro_init_sbm()
+CALL micro_init_sbm2()
 CALL kernalsdt()
 
 !Set up initial distribution and set moment values and parameter guesses
@@ -156,6 +156,129 @@ do i=1,nx
 enddo
 
 end subroutine sbm_init
+
+!------------------------------------------------------------
+subroutine tau_init(aer2d,drops2d)
+
+use switches, only: zctrl
+use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
+use column_variables, only: z
+use module_bin_init
+use micro_prm
+
+implicit none
+real(8),dimension(max_nbins) :: ffcd
+real :: dnc,dnr
+real, dimension(nz,nx,max_nbins) :: aer2d,drops2d
+integer :: i,k, jj, kk, iq ! Warm bin scheme
+
+! Set up input arrays...
+rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
+! AH - 04/03/10, line below leads to divide by 0
+!      corrected by setting array to 2:kkp. Problem highlighted
+!      by Theotonio Pauliquevis
+! prefrcp(:)=1./rprefrcp(:)
+prefrcp(2:kkp)=1./rprefrcp(2:kkp)
+
+prefn(2:kkp)=p0*exner(1:kkp-1,nx)**(1./this_r_on_cp)
+
+dzn(2:kkp)=dz_half(1:kkp-1)
+
+rhon(2:kkp)=rho(1:kkp-1)
+rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
+! Reference temperature (this is fixed in lem, but
+! shouldn't make a difference for microphysics if we
+! just set it to be the current profile (i.e. th'=0)
+tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
+
+! Set up microphysics species
+if (micro_unset)then ! See later call to microset
+   call set_micro
+end if
+
+do jj=jminp,jmaxp
+   q_lem (jj, 2:kkp, iqv) = qv(1:kkp-1, jj)
+   q_lem (jj, 2:kkp, iqss) = ss(1:kkp-1, jj)
+
+   do iq=1,ln2
+     ih=qindices(IAERO_BIN(iq))%ispecies
+     imom=qindices(IAERO_BIN(iq))%imoment
+     do kk=1,nz-1
+         q_lem (jj, kk+1, IAERO_BIN(iq)) = aerosol(kk,jj,ih)%moments(iq,imom)
+     end do
+   enddo
+   do iq=1,lk
+     ! mass bins
+     ih=qindices(ICDKG_BIN(iq))%ispecies
+     imom=qindices(ICDKG_BIN(iq))%imoment
+     do kk=1,nz-1
+        q_lem (jj, kk+1, ICDKG_BIN(iq)) = hydrometeors(kk,jj,ih)%moments(iq,imom)
+     end do
+     ! number bins
+     ih=qindices(ICDNC_BIN(iq))%ispecies
+     imom=qindices(ICDNC_BIN(iq))%imoment
+     do kk=1,nz-1
+        q_lem (jj, kk+1, ICDNC_BIN(iq)) = hydrometeors(kk,jj,ih)%moments(iq,imom)
+     end do
+   enddo
+   th_lem (jj, :) = 0.0
+   w_lem(jj,2:kkp)=w_half(1:kkp-1,jj)
+end do
+
+if (micro_unset)then
+    call bin_init !initialises the cloud bin categories
+    call data     !reads in and sets the coll-coal kernal
+
+   DO IQ = 1,LN2
+     ih=qindices(IAERO_BIN(iq))%ispecies
+     imom=qindices(IAERO_BIN(iq))%imoment
+     DO kk=1,nz-1
+       DO jj = JMINP , JMAXP
+         CCNORIG(jj,kk+1,IQ) = aerosol(kk,jj,ih)%moments(iq,imom)
+       ENDDO
+     ENDDO
+   ENDDO
+
+   DO kk = 1, KKP
+     DO jj = JMINP, JMAXP
+       TOTCCNORIG(jj,kk) = 0.0
+       DO IQ = 1, LN2
+         TOTCCNORIG(jj,kk) = TOTCCNORIG(jj,kk) + CCNORIG(jj,kk,IQ)
+       ENDDO
+     ENDDO
+   ENDDO
+   DO IQ = 1, Ln2
+      CCNORIGTOT(IQ) = 0.0
+      CCNORIGAVG(IQ) = 0.0
+       DO kk = 1, KKP
+         DO jj = JMINP, JMAXP
+           CCNORIGTOT(IQ) = CCNORIGTOT(IQ) + CCNORIG(jj,kk,IQ)
+         ENDDO
+       ENDDO
+       CCNORIGAVG(IQ) = CCNORIGTOT(IQ)/(JJP*KKP)
+   ENDDO
+    micro_unset=.False.
+end if
+
+!Set up initial distribution and set moment values and parameter guesses
+dnc=0.;dnr=0.
+if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
+                          /cloud_init(2)*gamma(h_shape(1)) &
+                          /gamma(h_shape(1)+3))**(1./3.)
+if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
+                         /rain_init(2)*gamma(h_shape(2)) &
+                         /gamma(h_shape(2)+3))**(1./3.)
+CALL init_distribution(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+
+do i=1,nx
+   do k=1,nz
+      if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+         drops2d(k,i,:)=ffcd
+      endif
+   enddo
+enddo
+
+end subroutine tau_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,ffcdinit)
 
@@ -315,6 +438,34 @@ enddo
 end subroutine mp_amp
 !---------------------------------------------------------------------
 subroutine mp_sbm(ffcd,press,tempk,qv,fncn,mc,mr)
+
+use module_hujisbm
+use micro_prm
+use parameters, only: nx,nz,num_h_moments,max_nbins
+
+implicit none
+integer:: i,j,k,ip
+
+real, dimension(nz,nx)::tempk,press,qv
+real, dimension(nz,nx,max_nbins)::ffcd,fncn
+real(8),dimension(nz,nx,10) :: mc,mr
+
+!------CALL MICROPHYSICS--------------------
+call micro_proc(press,tempk,qv,fncn,ffcd)
+
+!---------CALC MOMENTS-----------------------
+do k=1,nz
+ do j=1,nx
+   do i=1,10
+      mc(k,j,i)=sum(ffcd(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
+      mr(k,j,i)=sum(ffcd(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+   enddo
+ enddo
+enddo
+end subroutine mp_sbm
+
+!---------------------------------------------------------------------
+subroutine mp_tau(ffcd,press,tempk,qv,fncn,mc,mr)
 
 use module_hujisbm
 use micro_prm
