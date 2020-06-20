@@ -45,22 +45,23 @@ module module_bin_init
 
 contains
 
-!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS      
+!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 !DECK CLOUDSINIT
 !***********************************************************
       SUBROUTINE bin_init
 !***********************************************************
-! this subroutine is called if bin resolved moicrophysics is 
-! required. CLOUNDSINIT, declares the required variables, 
+! this subroutine is called if bin resolved moicrophysics is
+! required. CLOUNDSINIT, declares the required variables,
 ! defines and calculates the mass categories for usage in the bin
 ! model that is called in DYNVIS. The original code was IMPLICIT
 ! double, I've IMPLICIT noned it, and I compile double precision
 
 
-      IMPLICIT NONE 
+      IMPLICIT NONE
 
       REAL,PARAMETER :: RRV=461 !gas constant of moist air J/kg/K
       REAL,PARAMETER :: AL=597  !latent heat of evaporation and cond
+      ! in calories?! -ahu
       INTEGER K,L,J, ih, imom
       REAL,PARAMETER :: T00=273.15 !freezing point of water in K,from
                                    !the LES
@@ -69,7 +70,7 @@ contains
       REAL,PARAMETER :: UM = 1.72E-04 !dynamic viscosity of air
       REAL ALCP!latent heat of evap divided by specific heat of water vapor
       REAL ZRU
-           
+
 !*******************************************************************
 !     USING MKS UNITS: Kg,Mts,Sec,KCal
 !*******************************************************************
@@ -86,12 +87,12 @@ contains
       DIONE(1)=3.125E-6
       XK(1)=3.14159*DIONE(1)*DIONE(1)*DIONE(1)*1000./6.0
       XK_gr(1) = XK(1)*1.e3
-      DO 18 L=2,LK
+      DO 18 L=2,LK ! constructing mass bins
         XK(L)=2.0*XK(L-1)
         XK_gr(l) = XK(l)*1.e3
         DIONE(L)=2.0*DIONE(L-1)
  18   CONTINUE
-      DO 109 L=1,LK
+      DO 109 L=1,LK ! getting radius XKK1, diameter in μm ZRU
         XKK1(L)=((XK(L)*6./3141.59)**(1./3.))/2.
         ZRU=XKK1(L)*2.*1E6
         PRINT 108,L,XKK1(L),XK(L),ZRU
@@ -138,8 +139,8 @@ contains
         ENDIF
       ENDDO
 !*********************************************************
-! Reynolds parameters for evaporation in the bin model   
-!********************************************************
+! Reynolds parameters for evaporation in the bin model
+!*********************************************************
        do k = 2,kkp
          SC23 = (RHON(K)/1.64)**(2./3.)
          DO L=1,LK
@@ -149,7 +150,7 @@ contains
                VNTF(L)=1.00+0.108*SC23*RE(L,K)
             ELSE
                VNTF(L)=0.78+0.308*SQRT(SC23*RE(L,K))
-            ENDIF 
+            ENDIF
           ENDDO
           DV(K)=0.211*(TREF(K)/273.15)**1.94*(101250./PREFN(K))
           SC(K)=UM/(RHON(K)*1.E-03*DV(K))
@@ -162,7 +163,7 @@ contains
         ! converts to diameter in cm
         DG1 = (aero_rd_init(1)*2.)*100.
         SG1 = aero_sig_init(1)
-        
+
 
       END subroutine bin_init
 !
@@ -176,11 +177,11 @@ contains
       REAL XP
     OPEN(30,FILE='./src/tau_data/KIJ',STATUS='old')
     OPEN(31,FILE='./src/tau_data/KBARF',STATUS='old')
-    OPEN(32,FILE='./src/tau_data/PLL',STATUS='old') 
+    OPEN(32,FILE='./src/tau_data/PLL',STATUS='old')
     OPEN(33,FILE='./src/tau_data/ACON1',STATUS='old')
 
 !      PI=4.*ATAN(1.)
-    
+
 !************** SCON COEFFICIENTS   ACON1 *******
       DO 456 I=1,18
         DO 456 J=1,I
@@ -229,7 +230,7 @@ contains
       CLOSE(31)
       CLOSE(32)
       CLOSE(33)
-      
+
       END subroutine DATA
 !
 
