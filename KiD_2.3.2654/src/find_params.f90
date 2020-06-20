@@ -36,13 +36,9 @@ else
 !  call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
 
   !Calculate the moments - 0th, 3rd, and xth
-  if (bintype .eq. 'tau') then
-    nkr=34
-  end if
-
-    m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)! don't need this part since will cancel in ratio *col*1000.
-    mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
-    my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)!*col*1000.
+  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)! don't need this part since will cancel in ratio *col*1000.
+  mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
+  my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)!*col*1000.
 
   !Calculate the errors in the moments
   if (m3>0.) then
@@ -89,9 +85,6 @@ else
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
 
   !Calculate the moments - xth and 3rd
-  if (bintype .eq. 'tau') then
-    nkr=34
-  end if
   m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)!*col*1000.
   mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
 
@@ -118,10 +111,6 @@ double precision :: ratio,m3,mx,my,md(max_nbins),error(2),rx,nu,dn
 !  call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
 
   !Calculate the moments - 3rd, xth, and yth
-  if (bintype .eq. 'tau') then
-    nkr=34
-  end if
-
   m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3.)*col*1000.
   mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)*col*1000.
   my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)*col*1000.
@@ -223,9 +212,6 @@ double precision, dimension(max_nbins):: md
   md=0.
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
   !call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
-  if (bintype .eq. 'tau') then
-    nkr=34
-  end if
   m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)*col*1000.
 !print*, m3
 

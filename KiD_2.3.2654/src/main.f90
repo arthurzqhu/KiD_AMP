@@ -4,7 +4,7 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-! Driver for 1D Kinematic Driver (KiD) model 
+! Driver for 1D Kinematic Driver (KiD) model
 !
 ! Author: Ben Shipway
 !
@@ -12,7 +12,7 @@
 !
 
 Module main
- 
+
   Use typeKind
   Use parameters, only : dt, dg_dt, nx, nz
   Use namelists, only : read_namelist
@@ -27,14 +27,14 @@ Module main
   Use mphys_interface, only : mphys_column
   Use stepfields, only : step_column
   Use divergence, only : diverge_column
-
+  Use micro_prm, only: check_bintype,nkr
   Use column_variables
   Implicit none
 
 contains
 
   subroutine main_loop
-    real(8), allocatable :: temp_field(:,:) 
+    real(8), allocatable :: temp_field(:,:)
     integer :: itime      ! loop counter for time
     !
     ! Start by reading in namelists
@@ -42,7 +42,7 @@ contains
     allocate(temp_field(nz,0:nx+1))
 
     if (l_namelists) call read_namelist
-
+    call check_bintype
     ! Set up the initial fields and forcing
     if (l_input_file)then
        call read_profiles(input_file)
@@ -57,25 +57,25 @@ contains
     call interpolate_forcing
     endif
 
- 
-    call calc_derived_fields 
+
+    call calc_derived_fields
 
     ! Do we want to do diagnostics on this timestep?
     call query_dgstep
 
-    if ( nx == 1 ) then 
+    if ( nx == 1 ) then
        call save_diagnostics_1d
-    else 
+    else
        call save_diagnostics_2d
-    endif 
+    endif
 
     do itime=1,n_times
 
        !print*,itime, n_times
        time=time+dt
        time_step=time_step+1
-  
-       ! Do we want to do diagnostics on this timestep?        
+
+       ! Do we want to do diagnostics on this timestep?
        call query_dgstep
 
        if (icase .ne. 501) then
@@ -97,7 +97,7 @@ contains
        end if
 
        call step_column
- 
+
        temp_field = hydrometeors(:,:,1)%moments(2,1)
        !print*, itime, maxval(temp_field)
 

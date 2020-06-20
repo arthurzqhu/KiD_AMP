@@ -690,22 +690,23 @@ real(8), dimension(max_nbins) :: ffcd,diams
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
-  ffcd=0.
-  n0c=rxc/gamma(gnuc+3)
-  n0r=rxr/gamma(gnur+3)
-  do kr=1,nkr
-    if (rxc>0.) then
-      exptermc=exp(-1.*diams(kr)/dnc)
-      ffcd(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
-    endif
-    if (rxr>0.) then
-       exptermr=exp(-1.*diams(kr)/dnr)
-       ffcd(kr) = ffcd(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
-    endif
+
+ffcd=0.
+n0c=rxc/gamma(gnuc+3)
+n0r=rxr/gamma(gnur+3)
+do kr=1,nkr
+  if (rxc>0.) then
+    exptermc=exp(-1.*diams(kr)/dnc)
+    ffcd(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
+  endif
+  if (rxr>0.) then
+     exptermr=exp(-1.*diams(kr)/dnr)
+     ffcd(kr) = ffcd(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
+  endif
 !If ffcd(kr) is NaN, set to zero
 !    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
-  enddo
+enddo
 
 return
 !Diagnose shape parameter

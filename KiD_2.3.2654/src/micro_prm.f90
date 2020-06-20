@@ -32,7 +32,7 @@ real :: inuchomrt,inuccontrt,inucifnrt,inucifnct,inuchazrt   &
 !******Variables for SBM*******!
 logical :: iprint
 ! number of bins
-integer :: nkr=33
+integer :: nkr!=33
 
 ! for bulk nucleation
 integer, parameter :: BULKNUC=0
@@ -225,5 +225,16 @@ integer :: idx &
            ! had to hard code the array size to 33 since nkr is not a parameter -ahu
            ,oti(icemax) = (/(idx,idx=1,icemax,1)/) &
            ,oth(nhydro) = (/(idx,idx=1,nhydro,1)/)
+contains
+   subroutine check_bintype
+   implicit none
+
+   if (bintype .eq. 'sbm') then
+      nkr=33
+   elseif (bintype .eq. 'tau') then
+      nkr=34
+   endif
+
+   end subroutine check_bintype
 
 end module micro_prm
