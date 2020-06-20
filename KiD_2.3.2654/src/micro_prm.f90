@@ -2,7 +2,7 @@ module micro_prm
 use parameters, only: max_nbins
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
-                    cloud_init,rain_init
+                    cloud_init,rain_init,bintype
 !use parameters, only:nx,nz,num_h_moments
 implicit none
 
