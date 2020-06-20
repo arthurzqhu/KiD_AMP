@@ -281,7 +281,7 @@ RETURN
 END SUBROUTINE micro_proc
 
 !---------------------------------------------------------------------------------
-Subroutine micro_init
+Subroutine micro_init_sbm
 
 use micro_prm
 use module_hujisbm
@@ -368,9 +368,9 @@ ENDDO
 !enddo
 
 return
-END SUBROUTINE micro_init
+END SUBROUTINE micro_init_sbm
 !---------------------------------------------------------------------------------
-Subroutine micro_init2()
+Subroutine micro_init_sbm2()
 
 use micro_prm
 use module_hujisbm
@@ -454,7 +454,7 @@ ndtcoll_real = real(ndtcoll)
 call kernals(ndtcoll_real)
 
 return
-END SUBROUTINE micro_init2
+END SUBROUTINE micro_init_sbm2
 !--------------------------------------------------
 FUNCTION sum_pris(ff2r,rhocgs)
 
