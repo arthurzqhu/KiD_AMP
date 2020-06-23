@@ -854,7 +854,7 @@ ffcd=0.
 
 n0c=rxc/gamma(gnuc+3)
 n0r=rxr/gamma(gnur+3)
-print*, nkr
+
 do kr=1,nkr
   if (rxc>0.) then
     exptermc=exp(-1.*diams(kr)/dnc)

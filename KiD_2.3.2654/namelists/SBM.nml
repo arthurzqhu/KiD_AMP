@@ -34,7 +34,7 @@ docollisions = .true.
 dosedimentation = .true.
 
 ! Aerosol initialization
-num_aero_moments=0
+num_aero_moments=1
 num_aero_bins=1
 aero_N_init=300.e6 !or CCN at 1% SS
 aero_sig_init=1.4
