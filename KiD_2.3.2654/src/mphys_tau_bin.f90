@@ -143,6 +143,7 @@ contains
          ih=qindices(IAERO_BIN(iq))%ispecies
          imom=qindices(IAERO_BIN(iq))%imoment
          do k=1,nz-1
+print*,k,j,ih,iq,imom
              q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
          end do
        enddo

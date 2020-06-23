@@ -102,7 +102,7 @@ contains
          if (bintype .eq. 'sbm') then
             call sbm_init(aer2d,drops2d)
          elseif (bintype .eq. 'tau') then
-            !call tau_init(aer2d,drops2d)
+            call tau_init(aer2d,drops2d)
          endif
       endif
       micro_unset=.False.

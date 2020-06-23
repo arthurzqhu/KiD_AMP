@@ -164,13 +164,15 @@ subroutine tau_init(aer2d,drops2d)
 use switches, only: zctrl
 use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
 use column_variables, only: z
-use
 use micro_prm
 
 implicit none
-real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
+!real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
 !NQP=AERO_BIN+Ln2+LK+LK+1=71
 real :: dnc,dnr
+real(8),dimension(max_nbins) :: ffcd
+integer :: i,k
+real, dimension(nz,nx,max_nbins) :: aer2d,drops2d
 
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
@@ -183,6 +185,8 @@ if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
                          /gamma(h_shape(2)+3))**(1./3.)
 
 CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+
+print*, ffcd
 
 do i=1,nx
    do k=1,nz
@@ -404,4 +408,4 @@ do k=1,nz
    enddo
  enddo
 enddo
-end subroutine mp_sbm
+end subroutine mp_tau 

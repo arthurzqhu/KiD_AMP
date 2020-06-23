@@ -677,8 +677,7 @@ return
 END SUBROUTINE lhf_budget
 !-------------------------------------------------------------------
 Subroutine init_dist_sbm(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
-
-use micro_prm, only:nkr
+use micro_prm, only: nkr
 use parameters, only: max_nbins
 implicit none
 
@@ -690,8 +689,6 @@ real(8), dimension(max_nbins) :: ffcd,diams
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
-
-call check_bintype
 
 ffcd=0.
 n0c=rxc/gamma(gnuc+3)
@@ -742,12 +739,10 @@ END SUBROUTINE init_dist_sbm
 !-------------------------------------------------------------------
 subroutine micro_init_tau
 use micro_prm
-use module_bin_init, only: DIAM
-use parameter, only: max_nbins
+use module_bin_init
 use mphys_tau_bin_declare
 use module_bin_init
-
-integer ::j, k, iq
+use mphys_tau_bin, only: set_micro
 
 rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
 ! AH - 04/03/10, line below leads to divide by 0
@@ -778,9 +773,13 @@ do j=jminp,jmaxp
      ih=qindices(IAERO_BIN(iq))%ispecies
      imom=qindices(IAERO_BIN(iq))%imoment
      do k=1,nz-1
+print*,'before'
+print*,k,j,ih,iq,imom
+print*,'after'
          q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
      end do
    enddo
+
    do iq=1,lk
      ! mass bins
      ih=qindices(ICDKG_BIN(iq))%ispecies
@@ -839,20 +838,18 @@ Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
 use micro_prm, only:nkr
 use parameters, only: max_nbins
 use mphys_tau_bin_declare, only: DIAM, NQP
+
 implicit none
 
 integer :: kr
 real:: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
-real(8), dimension(max_nbins) :: diams
-real(8), dimension(NQP) :: ffcd_tau
+real(8), dimension(max_nbins) :: diams, ffcd
 
 diams = DIAM(1:max_nbins) !ditch the last dummy element (?) -ahu
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
-
-call check_bintype
 
 ffcd=0.
 
@@ -900,4 +897,4 @@ return
 !    xa=(729.*xx**2.+sqrt(4.*(-3.*xx**2.-75.*xx-3.)**3.+(729.*xx**2.+729.*xx)**2.)+729.*xx)**(1./3.)
 !    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
 !  endif
-END SUBROUTINE init_dist_sbm
+END SUBROUTINE init_dist_tau
