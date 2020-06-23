@@ -186,8 +186,6 @@ if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
 
 CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
 
-print*, ffcd
-
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then

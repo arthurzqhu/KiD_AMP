@@ -742,8 +742,10 @@ use micro_prm
 use module_bin_init
 use mphys_tau_bin_declare
 use module_bin_init
-use mphys_tau_bin, only: set_micro
+use mphys_tau_bin, only: set_micro,q_lem,th_lem,sq_lem,sth_lem,w_lem,i,l_ice,qindex,qindices,nqs
+implicit none
 
+integer :: j,k
 rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
 ! AH - 04/03/10, line below leads to divide by 0
 !      corrected by setting array to 2:kkp. Problem highlighted
@@ -773,9 +775,6 @@ do j=jminp,jmaxp
      ih=qindices(IAERO_BIN(iq))%ispecies
      imom=qindices(IAERO_BIN(iq))%imoment
      do k=1,nz-1
-print*,'before'
-print*,k,j,ih,iq,imom
-print*,'after'
          q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
      end do
    enddo
@@ -846,7 +845,7 @@ real:: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
 real(8), dimension(max_nbins) :: diams, ffcd
 
-diams = DIAM(1:max_nbins) !ditch the last dummy element (?) -ahu
+diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
@@ -855,7 +854,7 @@ ffcd=0.
 
 n0c=rxc/gamma(gnuc+3)
 n0r=rxr/gamma(gnur+3)
-
+print*, nkr
 do kr=1,nkr
   if (rxc>0.) then
     exptermc=exp(-1.*diams(kr)/dnc)
