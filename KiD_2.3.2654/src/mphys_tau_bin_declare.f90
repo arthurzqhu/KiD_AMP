@@ -1,5 +1,5 @@
 !
-! Common blocks used to run the tau bin micro in the 
+! Common blocks used to run the tau bin micro in the
 ! 1-D framework
 
 module mphys_tau_bin_declare
@@ -11,37 +11,37 @@ module mphys_tau_bin_declare
 
 ! Control parameters for the model:-
 ! Those which require a user value:
-INTEGER, PARAMETER::IIP = 1  
+INTEGER, PARAMETER::IIP = 1
                                       ! Number of grid points in x-direc
                                       ! Number of grid points in y-direc
-INTEGER, PARAMETER::JJP = nx  
+INTEGER, PARAMETER::JJP = nx
                                       ! Number of grid points in z-direc
-INTEGER, PARAMETER::KKP = nz  
+INTEGER, PARAMETER::KKP = nz
                                       ! Number of processors used (PEs)
-INTEGER, PARAMETER::NPES = 1  
-INTEGER, PARAMETER::IBSCATP = 0  
+INTEGER, PARAMETER::NPES = 1
+INTEGER, PARAMETER::IBSCATP = 0
                                       ! Switch for Backscatter 1=ON 0=OF
-INTEGER, PARAMETER::NQSCTP = 0  
+INTEGER, PARAMETER::NQSCTP = 0
                                       ! Switch for Backscatter on Q 1=ON
-INTEGER, PARAMETER::NBEGSCATP = 0  
+INTEGER, PARAMETER::NBEGSCATP = 0
                                       ! Timestep to begin Backscatter
-INTEGER, PARAMETER::ITVDUVWP = 1  
+INTEGER, PARAMETER::ITVDUVWP = 1
                      ! Switch for TVD advection on momentum 1=TVD 0=Pias
-INTEGER, PARAMETER::ITVDSCALP = 1  
+INTEGER, PARAMETER::ITVDSCALP = 1
                      ! Switch for TVD advection on scalars 1=TVD 0=Piasc
-INTEGER, PARAMETER::IFORSCALP = 1  
+INTEGER, PARAMETER::IFORSCALP = 1
                 ! Switch for forward stepping of scalars 1=Forward 0=Cen
-INTEGER, PARAMETER::IFORUVWP = 1  
+INTEGER, PARAMETER::IFORUVWP = 1
                 ! Switch for forward stepping of momentum 1=Forward 0=Ce
-INTEGER, PARAMETER::IBAROCLP = 0  
+INTEGER, PARAMETER::IBAROCLP = 0
                 ! Switch for baroclinicity: 1=Geostrophic shear 0=None
-INTEGER, PARAMETER::IUSETHP = 1  
+INTEGER, PARAMETER::IUSETHP = 1
                      ! Switch to use TH variable 1=Use 0=Do not use
-INTEGER, PARAMETER::IPASTHP = 0  
+INTEGER, PARAMETER::IPASTHP = 0
           ! Switch for passive TH 1=Passive 0=Active - must be 1 if IUSE
-INTEGER, PARAMETER::IUSEQP = 1  
+INTEGER, PARAMETER::IUSEQP = 1
                      ! Switch to use Q variables 1=Use 0=Do not use
-INTEGER, PARAMETER::IPASQP = 0  
+INTEGER, PARAMETER::IPASQP = 0
           ! Switch for passive Q 1=Passive 0=Active - must be 1 if IUSEQ
 INTEGER, PARAMETER :: Ln2=1
                      ! Ln2 is the number of bins for aerosol. Used the same
@@ -50,42 +50,42 @@ INTEGER, PARAMETER :: LK=34
                      ! Number of bins for cloud. In the model the number of
                      ! cloud bins is LK*2, first 34 is mass and the second
                                 ! number concentration
-integer, parameter :: lk_cloud = 15 
+integer, parameter :: lk_cloud = 15
                      ! the maximum cloud bin seperation
-INTEGER, PARAMETER :: LK_big = LK-15 
-                   ! Number of large bins used in SCONC and BREAK      
-INTEGER, PARAMETER :: NQP_cond = 3 !the number of NQP fields 
+INTEGER, PARAMETER :: LK_big = LK-15
+                   ! Number of large bins used in SCONC and BREAK
+INTEGER, PARAMETER :: NQP_cond = 3 !the number of NQP fields
                                          !conditional diags are calced on
 INTEGER, PARAMETER :: AERO_BIN=1
                      ! position after which ccn occur in Q array
                      !i.e after variable 5 in the Q array CCN bins begin
 INTEGER, PARAMETER :: LKCO=19
 INTEGER, PARAMETER :: LK4=8
-      !cut off for small particles. After Mordy (1959), any particles 
+      !cut off for small particles. After Mordy (1959), any particles
       !lower than 0.12microns, if nucleated are moved to first cloud
       !bin
 INTEGER, PARAMETER :: LNUC=Ln2+1
 INTEGER, PARAMETER :: LKDD=LK+1
 REAL, PARAMETER :: bin_res = 2.0 !bin resolution, i.e. 2.0 will result
                                 !in a bin distribution that is mass doubling
-REAL, PARAMETER :: DTMIC=2.0 
-                     !timestep for bin microphysics 
-INTEGER, PARAMETER::IANELP = 0  
+REAL, PARAMETER :: DTMIC=2.0
+                     !timestep for bin microphysics
+INTEGER, PARAMETER::IANELP = 0
           ! Switch to use anelastic equations 1=Anelastic 0=Boussinesq
-INTEGER, PARAMETER::IDAMPP = 0  
+INTEGER, PARAMETER::IDAMPP = 0
                      ! Switch to use damping layer 1=ON 0=OFF
-INTEGER, PARAMETER::INOVISP = 0  
+INTEGER, PARAMETER::INOVISP = 0
           ! Switch for viscosity 1=Inviscid 0=Viscosity and Diffusion ON
-INTEGER, PARAMETER::IGALOFFP = 1  
+INTEGER, PARAMETER::IGALOFFP = 1
                      ! Switch for Galilean transformation 1=OFF 0=ON
-INTEGER, PARAMETER::INOSURFP = 1  
+INTEGER, PARAMETER::INOSURFP = 1
           ! Switch for surface fluxes 1=Fluxes OFF 0=Fluxes ON
-INTEGER, PARAMETER::ISCBCP = 1 
+INTEGER, PARAMETER::ISCBCP = 1
           ! Flag for type of surface boundary condition for scalars
           ! 1=fixed surface fluxes 2=fixed surface values
-INTEGER, PARAMETER::ISATSURFP = 1 
+INTEGER, PARAMETER::ISATSURFP = 1
                      ! If =1 then saturated surface for ISCBCP=2
-INTEGER, PARAMETER::IADJANELP = 1  
+INTEGER, PARAMETER::IADJANELP = 1
           ! Flags for various options for setting up anelastic profiles
           ! 1 = No adjustment
           ! 2 = ensure P0=PSF by adjusting THREF profile by constant fac
@@ -93,13 +93,13 @@ INTEGER, PARAMETER::IADJANELP = 1
           ! 4 = ensure P0=PSF by adjusting PTOP
           ! Values only relevant if IANELP=1
                                       ! Number of bins for each time ser
-INTEGER, PARAMETER::NTIMP = 0  
+INTEGER, PARAMETER::NTIMP = 0
                                       ! Switch for timeseries 1=ON 0=OFF
-INTEGER, PARAMETER::ITSERP = 0  
+INTEGER, PARAMETER::ITSERP = 0
                                       ! Switch for spectra 1=ON 0=OFF
-INTEGER, PARAMETER::ISPECP = 0  
+INTEGER, PARAMETER::ISPECP = 0
                                       ! Maximum number of spectra
-INTEGER, PARAMETER::NSPECP = 0  
+INTEGER, PARAMETER::NSPECP = 0
                               ! Parameters to control microphysics
      ! I'm making these varaiables...
 !INTEGER, PARAMETER::   &
@@ -139,7 +139,7 @@ INTEGER, PARAMETER::IRADNP = 0, IRADSWP = 0, IRADLWP = 0, &
                          ! 1 = horizontally homogeneous radiation
 ! Parameters with default values that can be overridden by the user
                               ! Parameters to control large-scale forcin
-INTEGER, PARAMETER::ISUBP = 0, IFORCEP = 0, ITMFORP = 0  
+INTEGER, PARAMETER::ISUBP = 0, IFORCEP = 0, ITMFORP = 0
                       ! Switch for large-scale subsidence
                       ! Switch for prescribed forcing
                       ! Switch for time-varying forcing
@@ -160,60 +160,60 @@ INTEGER, PARAMETER::IDGDEEP = 0, ISURFDG = 1, ICLASSP = 0, &
                         ! Max number of conditional partitions
                         ! >0 Output conditional variance diagnostics
                         !    for various moist variables
-INTEGER, PARAMETER::NQFBUDGPMAX = 5  
+INTEGER, PARAMETER::NQFBUDGPMAX = 5
                      ! Max number of Q variables for flux budgets
-INTEGER, PARAMETER::MOISTRIP = 2  
+INTEGER, PARAMETER::MOISTRIP = 2
            ! Flag for choice of moist Richardson Number calculation
            ! 1=not recommended 2=recommended
-INTEGER, PARAMETER::IFBCHGP = 0  
+INTEGER, PARAMETER::IFBCHGP = 0
            ! Switch for time-varying surface values 1=ON 0=OFF
-INTEGER, PARAMETER::NDGSP = 600  
+INTEGER, PARAMETER::NDGSP = 600
            ! Maximum number of time-averaged diagnostics
-INTEGER, PARAMETER::IEACHDUMPP = 0  
+INTEGER, PARAMETER::IEACHDUMPP = 0
            ! Switch for dump 0=all PEs dump to same file
            !                 1=each PE to dump separately
-INTEGER, PARAMETER::ISMTHP = 1  
+INTEGER, PARAMETER::ISMTHP = 1
            ! Flag for choice of time filtering
            ! 0=no filtering 1=Robert filter 2=original (V2.0 and before)
                                            ! Length of APARMS array
-INTEGER, PARAMETER::NAPARMSP = 1024  
+INTEGER, PARAMETER::NAPARMSP = 1024
       ! MAXQSP removed from code at V2.3
                                         ! Length of Monin-Obukov lookup
-INTEGER, PARAMETER::LOOKP = 80  
+INTEGER, PARAMETER::LOOKP = 80
                                            ! A small number
-REAL, PARAMETER::SMALLP = 1.E-14  
+REAL, PARAMETER::SMALLP = 1.E-14
                                            ! A large number
-REAL, PARAMETER::RLARGEP = 1.E37  
-INTEGER, PARAMETER::NTIMPDGP = 100  
+REAL, PARAMETER::RLARGEP = 1.E37
+INTEGER, PARAMETER::NTIMPDGP = 100
            ! Dimension of TIMPDG: times for unaveraged diagnostic files
-INTEGER, PARAMETER::NTIMRDGP = 100  
+INTEGER, PARAMETER::NTIMRDGP = 100
            ! Dimension of TIMRDG: times for averaged diagnostic files
-INTEGER, PARAMETER::NTIMDUMP = 100  
+INTEGER, PARAMETER::NTIMDUMP = 100
            ! Dimension of TIMDUM: specified times for model dumps
-INTEGER, PARAMETER::NTMHALTP = 10  
+INTEGER, PARAMETER::NTMHALTP = 10
            ! Dimension of TIMHALT: times to halt model run
-INTEGER, PARAMETER::NTIMHFP = 20  
+INTEGER, PARAMETER::NTIMHFP = 20
            ! Maximum number of input times for time-varying surface flux
-INTEGER, PARAMETER::NINITP = 20  
+INTEGER, PARAMETER::NINITP = 20
            ! Maximum number of input levels for initial profiles
-INTEGER, PARAMETER::QLINITP = 0  
+INTEGER, PARAMETER::QLINITP = 0
            ! =1 THINIT and QINIT(1) are input as theta_l and q_t
            !    and iteration calculates QINIT(1), QINIT(2)
            !    and THINIT as initial qv,ql, and theta values
            ! =0 THINIT and QINIT(1) are input as theta and q_v
-INTEGER, PARAMETER::JMINP = 1, JMAXP = JJP  
+INTEGER, PARAMETER::JMINP = 1, JMAXP = JJP
            ! Lower and upper bounds for certain J loops
-INTEGER, PARAMETER::IRADSNW = 3  
+INTEGER, PARAMETER::IRADSNW = 3
          ! Radiation treatment of hydrometeors:
          ! >=1 treat snow, >=2 treat rain, >=3 treat graupel
-INTEGER, PARAMETER::IEXPLWP = 0  
+INTEGER, PARAMETER::IEXPLWP = 0
 !        ! LW radiation calculated using simple exponential scheme
 !        ! using Q(IQL) if IEXPLWP = 1
 !        ! using Q(1)   if IEXPLWP = 2
-INTEGER, PARAMETER::IEXPSWP = 0  
+INTEGER, PARAMETER::IEXPSWP = 0
 !        ! 1 = SW radiation using EUROCS "sunray" code
                                ! Parameters to control rad diagnostics
-INTEGER, PARAMETER::RAD_DIAGS = IRADNP, RAD_DIAGS2 = IRADNP  
+INTEGER, PARAMETER::RAD_DIAGS = IRADNP, RAD_DIAGS2 = IRADNP
                                ! >=2 timeseries of toa & surface fluxes
                                ! >=3 averaged profiles of fluxes
                                ! >=1 2-D fields of heating rates
@@ -229,7 +229,7 @@ INTEGER, PARAMETER::IMOVIEP = 0, JMOVMINP = 1, JMOVMAXP = JJP, &
                             ! Maximum of range in K direction
                             ! Horizontal grid increment
                                 !Parameters to control the NC animation
-INTEGER, PARAMETER::IMOVIE_NC = 0, KMINP_MNC = 2, KMAXP_MNC = KKP  
+INTEGER, PARAMETER::IMOVIE_NC = 0, KMINP_MNC = 2, KMAXP_MNC = KKP
                                 !Switch to activate NC movie
                                 !Minimum of range in K direction
                                 !Maximum of range in K direction
@@ -237,34 +237,34 @@ INTEGER, PARAMETER::IMOVIE_NC = 0, KMINP_MNC = 2, KMAXP_MNC = KKP
 ! long - marc 20/11/02
 !      INTEGER, PARAMETER :: ISDSZP = 2 ! Maximum pos. size of seed arra
                                          ! Maximum pos. size of seed arr
-INTEGER, PARAMETER::ISDSZP = 256  
+INTEGER, PARAMETER::ISDSZP = 256
                                        ! which is found by a call to
                                        ! RANDOM_SEED - intrinsic routine
                                     ! 0=Ice aggregation based on Ferrier
-INTEGER, PARAMETER::IAGGP = 0  
+INTEGER, PARAMETER::IAGGP = 0
                                     !   JAS 51, 249--280.
                                     ! 1=R. Cotton's ice aggregation sche
       ! Aerosol flags: 1=activated, 0=disabled.
                                          ! CCN aerosol
-INTEGER, PARAMETER::INCCNP = 0  
+INTEGER, PARAMETER::INCCNP = 0
                                          ! Deposition ice nuclei
-INTEGER, PARAMETER::INDEPP = 0  
+INTEGER, PARAMETER::INDEPP = 0
                                          ! CCN that are capable of evapo
-INTEGER, PARAMETER::INEVFP = 0  
+INTEGER, PARAMETER::INEVFP = 0
                                          !     freezing
                                          ! Contact-freezing aerosol
-INTEGER, PARAMETER::INCONP = 0  
+INTEGER, PARAMETER::INCONP = 0
                                          ! Aerosol
-INTEGER, PARAMETER::INAERP = 0  
+INTEGER, PARAMETER::INAERP = 0
 ! Parameters calculated from above parameters, not to be overridden by t
 ! user unless you REALLY know what you're doing !
-INTEGER, PARAMETER::ISAVP = 1 - (ISMTHP - 1) * (ISMTHP - 1)  
+INTEGER, PARAMETER::ISAVP = 1 - (ISMTHP - 1) * (ISMTHP - 1)
            ! =1 for Robert, 0 otherwise: collapses 3D arrays to 1D
                                                 ! Flag for 3D 0=2D 1=3D
-INTEGER, PARAMETER::I3DP = 2 - (IIP + 1) / IIP  
-INTEGER, PARAMETER::IIPEP = I3DP * (IIP / NPES) + (1 - I3DP)  
+INTEGER, PARAMETER::I3DP = 2 - (IIP + 1) / IIP
+INTEGER, PARAMETER::IIPEP = I3DP * (IIP / NPES) + (1 - I3DP)
            ! Number of slices per PE for 3-D; =1 for 2-D
-INTEGER, PARAMETER::JJTOTP = JJP * (1 + (NPES - 1) * (1 - I3DP) )  
+INTEGER, PARAMETER::JJTOTP = JJP * (1 + (NPES - 1) * (1 - I3DP) )
            ! Total number of columns; = JJP for 3-D; =JJP*NPES for 2-D
 INTEGER, PARAMETER::JJPEP = JJP / NPES, JJPEMINP = 1 - I3DP, &
  JJPEMAXP = JJPEP * I3DP + 1
@@ -279,30 +279,30 @@ INTEGER, PARAMETER::IMINP = 0, IMAXP = IIP * I3DP + JJTOTP * &
  (1 - I3DP) + 1
           ! IMAXP and IMINP are dimensions for PT (transformed pressure)
           ! in POISSON and account for 2-D run (when P not transformed)
-INTEGER, PARAMETER::IPMINP = 1 - I3DP, IPMAXP = IIPEP + I3DP  
+INTEGER, PARAMETER::IPMINP = 1 - I3DP, IPMAXP = IIPEP + I3DP
           ! x-direction dimension of the pressure array
-INTEGER, PARAMETER::NSP = 2 * I3DP + 1  
+INTEGER, PARAMETER::NSP = 2 * I3DP + 1
           ! Number of slices held for source (S) fields
-INTEGER, PARAMETER::NVISP = 2 * I3DP + 1 + IBSCATP  
+INTEGER, PARAMETER::NVISP = 2 * I3DP + 1 + IBSCATP
           ! Number of slices held for VIS and DIFF fields
-INTEGER, PARAMETER::NDISP = 4 * IBSCATP + 1  
+INTEGER, PARAMETER::NDISP = 4 * IBSCATP + 1
           ! Number of slices held for Backscatter dissipation fields
-INTEGER, PARAMETER::IFIRSTP = - 1 - 2 * IBSCATP  
+INTEGER, PARAMETER::IFIRSTP = - 1 - 2 * IBSCATP
           ! Index of first slice for I loop in NNSTEPS
                                                ! Total size of vertical
-INTEGER, PARAMETER::LENP = (JJP + 2) * KKP  
-INTEGER, PARAMETER::IBSCATTP = IBSCATP * IUSETHP  
+INTEGER, PARAMETER::LENP = (JJP + 2) * KKP
+INTEGER, PARAMETER::IBSCATTP = IBSCATP * IUSETHP
           ! Switch for Backscatter on TH (check if using TH)
-INTEGER, PARAMETER::IBSCATQP = IBSCATP * IUSEQP  
+INTEGER, PARAMETER::IBSCATQP = IBSCATP * IUSEQP
           ! Switch for Backscatter on Q (check if using Q)
 INTEGER, PARAMETER::NFLDSCTP = (IBSCATP + IBSCATTP + NQSCTP * &
  IBSCATQP - 1) * IBSCATP + 1
           ! Total number of fields for Backscatter; momentum counts as 1
-!INTEGER, PARAMETER::IMICROP = MIN (1, IRAINP)  
+!INTEGER, PARAMETER::IMICROP = MIN (1, IRAINP)
 !          ! Switch for microphysics 1=ON 0=OFF
-INTEGER, PARAMETER::NMETEORP = 10 !IMICROP + ICECLP + ISNOWP + IGRAUP  
+INTEGER, PARAMETER::NMETEORP = 10 !IMICROP + ICECLP + ISNOWP + IGRAUP
           ! Number of hydrometeors (Q fields with fall velocity)
-INTEGER, PARAMETER::NMETP = 10 ! + (NMETEORP - 1) * IMICROP  
+INTEGER, PARAMETER::NMETP = 10 ! + (NMETEORP - 1) * IMICROP
           ! Number of hydrometeors =1 if IMICROP=0
 !INTEGER, PARAMETER::NAEROSOL = INCCNP + INDEPP + INEVFP + INCONP + &
 ! INAERP
@@ -311,7 +311,7 @@ INTEGER, PARAMETER :: NQP=AERO_BIN+Ln2+LK+LK+1
 !INTEGER, PARAMETER::NQP = 10 !MAX (1 + IUSEQP, IMICROP * (NMETEORP + &
 ! 2) + INICEP + INRAINP + INGRAUP + INSNOWP + IVGRAUP + NAEROSOL)
           ! Number of Q variables (must be 1 if IUSEQP=0)
-INTEGER, PARAMETER::NPRC = 70  
+INTEGER, PARAMETER::NPRC = 70
           ! Number of cloud microphysical process terms
 INTEGER, PARAMETER::NSERP = 50 ! + IMICROP + 4 * ICECLP + ISNOWP + &
 ! IGRAUP + 4 * ICLASSP + 3 * IRADLWP + 4 * IRADSWP + 2 * NQP + &
@@ -326,18 +326,18 @@ INTEGER, PARAMETER::INDTVDSP = 2 - (ITVDSCALP + 2) / (ITVDSCALP + &
 
 real :: eps ! machine dependent small number, epsilon(1d.0)
 
-COMMON / MOIST / QSAT, QSATFAC, TSTARPR, DQSATDT, TREF, QSATPW  
+COMMON / MOIST / QSAT, QSATFAC, TSTARPR, DQSATDT, TREF, QSATPW
 ! Arrays for moist processes
 ! Note that at V2.3 arrays only used in MOISTRI(2) and Taylor series
 ! expanded over horizontal mean only. Pointwise values used in LATHEAT
-REAL, DIMENSION (KKP) ::QSAT, QSATFAC, TSTARPR, DQSATDT, TREF  
+REAL, DIMENSION (KKP) ::QSAT, QSATFAC, TSTARPR, DQSATDT, TREF
                      ! Saturation mixing ratio (kg/kg)
                      ! 1/(1 + RLVAP_ON_CP*DQSATDT)
                      ! Temperature about which Taylor Expansion
                      ! conducted for qsat calculation
                      ! Gradient of saturation mixing ratio with temperat
                      ! Reference temperature (K)
-REAL, DIMENSION (JMINP:JMAXP, KKP) ::QSATPW  
+REAL, DIMENSION (JMINP:JMAXP, KKP) ::QSATPW
                      ! Pointwise QSAT calculated in LATHEAT and then
                      ! used in MICROPHYS for sat. def. calculation
 !
@@ -345,23 +345,23 @@ COMMON / MEANS / OLUBAR, OLZUBAR, OLVBAR, OLZVBAR, OLTHBAR, &
  OLZTHBAR, OLQBAR, OLZQBAR
 ! Contains the true instantaneous horizontal mean fields for:
                             ! Current U mean
-REAL :: OLUBAR (KKP)  
+REAL :: OLUBAR (KKP)
                             ! Previous timestep U mean
-REAL :: OLZUBAR (KKP)  
+REAL :: OLZUBAR (KKP)
                             ! Current V mean
-REAL :: OLVBAR (KKP)  
+REAL :: OLVBAR (KKP)
                             ! Previous timestep V mean
-REAL :: OLZVBAR (KKP)  
+REAL :: OLZVBAR (KKP)
                             ! Current TH mean
-REAL :: OLTHBAR (KKP)  
+REAL :: OLTHBAR (KKP)
                             ! Previous timestep TH mean
-REAL :: OLZTHBAR (KKP)  
+REAL :: OLZTHBAR (KKP)
                             ! Current Q means
-REAL :: OLQBAR (KKP, NQP)  
+REAL :: OLQBAR (KKP, NQP)
                             ! Previous timestep Q means
 
 
-REAL :: OLZQBAR (KKP, NQP)  
+REAL :: OLZQBAR (KKP, NQP)
 !
 ! Parameters for the three-phase microphysics routines
 !
@@ -382,70 +382,70 @@ REAL, PARAMETER::rhoW = 1000., Rw = 461.5, THcond = 0.0243, &
 !       RnaX and RnbX are NOT used for double-moment representation
 !            instead the number concentration is predicted.
 !
-REAL, PARAMETER::Rna_R = 1.1E15, Rnb_R = 0., alph_R = 2.5  
+REAL, PARAMETER::Rna_R = 1.1E15, Rnb_R = 0., alph_R = 2.5
 ! Tuning for tropical convection small snowflakes with higher concentrat
-REAL, PARAMETER::Rna_S = 2.E27, Rnb_S = - 3.5, alph_S = 2.5  
+REAL, PARAMETER::Rna_S = 2.E27, Rnb_S = - 3.5, alph_S = 2.5
 ! For midlatitude, bigger snow flakes - see Swann'98 (Atmos. Res.:
 !      REAL, PARAMETER :: Rna_S=6.E20,Rnb_S=-2,0,alph_S=2.5
 ! Rutledge and Hobbs'83 :much used crap snow scheme -sensitivity study
 !      REAL, PARAMETER :: Rna_S=4.E6,Rnb_S=0.0,alph_S=0.0
 ! Graupel as in Swann'98 (Atmos. Res.):
-REAL, PARAMETER::Rna_G = 5.E25, Rnb_G = - 4.0, alph_G = 2.5  
-REAL, PARAMETER::alph_I = 0.0  
+REAL, PARAMETER::Rna_G = 5.E25, Rnb_G = - 4.0, alph_G = 2.5
+REAL, PARAMETER::alph_I = 0.0
 !
 !   Mass--Diameter relationships:
 !   *****************************
 !                             [Mass of X particle]=cX*[DiameterX]**dX
-REAL, PARAMETER::c_S = 52.36, d_S = 3.  
-REAL, PARAMETER::c_R = 523.6, d_R = 3.  
+REAL, PARAMETER::c_S = 52.36, d_S = 3.
+REAL, PARAMETER::c_R = 523.6, d_R = 3.
 ! Tuning for tropical convection, denser graupel (due to high QL:
 !      REAL, PARAMETER :: c_G=366.5,d_G=3.
                          !c_G not used if IVGRAUP=1(triple-moment)
 ! For midlatitude soft graupel:
-REAL, PARAMETER::c_G = 261.8, d_G = 3.  
+REAL, PARAMETER::c_G = 261.8, d_G = 3.
                          !c_G not used if IVGRAUP=1(triple-moment)
-REAL, PARAMETER::c_I = 104.0, d_I = 3.  
+REAL, PARAMETER::c_I = 104.0, d_I = 3.
 !
 ! Fallspeed--Diameter relationships
 ! *********************************
 !          [Vel of X particle]=aX*[DiameterX]**bX*exp(-[DiameterX]*fX)
-REAL, PARAMETER::a_R = 362., b_R = 0.65, f_R = 0.  
+REAL, PARAMETER::a_R = 362., b_R = 0.65, f_R = 0.
                                                      !f_S must be 0.0
-REAL, PARAMETER::a_S = 4.84, b_S = 0.25, f_S = 0.  
+REAL, PARAMETER::a_S = 4.84, b_S = 0.25, f_S = 0.
                                                      !f_I must be 0.0
-REAL, PARAMETER::a_I = 71.34, b_I = 0.6635, f_I = 0.  
+REAL, PARAMETER::a_I = 71.34, b_I = 0.6635, f_I = 0.
                                                              !f_G must b
-REAL, PARAMETER::a_G = 253., b_G = 0.734, f_G = 0., g_G = 0.422  
+REAL, PARAMETER::a_G = 253., b_G = 0.734, f_G = 0., g_G = 0.422
 !
 !   Various constants for ice parameterization:
 !   *******************************************
 ! mass of pristine ice crystal (equivalent to radius of order 1 micron).
 ! New value introduced with R.Cotton's ice aggregation
 !      REAL, PARAMETER :: RMI0=1.E-15
-REAL::RMI0 = 1.E-18  
+REAL::RMI0 = 1.E-18
 ! constant in aerosol concentration eq.
-REAL, PARAMETER::RNa0 = 2.E3  
+REAL, PARAMETER::RNa0 = 2.E3
 ! maximum mean Diameter of ice crystals before conversion to snow
-REAL, PARAMETER::DImax = 0.0003  
+REAL, PARAMETER::DImax = 0.0003
 ! Diameter of ice crystals that convert to snow
-REAL, PARAMETER::DI2S = 0.00033  
+REAL, PARAMETER::DI2S = 0.00033
 ! minimum lambI before conversion to snow
-REAL, PARAMETER::RlambImin = (1. + alph_I + d_I) / DImax  
+REAL, PARAMETER::RlambImin = (1. + alph_I + d_I) / DImax
 ! max mass-mean diameter of snow before breakup
-REAL, PARAMETER::DSmax = 0.004  
+REAL, PARAMETER::DSmax = 0.004
 ! minimum lambS before breakup
-REAL, PARAMETER::RlambSmin = (1. + alph_S + d_S) / DSmax  
+REAL, PARAMETER::RlambSmin = (1. + alph_S + d_S) / DSmax
 !
 !   Thresholds for autoconversion and rate coefficient for PRAUT:
 !   *************************************************************
 ! liquid cloud droplet concentration
-REAL, PARAMETER::RNc = 50E6 !240E6  
+REAL, PARAMETER::RNc = 50E6 !240E6
 ! droplet diameter required for autoconversion
-REAL, PARAMETER::DliqtoR = 0.00002  
+REAL, PARAMETER::DliqtoR = 0.00002
 ! Not very sensitive to this for single-moment rain:
-REAL, PARAMETER::autoR = 0.001  
+REAL, PARAMETER::autoR = 0.001
 ! Radius of newly formed raindrops
-REAL, PARAMETER::Ro = 0.000025  
+REAL, PARAMETER::Ro = 0.000025
       ! Coefficients used in most recent microphysics conversions
 REAL, PARAMETER::ACFAC11 = 2.20, QREXP11 = 0.875, ACFAC12 = 7.58, &
  QLEXP12 = 1.029, QREXP12 = 1.042, ACFAC13 = 3.9176, QREXP13 = &
@@ -456,16 +456,16 @@ REAL, PARAMETER::ACFAC11 = 2.20, QREXP11 = 0.875, ACFAC12 = 7.58, &
 !   ************************
 REAL, PARAMETER::ERW = 1., ERG = 1., ERS = 1., ERI = 1., ESW = 1., &
  EGW = 1., EIW = 1., EGS_WET = 1., EGI_WET = 1.
-REAL, PARAMETER::ERR = 1.0  
+REAL, PARAMETER::ERR = 1.0
 REAL, PARAMETER::EGS1_DRY = 0.2, EGI1_DRY = 0.2, ESI1 = 0.2, EII1 &
  = 0.2
 REAL, PARAMETER::EGS2_DRY = 0.08, EGI2_DRY = 0.08, ESI2 = 0.08, &
  EII2 = 0.08
-REAL, PARAMETER::ESS1 = 0.2, ESS2 = 0.08  
+REAL, PARAMETER::ESS1 = 0.2, ESS2 = 0.08
 !
 !   Constants used in Bigg freezing:
 !   ********************************
-REAL, PARAMETER::ABIGG = 0.66, BBIGG = 100.  
+REAL, PARAMETER::ABIGG = 0.66, BBIGG = 100.
 !
 !   These are multipliers for standard rates of:
 !   ********************************************
@@ -488,27 +488,27 @@ REAL, PARAMETER::HALMOS = 1.0, CONTACT = 0.0001, FLETCHER = 0.0, &
 !   Not applicable until D-M rain (INRAINP=1) option is coded:
 !   ***********************************************
                                        ! mean diameter of rain from melt
-REAL, PARAMETER::DRMELT = 0.001  
+REAL, PARAMETER::DRMELT = 0.001
 !
 !   Others.. only applicable if IVGRAUP=1:
 !   ******************************************
                                        !    Each of these
-REAL, PARAMETER::RHOGAUT = 200.  
+REAL, PARAMETER::RHOGAUT = 200.
                                        !    is the density of
-REAL, PARAMETER::RHOGFR = 900.  
+REAL, PARAMETER::RHOGFR = 900.
                                        !    each source of graupel.
-REAL, PARAMETER::RHORACI = 900.  
-REAL, PARAMETER::RHOGACS = 200.  
+REAL, PARAMETER::RHORACI = 900.
+REAL, PARAMETER::RHOGACS = 200.
                                        !    Each sink to the graupel mas
-REAL, PARAMETER::RHOGACI = 200.  
+REAL, PARAMETER::RHOGACI = 200.
                                        !    is assumed not to change the
-REAL, PARAMETER::RHOSACR = 500.  
+REAL, PARAMETER::RHOSACR = 500.
                                        !    graupel density.
-REAL, PARAMETER::RHOGDEP = 200.  
-REAL, PARAMETER::RHOGACW = 500.  
+REAL, PARAMETER::RHOGDEP = 200.
+REAL, PARAMETER::RHOGACW = 500.
 
 
-REAL, PARAMETER::RHOGACR = 800.  
+REAL, PARAMETER::RHOGACR = 800.
 !   Factors used in Grapuel fall/linit calculations
 !   ***********************************************
 
@@ -518,13 +518,13 @@ REAL, PARAMETER::gl1fac = 1.e-12, gl2fac = 1.0 / 100., gl3fac = &
 !   Various factors for triple-moment graupel
 !   *****************************************
 
-REAL ::gfacmass, gfacfall, gfacwet  
+REAL ::gfacmass, gfacfall, gfacwet
                       ! (Actual rhoG)/(rhoG_from_c_G)
                       ! gfacmass**0.578
                       ! (1.E-12 + gfacmass)**(-0.625)
 
 
-COMMON / TMGRAUP / gfacmass, gfacfall, gfacwet  
+COMMON / TMGRAUP / gfacmass, gfacfall, gfacwet
 !   Thresholds for Activating Microphysics
 !   **************************************
 
@@ -542,7 +542,7 @@ REAL :: qsmlli                  ! set in set_constants
 !   *******************************
 
 
-REAL, PARAMETER::TK0C = 273.15, pa2mb = 1. / 100.0  
+REAL, PARAMETER::TK0C = 273.15, pa2mb = 1. / 100.0
                           ! Temperature of freezing in K
                           ! Factor in converting pascals to mb
 !   Default PSD Parameters
@@ -551,7 +551,7 @@ REAL, PARAMETER::TK0C = 273.15, pa2mb = 1. / 100.0
 
 
 
-REAL, PARAMETER::Lambda_default = 1.0e7, N0_default = 1.0e7  
+REAL, PARAMETER::Lambda_default = 1.0e7, N0_default = 1.0e7
                                 ! Default value of Lambda_x
                                 ! Default value of N0_x
 !**********************************************************************
@@ -579,7 +579,7 @@ REAL, DIMENSION (JJP) ::PRaut, RRaut, PSaut, RSaut, PGaut, &
 ! ----------------------------------------------------------------------
 
 
-REAL, DIMENSION (JJP) ::RRacR, RRbrk, RIacI, RSacS, RSbrk  
+REAL, DIMENSION (JJP) ::RRacR, RRbrk, RIacI, RSacS, RSbrk
                            ! Aggregation of rain drops.
                            ! Breakup of rain drops.
                            ! Cloud ice aggregation.
@@ -619,7 +619,7 @@ REAL, DIMENSION (JJP) ::PRacI_S, PRacI_G, PIacR_S, PIacR_G, &
 ! Collisions between Rain and Ice Aggregates (Snow and Graupel)
 ! ----------------------------------------------------------------------
 
-REAL, DIMENSION (JJP) ::PSacR, PRacS, RSacR, PGacR, RGacR  
+REAL, DIMENSION (JJP) ::PSacR, PRacS, RSacR, PGacR, RGacR
                            ! Rate at which rain is collected by snow, to
                            ! form graupel (or snow if graupel not used).
                            ! Rate at which snow is collected by rain, to
@@ -641,7 +641,7 @@ REAL, DIMENSION (JJP) ::PSacI, RSacI, PGacI, RGacI, PGacS, &
 ! Graupel Growth Rates and Shedding
 ! ----------------------------------------------------------------------
 
-REAL, DIMENSION (JJP) ::PGwet, PGdry, PGshd, RGshd  
+REAL, DIMENSION (JJP) ::PGwet, PGdry, PGshd, RGshd
                            ! Maximum rate of growth of graupel, assuming
                            ! graupel surface is wet, ie. at 0 degrees C.
                            ! Graupel growth rate assuming graupel
@@ -680,7 +680,7 @@ REAL, DIMENSION (JJP) ::PIprm, RIprm, PIcnt, RIcnt, PIhal, &
 ! ----------------------------------------------------------------------
 
 
-REAL, DIMENSION (JJP) ::PIdcf, PIEvf, PIFrH, RCCNI  
+REAL, DIMENSION (JJP) ::PIdcf, PIEvf, PIFrH, RCCNI
                            !
                            !
                            !
@@ -707,14 +707,14 @@ REAL, Dimension (JJP) ::dqV, dqL, dqR, dqI, dqS, dqG, dqNL, &
 
 COMMON / QTEND / dqV, dqL, dqR, dqI, dqS, dqG, dqNL, dqNR, dqNI, &
  dqNS, dqNG, dqVG, dqNCCN, dqNDep, dqNEvF, dqNCon, dqNAer
-COMMON / RAIN / QTHRESH, EXPZ_ON_SCL, ABLTEMP, PUDDLE, bin_pcpt  
+COMMON / RAIN / QTHRESH, EXPZ_ON_SCL, ABLTEMP, PUDDLE, bin_pcpt
 ! Additional arrays used for the warm rain microphysics calculations
                             ! Autoconversion threshold = 0.001/RHON (kg/
-REAL :: QTHRESH (KKP)  
+REAL :: QTHRESH (KKP)
                             ! Factor for accretion calculation
-REAL :: EXPZ_ON_SCL (KKP)  
+REAL :: EXPZ_ON_SCL (KKP)
                             ! Factor for evaporation calculation
-REAL :: ABLTEMP (KKP)  
+REAL :: ABLTEMP (KKP)
 ! And diagnostic array for all microphysics:
 
 REAL :: PUDDLE (JMINP:JMAXP, NMETP, 0: (IIPEP + 1) )
@@ -728,25 +728,25 @@ REAL, DIMENSION(JMINP:JMAXP) :: bin_pcpt
 ! and functions of the above
 !      RLVAP_ON_CP, RLSUB_ON_CP, R_ON_CP, G_ON_2
 ! this is to prevent any of these values being accidently changed
-REAL, PARAMETER::CP = 1005.  
+REAL, PARAMETER::CP = 1005.
                    ! Specific heat of gas at constant pressure
-REAL, PARAMETER::R = 287.05  
+REAL, PARAMETER::R = 287.05
                    ! Universal gas constant
-REAL, PARAMETER::RATIO_MOL_WTS = 1.608  
+REAL, PARAMETER::RATIO_MOL_WTS = 1.608
                    ! Ratio of molecular weights of air and water vapour
-REAL, PARAMETER::G = 9.81  
+REAL, PARAMETER::G = 9.81
                    ! Acceleration due to gravity
-REAL, PARAMETER::RLVAP = 2.501e6  
+REAL, PARAMETER::RLVAP = 2.501e6
                    ! Latent heat of vapourisation
-REAL, PARAMETER::RLSUB = 2.834e6  
+REAL, PARAMETER::RLSUB = 2.834e6
                    ! Latent heat of sublimation
-REAL, PARAMETER::RLFUS = RLSUB - RLVAP  
+REAL, PARAMETER::RLFUS = RLSUB - RLVAP
                    ! Latent heat of fusion
-REAL, PARAMETER::RLVAP_ON_CP = RLVAP / CP  
-REAL, PARAMETER::RLSUB_ON_CP = RLSUB / CP  
-REAL, PARAMETER::RLFUS_ON_CP = RLSUB_ON_CP - RLVAP_ON_CP  
-REAL, PARAMETER::R_ON_CP = R / CP  
-REAL, PARAMETER::G_ON_2 = 0.5 * G  
+REAL, PARAMETER::RLVAP_ON_CP = RLVAP / CP
+REAL, PARAMETER::RLSUB_ON_CP = RLSUB / CP
+REAL, PARAMETER::RLFUS_ON_CP = RLSUB_ON_CP - RLVAP_ON_CP
+REAL, PARAMETER::R_ON_CP = R / CP
+REAL, PARAMETER::G_ON_2 = 0.5 * G
 ! Time data which is useful to keep constant (formally in RAD_MOD)
 
 REAL, PARAMETER::secinhr = 3600., hrinday = 24., secsinday = &
@@ -755,15 +755,15 @@ REAL, PARAMETER::secinhr = 3600., hrinday = 24., secsinday = &
                                 ! hours in day
                                 ! seconds in day
 !
-COMMON / MICROCOEF / physcal, phys1d  
+COMMON / MICROCOEF / physcal, phys1d
 ! Coefficients used in 3-phase microphysics
-INTEGER, PARAMETER::nphyscalp = 11, nphys1dp = 78  
+INTEGER, PARAMETER::nphyscalp = 11, nphys1dp = 78
                            ! Number of values of physcal
                            ! Number of phys1d
-REAL, DIMENSION (nphyscalp) ::physcal  
+REAL, DIMENSION (nphyscalp) ::physcal
                            ! Exchange coefficients used in microx
 
-REAL, DIMENSION (kkp, nphys1dp) ::phys1d  
+REAL, DIMENSION (kkp, nphys1dp) ::phys1d
                            ! Coefficient also fn of height
       !
 COMMON / PARAMS / DXX, DYY, VK, FCORIOL, VG0, UG0, TSMTH, BETAM, &
@@ -781,208 +781,208 @@ COMMON / PARAMS / DXX, DYY, VK, FCORIOL, VG0, UG0, TSMTH, BETAM, &
 ! physics of the model, mostly input via the namelists
 ! from Namelist NUMERICS:-
                    ! Grid spacing in x-direction (m)
-REAL :: DXX  
+REAL :: DXX
                    ! Grid spacing in y_direction (m)
-REAL :: DYY  
+REAL :: DYY
                    ! Time-smoothing factor
-REAL :: TSMTH  
+REAL :: TSMTH
                    ! Incremental factor for increasing timestep
-REAL :: RINCMAX  
+REAL :: RINCMAX
                    ! Maximum value for timestep (s)
-REAL :: DTMMAX  
+REAL :: DTMMAX
                    ! Minimum value for timestep (s)
-REAL :: DTMMIN  
+REAL :: DTMMIN
 ! from Namelist DYNAMICS:-
                    ! Coriolis parameter (s-1)
-REAL :: FCORIOL  
+REAL :: FCORIOL
                     ! Components of surface geostrophic wind (ms-1)
-REAL :: UG0, VG0  
+REAL :: UG0, VG0
                         ! Rate of change of components of
-REAL :: DUGDZ, DVGDZ  
+REAL :: DUGDZ, DVGDZ
                         ! geostrophic wind with height (s-1)
 ! from Namelist PHYSICS:-
                    ! von Karman constant (default value=0.4)
-REAL :: VK  
+REAL :: VK
                     ! Monin-Obukhov coefficents; default values:
-REAL :: BETAM, GAMMAM, BETAH, GAMMAH, ALPHAH  
+REAL :: BETAM, GAMMAM, BETAH, GAMMAH, ALPHAH
                     ! =4.8
                     ! =19.3
                     ! =7.8
                     ! =12.0
                     ! =1.0
                    ! Maximum change in buoyancy flux between iterations
-REAL :: DFBMAX  
+REAL :: DFBMAX
                    ! in CHGBUOY.
                    ! Coefficients for "virtual" contributions to
-REAL :: CQ (NQP)  
+REAL :: CQ (NQP)
                    ! buoyancy from Q fields.
                  ! ratio of the circumference of a circle to its diamete
-!REAL :: PI  
+!REAL :: PI
 ! from Namelist INPUT:-
                           ! surface roughness length for momentum (m)
-REAL :: Z0  
+REAL :: Z0
                           ! surface roughness length for scalars (m)
-REAL :: Z0TH  
+REAL :: Z0TH
                           ! surface pressure (Pa)
-REAL :: PSF  
+REAL :: PSF
                           ! surface reference pressure (Pa)
-REAL :: PSFR  
+REAL :: PSFR
                           ! density for Boussinesq run (kg/m3)
-REAL :: RHOBOUS  
+REAL :: RHOBOUS
                           ! specified surface sensible heat flux (W/m2)
-REAL :: SHFLX_SEN  
+REAL :: SHFLX_SEN
                           ! specified surface latent heat fluxes (W/m2)
-REAL :: SHFLX_LAT (NQP)  
+REAL :: SHFLX_LAT (NQP)
                           ! specified value of surface theta (K)
-REAL :: THSURF  
+REAL :: THSURF
                           ! specified value fo surface vapour mixing rat
-REAL :: QSURF  
+REAL :: QSURF
 ! from Namelist GRID:-
                           ! Array of heights for setting vertical grid (
-REAL :: HGD (NINITP)  
+REAL :: HGD (NINITP)
                           ! Gridpoints for which HGD values correspond
-INTEGER :: KGD (NINITP)  
+INTEGER :: KGD (NINITP)
                        ! Height of domain top (m)
-REAL :: ZZTOP  
+REAL :: ZZTOP
 ! from Namelist THPROF:-
                           ! Reference potential temnperature for
-REAL :: THREF0  
+REAL :: THREF0
                           ! Boussinesq run (IANELP=0)
                                ! Array of heights for setting reference
-REAL :: ZNREF_READ (NINITP)  
+REAL :: ZNREF_READ (NINITP)
                                ! potential temperature profile (THREF)
                                ! Corresponding array of values for setti
-REAL :: THREF_READ (NINITP)  
+REAL :: THREF_READ (NINITP)
                                ! THREF
 ! from Namelist SUBMODEL:-
                          ! Backscatter coefficient for momentum
-REAL :: SCT  
+REAL :: SCT
                          ! Backscatter coefficient for TH
-REAL :: SCTT  
-REAL :: SCTQ (NQP)  
+REAL :: SCTT
+REAL :: SCTQ (NQP)
 ! other variables
                               ! Array of heights for THREF calculation (
-REAL :: ZNREFGD (NINITP + 1)  
+REAL :: ZNREFGD (NINITP + 1)
                               ! THREF values corresponding to ZNREFGD (K
-REAL :: THREFGD (NINITP + 1)  
+REAL :: THREFGD (NINITP + 1)
                         ! =DUGDZ*THREF0*F_ON_G ) for calculation of
-REAL :: DUGDZFAC  
+REAL :: DUGDZFAC
                         ! =DVGDZ*THREF0*F_ON_G ) baroclinicity
-REAL :: DVGDZFAC  
+REAL :: DVGDZFAC
                         ! FCORIOL/G
-REAL :: F_ON_G  
+REAL :: F_ON_G
                         ! Reciprocal of number of horizontal
-REAL :: RNHPTS  
+REAL :: RNHPTS
                         ! grid points = 1/REAL(IIP*JJTOTP)
                         ! 1 - TSMTH    ) used for timestep
-REAL :: TSMTHC1  
+REAL :: TSMTHC1
                         ! 2*TSMTH - 1  ) smoothing
-REAL :: TSMTHC2  
+REAL :: TSMTHC2
                         ! Galilean transformation for u (m/s)
-REAL :: UGAL  
+REAL :: UGAL
                         ! Galilean transformation for v (m/s)
-REAL :: VGAL  
+REAL :: VGAL
 ! following used in LOWERBC
                         ! LOG(1 + ZN(2)/Z0)
-REAL :: ZLOGM  
+REAL :: ZLOGM
                         ! LOG(1 + ZN(2)/Z0TH)
-REAL :: ZLOGTH  
+REAL :: ZLOGTH
                         ! DZN(2)*0.5
-REAL :: CZN  
+REAL :: CZN
                         ! Coefficient for viscous Courant number in LOWE
-REAL :: COCVIS  
+REAL :: COCVIS
                         ! VK/ZLOGM
-REAL :: VK_ON_ZLOGM  
+REAL :: VK_ON_ZLOGM
                         ! ZLOGTH/VK
-REAL :: ZLOGTH_ON_VK  
+REAL :: ZLOGTH_ON_VK
                         ! Convective limit = -0.5
-REAL :: EXPTFC  
+REAL :: EXPTFC
 ! Time variables
                         ! Current model time (s)
-REAL :: TIME  
+REAL :: TIME
                         ! Current model timestep (s)
-REAL :: DTM  
+REAL :: DTM
                         ! Current time over which diagnostics averaged
-REAL :: TIMEAV  
+REAL :: TIMEAV
                         ! DTM * 2
-REAL :: DTM_X2  
+REAL :: DTM_X2
                         ! DTM * 4
-REAL :: DTM_X4  
+REAL :: DTM_X4
                         ! Time advanced since AVDG last called
-REAL :: TIMEDG  
+REAL :: TIMEDG
                         ! Timestep on last model step (s)
-REAL :: DTMOLD  
+REAL :: DTMOLD
                         ! Timestep for next model step (s)
-REAL :: DTMNEW  
+REAL :: DTMNEW
                         ! Reciprocal of timstep
-REAL :: RDTM  
+REAL :: RDTM
                         ! Reciprocal of twice the timestep
-REAL :: R_2DTM  
+REAL :: R_2DTM
 ! Flux and buoyancy variables
                         ! Surface temperature flux
-REAL :: FTH  
+REAL :: FTH
                         ! Surface moisture flux
-REAL :: FQ (NQP)  
+REAL :: FQ (NQP)
                         ! Surface buoyancy flux
-REAL :: FBUOY  
+REAL :: FBUOY
                         ! NOT REALLY SURE
-REAL :: FBUOYNEW  
+REAL :: FBUOYNEW
 ! variables for fixed temperature surface boundary condition
                         ! RATIO_MOL_WTS*THREF0 (or THREF(K))
-REAL :: THCONA  
+REAL :: THCONA
                         ! THCONA-THREF0 (or equiv for IANEL=1)
-REAL :: THCONB  
+REAL :: THCONB
                         ! Tolerence for surface flux iteration
-REAL :: TOL  
+REAL :: TOL
                         ! Surface virtual potential temperature
-REAL :: THVSURF  
+REAL :: THVSURF
                         ! ALPHAH*ZLOGTH
-REAL :: BHBC  
+REAL :: BHBC
                         ! BETAM*ZN(2)*G*VK/THVSURF
-REAL :: CMBC  
+REAL :: CMBC
                         ! 1/CMBC
-REAL :: RCMBC  
+REAL :: RCMBC
                         ! BETAH*(ZN(2)+Z0-Z0TH)/(BETAM*ZN(2))
-REAL :: RHMBC  
+REAL :: RHMBC
                         ! ZLOGM*(BHBC-RHMBC*ZLOGM)
-REAL :: DDBC  
+REAL :: DDBC
                         ! 0.5/DDB
-REAL :: R2DDBC  
+REAL :: R2DDBC
                         ! 4.*DDBC
-REAL :: DDBC_X4  
+REAL :: DDBC_X4
                         ! 2.*RHMBC*ZLOGM-BHBC
-REAL :: EECON  
+REAL :: EECON
                         ! VK/BHBC
-REAL :: TSTRCONA  
+REAL :: TSTRCONA
                         ! VK/ALPHAH
-REAL :: TSTRCONB  
+REAL :: TSTRCONB
                         ! THVSURF/(G*VK)
-REAL :: ELLMOCON  
+REAL :: ELLMOCON
                         ! GAMMAM*(ZN(2)+Z0)
-REAL :: X4CON  
+REAL :: X4CON
                         ! GAMMAM*Z0
-REAL :: XX0CON  
+REAL :: XX0CON
                         ! GAMMAH*(ZN(2)+Z0)
-REAL :: Y2CON  
+REAL :: Y2CON
                         ! GAMMAH*Z0TH
-REAL :: YY0CON  
+REAL :: YY0CON
 ! variables for exponential radiation
                         ! LW exponential decay factor
-REAL :: EXP_LW  
+REAL :: EXP_LW
                         ! cloud top LW flux (Wm-2)
-REAL :: LWTOP_IN  
+REAL :: LWTOP_IN
                         ! cloud base LW flux (Wm-2)
 
 
-REAL :: LWBASE_IN  
+REAL :: LWBASE_IN
 !
-REAL ::a_IX, b_IX, c_IX, d_IX  
+REAL ::a_IX, b_IX, c_IX, d_IX
 
-REAL ::a_SX, b_SX, c_SX, d_SX  
+REAL ::a_SX, b_SX, c_SX, d_SX
 
-REAL, DIMENSION (7) ::GamFN_I, GamFN_S  
+REAL, DIMENSION (7) ::GamFN_I, GamFN_S
 
-REAL ::dndt_I, dndt_S  
+REAL ::dndt_I, dndt_S
 
 COMMON / AGGPRM / a_IX, b_IX, c_IX, d_IX, a_SX, b_SX, c_SX, d_SX, &
  dndt_I, dndt_S, GamFN_I, GamFN_S
@@ -992,40 +992,40 @@ COMMON / dgstore / l_dodgs, l_updwn4d, dth_dt, dq_dt, dthl_dt_p, dqt_dt_p, &
                                                  ! redundant icl,
       !
                          ! number of domain decompositions
-!INTEGER ::nupdown  
+!INTEGER ::nupdown
       !
-REAL, DIMENSION (kkp) ::olqlbar  
-REAL, DIMENSION (jjp, kkp) ::dth_dt, dthl_dt_p, dmse_dt_p  
-REAL, DIMENSION (jjp, kkp, nqp) ::dq_dt!, fallq  
-REAL, DIMENSION (jjp, kkp) ::dqt_dt_p  
-!REAL, DIMENSION (jjp, kkp, nprc) ::procrate  
+REAL, DIMENSION (kkp) ::olqlbar
+REAL, DIMENSION (jjp, kkp) ::dth_dt, dthl_dt_p, dmse_dt_p
+REAL, DIMENSION (jjp, kkp, nqp) ::dq_dt!, fallq
+REAL, DIMENSION (jjp, kkp) ::dqt_dt_p
+!REAL, DIMENSION (jjp, kkp, nprc) ::procrate
       !!
-LOGICAL, DIMENSION (nupdownmaxp, jjp, kkp, iipep) ::l_updwn4d  
+LOGICAL, DIMENSION (nupdownmaxp, jjp, kkp, iipep) ::l_updwn4d
                        ! flag for each grid point and each catagory
 
-LOGICAL ::l_dodgs  
+LOGICAL ::l_dodgs
                        ! Flag for diagnostic run or not
 
-!CHARACTER(LEN = 3), DIMENSION (nupdownmaxp) ::cupdown  
+!CHARACTER(LEN = 3), DIMENSION (nupdownmaxp) ::cupdown
                        ! Name of each category
 common / dgchars / chav, chts, chsp, ctemp1, ctemp2, ctemp3, &
  procchar
       !
                                                        !
 
-CHARACTER(LEN = 7), DIMENSION (nprc) ::procchar  
-CHARACTER(LEN = 11), DIMENSION (ndgsp) ::chav  
+CHARACTER(LEN = 7), DIMENSION (nprc) ::procchar
+CHARACTER(LEN = 11), DIMENSION (ndgsp) ::chav
                    !
-CHARACTER(LEN = 9), DIMENSION (nserp) ::chts  
+CHARACTER(LEN = 9), DIMENSION (nserp) ::chts
                    !
                                                                       !
 CHARACTER(LEN = 10), DIMENSION ( (nspecp - 1) * ispecp + 1) :: &
  chsp
       ! temporary characters
-CHARACTER(LEN = 3) ::ctemp3  
-CHARACTER(LEN = 2) ::ctemp2  
+CHARACTER(LEN = 3) ::ctemp3
+CHARACTER(LEN = 2) ::ctemp2
 
-CHARACTER(LEN = 1) ::ctemp1  
+CHARACTER(LEN = 1) ::ctemp1
 !
 ! History fields for homogeneous freezing
 
@@ -1034,7 +1034,7 @@ INTEGER, PARAMETER::IIP_CCN = MAX (1, IIP * INCCNP), JJP_CCN = &
 REAL ::TC_2 (1:JJP_CCN, 1:KKP_CCN, 1:IIP_CCN), TC_1 (1:JJP_CCN, &
  1:KKP_CCN, 1:IIP_CCN), sW_1 (1:JJP_CCN, 1:KKP_CCN, 1:IIP_CCN)
 
-REAL ::DT_2, DT_1  
+REAL ::DT_2, DT_1
 
 !!!Declarations for TAU bin model and interface
   real :: rdt
@@ -1045,27 +1045,27 @@ REAL ::DT_2, DT_1
   real :: rhon(KKP)
   real :: rdz_on_rhon(KKP)
   integer::iqv = 0
-!!$  integer::iql = 0  
-!!$  integer::iqr = 0  
-!!$  integer::iqs = 0  
-!!$  integer::iqg = 0  
-!!$  integer::iqi = 0  
-!!$  integer::iqn = 0  
+!!$  integer::iql = 0
+!!$  integer::iqr = 0
+!!$  integer::iqs = 0
+!!$  integer::iqg = 0
+!!$  integer::iqi = 0
+!!$  integer::iqn = 0
 !!$  integer::iqng = 0
-!!$  integer::iqns = 0  
-!!$  integer::iqnr = 0  
-!!$  integer::iqvg = 0  
-!!$  integer::iqnl = 0 
-!!$  integer::iqndep = 0  
-!!$  integer::iqnccn = 0  
-!!$  integer::iqnevf = 0 
+!!$  integer::iqns = 0
+!!$  integer::iqnr = 0
+!!$  integer::iqvg = 0
+!!$  integer::iqnl = 0
+!!$  integer::iqndep = 0
+!!$  integer::iqnccn = 0
+!!$  integer::iqnevf = 0
 !!$  integer::iqncon = 0
-!!$  integer::inbinql = 0 
-  integer::iqss = 0 
+!!$  integer::inbinql = 0
+  integer::iqss = 0
 
 !!$  integer i
 !!$
-!!$  !Logical switches 
+!!$  !Logical switches
 !!$  logical :: l_ice=.False.
 !!$  logical :: micro_unset=.True.
 
@@ -1088,7 +1088,7 @@ REAL ::DT_2, DT_1
        , IRAINBIN   = 0 &
        , IG_FORCE   = 1 &
        , IINHOM_mix = 0 &
-       , IEVAP_MIX_JR06 = 0 
+       , IEVAP_MIX_JR06 = 0
   INTEGER :: arr_loop
   integer,DIMENSION(Ln2):: &
           IAERO_BIN=(/(arr_loop, &
@@ -1104,24 +1104,24 @@ REAL ::DT_2, DT_1
 !!$     integer :: ispecies ! Species index
 !!$     integer :: imoment  ! moment index
 !!$  end type qindex
-!!$     
+!!$
 !!$  type(qindex), allocatable :: qindices(:)
 !!$  integer :: nqs ! number of qindices (possibly different from nqp)
 
-  
+
   integer:: iq, ih, imom
   character(max_char_len) :: name, units
   real :: value
 
 
 !*COMDECK AEROSOL
-!*/AEROSOL COMMON BLOCK - contains the physical properties of the 
+!*/AEROSOL COMMON BLOCK - contains the physical properties of the
 !*/aerosol for kohler calculations in readnuc
 common /AEOROSOL/rhos,nu,amss,rhos2,nu2,amss2
  REAL RHOS!density of fine aerosol (assumed to be ammonium sulphate)
  REAL NU !number of ions resulting from dissociation of ammonium
  !sulphate
- REAL AMSS!molecular weight of ammonium sulphate 
+ REAL AMSS!molecular weight of ammonium sulphate
  REAL RHOS2!density of coarse aerosol (assumed to be NaCl)
  REAL NU2!number of ions resulting from dissociation of NaCl
  REAL amss2!molecular wieght of NaCl
@@ -1136,36 +1136,36 @@ COMMON/AEROPROF/RN,CCNINIT,BXsul, BXnacl,xn,xa
   !from readnuc, read from external file
  REAL,DIMENSION(Ln2) :: xn !aerosol number
  REAL,DIMENSION(lnuc) :: xa !aerosol mass
- 
+
 ! KiD : moved mean and stdev of aersol dist from module_mp_tau to here
-!       so that value can be initialised in namelist. 
+!       so that value can be initialised in namelist.
  REAL DG1 ! mean aerosol diameter in cms, converted in bin_init
  REAL SG1 ! standard deviation of the aerosol distribution
 !
- REAL BXsul!solute term for fine particles (assumed to 
+ REAL BXsul!solute term for fine particles (assumed to
  !be ammonium sulphate)
  REAL BXnacl!solute term for coarse particles (assumed to be
   !NaCl)
-! 
+!
 !*COMDECK BA
 COMMON/BA/CCN
  REAL,DIMENSION(JMINP:JMAXP,KKP,Ln2)::CCN
 !CCN is new number of aerosol following activation
-! 
+!
 !*COMDECK CC
 COMMON/CC/XKK1,DUS,DUS1
  REAL,DIMENSION(LK) :: XKK1
  REAL,DIMENSION(JMINP:JMAXP,KKP) :: DUS,DUS1
-! 
+!
 !*COMDECK X123
 common/X123/X2,X12,X13,X23
  REAL,DIMENSION(LKDD)::X2,X12,X13,X23
-! 
+!
 !*COMDECK DYN
 COMMON/DYN/DS
 REAL,DIMENSION(JMINP:JMAXP,KKP):: DS
    !absolute value of supersat liquid in Yan's model
-! 
+!
 !*COMDECK SD
 COMMON/SD/ANK,AMK,AMN,AMM
  REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: ANK!number concentration
@@ -1173,19 +1173,19 @@ COMMON/SD/ANK,AMK,AMN,AMM
  REAL,DIMENSION(LK) :: AMN,AMM
 !
 !*COMDECK SDOLD
-COMMON/SDOLD/ANKOLD,AMKOLD,AMKORIG,ANKORIG,CCNOLD 
+COMMON/SDOLD/ANKOLD,AMKOLD,AMKORIG,ANKORIG,CCNOLD
  REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: ANKOLD !no. conc previous dt
  REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: AMKOLD !mass previous dt
 !ANKOLD and AMKOLD are updated after activation
- REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: AMKORIG !no. conc previous dt
- REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: ANKORIG !mass previous dt
+ REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: AMKORIG !mass previous dt
+ REAL,DIMENSION(JMINP:JMAXP,KKP,LK):: ANKORIG !no. conc previous dt
  !AMKORIG and ANKORIG are not updated during microphys, these
  !values are used to work out the source term
  REAL,DIMENSION(JMINP:JMAXP,KKP,LN2) :: CCNOLD
 
  !Aerosol number concentration before activation
-! 
-!*COMDECK CON 
+!
+!*COMDECK CON
 COMMON/CON/AP,XI2,XI,YYY,ZZZ,DDS,XI23,ZI
  REAL AP
  REAL XI2
@@ -1195,76 +1195,76 @@ COMMON/CON/AP,XI2,XI,YYY,ZZZ,DDS,XI23,ZI
  REAL DDS
  REAL XI23
  REAL ZI
-! 
+!
 !*COMDECK WM
 COMMON/WM/AM1,AN1,AN2
  REAL,DIMENSION(JMINP:JMAXP,KKP)::AM1,AN1,AN2
-! 
-!*COMDECK QZ 
+!
+!*COMDECK QZ
  COMMON/QZ/QST
  REAL,DIMENSION(JMINP:JMAXP,KKP):: QST
- !saturation specific humidity for bin model 
-! 
-!*COMDECK TI 
+ !saturation specific humidity for bin model
+!
+!*COMDECK TI
  COMMON/TI/DIEMD,DIEND,DSEDMDT,DSEDNDT
  REAL,DIMENSION(LK)::DIEMD,DIEND!change in mass and number conc
    !due to collision_coalescence and pcpt (bin)
  REAL,DIMENSION(JMINP:JMAXP,KKP,LK)::DSEDMDT,DSEDNDT
   !change in mass and number conc due to sedimentation
-! 
-!*COMDECK XD 
+!
+!*COMDECK XD
  COMMON/XD/X_bin,XX,DIAM,BET,ALP
  REAL,DIMENSION(LKDD)::X_bin,XX,DIAM
  REAL,DIMENSION(LK) ::BET,ALP
-! 
+!
 !*COMDECK RI
   COMMON/RI/XK,DIEMC,DIENC,DIONE,XKmean, XKlocal, &
   XKlayer,XK_gr
   REAL,DIMENSION(LK)::XK,DIEMC,DIENC,DIONE,XKmean,XK_gr
   REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: XKlocal
   REAL, DIMENSION(KKP,LK) :: XKlayer
-! 
+!
 !*COMDECK AH
  COMMON/AH/KBAR,ACON
  REAL,DIMENSION(LKCO,LKCO)::ACON
  REAL KBAR(LK,LK)
-! 
+!
 !*COMDECK LB
  COMMON/LB/PLL,KIJ
  REAL PLL(LKCO,LKCO,LKCO)
  REAL KIJ(LKCO,LKCO)
-! 
+!
 !*COMDECK SK
  COMMON/SK/SMCK
  REAL SMCK(LKCO)
-! 
+!
 !*COMDECK LM
  COMMON/LM/PLM
  REAL PLM(LKCO,LKCO)
-! 
+!
 !*COMDECK S
  COMMON/S/AX,AD
  REAL,DIMENSION(20)::AX,AD
-! 
+!
 !*COMDECK SSS
  COMMON/SSS/AZ0,AM3,AM4,CA,CB,CC,CD
  REAL,DIMENSION(LK)::AZ0,AM3,AM4
  REAL,DIMENSION(LKCO)::CA,CB,CC,CD
-! 
+!
 !*COMDECK XY
  COMMON/XY/CM,CN,SCM
  REAL,DIMENSION(LK)::CM,CN,SCM
-! 
+!
 !*COMDECK ZM
  COMMON/ZM/PSI2,F2 !rm vars F and PSI, see comments in SXY
  REAL,DIMENSION(LK)::PSI2,F2
-! 
+!
 !*COMDECK A
  COMMON/A/SN0,SN,SM0,SM,SMC
  REAL,DIMENSION(LKCO)::SN0,SN,SM0,SM,SMC
-! 
+!
 !*COMDECK CONEV
-! variables for condensation and evaporation subroutines 
+! variables for condensation and evaporation subroutines
  COMMON/CONEV/AM0,AN0,B,C,DD,EE,ZK,YK
  REAL,DIMENSION(LK)::AM0,AN0,B,C,DD,EE,ZK,YK
 !
@@ -1282,7 +1282,7 @@ COMMON/WM/AM1,AN1,AN2
 !*COMDECK SEDIM
  !variables for sedimentation.
  COMMON/SEDIM/AMS,VT,VBAR, QL_SED, QLN_SED
- REAL,DIMENSION(JMINP:JMAXP,KKP):: AMS,VT,VBAR 
+ REAL,DIMENSION(JMINP:JMAXP,KKP):: AMS,VT,VBAR
  REAL, DIMENSION(JMINP:JMAXP,KKP,NQP) :: QL_SED
  REAL, DIMENSION(JMINP:JMAXP,KKP,NQP) :: QLN_SED!
 !*COMDECK NUCFACT
@@ -1290,13 +1290,13 @@ COMMON/WM/AM1,AN1,AN2
 ,k_radorig, radeq
  REAL, DIMENSION(LN2):: K_factor !factor to multiply aerosol by to
  !calculate the size of cloud drop resulting from aerosol at 100%RH
- REAL, DIMENSION(LN2):: K_rad, k_radorig, radeq 
- ! radius of cloud droplet resulting 
+ REAL, DIMENSION(LN2):: K_rad, k_radorig, radeq
+ ! radius of cloud droplet resulting
  ! from K_factor*rad_aersol
  REAL, DIMENSION(LN2):: K_mass! mass of cloud droplet
  REAL, DIMENSION(LN2):: RNstar
                  !critical radius for nuc (not the same as rstar in kohler)
-                 !based on Ivanova et al (1977)   
+                 !based on Ivanova et al (1977)
   REAL, DIMENSION(LN2):: R_CRIT, RN_CRIT
 !
 !*COMDECK NUCMAIN
@@ -1304,39 +1304,39 @@ COMMON/WM/AM1,AN1,AN2
  REAL, DIMENSION(LNUC) :: SCRIT !critical supersaturation for nuc
  REAL, DIMENSION(LN2) :: CCINTER !change aerosol number due to nucleation
  REAL,DIMENSION(LK) :: ANKCC !CDNC resulting from nuc
- REAL,DIMENSION(LK) :: AMKCC !CDmass resulting from nuc 
+ REAL,DIMENSION(LK) :: AMKCC !CDmass resulting from nuc
 !
 !*COMDECK BIN_RAIN
  COMMON/BIN_RAIN/RATE,ZTOTAL,REFF,ZW_bin
- REAL, DIMENSION(JMINP:JMAXP,KKP) :: RATE,ZTOTAL,REFF 
+ REAL, DIMENSION(JMINP:JMAXP,KKP) :: RATE,ZTOTAL,REFF
  REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: ZW_bin
 
 !*COMDECK REGEN
  COMMON/REGEN/CCNLOSS, CDNCEVAP, CCNREGEN, BINEVAP,ccnorig, &
- TOTCCNORIG, CCNfrac, CCNDIFF, NUCREG_COUNT,LREG, CCNNEWTOT,& 
+ TOTCCNORIG, CCNfrac, CCNDIFF, NUCREG_COUNT,LREG, CCNNEWTOT,&
  CCNORIGTOT, CCNORIGAVG, CCNNEWAVG, CCNxcess, CCNNEWAFT, AEROTOT,&
  qvtot,AN1OLD,AM1OLD
  REAL, DIMENSION(LN2) ::CCNNEWTOT,CCNORIGTOT, CCNORIGAVG, CCNNEWAVG
- REAL, DIMENSION(LN2) :: CCNLOSS, CCNNEWAFT 
+ REAL, DIMENSION(LN2) :: CCNLOSS, CCNNEWAFT
  REAL, DIMENSION(JMINP:JMAXP,KKP,Ln2):: CCNREGEN, ccnorig
- REAL, DIMENSION(JMINP:JMAXP,KKP,Ln2):: CCNfrac, CCNDIFF 
+ REAL, DIMENSION(JMINP:JMAXP,KKP,Ln2):: CCNfrac, CCNDIFF
  REAL, DIMENSION(JMINP:JMAXP,KKP,Ln2):: NUCREG_COUNT, CCNxcess
  REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: BINEVAP
  REAL, DIMENSION(JMINP:JMAXP,KKP) ::CDNCEVAP,AN1OLD,TOTCCNORIG,AM1OLD
  REAL :: AEROTOT, qvtot
  INTEGER :: LREG
 !*COMDECK AERO_DIAG
- COMMON /AERO_DIAG/ CCN_NUC, CCN_REG, dqn_act, dqn_reg,ssat,dcrit 
+ COMMON /AERO_DIAG/ CCN_NUC, CCN_REG, dqn_act, dqn_reg,ssat,dcrit
  REAL, DIMENSION(JMINP:JMAXP,KKP,LN2) :: CCN_NUC,CCN_REG
  REAL, DIMENSION(JMINP:JMAXP,KKP) :: dqn_act, dqn_reg
- REAL, DIMENSION(JMINP:JMAXP,KKP) :: SSAT,dcrit 
+ REAL, DIMENSION(JMINP:JMAXP,KKP) :: SSAT,dcrit
 !*COMDECK CCN_TEST
  COMMON /CCN_TEST/adv_nd,adv_w_nd,adv_v_nd,ccn_init
  REAL, DIMENSION(JMINP:JMAXP, KKP) ::adv_nd,adv_w_nd,adv_v_nd, ccn_init
 !*COMDECK rand_test
  common /rand_test/randarr
 ! real randarr(jjp,kkp,iip)
- real randarr(JMINP:JMAXP*IUSETHP,(KKP-1)*IUSETHP+1,& 
+ real randarr(JMINP:JMAXP*IUSETHP,(KKP-1)*IUSETHP+1,&
 (IDIMMINP-1)*IUSETHP+1:(IDIMMAXP-1)*IUSETHP+1)
 !
 !*COMDECK RAD_TIME
@@ -1347,19 +1347,19 @@ COMMON/WM/AM1,AN1,AN2
 !*COMDECK JR2006
  COMMON /JR2006/t_mix,t_mix_approx,tevap_bb,tevap_squires,da_no &
 ,R_bar, R_int,da_no_rat,evap_a
- REAL,DIMENSION(JMINP:JMAXP,KKP) :: t_mix  
+ REAL,DIMENSION(JMINP:JMAXP,KKP) :: t_mix
                              !mixing timescale calced using eddy dis
- REAL,DIMENSION(JMINP:JMAXP,KKP) :: t_mix_approx 
+ REAL,DIMENSION(JMINP:JMAXP,KKP) :: t_mix_approx
                              !mixing timescale calced using vert vel only
  REAL,DIMENSION(JMINP:JMAXP,KKP) :: tevap_bb
                              !evaporation timescale calced using method
                              !based on brenguier+burnet
  REAL,DIMENSION(JMINP:JMAXP,KKP) :: tevap_squires
- REAL,DIMENSION(JMINP:JMAXP,KKP) :: da_no   
+ REAL,DIMENSION(JMINP:JMAXP,KKP) :: da_no
                              !dahmkohler number,ratio of t_mix to t_evap
- REAL,DIMENSION(JMINP:JMAXP,KKP) ::  R_bar   
+ REAL,DIMENSION(JMINP:JMAXP,KKP) ::  R_bar
                              !mean cloud drop radius
- REAL,DIMENSION(JMINP:JMAXP,KKP) ::  R_int   
+ REAL,DIMENSION(JMINP:JMAXP,KKP) ::  R_int
                              !integral radius
  REAL,DIMENSION(JMINP:JMAXP,KKP) :: da_no_rat, evap_a
 !
@@ -1369,11 +1369,11 @@ COMMON/WM/AM1,AN1,AN2
 !so sum will not equal dq_dt(IQL) or dq_dt(ND) in the present
 !diags
  COMMON /MICRO_MIX/ce_dqdt_sub,ce_dqdt_res,am1_diag,an1_diag &
- ,am2_diag,an2_diag 
+ ,am2_diag,an2_diag
  REAL,DIMENSION(JMINP:JMAXP,KKP,NQP) :: ce_dqdt_sub,ce_dqdt_res
  REAL,DIMENSION(JMINP:JMAXP,KKP) :: am1_diag,an1_diag
- REAL,DIMENSION(JMINP:JMAXP,KKP) :: am2_diag,an2_diag 
- 
+ REAL,DIMENSION(JMINP:JMAXP,KKP) :: am2_diag,an2_diag
+
  common /auto_con_diag/rmass_cw, rnum_cw
  REAL,DIMENSION(KKP) :: rmass_cw, rnum_cw
 
