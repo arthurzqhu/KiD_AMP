@@ -190,7 +190,7 @@ module module_mp_tau_bin
                    (SQ(J,K,ICDNC_BIN(IQ))*DT)
               if (AMKORIG(J,K,IQ) < eps .or.         &
                    ANKORIG(J,K,IQ) < eps .or.        &
-                   AMKORIG(J,K,IQ) > ANKORIG(J,K,IQ)) then
+                   AMKORIG(J,K,IQ) > ANKORIG(J,K,IQ)) then ! a check for large mass? -ahu
                  AMKORIG(J,K,IQ) = 0.0
                  ANKORIG(J,K,IQ) = 0.0
               endif
