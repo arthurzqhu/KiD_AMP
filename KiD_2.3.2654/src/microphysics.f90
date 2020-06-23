@@ -676,7 +676,7 @@ endif
 return
 END SUBROUTINE lhf_budget
 !-------------------------------------------------------------------
-Subroutine init_distribution(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
+Subroutine init_dist_sbm(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
 
 use micro_prm, only:nkr
 use parameters, only: max_nbins
@@ -690,6 +690,8 @@ real(8), dimension(max_nbins) :: ffcd,diams
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
+
+call check_bintype
 
 ffcd=0.
 n0c=rxc/gamma(gnuc+3)
@@ -735,4 +737,167 @@ return
 !    xa=(729.*xx**2.+sqrt(4.*(-3.*xx**2.-75.*xx-3.)**3.+(729.*xx**2.+729.*xx)**2.)+729.*xx)**(1./3.)
 !    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
 !  endif
-END SUBROUTINE init_distribution
+END SUBROUTINE init_dist_sbm
+
+!-------------------------------------------------------------------
+subroutine micro_init_tau
+use micro_prm
+use module_bin_init, only: DIAM
+use parameter, only: max_nbins
+use mphys_tau_bin_declare
+use module_bin_init
+
+integer ::j, k, iq
+
+rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
+! AH - 04/03/10, line below leads to divide by 0
+!      corrected by setting array to 2:kkp. Problem highlighted
+!      by Theotonio Pauliquevis
+! prefrcp(:)=1./rprefrcp(:)
+prefrcp(2:kkp)=1./rprefrcp(2:kkp)
+
+prefn(2:kkp)=p0*exner(1:kkp-1,nx)**(1./this_r_on_cp)
+
+dzn(2:kkp)=dz_half(1:kkp-1)
+
+rhon(2:kkp)=rho(1:kkp-1)
+rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
+! Reference temperature (this is fixed in lem, but
+! shouldn't make a difference for microphysics if we
+! just set it to be the current profile (i.e. th'=0)
+tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
+
+! Set up microphysics species
+call set_micro
+
+do j=jminp,jmaxp
+   q_lem (j, 2:kkp, iqv) = qv(1:kkp-1, j)
+   q_lem (j, 2:kkp, iqss) = ss(1:kkp-1, j)
+
+   do iq=1,ln2
+     ih=qindices(IAERO_BIN(iq))%ispecies
+     imom=qindices(IAERO_BIN(iq))%imoment
+     do k=1,nz-1
+         q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
+     end do
+   enddo
+   do iq=1,lk
+     ! mass bins
+     ih=qindices(ICDKG_BIN(iq))%ispecies
+     imom=qindices(ICDKG_BIN(iq))%imoment
+     do k=1,nz-1
+        q_lem (j, k+1, ICDKG_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+     end do
+     ! number bins
+     ih=qindices(ICDNC_BIN(iq))%ispecies
+     imom=qindices(ICDNC_BIN(iq))%imoment
+     do k=1,nz-1
+        q_lem (j, k+1, ICDNC_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+     end do
+   enddo
+   th_lem (j, :) = 0.0
+   w_lem(j,2:kkp)=w_half(1:kkp-1,j)
+end do
+
+call bin_init !initialises the cloud bin categories
+call data     !reads in and sets the coll-coal kernal
+
+DO IQ = 1,LN2
+ ih=qindices(IAERO_BIN(iq))%ispecies
+ imom=qindices(IAERO_BIN(iq))%imoment
+ DO k=1,nz-1
+   DO j = JMINP , JMAXP
+     CCNORIG(j,k+1,IQ) = aerosol(k,j,ih)%moments(iq,imom)
+   ENDDO
+ ENDDO
+ENDDO
+
+DO k = 1, KKP
+ DO j = JMINP, JMAXP
+   TOTCCNORIG(j,k) = 0.0
+   DO IQ = 1, LN2
+     TOTCCNORIG(j,k) = TOTCCNORIG(j,k) + CCNORIG(j,k,IQ)
+   ENDDO
+ ENDDO
+ENDDO
+DO IQ = 1, Ln2
+  CCNORIGTOT(IQ) = 0.0
+  CCNORIGAVG(IQ) = 0.0
+   DO k = 1, KKP
+     DO j = JMINP, JMAXP
+       CCNORIGTOT(IQ) = CCNORIGTOT(IQ) + CCNORIG(j,k,IQ)
+     ENDDO
+   ENDDO
+   CCNORIGAVG(IQ) = CCNORIGTOT(IQ)/(JJP*KKP)
+ENDDO
+
+end subroutine micro_init_tau
+
+!-------------------------------------------------------------------
+Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
+
+use micro_prm, only:nkr
+use parameters, only: max_nbins
+use mphys_tau_bin_declare, only: DIAM, NQP
+implicit none
+
+integer :: kr
+real:: rxc,gnuc,dnc,rxr,gnur,dnr
+real(8):: n0c,exptermc,n0r,exptermr
+real(8), dimension(max_nbins) :: diams
+real(8), dimension(NQP) :: ffcd_tau
+
+diams = DIAM(1:max_nbins) !ditch the last dummy element (?) -ahu
+!print*, 'inside init dist',rx,gnu,dn
+!Setting up a mass distribution, not a number distribution
+!So increase gnu by 3
+
+call check_bintype
+
+ffcd=0.
+
+n0c=rxc/gamma(gnuc+3)
+n0r=rxr/gamma(gnur+3)
+
+do kr=1,nkr
+  if (rxc>0.) then
+    exptermc=exp(-1.*diams(kr)/dnc)
+    ffcd(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
+  endif
+  if (rxr>0.) then
+     exptermr=exp(-1.*diams(kr)/dnr)
+     ffcd(kr) = ffcd(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
+  endif
+!If ffcd(kr) is NaN, set to zero
+!    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
+!       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
+enddo
+
+return
+!Diagnose shape parameter
+!  if (mom<0) then
+!    !Shape parameter is given by mx
+!    gnu=mx
+!  elseif (mom==1) then
+!    xx=cx**(-2./3.)*mx/m3**(1./3.)
+!    if (xx>=1.) xx=0.99
+!    x3=xx**3.
+!    gnu=(-3.*x3-xx**1.5*sqrt(x3+8.))/(2.*(x3-1))
+!  elseif (mom==2) then
+!    xx=cx**(-1./3.)*mx/m3**(2./3.)
+!    if (xx>=1.) xx=0.99
+!    x3=xx**3.
+!    gnu=(-4.*x3-sqrt(8.*x3+1.)+1)/(2.*(x3-1))
+!  elseif (mom==4) then
+!    xx=cx**(1./3.)*mx/m3**(4./3.)
+!    if (xx<=1.) xx=1.01
+!    x3=xx**3.
+!    xa=(45*x3**2.+27*x3+(0.,1.)*sqrt(3.)*xx**3.)**(1./3.)
+!    gnu=real(-1.*(x3-3.)/(x3-1.)+xa/(3.**(2./3.)*(x3-1.))+(3.*x3**2.+33.*x3)/(3.**(4./3.)*(x3-1.)*xa))
+!  elseif (mom==6) then
+!    xx=cx*mx/m3**(2.)
+!    if (xx<=1.) xx=1.01
+!    xa=(729.*xx**2.+sqrt(4.*(-3.*xx**2.-75.*xx-3.)**3.+(729.*xx**2.+729.*xx)**2.)+729.*xx)**(1./3.)
+!    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
+!  endif
+END SUBROUTINE init_dist_sbm

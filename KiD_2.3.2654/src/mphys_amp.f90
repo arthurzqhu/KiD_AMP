@@ -44,6 +44,8 @@ contains
     real(8), dimension(nz,nx,2,flag_count) :: flag
     character(1) :: Mnum
 
+    call check_bintype
+    
     do i=1,nx
        do k=1,nz
           !if (l_advect .and. l_diverge) then

@@ -46,21 +46,21 @@ module module_mp_tau_bin
   Use switches_bin
 
   IMPLICIT NONE
-  
+
   !generic 1d and 2d KiD arrays for diagnostics
   real, dimension(KKP) :: field ! field for 1-D KiD diagnostics
-  real, dimension(KKP,JMINP:JMAXP):: field_2d ! field for 1-D KiD diagnostics
+  real, dimension(KKP,JMINP:JMAXP):: field_2d ! field for 2-D KiD diagnostics
 
   contains
 
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       SUBROUTINE tau_bin(I,TH,Q,STH,SQ,DT,RDT)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-!      
+!
       IMPLICIT NONE
-!     
+!
 !variables for fixed radiative flux
-!CALL RAD_MOD      
+!CALL RAD_MOD
        REAL ::                                                          &
      &  RADFAC                                                          &
                   ! factor to change from flux to heating rate
@@ -77,51 +77,51 @@ module module_mp_tau_bin
       REAL, DIMENSION(jjp,kkp) :: fnt_lw, sth_lw
 !     variables for fixed cooling rate
       REAL :: cool_kday,sth_lwmax,qttol
-      INTEGER,DIMENSION(JMINP:JMAXP) ::  K_BL_TOP 
+      INTEGER,DIMENSION(JMINP:JMAXP) ::  K_BL_TOP
 ! Subprogram arguments
-! IN  
+! IN
       INTEGER, INTENT(IN) :: I
       REAL, INTENT(IN) ::                                               &
      &    DT                                                            &
-                   ! timestep 
+                   ! timestep
      &   ,RDT      ! 1/timestep
       REAL, INTENT(IN), DIMENSION(JMINP:JMAXP,KKP) ::                       &
      &    TH       ! potential temperature perturbation
       REAL, INTENT(IN), DIMENSION(JMINP:JMAXP,KKP,NQP) ::                   &
      &    Q        ! moisture fields
-      
-! INOUT    
+
+! INOUT
       REAL, INTENT(INOUT), DIMENSION(JMINP:JMAXP,KKP) ::                    &
-     &    STH      ! potential temperature tendency 
+     &    STH      ! potential temperature tendency
       REAL, INTENT(INOUT), DIMENSION(JMINP:JMAXP,KKP,NQP) ::                &
-     &    SQ        ! moisture fields' tendency      
+     &    SQ        ! moisture fields' tendency
 !
       integer ijj,ikk
 !
-!END of RADIATION DECLARATIONS 
+!END of RADIATION DECLARATIONS
 !
 ! Local variables
 !
-      
+
       REAL,DIMENSION(JMINP:JMAXP,KKP) :: DQLDT,DNQLDT,QLOLD,QLNEW           &
      &                             , NQLOLD,NQLNEW, RAINOLD,RAINNOOLD   &
      &                             ,RAINNEW,RAINNONEW,DRAINDT,DRAINNODT &
      &                             , QSATMIX                            &
                                              !saturation mixing ratio
      &                             , RH, RH2                            &
-                                             !relative humidity 
+                                             !relative humidity
      &                             , DTHDT                              &
-                                           ! microphysical tendency 
+                                           ! microphysical tendency
                                            ! in potential temperature
      &                             , DQVDT                              &
-                                           ! microphysical tendency 
+                                           ! microphysical tendency
                                            ! in water vapour
      &                             , TBASE                              &
-                                           !value of T around which 
+                                           !value of T around which
                                            !saturation functions base
-     &                             ,QVOLD,QTOT 
-!      
-      REAL,DIMENSION(JMINP:JMAXP,KKP,LN2) :: CCNfrac_loc 
+     &                             ,QVOLD,QTOT
+!
+      REAL,DIMENSION(JMINP:JMAXP,KKP,LN2) :: CCNfrac_loc
       REAL :: THOLD                                                     &
                     !potential temp pertubation
      & ,      THNEW                                                     &
@@ -143,7 +143,7 @@ module module_mp_tau_bin
       real :: t
 !
 !local integers
-!     
+!
       INTEGER, DIMENSION(JMINP:JMAXP) :: KQLINV
       INTEGER :: KQLMAX
       INTEGER J,K,IQ, N
@@ -151,17 +151,17 @@ module module_mp_tau_bin
 
 
 !Functions
-!      
+!
 !      REAL,EXTERNAL :: QSATURATION                                      &
                                    !specific humidity for this case
-!     &  , RELHUM  !function for relative humidty 
-!      
-! 
+!     &  , RELHUM  !function for relative humidty
+!
+!
       IF(IMICROBIN == 1.AND.IRAINP == 0) THEN
 
 !Calculate the domain total bin resolved CCN number for regen
 !when Ln2 >  3
- 
+
         TOTCCNNUC = 0.0
         DO IQ = 1, Ln2
            CCNNEWTOT(IQ) = 0.0
@@ -174,11 +174,11 @@ module module_mp_tau_bin
            ENDDO
            TOTCCNNUC = TOTCCNNUC + (CCNORIGTOT(IQ) - CCNNEWTOT(IQ))
         ENDDO
-        
+
      ENDIF
 
      eps = epsilon(1.0d0)
-     
+
      do K = 2, KKP
         do J = JMINP,JMAXP
            DO IQ=1,LK
@@ -197,14 +197,14 @@ module module_mp_tau_bin
            ENDDO
         ENDDO
      ENDDO
-       
-     if (l_sediment) then
-           
-        CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
-        
-     endif                    ! sedimentation calculation 
 
-       
+     if (l_sediment) then
+
+        CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
+
+     endif                    ! sedimentation calculation
+
+
      totevap = 0.0
      totevap2 = 0.0
      totccnreg = 0.0
@@ -213,7 +213,7 @@ module module_mp_tau_bin
      NQLOLD(:,:) = 0.0
      QLNEW(:,:) = 0.0
      NQLNEW(:,:) = 0.0
- 
+
      DO K=2,KKP
         PMB = 0.01*PREFN(K)
         DO J=JMINP,JMAXP
@@ -223,8 +223,8 @@ module module_mp_tau_bin
            T_0(j,k) = TREF(K) + TH(j,k)*RPREFRCP(K)
            QST_0(j,k) = QSATURATION(t_0(j,k),PMB)
            DS_0 = q(j,k,IQSS) + (SQ(J,K,IQSS)*DT)
-            
-!b) Set base values after dynamics for use in microphys            
+
+!b) Set base values after dynamics for use in microphys
            THOLD=TH(J,K) + (STH(J,K)*DT)
            QVOLD(J,K)=Q(J,K,IQV) + (SQ(J,K,IQV)*DT)
            DO IQ = 1, LK
@@ -233,7 +233,7 @@ module module_mp_tau_bin
               NQLOLD(J,K)=NQLOLD(J,K)+(Q(J,K,ICDNC_BIN(IQ))               &
      &        +(SQ(J,K,ICDNC_BIN(IQ))*DT))
            ENDDO
-            
+
            TBASE(J,K)=TREF(K) + THOLD*RPREFRCP(K)
 !
 ! 2. calculate saturation functions
@@ -242,23 +242,23 @@ module module_mp_tau_bin
 !
 ! 3. call cloudbin to calculate the bin microphysics (i.e.
 !   nucleation, condensation, evaporation, collection, breakup)
-!          
+!
             CALL CLOUDBIN(I,J,K,Q,SQ,AMKORIG,ANKORIG,QSATPW,RH,TBASE,TREF,    &
      &                  DQVDT(J,K),DT,RDT,PMB,QVOLD(J,K),QLOLD(J,K),    &
      &                  totevap,totccnreg,DS_0)
 
 !
-! 4. calculate the change in theta due to bin microphysics            
+! 4. calculate the change in theta due to bin microphysics
 !
             THNEW=(TBASE(J,K) - TREF(K))*PREFRCP(K)
             DTHDT(J,K)=(THNEW-THOLD)*RDT
             totevap = totevap + CDNCEVAP(J,K)
         ENDDO
-        
-      ENDDO      
+
+      ENDDO
 !
-!regeneration for single prognostic CCN variable 
-      if (.not. l_fix_aerosols) then        
+!regeneration for single prognostic CCN variable
+      if (.not. l_fix_aerosols) then
         DO IQ = 1, LN2
           CCNNEWTOT(IQ) = 0.0
           CCNNEWAVG(IQ) = 0.0
@@ -286,18 +286,18 @@ module module_mp_tau_bin
               ENDIF
             ENDDO
           ENDDO
-        ENDDO       
-        if (jjp == 1) then 
+        ENDDO
+        if (jjp == 1) then
            field(:) = dqn_reg(jjp,:)
-           call save_dg(field,'ccn_reg', i_dgtime, & 
+           call save_dg(field,'ccn_reg', i_dgtime, &
                 units='#/kg/s',dim='z')
-        else 
-           do  K = 2,KKP 
+        else
+           do  K = 2,KKP
               do J = JMINP, JMAXP
                  field_2d(k, j) = dqn_reg(j,k)
               enddo
            enddo
-           call save_dg(field_2d(1:kkp,1:jjp),'ccn_reg', i_dgtime, & 
+           call save_dg(field_2d(1:kkp,1:jjp),'ccn_reg', i_dgtime, &
                 units='#/kg/s',dim='z,x')
         endif
       endif
@@ -307,23 +307,23 @@ module module_mp_tau_bin
          call save_dg(field,'ccn_act', i_dgtime, &
               units='#/kg/s',dim='z')
       else
-         do  K = 2,KKP 
+         do  K = 2,KKP
             do J = JMINP, JMAXP
                field_2d(k, j) = dqn_act(j,k)
             enddo
          enddo
          call save_dg(field_2d(1:kkp,1:jjp), 'ccn_act', i_dgtime, units, dim='z,x')
       endif
-         
-      DO K = 2,KKP 
+
+      DO K = 2,KKP
          DO J = JMINP,JMAXP
             STH(J,K) = STH(J,K) + DTHDT(J,K)
             SQ(J,K,IQV) = SQ(J,K,IQV)+DQVDT(J,K)
             DO IQ=1,LK
 !Call microcheck to update the source fields for bin resolved mass
-!and number, and check that small numbers are not causing erroneous 
+!and number, and check that small numbers are not causing erroneous
 !values of mass and number that lead to numerical instabilities
-      
+
                IF((Q(J,K,ICDKG_BIN(IQ))+(SQ(J,K,ICDKG_BIN(IQ))*DT))      &
                 < 0.0 &
                 .or.(Q(J,K,ICDNC_BIN(IQ))+(SQ(J,K,ICDNC_BIN(IQ))*DT))      &
@@ -341,11 +341,11 @@ module module_mp_tau_bin
             DNQLDT(J,K)=(NQLNEW(J,K)-NQLOLD(J,K))*RDT
          ENDDO
       ENDDO
-! 6. calculate effective radius for radiation 
+! 6. calculate effective radius for radiation
         CALL REFFCALC(Q,SQ,DT,RDT)
- !      
+ !
 ! 7. update diagnostic fields if necessary
-!              
+!
        DO K = 2, KKP
          DO J = JMINP, JMAXP
             IF(l_dodgs)THEN
@@ -363,11 +363,11 @@ module module_mp_tau_bin
 !***********************************************************************
       IMPLICIT NONE
 !This routine is the main loop for bin microphysics, it calculates
-!the changes in mass and nmber concentrations of CCN and cloud 
+!the changes in mass and number concentrations of CCN and cloud
 !droplets and writes the CCN number into array of Q(J,K,IAERO_BIN),
-!Cloud drop mass into Q(J,K,ICDKG_BIN) and cloud drop number into 
+!Cloud drop mass into Q(J,K,ICDKG_BIN) and cloud drop number into
 !Q(J,K,ICDNC_BIN).
-      
+
       REAL,DIMENSION(JMINP:JMAXP,KKP,NQP)::                                 &
      & SQ                                                               &
           !Source term of the water fields
@@ -380,14 +380,14 @@ module module_mp_tau_bin
      & , QST,QST2                                                       &
                   !specific humidity calculated in Spechum
      & , RH, RH2 !relative humidity calculated in relhum
-      INTEGER J,K,L,I !loop counter 
-      
+      INTEGER J,K,L,I !loop counter
+
       REAL,PARAMETER :: RRV=461 !gas constant of moist air J/kg/K
-      
+
       REAL,PARAMETER :: AL=597  !latent heat of evaporation and cond
       REAL,PARAMETER :: T00=273.15 !freezing point of water in K,from
                                    !the LES
-      
+
       REAL,PARAMETER :: CPBIN=0.24 !specific heat of water vapour
       REAL,PARAMETER :: AAR=0.24E-3
 
@@ -396,15 +396,15 @@ module module_mp_tau_bin
 
 !      REAL :: DG1 ! mean aerosol diameter in cm (not m!) = 0.10E-4 !
 !      REAL :: SG1 ! = 1.5
-      
+
       REAL,DIMENSION(JJP,KKP) :: AMY
       REAL,DIMENSION (JMINP:JMAXP,KKP):: TBASE!temp calced in Tau_bin
-                                !using tref+th(1/exner function). passed into 
+                                !using tref+th(1/exner function). passed into
                                 !all other routines as TEMP
       REAL, DIMENSION(JMINP:JMAXP,KKP) :: CDNCEVAP1, CCNTOT, CCNTOTNEW
       REAL :: CN1
       REAL,DIMENSION(KKP)::TREF !reference temperature from LES
-      
+
       REAL DT  !timestep from tau_bin
       REAL RDT !1/timestep from tau_bin
       REAL DM !the condensated mass calced in EVAP and COND routines
@@ -436,7 +436,7 @@ module module_mp_tau_bin
      &                                AMK_sub, ANK_sub
       REAL AVG, masstemp, notemp, ANKwrong, ANKoldwrong, evapbin
 !     code added 1/5/08 - AH - changing declarations of get_forcing
-!     variables to arrays, for debugging+clarity purposes      
+!     variables to arrays, for debugging+clarity purposes
       REAL,DIMENSION(JMINP:JMAXP,KKP) :: TAU                                &
                                          !microphys forcing
      &                ,VSW                                              &
@@ -448,14 +448,14 @@ module module_mp_tau_bin
       REAL :: ds_0      ! dynamic term for supersaturation total trans
       REAL,DIMENSION(JMINP:JMAXP,KKP) :: tau_dum
       REAL ::  delm
-!      
+!
       REAL,DIMENSION(JMINP:JMAXP,KKP) :: NCC,MCC,AN1_bef_adv,AN1_aft_adv
       REAL totnuc, totcdnc, totevap, totccnreg,DtraceDT
 
       real, dimension(kkp) :: auto_mass, auto_num, auto_con_mass, d_rmass
       real :: rmass_tot_orig, rmass_tot_new
       real :: t_test, dtcalc
-      
+
       LOGICAL L_ERROR
       INTEGER ISTOPU
       Integer LC !the smallest bin that will nucleate, used in subnuc
@@ -463,30 +463,30 @@ module module_mp_tau_bin
       INTEGER :: LT, IT, inhom_evap
       INTEGER :: ccn_pos, cloud_pos, count, loop_count
       character(2) :: str2
-       
+
 !      REAL,EXTERNAL::QSATURATION,XACT
 ! Set values of bins before microphysics, these values do not include the
-! effect of dynamics from this timestep. I do not think this is needed 
+! effect of dynamics from this timestep. I do not think this is needed
 ! as all I want is a tendency due ti microphysics. The tendency for aerosol
 ! is calculated in SUBNUC, as this is where nucleation is calculated
 
       if (jjp == 1) then
-         call save_dg(k,rhon(k),'density', & 
+         call save_dg(k,rhon(k),'density', &
               i_dgtime, units='kg/m3',dim='z')
       endif
-         
+
 
       QVNEW = QVOLD
       DO L=1,LN2
         CCNOLD(J,K,L)=Q(J,K,IAERO_BIN(L)) + (SQ(J,K,IAERO_BIN(L))*DT)
-        CCN(J,K,L) = CCNOLD(J,K,L) !this line is required so that 
+        CCN(J,K,L) = CCNOLD(J,K,L) !this line is required so that
         !CCN does not equal zero if DS < 0, i.e. for calc of aerosol
-                                !tendency 
+                                !tendency
       ENDDO
 
       DO L=1,LK
         AMKOLD(J,K,L)=AMKORIG(J,K,L)
-        ANKOLD(J,K,L)=ANKORIG(J,K,L)        
+        ANKOLD(J,K,L)=ANKORIG(J,K,L)
       ENDDO
 
 !****************************************************************
@@ -495,9 +495,9 @@ module module_mp_tau_bin
       DS(J,K)=QVNEW-QST(J,K)
       DUS(J,K)=DS(J,K)/QST(J,K)
       QST_nuc = QST(J,K) !used in activation calculation
-      TEMP_NUC = TBASE(J,K) 
+      TEMP_NUC = TBASE(J,K)
       DS_FORCE = 0.0
-      
+
       IF (DT.GT.4.0) THEN
          LT = CEILING(DT/1.0)
          DTcalc = DT/REAL(LT)
@@ -505,11 +505,11 @@ module module_mp_tau_bin
          LT=1
          DTcalc=DT
       ENDIF
-     
+
       CDNCEVAP(j,k) = 0.0
       am1_diag(j,k) = 0.0
       an1_diag(j,k) = 0.0
-     
+
 !AH 0410 - moving all unit conversion outside
 !        the calls for get_force, cond and evap_new
 !        to minimise precision errors, also don't change
@@ -517,7 +517,7 @@ module module_mp_tau_bin
       DO L=1,LK
          IF(AMKOLD(J,K,L) > eps .AND.       &
               ANKOLD(J,K,L) > eps )THEN
-            am0(l)=(amkold(j,k,l)*Rhon(k))/1.E3 
+            am0(l)=(amkold(j,k,l)*Rhon(k))/1.E3
             an0(l)=(ankold(j,k,l)*Rhon(k))/1.E6
             AMN(L)=am0(L)/an0(L)
          ELSE
@@ -527,8 +527,8 @@ module module_mp_tau_bin
          ENDIF
          am1_diag(j,k) = am1_diag(j,k)+am0(l)
          an1_diag(j,k) = an1_diag(j,k)+an0(l)
-      ENDDO 
-      
+      ENDDO
+
       DO it = 1,lt
 
          IF(IINHOM_mix == 0) then
@@ -537,9 +537,9 @@ module module_mp_tau_bin
                  AM0,AN0,DTcalc,TAU,EN,EA,VSW(J,K))
 
             inhom_evap = 0
-                
+
          ENDIF
-         
+
          DM=0.0
          dm_cloud_evap = 0.0
          dm_rain_evap = 0.0
@@ -566,69 +566,69 @@ module module_mp_tau_bin
             DIEND(L)=0.0
             ANK(J,k,L) = 0.0
             AMK(j,k,l) = 0.0
-         ENDDO         
-         IF (IINHOM_MIX == 0) then          
+         ENDDO
+         IF (IINHOM_MIX == 0) then
             DS_force = tau(j,k)
             tau_dum(j,k) = tau(j,k)
          endif
 
-         IF (DS_force >  eps) THEN        
-!*****************************************************************        
+         IF (DS_force >  eps) THEN
+!*****************************************************************
 !        CONDENSATION
 !     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
 !****************************************************************
             AN1OLD(J,K) = 0.0
             AM1OLD(j,k) = 0.0
             DO L=1,LK
-               AN1OLD(J,K) =AN1OLD(J,K)+AN0(l) 
+               AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
                AM1OLD(j,K) = AM1OLD(j,K)+am0(l)
             ENDDO
 
-!***************************************************************      
+!***************************************************************
             CALL COND_new(J,K,DM,TBASE,QST,RH,Q,SQ,DT,RDT,PMB,QVNEW,      &
                  TAU_dum,it,LT)
-!***************************************************************      
+!***************************************************************
 
             CALL REBIN(J,K)
-            
+
             AN1(J,K) = 0.0
             AM1(j,k) = 0.0
-            DO L=1,LK 
+            DO L=1,LK
                AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
                AM1(J,K) = AM1(j,k) + (AMK(j,k,l))
             ENDDO
-               
+
             IF(ABS((AN1(J,K))-(AN1OLD(J,K))) >  1.) THEN
                print *, 'cond conservation prob after rebin'
                print *, 'AN1OLD', AN1OLD(j,k),k,j
                print *, 'AN1', AN1(j,k),k,j
             ENDIF
 
-       ! new code to calc the change in total mass and num from 
-       ! rain dropsize bins due to condensation. This is 
-       ! sort-of equivalent to the autoconversion in the Bulk scheme   
+       ! new code to calc the change in total mass and num from
+       ! rain dropsize bins due to condensation. This is
+       ! sort-of equivalent to the autoconversion in the Bulk scheme
             auto_mass(k) = 0.0
             auto_num(k) = 0.0
             DO L = 16, LK
-                  
+
                auto_mass(k) = auto_mass(k) + (AMK(J,K,L) - AM0(L))
                auto_num(k) = auto_num(k) + (ANK(J,K,L) - AN0(L))
-               
+
             enddo
-               
+
             if (auto_mass(k) < 0.0 .or. auto_num(k) < 0.0 ) then
                auto_mass(k) = 0.0
                auto_num(k) = 0.0
             endif
-            
+
             if (jjp == 1) then
-               call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', & 
-                    i_dgtime, units='kg/kg/s',dim='z')    
+               call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+                    i_dgtime, units='kg/kg/s',dim='z')
                call save_dg(k,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
                     i_dgtime, units='#/kg/s',dim='z')
             else
-               call save_dg(k,j,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', & 
-                    i_dgtime, units='kg/kg/s',dim='z,x')    
+               call save_dg(k,j,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+                    i_dgtime, units='kg/kg/s',dim='z,x')
                call save_dg(k,j,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
                     i_dgtime, units='#/kg/s',dim='z,x')
             endif
@@ -639,23 +639,23 @@ module module_mp_tau_bin
 !     EVAP RECEIVES MKD,NKD RETURNS MK,NK
 !***********************************************************
             AN1OLD(J,K) = 0.0
-               
+
             DO L=1,LK
-               AN1OLD(J,K) =AN1OLD(J,K)+AN0(l) 
+               AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
             ENDDO
-               
+
             IF (AN1OLD(J,K) > eps) then
-               
+
                CALL EVAP_new(I,J,K,DM,TBASE,QST,RH,Q,SQ,DT,RDT,PMB,      &
                     QVNEW,TAU_dum,EA,it,LT,inhom_evap,delm)
-               ! 
+               !
                CALL REBIN(J,K)
-               !  
+               !
                AN1(J,K) = 0.0
-               DO L=1,LK 
-                  AN1(J,K) = AN1(J,K) + (ANK(J,K,L))        
+               DO L=1,LK
+                  AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
                ENDDO
-               
+
             ELSE
                DO L=1,LK
                   AMK(J,K,L)=AM0(L)
@@ -663,15 +663,15 @@ module module_mp_tau_bin
                ENDDO
             ENDIF
          ELSE
-            
+
             DO L=1,LK
                AMK(J,K,L)=am0(L)
                ANK(J,K,L)=an0(L)
             ENDDO
-            
+
          ENDIF
-                  
-            !update fields 
+
+            !update fields
          an1old(j,k) = 0.0
          an1(j,k) = 0.0
          DO L=1,LK
@@ -686,12 +686,12 @@ module module_mp_tau_bin
                AMN(L)=0.
             ENDIF
 !
-! AH 0410 - convert mass and number back to kg/kg and #/kg 
+! AH 0410 - convert mass and number back to kg/kg and #/kg
 !           respectively for source term calc and thermodynamic
 !           updates
-!             
-            amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)      
-            ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)     
+!
+            amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)
+            ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)
             if(amk(j,k,l) < eps.or.                 &
                  ank(j,k,l) < eps) then
                amk(j,k,l) = 0.0
@@ -712,32 +712,32 @@ module module_mp_tau_bin
 !           finished
          if ( it .ne. lt )  DS_0 = EN(j,k)
          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
-         QVNEW = QVNEW - DM      
-         QST(J,K)=QSATURATION(TBASE(J,K),PMB) 
+         QVNEW = QVNEW - DM
+         QST(J,K)=QSATURATION(TBASE(J,K),PMB)
          DS(J,K)=QVNEW-QST(J,K)
 
-      ENDDO          !end of iteration over LT  
-      
+      ENDDO          !end of iteration over LT
+
 !subtract total number after evaporation, from total number before evap
-!this value tells the number of droplets that have evaporated completely  
+!this value tells the number of droplets that have evaporated completely
 !
       IF (AN1(J,K) >  AN1OLD(J,K)) THEN
          CDNCEVAP(J,K) = 0.0
       ELSE
          CDNCEVAP(J,K) = (AN1OLD(J,K) - (AN1(J,K)))
       ENDIF
-      
+
       if (jjp > 1) then
          !    diagnostics for total cond/evap rate liquid water (change in mass)
          call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
               units='kg/kg/s',dim='z,x')
-         !    cond/evap rate of cloud 
+         !    cond/evap rate of cloud
          do l = 1,lk_cloud
             dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
          enddo
          call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
               units='kg/kg/s',dim='z,x')
-         !     cond/evap rate of rain 
+         !     cond/evap rate of rain
          do l = lk_cloud+1, lk
             dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
          enddo
@@ -747,27 +747,27 @@ module module_mp_tau_bin
          !    diagnostics for total cond/evap rate liquid water (change in mass)
          call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
               units='kg/kg/s',dim='z')
-         !    cond/evap rate of cloud 
+         !    cond/evap rate of cloud
          do l = 1,lk_cloud
             dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
          enddo
          call save_dg(k,dm_cloud_evap/dt,'dm_cloud', i_dgtime, &
               units='kg/kg/s',dim='z')
-         !     cond/evap rate of rain 
+         !     cond/evap rate of rain
          do l = lk_cloud+1, lk
             dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
          enddo
          call save_dg(k,dm_rain_evap/dt,'dm_rain', i_dgtime, &
-              units='kg/kg/s',dim='z')        
+              units='kg/kg/s',dim='z')
       endif
-!               
-            
+!
+
 
 ! do activation after cond/evap, using updated supersat for timestep
        EA(J,K) = DS(J,K)
 
       IF(EA(J,K) >  0.0) THEN
- 
+
         AN1OLD(J,K) = 0.0
         AM1OLD(J,K) = 0.0
         CCNTOT(J,K) = 0.0
@@ -779,28 +779,28 @@ module module_mp_tau_bin
         DO L = 1, LN2
           CCNTOT(J,K) =  CCNTOT(J,K) + CCNOLD(J,K,L)
         ENDDO
-   
+
         AN1(J,K) = 0.0
         AM1(J,K) = 0.0
         amkcc(1) = 0.0
         ankcc(1) = 0.0
-        
+
         DO L = 1, LK
           AN1(J,K) = AN1(J,K) + ANK(J,K,L)
         ENDDO
 
         AM1(J,K) = AMK(J,K,1)
         DDDD=(EA(J,K)/QST(J,K))*100
-        
+
         ccn_pos = 1
-        cloud_pos = 1      
-         
+        cloud_pos = 1
+
         CN1 = CCN(j,k,ccn_pos)/rhon(k) ! convert to /kg
-    
+
         if (.not. l_fix_aerosols) then
-        
+
            AN2(J,K) = MAX(0.,                                            &
-     &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  & 
+     &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
               CN1)
 
            !adjust CCN to show the removal of CCN by activation
@@ -811,29 +811,29 @@ module module_mp_tau_bin
      &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
               CN1-AN1(J,K))
 !     &       CCN(J,K,ccn_pos)-AN1(J,K))
-           
+
         endif
 
         dqn_act(J,K) = AN2(J,K)/dt
-        
+
         ANK(J,K,1) = ANK(J,K,1) + AN2(J,K)
         ! the 0.25 factor attempts to accomodate for the fact
         ! that not all CCN will grow to the size of the 1st bin
         AMK(J,K,1) = AMK(J,K,1) + AN2(J,K)*XK(1)*0.25
         AMK(J,K,1) = MAX(ANK(J,K,1)*XK(1)*1.01, AMK(J,K,1))
-       
+
         MCC(J,K) = AMK(J,K,1) - AM1(J,K)
-        
+
         AM1(j,k) = 0.0
         DO L = 1, LK
           AM1(J,K) = AM1(J,K) + AMK(J,K,L)
         ENDDO
-            
-!calculate the new termodynamic fields following activation          
+
+!calculate the new termodynamic fields following activation
         TBASE(J,K)=TBASE(J,K)+AL/CPBIN*MCC(J,K)
         QVNEW = QVNEW - MCC(J,K)
-        QST(J,K)=QSATURATION(TBASE(J,K),PMB)                        
-     
+        QST(J,K)=QSATURATION(TBASE(J,K),PMB)
+
       ENDIF                          ! end of do activation
 
       AN1(j,k) = 0.0
@@ -841,7 +841,7 @@ module module_mp_tau_bin
         AN1(J,K) = AN1(J,K) + ANK(J,K,L)
       ENDDO
 
-! AH 0410 - to update supersat for advection. The update of ss is 
+! AH 0410 - to update supersat for advection. The update of ss is
 !           performed here not in stepfields (code commented out in
 !           stepfields)
 !
@@ -853,11 +853,11 @@ module module_mp_tau_bin
 !             AFTER  CONDENSATION-EVAPORATION
 !*************************************************************
       DO L=1,LK
-         DIEMC(L)=AMK(J,K,L)-AMKORIG(J,K,L)!AMKORIG is the mass prior to 
-                !bin micro, therefore DIEMC (old variable name) is 
+         DIEMC(L)=AMK(J,K,L)-AMKORIG(J,K,L)!AMKORIG is the mass prior to
+                !bin micro, therefore DIEMC (old variable name) is
                 !mass resulting from bin micro
-         DIENC(L)=ANK(J,K,L)-ANKORIG(J,K,L)!ANKORIG is the number prior to 
-                !bin micro, therefore DIENC (old variable name) is 
+         DIENC(L)=ANK(J,K,L)-ANKORIG(J,K,L)!ANKORIG is the number prior to
+                !bin micro, therefore DIENC (old variable name) is
                 !number resulting from bin micro
       ENDDO
 
@@ -867,14 +867,14 @@ module module_mp_tau_bin
 !            COLLECTION + BREAKUP
 !************************************************************
 !
-! AH 0410 - The collision-coalescence code uses the original format 
-!           of the TAU model (so is an older version than that used 
-!           in RAMS). AMKORIG and ANKORIG, which are the same as 
+! AH 0410 - The collision-coalescence code uses the original format
+!           of the TAU model (so is an older version than that used
+!           in RAMS). AMKORIG and ANKORIG, which are the same as
 !           AMKOLD and ANKOLD) are used to initialise calculations in
-!           SXY, SCONC and BREAK. Unit conversions are performed 
-!           in the respective subroutines (this is not neccesary and 
+!           SXY, SCONC and BREAK. Unit conversions are performed
+!           in the respective subroutines (this is not neccesary and
 !           should be moved out so that AN0 and AM0 are used
-! 
+!
           rmass_cw(k) = 0.0
 
           loop_count = 0
@@ -893,19 +893,19 @@ module module_mp_tau_bin
 
 
           IF(AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
- 
+
             if (l_coll_coal) then
-               
+
 
                CALL SXY(J,K,DT)
                CALL SCONC(J,K,DT)
-             
+
                if (l_break) then
                   CALL BREAK(J,K,DT)
                endif
- 
+
             endif
-      
+
 !*************************************************************
 !        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
 !             AFTER  COLLECTION & BREAKUP
@@ -916,11 +916,11 @@ module module_mp_tau_bin
             ENDDO
 
             d_rmass(k) = 0.0
-            
-            do l = 16, lk                 
+
+            do l = 16, lk
                d_rmass(k) = d_rmass(k) + DIEMD(L)
             enddo
-            
+
             if (jjp == 1) then
                call save_dg(k,d_rmass(k)/dt,'drain_tot', i_dgtime, &
                     units='kg/kg/s',dim='z')
@@ -932,8 +932,8 @@ module module_mp_tau_bin
             DO L=1,LK
              DIEMD(L) = 0.0
              DIEND(L)= 0.0
-           ENDDO 
-         ENDIF        
+           ENDDO
+         ENDIF
       ENDIF    !if IRAINBIN == 1.AND.IMICROBIN == 1
 
 !***********************************************************
@@ -952,7 +952,7 @@ module module_mp_tau_bin
           ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)
         ENDIF
       ENDDO
-!   
+!
 !     Calculate the change in "rain bin" mass and number
 !     (i.e. bin greater than  100 microns diameter)
       if (j == 0) then
@@ -966,25 +966,25 @@ module module_mp_tau_bin
           rmass_tot_new = rmass_tot_new + AMK(J,K,L)
       enddo
 
-     ! d_rmass(k) = rmass_tot_new - rmass_tot_orig    
+     ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
 
       auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
 
       if (jjp == 1) then
          call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-              units='kg/kg/s',dim='z') 
-         
+              units='kg/kg/s',dim='z')
+
          call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-              units='kg/kg/s',dim='z') 
+              units='kg/kg/s',dim='z')
       else
          call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-              units='kg/kg/s',dim='z,x') 
-         
+              units='kg/kg/s',dim='z,x')
+
          call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-              units='kg/kg/s',dim='z,x') 
+              units='kg/kg/s',dim='z,x')
 
       endif
-       
+
       endif
 !**********************************************************
 !     Update mass and conc, tendencies due to micro and end
@@ -1001,8 +1001,8 @@ module module_mp_tau_bin
          ENDDO
        endif
 
-       DO L=1,LK         
-!AH 0410 - Calculate the change in mass and number due to microphysics i.e. 
+       DO L=1,LK
+!AH 0410 - Calculate the change in mass and number due to microphysics i.e.
 !          nucleation, cond, evap, collection and sedimentation
 !
           IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
@@ -1025,9 +1025,9 @@ module module_mp_tau_bin
                ,Q(J,K,ICDNC_BIN(L)))
 
        ENDDO
-      
+
       dD(1)=xkk1(1)*2.0*1.e6
-      do l = 2, lk 
+      do l = 2, lk
          dD(l)=(xkk1(l)-xkk1(l-1))*2.0*1.e6
       end do
 
@@ -1045,7 +1045,7 @@ module module_mp_tau_bin
 
 ! Finally calc the microphys change in QV
       DQVDT=(QVNEW-QVOLD)*RDT
-!        
+!
       END subroutine CLOUDBIN
 
 !*******************************************************************
@@ -1068,16 +1068,16 @@ module module_mp_tau_bin
       INTEGER K,L !loop counter for cloud bins, confused yet - I am! I
       !think more than one person wrote this code
       INTEGER I,LRK
-      REAL :: DT   ! timestep 
+      REAL :: DT   ! timestep
       REAL :: AVG, sum, sun
-!      
+!
       DO L=1,LK
          CM(L)=AMKORIG(KR,II,L)*RHON(II)/1.E+03
          CN(L)=ANKORIG(KR,II,L)*RHON(II)/1.E+06
 
          IF(CM(L) >  eps .AND.CN(L) > eps)THEN
             SCM(L)=CM(L)/CN(L)
-        !check to see whether SCM (mean single particle mass in a 
+        !check to see whether SCM (mean single particle mass in a
         !bin) is larger than twice maximum bin if so not used in
         !collision - adrian 01/06/05
             IF(SCM(L) >  X_BIN(L+1)) THEN
@@ -1090,14 +1090,14 @@ module module_mp_tau_bin
             SCM(L)=0.
          ENDIF
       ENDDO ! end loop over LK bins
-      
+
       DO K=1,LK
         IF (SCM(K) <  X_BIN(K).OR.SCM(K) >  (2*X_BIN(K)).OR.SCM(K) == 0.0) THEN
           AP=1.0
         ELSE
           AP=0.5*(1.+3.*(X_BIN(K)/SCM(K))-2*((X_BIN(K)/SCM(K))**2.))
         ENDIF
-!        
+!
 
         AZ0(K)=AP*SCM(K)*CM(K)
         AM3(K)=(AP**3)*(SCM(K)**2)*CM(K)
@@ -1109,12 +1109,12 @@ module module_mp_tau_bin
            F2(K)=2.*CN(K)/X_BIN(K)
            PSI2(K)=0.0
         ENDIF
-        !        
+        !
         IF (SCM(K) >  X_BIN(K+1)) THEN
            PSI2(K)=2.*CN(K)/X_BIN(K)
            F2(K)=0.0
         ENDIF
-!        
+!
         SM1=0.
         SM2=0.
         SM3=0.
@@ -1124,7 +1124,7 @@ module module_mp_tau_bin
         SN2=0.
         SN3=0.
         SN4=0.
-!        
+!
        DO I=K,LK ! do bin K to bin LK
           !
           IF(K >= 16) EXIT ! exit I = K, LK
@@ -1142,11 +1142,11 @@ module module_mp_tau_bin
           !
         ENDIF
         IF(K-1 < 16) then
-          SM3=KBAR(K-1,K-1)*(AZ0(K-1)*CN(K-1)+CM(K-1)**2) 
+          SM3=KBAR(K-1,K-1)*(AZ0(K-1)*CN(K-1)+CM(K-1)**2)
         ENDIF
         DO I=1,K-1
            !
-           IF(I >= 16) EXIT ! exit K = 1, LK 
+           IF(I >= 16) EXIT ! exit K = 1, LK
            !
             SM2=SM2+KBAR(K,I)*(4.*X2(K)*PSI2(K)*CM(I)+                  &
      &      X_BIN(K)/2.*(4.*PSI2(K)+F2(K))*AZ0(I)-(2.*PSI2(K)-F2(K))*AM3(I) &
@@ -1154,7 +1154,7 @@ module module_mp_tau_bin
 
             SN3=SN3+KBAR(K,I)*(2.*X_BIN(K)*PSI2(K)*CM(I)+0.5*F2(K)*AZ0(I)   &
      &      -1./(2.*X_BIN(K))*(PSI2(K)-F2(K))*AM3(I))
- 
+
         ENDDO
         DO I=1,K-1
            !
@@ -1186,7 +1186,7 @@ module module_mp_tau_bin
      &      *AZ0(I)-1./(2.*X_BIN(K-1))*(PSI2(K-1)-F2(K-1))*AM3(I))
 !
          ENDDO
-         
+
          ! update mass and number fields with terms from collision
          !
          IF (K == LK) THEN
@@ -1212,7 +1212,7 @@ module module_mp_tau_bin
          AMK(KR,II,L)=CM(L)
       ENDDO
 
-      ! save diagnostics of for accretion rates (pracw, cloud mass and 
+      ! save diagnostics of for accretion rates (pracw, cloud mass and
       ! rracw, cloud number)
       !
       SUM=0.
@@ -1221,8 +1221,8 @@ module module_mp_tau_bin
          SUM=SUM+CM(L) - AMKORIG(KR,II,L)
          SUN=SUN+CN(L) - ANKORIG(KR,II,L)
       end DO
-         
-      if (jjp == 1) then 
+
+      if (jjp == 1) then
          call save_dg(ii, sum/dt,'pracw', i_dgtime, &
               units='kg/kg/s',dim='z')
          call save_dg(ii,sun/dt,'rracw', i_dgtime, &
@@ -1235,7 +1235,7 @@ module module_mp_tau_bin
       endif
       rmass_cw(ii) = SUM
       rnum_cw(ii) = SUN
-      
+
       END subroutine SXY
 
 !****************************************************************
@@ -1254,12 +1254,12 @@ module module_mp_tau_bin
       REAL :: DT !timestep from the 1d framework
       REAL :: AVG,masstemp,notemp, sum, sun
 
-!      
+!
       DO  L=16,LK
         SM0(L-15)=AMKORIG(KR,II,L)*RHON(II)/1.E+03
         SN0(L-15)=ANKORIG(KR,II,L)*RHON(II)/1.E+06
       ENDDO
-      
+
       DO L=1,LK_big
          SM1=0.
          SM2=0.
@@ -1274,7 +1274,7 @@ module module_mp_tau_bin
          CB(L)=(2.*SM0(L)-3.*AX(L)*SN0(L))/(AX(L)**3)
          CC(L)=2.*AX(L)*CA(L)
          CD(L)=(3.*SM0(L)-4.*AX(L)*SN0(L))/(AX(L)**2)
-         
+
          IF(SM0(L) > eps .AND. SN0(L) > eps)THEN
             SMC(L)=SM0(L)/SN0(L)
             IF(SMC(L) >  AX(L+1))  THEN
@@ -1294,11 +1294,11 @@ module module_mp_tau_bin
             AP=0.5*(1.+3.*(AX(L)/SMC(L))-2*((AX(L)/SMC(L))**2.))
          ENDIF
          !
-         !AH 0410 - original threshold was 1.e-20 for SN0 and no 
+         !AH 0410 - original threshold was 1.e-20 for SN0 and no
          !          threshold for mass (SM0). This can lead to overflows
          !          with ifort 11 and an AIX compiler. Thus, hardcoded
          !          threshold to be 1.e-15 and added in mass threshold
-         !          This is not ideal - I will work on a more dynamic, 
+         !          This is not ideal - I will work on a more dynamic,
          !          generic fix
          !
          IF(SN0(L) > eps .and. SM0(L) > eps)THEN
@@ -1315,7 +1315,7 @@ module module_mp_tau_bin
          IF(L == 1)THEN
             SN(L)=SN0(L)-SN0(L)*SN3*DT
             SM(L)=SM0(L)-SM4*DT
-            ! 
+            !
             CYCLE ! execute the next iteration of L=1,LK_big
             !
          ENDIF
@@ -1336,7 +1336,7 @@ module module_mp_tau_bin
          IF(L == 2)THEN
             SN(L)=SN0(L)+(SN4-SN3-SN2)*DT
             SM(L)=SM0(L)+(SM3-SM4-SM2+SM5)*DT
-            ! 
+            !
             CYCLE ! execute the next iteration of L=1,LK_big
             !
          ENDIF
@@ -1359,7 +1359,7 @@ module module_mp_tau_bin
          ENDIF
       ENDDO ! end do loop L=1,LK_big
       !
-      ! store rain collecting rain mass rate (pracr) and 
+      ! store rain collecting rain mass rate (pracr) and
       ! rain collection rain number rate (rracr)
       !
       !if (kr==1)then
@@ -1369,7 +1369,7 @@ module module_mp_tau_bin
             SUM=SUM+SM(L)*1.E+03/RHON(II) - AMKORIG(KR,II,L+15)
             SUN=SUN+SN(L)*1.E+06/RHON(II) - ANKORIG(KR,II,L+15)
          end DO
-         
+
          if (jjp == 1) then
             call save_dg(ii, sum/dt,'pracr', i_dgtime, &
                  units='kg/kg/s',dim='z')
@@ -1403,9 +1403,9 @@ module module_mp_tau_bin
       IMPLICIT NONE
 
       INTEGER KR, II !J and K loop counters from 1d-mod respect!
-      INTEGER K, J, I 
+      INTEGER K, J, I
       INTEGER L
-      REAL :: DT !timestep 
+      REAL :: DT !timestep
       REAL :: AVG, sum, sun
       SUM=0.
       SUN=0.
@@ -1423,7 +1423,7 @@ module module_mp_tau_bin
                SMC(K) = (2*AX(K)) !upper bin boundary
             ENDIF
             IF((SMC(K) <  AX(K)).AND.(SM0(K) <                            &
-     &         eps .or.SN0(K) < eps)) THEN 
+     &         eps .or.SN0(K) < eps)) THEN
                SMC(K) = AX(K) !lower bin boundary
             ENDIF
          ELSE
@@ -1431,8 +1431,8 @@ module module_mp_tau_bin
          ENDIF
 !
          DO I=9,LK_big-1
-            IF(K >  (I+1)) CYCLE ! execute next iteration of I=9,LK_big-1 
-            IF(SMC(I) <  AX(I)) CYCLE ! execute next iteration of I=9,LK_big-1 
+            IF(K >  (I+1)) CYCLE ! execute next iteration of I=9,LK_big-1
+            IF(SMC(I) <  AX(I)) CYCLE ! execute next iteration of I=9,LK_big-1
             DO J=6,I-1
                IF(SMC(J) <  AX(J)) CYCLE ! execute next iteration of J=6,I-1
                IF(SMC(I) >  AX(I+1))THEN
@@ -1451,10 +1451,10 @@ module module_mp_tau_bin
          SN1=SM1*AX(K)
          SM1=SM1*AX(K)**2*1.5
          !
-         ! AH 0410 - this loop looks a bit suspicious to me, check 
+         ! AH 0410 - this loop looks a bit suspicious to me, check
          !           against original code
          DO I=9,9
-            IF(SMC(I) <  AX(I)) CYCLE 
+            IF(SMC(I) <  AX(I)) CYCLE
             IF(K >  (I+1)) CYCLE
             IF(SMC(I) >  AX(I+1))THEN
                SM2=SM2+SN0(I)*AX(I+1)*SN0(I)*KIJ(I,I)*PLL(I,I,K)
@@ -1470,7 +1470,7 @@ module module_mp_tau_bin
             DO J=6,lk_big-1
                IF(SMC(J) <  AX(J)) CYCLE ! execute next iteration of J=6,lk_big-1
                IF(J >  K)THEN
-                  IF(J <  9) CYCLE ! execute next iteration of J=6,lk_big-1 
+                  IF(J <  9) CYCLE ! execute next iteration of J=6,lk_big-1
                   SN3=SN3+SN0(J)*PLM(J,K)*KIJ(J,K)
                ELSEIF(K >= J)THEN
                   IF(K <  9) CYCLE ! execute next iteration of J=6,lk_big-1
@@ -1484,28 +1484,28 @@ module module_mp_tau_bin
                SM3=1.5*SN3*SM0(K)
             ENDIF
             SN3=1.5*SN3*SN0(K)
-         ENDIF 
-         
+         ENDIF
+
          if (kr==0)then
             DO L=1,LK_big
                SUM=SUM+((SM1+SM2-SM3)*DT)*1.E+03/RHON(II) - AMKORIG(KR,II,L+15)
             end DO
-            
+
             if (jjp == 1) then
                call save_dg(ii,sum/DT,'prbrk', i_dgtime, &
                     units='kg/kg/s',dim='z')
             else
                call save_dg(ii,kr,sum/DT,'prbrk', i_dgtime, &
-                    units='kg/kg/s',dim='z,x')               
+                    units='kg/kg/s',dim='z,x')
             endif
             rmass_cw(ii) = rmass_cw(ii)+SUM
          end if
-         
+
          SM(K)=SM(K)+(SM1+SM2-SM3)*DT
          SN(K)=SN(K)+(SN1+SN2-SN3)*DT
          !
       ENDDO ! end of loop  K=1,LK_big (main loop for entire routine)
-      
+
       DO L=16,LK
          AMK(KR,II,L)=SM(L-15)*1.E+03/RHON(II) +(CM(L)                 &
      &                -AMKORIG(KR,II,L))
@@ -1518,18 +1518,18 @@ module module_mp_tau_bin
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       SUBROUTINE BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-      
+
       IMPLICIT NONE
 
 ! This routine calculates the tendency for each bin due to sedimentation
-! Unlike earlier versions, these tendencies (QL_ and QLN_SED) are saved 
-! and passed to cloudbin using common block SEDIM so they can be added 
+! Unlike earlier versions, these tendencies (QL_ and QLN_SED) are saved
+! and passed to cloudbin using common block SEDIM so they can be added
 ! to the other microphys tends at the end of cloudbin (in MICROcheck)
-      
-      INTEGER :: I !x grid 
-      REAL :: DT !timestep 
+
+      INTEGER :: I !x grid
+      REAL :: DT !timestep
       REAL :: RDT !reciprocal timestep
-      REAL, DIMENSION(JMINP:JMAXP,KKP,NQP):: Q !moisture fields 
+      REAL, DIMENSION(JMINP:JMAXP,KKP,NQP):: Q !moisture fields
       REAL,INTENT(IN),DIMENSION(JMINP:JMAXP,KKP,LK)::AMKORIG,ANKORIG
       REAL, DIMENSION(JMINP:JMAXP,KKP,NQP):: SQ!moisture tendency
       REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: QLORIG
@@ -1547,22 +1547,22 @@ module module_mp_tau_bin
                                num_after
      ! REAL, DIMENSION(KKP,LK) :: vt
       REAL :: DIAM
-      
-       character(2) :: str2   
- 
+
+       character(2) :: str2
+
      dmtot(:) = 0.0
      dntot(:) = 0.0
-     vt(:,:) = 0.0 
+     vt(:,:) = 0.0
      mass_before(:) = 0.0
      num_before(:) = 0.0
      mass_after(:) = 0.0
      num_after(:) = 0.0
-     bin_pcpt(:) = 0.0   
+     bin_pcpt(:) = 0.0
       DO L=1,LK
         write(str2,'(i2.2)')l
         DO J=JMINP,JMAXP
           DO K=2,KKP
-            QLORIG(J,K,L) = AMKORIG(J,K,L) 
+            QLORIG(J,K,L) = AMKORIG(J,K,L)
             QLNORIG(J,K,L) = ANKORIG(J,K,L)
             IF(QLORIG(J,K,L) > eps.AND.             &
      &         QLNORIG(J,K,L) > eps)THEN
@@ -1578,15 +1578,15 @@ module module_mp_tau_bin
             VBAR(J,K)=VT(J,K)/100.
           ENDDO
         ENDDO
-        
+
         DO K = 2, KKP-1
            DO J = JMINP, JMAXP
-!1) WORK OUT THE MASS SEDIMENTATION FOR EACH BIN            
-!calculate the value of the q field (q_sed) following sedimentation            
+!1) WORK OUT THE MASS SEDIMENTATION FOR EACH BIN
+!calculate the value of the q field (q_sed) following sedimentation
               QL_SED(J,K,L) = QLORIG(J,K,L) - DT*(RHON(K+1)* QLORIG(J,K+1,L)*    &
      &               VBAR(J,K+1) - RHON(K)* QLORIG(J,K,L)*                &
      &               VBAR(J,K))/(RHON(K)*DZN(K))
-!work out the change in q due to sedimentation 
+!work out the change in q due to sedimentation
               DM = QL_SED(J,K,L) - QLORIG(J,K,L)
               QL_SED(J,K,L) = DM
               IF (K == 2) THEN
@@ -1601,18 +1601,18 @@ module module_mp_tau_bin
               endif
 !
 !2) WORK OUT THE NUMBER SEDIMENTATION FOR EACH BIN
-!calculate the value of the q field (q_sed) following sedimentation            
+!calculate the value of the q field (q_sed) following sedimentation
               QLN_SED(J,K,L) = QLNORIG(J,K,L) - DT*(RHON(K+1)* QLNORIG(J,K+1,L)* &
      &               VBAR(J,K+1) - RHON(K)* QLNORIG(J,K,L)*               &
      &               VBAR(J,K))/(RHON(K)*DZN(K))
-!work out the change in q due to sedimentation 
+!work out the change in q due to sedimentation
               DN = QLN_SED(J,K,L) - QLNORIG(J,K,L)
               QLN_SED(J,K,L) = DN
 !add the DM divided by timestep (DT) to the source term for Q
-!              SQ(J,K,ICDNC_BIN(L)) = SQ(J,K,ICDNC_BIN(L)) + DN*RDT 
+!              SQ(J,K,ICDNC_BIN(L)) = SQ(J,K,ICDNC_BIN(L)) + DN*RDT
               IF (j .EQ. jjp) THEN
                  dntot(k) = dntot(k)+dn
-              endif           
+              endif
             ENDDO
           ENDDO
           DO J = JMINP, JMAXP
@@ -1620,48 +1620,48 @@ module module_mp_tau_bin
      &               VBAR(J,KKP))/(RHON(KKP)*DZN(KKP))
              DM = QL_SED(J,KKP,L) - QLORIG(J,KKP,L)
              QL_SED(J,KKP,L) = DM
-             
+
              QLN_SED(J,KKP,L) = QLNORIG(J,KKP,L) - DT*(-RHON(KKP)* QLNORIG(J,KKP,L)*                &
      &               VBAR(J,KKP))/(RHON(KKP)*DZN(KKP))
              DN = QLN_SED(J,KKP,L) - QLNORIG(J,KKP,L)
              QLN_SED(J,KKP,L) = DN
           ENDDO
-             
+
 !deal with K=1
           DO J = JMINP, JMAXP
             SQ(J,1,ICDKG_BIN(L)) = 0.0
             SQ(J,1,ICDNC_BIN(L)) = 0.0
          ENDDO
       ENDDO
-      
+
       name='surface_ppt_for_warm_bin'
       units='kg/kg ms-1'
       value=sum(bin_pcpt(1:JJP))/JJP
 
       call save_dg(value, name, i_dgtime, units,dim='time')
-      
+
       if (jjp > 1) then
          call save_dg(bin_pcpt, name, i_dgtime, units,dim='time')
       endif
 
       END subroutine BIN_SEDIMENT
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-      
-!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS      
-      SUBROUTINE REFFCALC (Q,SQ,DT,RDT) 
+
+!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+      SUBROUTINE REFFCALC (Q,SQ,DT,RDT)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       IMPLICIT NONE
-      
-!This routine uses the multi-moment method to calc rain rate 
+
+!This routine uses the multi-moment method to calc rain rate
 !and cloud
-!      
+!
 !arguments
       INTEGER :: I
-      REAL :: DT !timestep 
+      REAL :: DT !timestep
       REAL :: RDT !reciprocal timestep
       REAL, DIMENSION(JMINP:JMAXP,KKP,NQP)::Q,                              &
-     &                                 SQ!moisture tendency      
-!      
+     &                                 SQ!moisture tendency
+!
 !Local variables
       REAL :: PK
       REAL :: XI_AVE
@@ -1671,10 +1671,10 @@ module module_mp_tau_bin
       REAL :: SRR0H
       REAL :: SWR
       REAL :: DMJ
-      REAL :: DMASJ  
+      REAL :: DMASJ
 !Local loop counters
       INTEGER J, K, L
-      
+
       RRM = DYY*JJP
       DO L=1,LK
         DO K=2,KKP
@@ -1725,33 +1725,33 @@ module module_mp_tau_bin
       endif
 
       END subroutine REFFCALC
-      
+
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       SUBROUTINE REBIN(J,K)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-!Purpose: test routine - this checks whether the particles lie 
-!         outside their corresponding bin boundaries. If they 
+!Purpose: test routine - this checks whether the particles lie
+!         outside their corresponding bin boundaries. If they
 !         do the mass and number are transfered to the correct
-!         bin, and the number (ANK) and mass (AMK) are updated 
+!         bin, and the number (ANK) and mass (AMK) are updated
 !         for the next microphysical steps
       IMPLICIT NONE
-      
+
 !CALL PRAMETR
-!      
+!
 !CALL SD
-!      
-!CALL RI      
+!
+!CALL RI
       REAL, DIMENSION(JMINP:JMAXP, KKP, LK) ::                              &
      & AVG,                                                             &
              !mean droplet size
      & DMK,                                                             &
-             !change in mass due to transfer 
+             !change in mass due to transfer
      & DNK   !change in number due to transfer
       REAL DUM
       INTEGER :: J,K,L !loop counters
       INTEGER :: NEWBIN!the bin that mass and no.are tranferred
                        !to
-      
+
 !1) zero DMK and DNK
       DO L = 1, LK
         DMK(J,K,L) = 0.0
@@ -1766,7 +1766,7 @@ module module_mp_tau_bin
           AVG(J,K,L) = 0.0
         ENDIF
       ENDDO
-!      
+!
 !3a) check to see whether the mean droplet size lies
 !   within its corresponding bin boundaries
       DO L = 1, LK
@@ -1780,7 +1780,7 @@ module module_mp_tau_bin
               IF (NEWBIN >  LK)  NEWBIN = LK
               IF (NEWBIN <= 0.0) NEWBIN = 1
             ENDIF
-!3b) calculate the changes in bin mass and number            
+!3b) calculate the changes in bin mass and number
             DNK(J,K,NEWBIN)=DNK(J,K,NEWBIN) + ANK(J,K,L)
             DMK(J,K,NEWBIN)=DMK(J,K,NEWBIN) + AMK(J,K,L)
             DNK(J,K,L)=DNK(J,K,L) - ANK(J,K,L)
@@ -1788,7 +1788,7 @@ module module_mp_tau_bin
           ENDIF
         ENDIF
       ENDDO
-!      
+!
 !4) calculate the new numbers and mass. This the change (DN and DM)
 !   added to ANK and AMK. The sourceterms are calced at the end
 !   of microphysics, they are not updated here.
@@ -1796,15 +1796,15 @@ module module_mp_tau_bin
         ANK(J,K,L)=ANK(J,K,L)+DNK(J,K,L)
         AMK(J,K,L)=AMK(J,K,L)+DMK(J,K,L)
       ENDDO
-      
+
       END subroutine REBIN
-      
+
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       SUBROUTINE  MICROcheck(J,K,IQ,DT,Qmass,Qnum,Sourcemass, &
            Sourcenum,DAMKDT,DANKDT,RDT,Qmass_orig,Qnum_orig)
-!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS      
+!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       IMPLICIT NONE
-      
+
 !local variable
       REAL :: AVG, avginit, avgorig
       REAL :: QmassFLD, Qmass,Qmass_orig
@@ -1819,11 +1819,11 @@ module module_mp_tau_bin
       REAL :: RDT !1/timestep from tau
 !loop counters
       INTEGER J, K, IQ, ISTOPU
-!     
+!
       QmassFLD = Qmass_orig+((Sourcemass+DAMKDT)*DT)
       Qnumfield = Qnum_orig+((Sourcenum+DANKDT)*DT)
-!        
-!positivity check for negative values of mass. 
+!
+!positivity check for negative values of mass.
 !If mass or number goes less than zero after micro
 !assume all mass is lost for that bin, set SQ to just above q value
 
@@ -1840,13 +1840,13 @@ module module_mp_tau_bin
          Sourcemass = 0.0
          Sourcenum = 0.0
        ENDIF
-       
+
       END subroutine MICROCHECK
 
 !----------------------------------------------------------------------
 ! XACT: Computes the fraction of aerosol in a log normal dist.
 ! activated at a given temperature (K) and supersaturation (%)
-! 
+!
       REAL FUNCTION XACT(TEMP,S,DG,SG,DCRIT)
 
       IMPLICIT NONE
@@ -1855,7 +1855,7 @@ module module_mp_tau_bin
       REAL, PARAMETER :: BETA = 0.651232
 !      REAL, EXTERNAL :: TOPLOG
 !
-! Calculations of critical dry ccn radius associated with equilibrium 
+! Calculations of critical dry ccn radius associated with equilibrium
 ! nucleation.
 !
       GAMMA = LOG(S/100.+1.)
@@ -1918,17 +1918,17 @@ module module_mp_tau_bin
       ERF=MAX(-1.0,ERF)
 
       END function ERF
-   
+
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       SUBROUTINE COND_NEW(J,K,DM,TBASE,QST,RH,Q,SQ,DT,RDT               &
      &                    ,PMB,QVNEW,TAU,it,lt)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 !
 !This is a newer version of the COND routine from the orig.
-!cloud model supplied by Yin Yan. Although the orig routine 
+!cloud model supplied by Yin Yan. Although the orig routine
 !works OK, it failed to run when code was optimised to -O2
 !and compiled on pgf90 6.1. Therefore I have updated the code
-!using newer cond and evap routines supplied by Graham 
+!using newer cond and evap routines supplied by Graham
 !Feingold - (Adrian Hill, October 2006)
 !
       IMPLICIT NONE
@@ -1940,30 +1940,30 @@ module module_mp_tau_bin
       INTEGER IK                                                        &
                 !lower category boundary, eq to KK within the loop
      &,IJ                                                               &
-          !upper category boundary, eq to JJ within the loop 
+          !upper category boundary, eq to JJ within the loop
      &,NJ                                                               &
-         !number of categories between the upper and lower bounds IJ-IK 
-     &,AH 
-      REAL,DIMENSION(JMINP:JMAXP,KKP,NQP):: Q,SQ 
-  
+         !number of categories between the upper and lower bounds IJ-IK
+     &,AH
+      REAL,DIMENSION(JMINP:JMAXP,KKP,NQP):: Q,SQ
+
       REAL,DIMENSION(JMINP:JMAXP,KKP) ::                                    &
      & QS                                                               &
           !saturation mixing ratio of water calced in Qsaturation
      & , QST                                                            &
              !specific humidity calculated in Spechum
      & , RH !relative humidity
-      
+
       INTEGER,PARAMETER :: RRV=461 !gas constant of moist air J/kg/K
-      
+
       INTEGER,PARAMETER :: AL=597  !latent heat of evaporation and cond
-      
+
       REAL,PARAMETER :: T00=273.15 !freezing point of water in K,from
                                    !the LES
-      
+
       REAL,PARAMETER :: CPBIN=0.24 !specific heat of water vapour
-      
+
       REAL,PARAMETER :: AAR=0.24E-3
-      
+
       REAL,DIMENSION (JMINP:JMAXP,KKP):: TBASE !temp calced in Lathe
                    !using tref+th(1/exner function).
       REAL DT !time calced in the LES
@@ -1971,7 +1971,7 @@ module module_mp_tau_bin
 !      REAL DTmic !microphysical timestep if DT > 4
       REAL DM  ! mass of condensated water
       REAL DMM !mass of condensed water at the end of the subroutine
-      
+
       REAL pres,R0 ! pressure and density
       REAL F,FF,FFF,HH,HHH,GG,GGG,SM1,SN1,SUMDS !not sure, but these are calced
       !and used in the big calculation of AMK and ANK
@@ -1992,12 +1992,12 @@ module module_mp_tau_bin
       REAL :: delm !theoretical mass change in mass
       REAL, DIMENSION(LK) :: s1, s2, s3, s4
                   !variables for calculation of change in mass and
-                  !number due to condensation 
+                  !number due to condensation
       REAL :: fk, psik, ex2, fx1, fy, fz, fxn, fac
       REAL,DIMENSION(JMINP:JMAXP,KKP)::TAU
 
       Real :: t_test
-      
+
       INTEGER :: i0                                                     &
                     !the bin in which yk(l) is located
      &          ,in                                                     &
@@ -2007,33 +2007,33 @@ module module_mp_tau_bin
      &          ,i1                                                     &
                     ! i0 + 1
      &  ,j1
-      
-! 
+
+!
 !      REAL,EXTERNAL::QSATURATION, FGV, F1, F2
-       
-       
+
+
        r0= RHON(K)*1.e-3
        pres = PREFN(K)*10
-       ex2 = 0.6666666667    
-! 
-! for high supersaturations or large DT reduce the microphysical time step. 
+       ex2 = 0.6666666667
+!
+! for high supersaturations or large DT reduce the microphysical time step.
 ! the microphysical DTcalc, can be
 ! changed allowing multiple condensation iterations, this is done for
 ! supersaturations greater that 4% as specified below, or timestep >  2s.
       do l=1,LK
-        dphasem(l)=0.0         
+        dphasem(l)=0.0
 !         sm0(l)=(smk0(l))
 !         xk(l)=(x_bin(l))
       enddo
 !         xk(lk+1)=dble(x_bin(lk+1))
-! 
-! begin the timestep iterations (usually only one) for condensation 
+!
+! begin the timestep iterations (usually only one) for condensation
 ! calculations.  first we calculate the function f which is related to
 ! the integral of s(t)dt in the reference (appendix b).  necessary for
 ! the calculation of f is the functions a(p,t) and s2(p,t) where the
 ! former is a thermodynamic function and the latter is the growth rate
 ! of a single droplet.  both are given in appendix b of the reference.
-! if f is below a certain threshold, there is no condensation we exit 
+! if f is below a certain threshold, there is no condensation we exit
 ! from the routine.
 !
       dds=ds(j,k)
@@ -2060,12 +2060,12 @@ module module_mp_tau_bin
 !
       delm=f*1.50*xi*sddm
 !
-! preperation of some standard functions of the bin number for 
+! preperation of some standard functions of the bin number for
 ! use in the condensation calculations.  functions on determined
 ! depending on whether or not the average bin mass is within its
 ! bin range
 
- 
+
       do i=1,lk
          if(amn(i) <  x_bin(i))then
             ff=1.0
@@ -2077,7 +2077,7 @@ module module_mp_tau_bin
          fk=2.0*an0(i)/(x_bin(i)*(bin_res-1.0))*                               &
               (1.0 - 1./(bin_res-1.0) * (ff-1.0) )
          psik=2.*an0(i)/(x_bin(i)* (bin_res-1.0)*(bin_res-1.0))*               &
-              (ff-1.0) 
+              (ff-1.0)
 
 ! These for solute
          fac=1.0/(x_bin(i+1)-x_bin(i))
@@ -2109,17 +2109,17 @@ module module_mp_tau_bin
             if(abs(zk(l)-x_bin(l+1)) <  1.0e-20)zk(l)=x_bin(l+1)
             !
 ! locate the bin in which yk(l) is located, designate as i0
-! 
+!
             do i=1,lk
                if(yk(l) <  x_bin(i+1))then
-                  i0=i 
+                  i0=i
                   exit
                endif
             enddo
-! 
+!
 ! locate the bin in which zk(l) is located; for efficiency, start
 ! at i0 (since zk>yk), futhermore designate as in
-! 
+!
 !               do i=i0,lk+1
             do i=i0,lk
                if(zk(l) <  x_bin(i+1))then
@@ -2130,34 +2130,34 @@ module module_mp_tau_bin
 
             idiff=in-i0
             i1=i0+1
-! 
+!
 ! below the parameters fx1,fy, fz,fxn,gg, and ggg are parameters
 ! appearing in the analytic solution to integrals in the reference
 ! equations 12 and 13.  furthermore functions f1 and func2 are defined
 ! because the form of this computation is repeatedly called and they
 ! simplify the code
-! 
+!
             fx1 =sqrt((x_bin(i1)**ex2 + f))
             fy=sqrt(( yk(l)**ex2 + f))
             fz =sqrt(( zk(l)**ex2 + f))
-! 
+!
 ! solutions to eqs. 8 and 9 (#3) for various values of nj.
 !    idiff=0 implies yk and zk are located in the same bin.
 !    idiff=1 implies zk is in a bin one higher than yk.
-!    idiff>1 implies zk is in a bin more than one higher than yk. 
+!    idiff>1 implies zk is in a bin more than one higher than yk.
 ! the latter case should never appear given mass doubling between bins
 !
             if(idiff == 0)then
-             ank(j,k,l)=(zk(l)-yk(l))*(s1(i0)+s2(i0)*(zk(l)+yk(l))) 
+             ank(j,k,l)=(zk(l)-yk(l))*(s1(i0)+s2(i0)*(zk(l)+yk(l)))
              amk(j,k,l)= s4(in)*(f1(zk(l),fz,f)-f1(yk(l),fy,f))         &
                   + s3(in)*(func2(f,fz)-func2(f,fy))
 
-!             smk(l)=(zk(l)-yk(l))*(s1s(i0)+s2s(i0)*(zk(l)+yk(l))) 
+!             smk(l)=(zk(l)-yk(l))*(s1s(i0)+s2s(i0)*(zk(l)+yk(l)))
 
 ! Note: The following doesn't work if the bin originally has no solute in it (sm0(l)=0)!
 !            dn=(ank(j,k,l)-an0(l))
 !            smk(l)=sm0(l)*(1.+dn/(an0(l)+1.d-30) )
-               
+
           elseif(idiff == 1)then
              fxn=sqrt(x_bin(in)**(ex2)+f)
              ank(j,k,l)=(x_bin(i1)-yk(l))*(s1(i0)+s2(i0)*(x_bin(i1)+yk(l)))      &
@@ -2172,7 +2172,7 @@ module module_mp_tau_bin
              amk(j,k,l)=s4(in)*f1(zk(l),fz,f)-s4(i0)*f1(yk(l),fy,f)   &
                   +s3(in)*func2(f,fz)      -s3(i0)*func2(f,fy)          &
                   + (s4(i0)-s4(in))*f1(x_bin(in),fx1,f)               &
-                  + (s3(i0)-s3(in))*func2(f,fx1) 
+                  + (s3(i0)-s3(in))*func2(f,fx1)
 
           elseif(idiff >= 2)then
              fxn=sqrt(x_bin(in)**(ex2)+f)
@@ -2194,7 +2194,7 @@ module module_mp_tau_bin
                   +(zk(l) -x_bin(in))*(s1(in)+s2(in)*(zk(l)+x_bin(in)))           &
                   +sn1
 !           smk(l)=(x_bin(i1)-yk(l))*(s1s(i0)+s2s(i0)*(x_bin(i1)+yk(l)))
-!     %          +(zk(l) -x_bin(in))*(s1s(in)+s2s(in)*(zk(l)+x_bin(in))) 
+!     %          +(zk(l) -x_bin(in))*(s1s(in)+s2s(in)*(zk(l)+x_bin(in)))
 !     %            +soln
 
 
@@ -2212,19 +2212,19 @@ module module_mp_tau_bin
           amk(j,k,l)=0.0
        endif
     enddo
-  
+
     end subroutine COND_NEW
 
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FUNCTION AA(P,J,K,temp,rst)  
+      FUNCTION AA(P,J,K,temp,rst)
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
       IMPLICIT NONE
-      
+
 !CALL PRAMETR
       REAL :: AA
-!Intent (IN)       
+!Intent (IN)
       INTEGER,INTENT(IN):: J,K
-      REAL,INTENT(IN):: TEMP 
+      REAL,INTENT(IN):: TEMP
       REAL,INTENT(IN) :: RST
       REAL,INTENT(IN) :: P
 
@@ -2249,10 +2249,10 @@ module module_mp_tau_bin
       INTEGER,INTENT(IN):: J,K
       REAL,INTENT(IN) :: TEMP
       REAL,INTENT(IN) :: RST
-      
+
       REAL,INTENT(IN) :: P
-      
-      REAL :: CPT      
+
+      REAL :: CPT
 
       REAL,PARAMETER :: EPS_cpt=0.622
       REAL :: E_cpt
@@ -2268,10 +2268,10 @@ module module_mp_tau_bin
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
       function f1(a,b,c)
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      IMPLICIT NONE    
+      IMPLICIT NONE
 
       real :: a,b,c,d,e,ex1,f1
-      
+
       ex1 = 0.3333333333
 
       d=a**ex1
@@ -2285,14 +2285,14 @@ module module_mp_tau_bin
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
       function func2(a,b)
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-! just a functional form commonly encountered in the condensation 
+! just a functional form commonly encountered in the condensation
 ! routine, resulting from the analytical solution of the integrals
 ! for condensation.  this function assumes a is positive as it should
 ! be for condensation.
       IMPLICIT NONE
 
       REAL :: a,b,c,ext1,func2
-      
+
       ext1 = 0.3333333333
 
       c=sqrt(a)
@@ -2306,10 +2306,10 @@ module module_mp_tau_bin
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 !
 !This is a newer version of the EVAP routine from the orig.
-!cloud model supplied by Yin Yan. Although the orig routine 
+!cloud model supplied by Yin Yan. Although the orig routine
 !works OK, it failed to run when code was optimised to -O2
 !and compiled on pgf90 6.1. Therefore I have updated the code
-!using newer cond and evap routines supplied by Graham 
+!using newer cond and evap routines supplied by Graham
 !Feingold - (Adrian Hill, October 2006)
 
       IMPLICIT NONE
@@ -2321,12 +2321,12 @@ module module_mp_tau_bin
       INTEGER IK                                                        &
                 !lower category boundary, eq to KK within the loop
      &,IJ                                                               &
-          !upper category boundary, eq to JJ within the loop 
+          !upper category boundary, eq to JJ within the loop
      &,NJ                                                               &
          !number of categories between the upper and lower bounds IJ-IK
      &  ,KP
       INTEGER :: inhom_evap
-      REAL,DIMENSION(JMINP:JMAXP,KKP,NQP):: Q,SQ 
+      REAL,DIMENSION(JMINP:JMAXP,KKP,NQP):: Q,SQ
       REAL,DIMENSION(JMINP:JMAXP,KKP) ::                                    &
      & QS                                                               &
           !saturation mixing ratio of water calced in Qsaturation
@@ -2349,7 +2349,7 @@ module module_mp_tau_bin
 
       REAL :: DM,dm_sub,dm_res    ! mass of condensated water
       REAL DMM !mass of condensed water at the end of the subroutine
-      
+
       REAL pres,R0 ! pressure and density
       REAL XMAX
       REAL SUMX,SUMY,DDSD,AMMD
@@ -2370,7 +2370,7 @@ module module_mp_tau_bin
 !
       REAL, DIMENSION(LK) :: dphasem,dphasen,dphasem_sub                &
      &  ,dphasem_res
-      
+
       REAL :: rofac
       REAL :: sdn !total change in CDNC
       REAL :: sdd, sddm, chi
@@ -2385,7 +2385,7 @@ module module_mp_tau_bin
       REAL :: xnevap !the total number of evaporated drops
       REAL, DIMENSION(LK) :: s1, s2, s3, s4
       REAL :: S
-      
+
       REAL,PARAMETER :: UM = 1.72E-04 !dynamic viscosity of air
       real :: amk_tot,ank_tot
       INTEGER :: it                                                     &
@@ -2410,25 +2410,25 @@ module module_mp_tau_bin
       REAL,DIMENSION(JMINP:JMAXP,KKP)::                                     &
      &  L_evap                ! evaporation limiter as calced using JR06
       REAL, DIMENSION(JMINP:JMAXP,KKP,LK)::R_k,m_k !mean rad for each bin
-      
+
       real :: t_test
-      
+
 !      REAL,EXTERNAL :: QSATURATION,f1, f3
 
 !
 ! initialization and scaling of variables. dt is the evaporation time
-! step, if t=dt then the evaporation time step is the same as the 
-! dynamic timestep.  also we calculate the dynamic viscosity of air 
+! step, if t=dt then the evaporation time step is the same as the
+! dynamic timestep.  also we calculate the dynamic viscosity of air
 ! (dv), and the scaling factor for density (r0fac) where sldeni is the
 ! inverse of the sea level density in cgs units.  the schmidt number
 ! for use in the ventilation coefficient calculations is also found.
 !
       ex1 = 0.3333333333
-      ex2 = 0.6666666667 
-      sldeni = 784.3137255       
+      ex2 = 0.6666666667
+      sldeni = 784.3137255
 
-      r0= RHON(K)*1.e-3         !units for EVAP and COND are g/cm^3  
-      pres = PREFN(K)*10 
+      r0= RHON(K)*1.e-3         !units for EVAP and COND are g/cm^3
+      pres = PREFN(K)*10
 
       amk_tot = 0.0
       ank_tot = 0.0
@@ -2459,12 +2459,12 @@ module module_mp_tau_bin
 !!$!          R_bar(J,K) = ((3.0*am1old(j,k))/(4.0*PI*1000.0*an1old(j,k)))
 !!$!     $               **(1./3.)
 !!$        ENDIF
-!!$       
+!!$
 !!$!        CALL EVAP_MIX(igrid,J,K,PREFN,TBASE,QVNEW,S,L_evap,QST,EA)
 !!$      ENDIF
-      
+
 !     work out the mass before micro, which is used to work fractional
-!     change in mass for inhom_mix parameterisation      
+!     change in mass for inhom_mix parameterisation
       IF(inhom_evap  ==  1) then
         am1old(J,K) = 0.0
         DO L=1,LK
@@ -2483,7 +2483,7 @@ module module_mp_tau_bin
       enddo
 !
 ! beginning the timestep iterations, at each timestep we calculate the
-! necessary thermodyanimc functions (see reference and comments in 
+! necessary thermodyanimc functions (see reference and comments in
 ! condensation.)
 !
      sdn=0.0
@@ -2512,9 +2512,9 @@ module module_mp_tau_bin
 !     Conditional for mixing assumption, if inhom=0, run
 !     normal evap scheme
 
-     if(inhom_evap == 0) then  
+     if(inhom_evap == 0) then
 !
-! preperation of some standard functions of the bin number for 
+! preperation of some standard functions of the bin number for
 ! use in the condensation calculations.  functions on determined
 ! depending on whether or not the average bin mass is within its
 ! bin range
@@ -2531,7 +2531,7 @@ module module_mp_tau_bin
            fk=2.0*an0(i)/(x_bin(i)*(bin_res-1.0))*                               &
                 (1.0 - 1./(bin_res-1.0) * (ff-1.0) )
            psik=2.*an0(i)/(x_bin(i)* (bin_res-1.0)*(bin_res-1.0))*               &
-                (ff-1.0) 
+                (ff-1.0)
            fac=1.0/(x_bin(i+1)-x_bin(i))
            s1(i)=fac *                                                       &
                 (x_bin(i+1)* fk - x_bin(i) * psik )
@@ -2548,13 +2548,13 @@ module module_mp_tau_bin
 !     fk=2.0*an0(i)/(x_bin(i)*(bin_res-1.0))*
 !    +       (1.0 - 1./(bin_res-1.0) * (ff-1.0) )
 !     psik=2.*an0(i)/(x_bin(i)* (bin_res-1.0)*(bin_res-1.0))*
-!    +       (ff-1.0) 
+!    +       (ff-1.0)
 
         enddo
-! begin iterating through the bins for the actual evaporation 
+! begin iterating through the bins for the actual evaporation
 ! calculations, so long as f is greater than a certain threshold.
 !
-           if(abs(f) >  1.0e-20)then 
+           if(abs(f) >  1.0e-20)then
               do l=1,lk
                  yk(l)=(x_bin(l)**(ex2)-f)**(1.50)
                  zk(l)=min((x_bin(l+1)**(ex2)-f)**1.50,x_bin(lk+1))
@@ -2563,24 +2563,24 @@ module module_mp_tau_bin
                  if(x_bin(lk+1) >  yk(l))then
 !
 ! locate the bin in which yk(l) is located, designate as i0
-! 
+!
                     il1=0
                     i0=0
                     in=0
                     do i=1,lk
                        if(yk(l) <  x_bin(i+1))then
-                          i0=i 
+                          i0=i
                           exit
                        endif
                     enddo
 
                     if(l == 1)il1=i0
-! 
+!
 ! locate the bin in which zk(l) is located; for efficiency, start
 ! at i0 (since zk>yk), futhermore designate as in
-! 
+!
 !this loop goes out of bounds do i=i0,lk+1, hence change
-                    do i=i0,lk 
+                    do i=i0,lk
                        if(zk(l) <  x_bin(i+1))then
                           in=i
                           exit
@@ -2589,23 +2589,23 @@ module module_mp_tau_bin
 
                     idiff=in-i0
                     i1=i0+1
-! 
+!
 ! below the parameters fx1,fy, fz,fxn,gg, and ggg are parameters
 ! appearing in the analytic solution to integrals in the reference
 ! equations 12 and 13.  furthermore functions f1 and f3 are defined
 ! because the form of this computation is repeatedly called and they
 ! simplify the code
-! 
+!
 !               fx0 = sqrt(( x_bin(1)**ex2 + f))
                     fx1 = sqrt(( x_bin(i1)**ex2 + f))
                     fy  = sqrt(( yk(l)**ex2 + f))
                     fz  = sqrt(( zk(l)**ex2 + f))
-! 
+!
                     fy1  = sqrt(( yk(1)**ex2 + f))
 ! solutions to eqs. 8 and 9 (#3) for various values of nj.
 !    idiff=0 implies yk and zk are located in the same bin.
 !    idiff=1 implies zk is in a bin one higher than yk.
-!    idiff>1 implies zk is in a bin more than one higher than yk. 
+!    idiff>1 implies zk is in a bin more than one higher than yk.
 ! the latter case should never appear given mass doubling between bins
 !
 ! * *
@@ -2674,21 +2674,21 @@ module module_mp_tau_bin
            endif
 
         else ! inhom_evap = 1, do ext inhom mixing
-  
+
 !     calculate CDNC and mass assuming extreme inhomogeneous mixing.
 !     This is achieved by assuming the bulk mass change (sum(amk)-sum(amkd))
 !     calculated by the bin micro is correct. Use the old (pre-evap)
 !     and the new (post-evap) bulk mass to calc % change in mass. Then
 !     use this % to reduce all bin mass and number
-!          
+!
 
-           delm=f*1.50*xi*sddm          
-           am1new(j,k) = 0.0 
+           delm=f*1.50*xi*sddm
+           am1new(j,k) = 0.0
            am1new(j,k) = am1old(j,k) + delm
 
            IF(am1old(j,k) > eps.and.                &
                 am1new(j,k) > eps) then
-              
+
               DO l = 1, lk
                  amk(j,k,l) = (am1new(j,k)/am1old(j,k))*am0_iter(l)
                  ank(j,k,l) = (am1new(j,k)/am1old(j,k))*an0_iter(l)
@@ -2700,7 +2700,7 @@ module module_mp_tau_bin
               ENDDO
            ENDIF
         ENDIF ! endif to inhom_evap = 0
-        
+
       end subroutine EVAP_new
 
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
@@ -2710,7 +2710,7 @@ module module_mp_tau_bin
 ! condensation integrals. see #3, appendix b, eq. 32.
 ! fgv = 2/3 * c(p,t) * integral ds dt
       IMPLICIT NONE
- 
+
 !CALL PRAMETR
 !CALL SD
 !CALL CON
@@ -2746,18 +2746,18 @@ module module_mp_tau_bin
 
       if (a >  0.0) print *, 'tau prob', a
       c=sqrt(-1.*a)
-      f3=3.*a*(b - c*atan(b/c)) + b*b*b 
+      f3=3.*a*(b - c*atan(b/c)) + b*b*b
 
       end function f3
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 !
-! GET_FORCING:   This routine gets the integrated forcing for cnd/evp 
+! GET_FORCING:   This routine gets the integrated forcing for cnd/evp
 ! in accordance with the analytic/numerical method.  It also returns
-! various measures of the excess vapor amount for use in nucleation 
+! various measures of the excess vapor amount for use in nucleation
 ! and in diagnostic tests.
-! 
+!
       SUBROUTINE GET_FORCING(J,K,RST,TEMP,ETA_0,ETA_D,                  &
      &             AM_gf,AN_gf,DT,TAU,ETA_N,ETA_A,VSW)
 
@@ -2767,7 +2767,7 @@ module module_mp_tau_bin
 !CALL RW
 !CALL GRID1
 
-! Intent (IN) arguments      
+! Intent (IN) arguments
       INTEGER, INTENT(IN) ::J,K
       INTEGER L
       REAL, INTENT(IN),DIMENSION(JMINP:JMAXP,KKP) :: TEMP !temp calced in Tau
@@ -2779,7 +2779,7 @@ module module_mp_tau_bin
 !      REAL,INTENT(IN),DIMENSION(JMINP:JMAXP,KKP,LK)::ANKOLD
       REAL,INTENT(IN) :: DT
       REAL,INTENT(IN) :: VSW
-! Intent (OUT) arguments 
+! Intent (OUT) arguments
       REAL,INTENT(OUT),DIMENSION(JMINP:JMAXP,KKP):: TAU,ETA_A,ETA_N
 !     Local variables
       REAL,DIMENSION(JMINP:JMAXP,KKP)::ETA_DT
@@ -2794,7 +2794,7 @@ module module_mp_tau_bin
 
       PARAMETER (L0=0.0)
       PARAMETER (XI=0.9840654,EX1=1./3.,EX2=2./3.)
-      
+
       pres = PREFN(K)*10
 
       SDDM=0.
@@ -2811,12 +2811,12 @@ module module_mp_tau_bin
          ETA_N(J,K)=ETA_D(J,K)
          RETURN
       ENDIF
-      
+
 !
 ! Eta at the next timestep and the integral of eta are estimated
 !
       CHI   = -XI*ZZZ*SDDM*AA(pres,j,k,temp(j,k),RST(j,k))
-     
+
       if (abs(CHI) < eps) Then
          TAU(J,K)=0.
          ETA_DT=0.
@@ -2826,10 +2826,10 @@ module module_mp_tau_bin
 
       ETA_N(J,K) = ETA_NEW(ETA_0,ETA_D(J,K),CHI,DT)
       ETA_DT(J,K) = ETA_INT(ETA_0,ETA_D(J,K),CHI,DT)
-       
+
 !
 ! Here the integral for eta over the timestep is bounded by its values
-! at the endpoints, erroneous values of eta_dt sometimes are computed 
+! at the endpoints, erroneous values of eta_dt sometimes are computed
 ! for vanishingly small amounts of mass in the presence of evaporation,
 ! here the limiting eliminates erroneous values
 !
@@ -2837,10 +2837,10 @@ module module_mp_tau_bin
       FSW = MAX(MIN(1.,MAX((MIN(ETA_0,ETA_N(J,K))                       &
      &      *DT-ETA_DT(J,K))*1.E15,0.))                                 &
      &    ,MIN(1.,MAX((ETA_DT(J,K)-MAX(ETA_0,ETA_N(J,K))*DT)*1.E15,0.)))
-      
+
       ETA_DT(J,K)=ETA_DT(J,K)*(1.-FSW) + FSW*(ETA_0+ETA_N(J,K))         &
      &  *DT*0.5
-!      
+!
 ! Average value of eta over the timestep is computed for diagnostics
 ! as is the estimated change in mass
 !
@@ -2884,9 +2884,9 @@ module module_mp_tau_bin
 !
 !FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 !
-! ETA_NEW is the estimated value of ETA at the end of the timestep 
-! given the forcings.  It is calculated in a manner consistent with 
-! the dynamical and micro-physical forcings via the 
+! ETA_NEW is the estimated value of ETA at the end of the timestep
+! given the forcings.  It is calculated in a manner consistent with
+! the dynamical and micro-physical forcings via the
 ! analytical/numerical method.
 !
 ! X ......generic variable for designating difference between the

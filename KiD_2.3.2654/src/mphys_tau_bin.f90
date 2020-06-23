@@ -1,5 +1,5 @@
 !
-! This Module contains the code required to call 
+! This Module contains the code required to call
 ! Tel-aviv university (TAU) bin microphysics subroutines
 ! within the 1-D framework
 !
@@ -12,9 +12,9 @@ module mphys_tau_bin
   Use column_variables
   Use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
   Use mphys_tau_bin_declare
-  
+
   Use switches_bin
-  Use module_mp_tau_bin 
+  Use module_mp_tau_bin
   Use module_bin_init
 
  implicit none
@@ -27,7 +27,7 @@ module mphys_tau_bin
 
   integer i
 
-  !Logical switches 
+  !Logical switches
   logical :: l_ice=.False.
   logical :: micro_unset=.True.
 
@@ -35,7 +35,7 @@ module mphys_tau_bin
      integer :: ispecies ! Species index
      integer :: imoment  ! moment index
   end type qindex
-     
+
   type(qindex), allocatable :: qindices(:)
   integer :: nqs ! number of qindices (possibly different from nqp)
 
@@ -47,18 +47,18 @@ contains
     rdt=1./dt
 
     ! vapour
-    
+
     iq=1
     iqv=iq
 
     if (num_h_bins(1) >= 11) then
       IMICROBIN=1
       IRAINBIN=1
-       
+
       call qcount(iqss, iq)   ! advected supersat.
 
 !      call qcount(iql, iq)   ! total water for diag
-      
+
       if (num_aero_moments(1) >= 1) then
          do i = 1,ln2
             call qcount(IAERO_BIN(i),iq) ! aerosol bins
@@ -70,10 +70,10 @@ contains
       do i = 1,lk
         call qcount(ICDNC_BIN(i),iq) ! cloud number bins
       enddo
-      
+
       nqs=aero_bin+ln2+lk+lk+1
 
-      allocate(qindices(nqs))      
+      allocate(qindices(nqs))
 
       ! Set qindices for later use
       if (num_aero_moments(1) >= 1) then
@@ -92,11 +92,11 @@ contains
       end if
 
     end if ! bin model selected
-  
+
   end subroutine set_micro
 
 
- 
+
   subroutine qcount(var, count)
     integer, intent(out) :: var
     integer, intent(inout) ::  count
@@ -113,7 +113,7 @@ contains
 
     ! Set up input arrays...
     rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
-    ! AH - 04/03/10, line below leads to divide by 0 
+    ! AH - 04/03/10, line below leads to divide by 0
     !      corrected by setting array to 2:kkp. Problem highlighted
     !      by Theotonio Pauliquevis
     ! prefrcp(:)=1./rprefrcp(:)
@@ -125,8 +125,8 @@ contains
 
     rhon(2:kkp)=rho(1:kkp-1)
     rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
-    ! Reference temperature (this is fixed in lem, but 
-    ! shouldn't make a difference for microphysics if we 
+    ! Reference temperature (this is fixed in lem, but
+    ! shouldn't make a difference for microphysics if we
     ! just set it to be the current profile (i.e. th'=0)
     tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
 
@@ -171,31 +171,31 @@ contains
        DO IQ = 1,LN2
          ih=qindices(IAERO_BIN(iq))%ispecies
          imom=qindices(IAERO_BIN(iq))%imoment
-         DO K=1,nz-1
-           DO J = JMINP , JMAXP
-             CCNORIG(J,K+1,IQ) = aerosol(k,j,ih)%moments(iq,imom)
+         DO k=1,nz-1
+           DO j = JMINP , JMAXP
+             CCNORIG(j,k+1,IQ) = aerosol(k,j,ih)%moments(iq,imom)
            ENDDO
          ENDDO
        ENDDO
 
-       DO K = 1, KKP
-         DO J = JMINP, JMAXP
-           TOTCCNORIG(J,K) = 0.0
+       DO k = 1, KKP
+         DO j = JMINP, JMAXP
+           TOTCCNORIG(j,k) = 0.0
            DO IQ = 1, LN2
-             TOTCCNORIG(J,K) = TOTCCNORIG(J,K) + CCNORIG(J,K,IQ)
+             TOTCCNORIG(j,k) = TOTCCNORIG(j,k) + CCNORIG(j,k,IQ)
            ENDDO
          ENDDO
        ENDDO
        DO IQ = 1, Ln2
           CCNORIGTOT(IQ) = 0.0
           CCNORIGAVG(IQ) = 0.0
-           DO K = 1, KKP
-             DO J = JMINP, JMAXP
-               CCNORIGTOT(IQ) = CCNORIGTOT(IQ) + CCNORIG(J,K,IQ)
+           DO k = 1, KKP
+             DO j = JMINP, JMAXP
+               CCNORIGTOT(IQ) = CCNORIGTOT(IQ) + CCNORIG(j,k,IQ)
              ENDDO
            ENDDO
            CCNORIGAVG(IQ) = CCNORIGTOT(IQ)/(JJP*KKP)
-       ENDDO    
+       ENDDO
         micro_unset=.False.
     end if
 
@@ -205,7 +205,7 @@ contains
        sq_lem(j,2:kkp,iqv)=dqv_adv(1:kkp-1,j)+dqv_div(1:kkp-1,j)
 
        sq_lem(j,2:kkp,iqss)=dss_adv(1:kkp-1,j)+dss_div(1:kkp-1,j)
-       
+
        do iq=1,ln2
           ih=qindices(iaero_bin(iq))%ispecies
           imom=qindices(iaero_bin(iq))%imoment
@@ -231,12 +231,12 @@ contains
      end do
 
 ! test if the transport has moved mass and number around
-     DO K = 2, nz
-        DO J = jminp,jmaxp
+     DO k = 2, nz
+        DO j = jminp,jmaxp
            DO IQ = 1, LK
-              CALL ADVECTcheck(J,K,iq,DT,Q_lem(J,K,ICDKG_BIN(iq)),              &
-    &                 Q_lem(J,K,ICDNC_BIN(iq)),SQ_lem(J,K,ICDKG_BIN(iq)),  &
-    &                 SQ_lem(J,K,ICDNC_BIN(iq)))
+              CALL ADVECTcheck(j,k,iq,DT,Q_lem(j,k,ICDKG_BIN(iq)),              &
+    &                 Q_lem(j,k,ICDNC_BIN(iq)),SQ_lem(j,k,ICDKG_BIN(iq)),  &
+    &                 SQ_lem(j,k,ICDNC_BIN(iq)))
            ENDDO
         ENDDO
      ENDDO
@@ -256,7 +256,7 @@ contains
                    + daerosol_div(k,j,ih)%moments(iq,imom))
            end do
         enddo
-        
+
         do iq=1,lk
            ih=qindices(icdkg_bin(iq))%ispecies
            imom=qindices(icdkg_bin(iq))%imoment
@@ -274,19 +274,19 @@ contains
            end do
         end do
 
-        ! For now set no microphysics on the bottom level - this would be 
+        ! For now set no microphysics on the bottom level - this would be
        ! better done by having a subterranian level 0 in column variables
         sq_lem(j,1,1)=0
-        
+
         dtheta_mphys(1:kkp-1,j)=sth_lem(j,2:kkp)
 
         dqv_mphys(1:kkp-1,j)=sq_lem(j,2:kkp,iqv)
-        
+
        !
        ! update supersaturation field here (not in step fields)
        !
         ss(1:kkp-1,j) = q_lem(j,2:kkp,iqss)
-    
+
         do iq=1,ln2
            ih=qindices(iaero_bin(iq))%ispecies
            imom=qindices(iaero_bin(iq))%imoment
@@ -316,15 +316,15 @@ contains
 
 !DECK ADVcheck
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-      SUBROUTINE  ADVECTcheck(J,K,IQ,DT,ZQmass,ZQnum,Sourcemass,&
+      SUBROUTINE  ADVECTcheck(j,k,IQ,DT,ZQmass,ZQnum,Sourcemass,&
            Sourcenum)
-!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS      
+!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
       IMPLICIT NONE
-      
+
 !CALL PRAMETR
 !CALL RI
-!CALL XD      
-!CALL GRID1     
+!CALL XD
+!CALL GRID1
 !local variable
       REAL :: QmassFLD, ZQmass, Qmass
       REAL :: Qnumfield, ZQnum, Qnum
@@ -333,15 +333,15 @@ contains
       REAL :: AVG, AVGinit
       REAL :: DT,RDT
 !loop counters
-      INTEGER J, K, IQ      
-          
+      INTEGER j, k, IQ
+
       RDT = 1.0/DT
 
-!First calculate the new field      
+!First calculate the new field
       QmassFLD=(ZQmass+(DT*Sourcemass))
       Qnumfield = (ZQnum+(DT*Sourcenum))
 !Change units to microphys units (just for consistency
- 
+
       QmassFLD = (QmassFLD*rhon(k))/1.e3
       Qnumfield = (Qnumfield*rhon(k))/1.e6
       Sourcemass = (Sourcemass*rhon(k))/1.e3
@@ -364,9 +364,9 @@ contains
 !
       Sourcemass = (Sourcemass*1.e3)/rhon(k)
       Sourcenum  = (Sourcenum*1.e6)/rhon(k)
-      
-!do positivity check after normalisation as changing SQ by normalisation 
-!can lead to negatives      
+
+!do positivity check after normalisation as changing SQ by normalisation
+!can lead to negatives
       IF((ZQmass+(DT*Sourcemass) <  0.0).or.                            &
      &                    (ZQnum+(DT*Sourcenum) <  0.0)) THEN
         Sourcemass = -0.99999 * ZQmass/DT
