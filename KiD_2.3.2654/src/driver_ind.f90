@@ -172,7 +172,7 @@ implicit none
 real :: dnc,dnr
 real(8),dimension(max_nbins) :: ffcd_mass,ffcd_num
 integer :: i,k
-real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
+real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d
 
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
@@ -195,6 +195,7 @@ do i=1,nx
       endif
    enddo
 enddo
+
 
 end subroutine tau_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

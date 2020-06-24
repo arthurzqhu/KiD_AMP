@@ -737,14 +737,14 @@ return
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
-subroutine micro_proc_tau(DECIDE THE INPUTS)
-use parameters, only: nz, nx, dt,
+subroutine micro_proc_tau!(DECIDE THE INPUTS)
+use parameters, only: nz, nx, dt
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div
 use mphys_tau_bin, only: ADVECTcheck, q_lem, sq_lem, sth_lem, qindices
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN
-use module
+!use module
 
 integer :: j, k, iq, ih, imom
 real :: rdt
@@ -794,7 +794,7 @@ end if
 
 rdt = 1./dt
 
-call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
+!call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
 
 
 end subroutine micro_proc_tau
@@ -914,7 +914,8 @@ diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy elemen
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
 
-ffcd=0.
+ffcd_mass=0.
+ffcd_num=0.
 
 n0c=rxc/gamma(gnuc+3)
 n0r=rxr/gamma(gnur+3)
@@ -927,7 +928,7 @@ do kr=1,nkr
   endif
   if (rxr>0.) then
      exptermr=exp(-1.*diams(kr)/dnr)
-     ffcd_mass(kr) = ffcd(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
+     ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
      ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/(diams(kr)**3*pi/6.*rhoW)
   endif
 
