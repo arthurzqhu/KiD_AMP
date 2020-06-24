@@ -114,7 +114,7 @@ enddo
 
 end subroutine amp_init
 !------------------------------------------------------------
-subroutine sbm_init(aer2d,drops2d)
+subroutine sbm_init(aer2d,dropsm2d)
 
 use switches, only: zctrl
 use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
@@ -125,7 +125,7 @@ use micro_prm
 implicit none
 real(8),dimension(max_nbins) :: ffcd
 real :: dnc,dnr
-real, dimension(nz,nx,max_nbins) :: aer2d,drops2d
+real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
 integer :: i,k
 
 !Set some parameters
@@ -151,7 +151,7 @@ CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diam
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
-         drops2d(k,i,:)=ffcd
+         dropsm2d(k,i,:)=ffcd
       endif
    enddo
 enddo
@@ -159,7 +159,7 @@ enddo
 end subroutine sbm_init
 
 !------------------------------------------------------------
-subroutine tau_init(aer2d,drops2d)
+subroutine tau_init(aer2d,dropsm2d,dropsn2d)
 
 use switches, only: zctrl
 use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
@@ -170,9 +170,9 @@ implicit none
 !real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
 !NQP=AERO_BIN+Ln2+LK+LK+1=71
 real :: dnc,dnr
-real(8),dimension(max_nbins) :: ffcd
+real(8),dimension(max_nbins) :: ffcd_mass,ffcd_num
 integer :: i,k
-real, dimension(nz,nx,max_nbins) :: aer2d,drops2d
+real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
 
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
@@ -184,12 +184,14 @@ if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
                          /rain_init(2)*gamma(h_shape(2)) &
                          /gamma(h_shape(2)+3))**(1./3.)
 
-CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
+                   dnr,diams,ffcd_mass,ffcd_num)
 
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
-         drops2d(k,i,:)=ffcd
+         dropsm2d(k,i,:)=ffcd_mass
+         dropsn2d(k,i,:)=ffcd_num
       endif
    enddo
 enddo
@@ -275,7 +277,7 @@ enddo
 !print*,Mpc(25,1,2),mc0(25,1,momx+1)
 !------CALL MICROPHYSICS--------------------
 
-call micro_proc(press,tempk,qv,fncn,ffcd)
+call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
@@ -367,7 +369,7 @@ real, dimension(nz,nx,max_nbins)::ffcd,fncn
 real(8),dimension(nz,nx,10) :: mc,mr
 
 !------CALL MICROPHYSICS--------------------
-call micro_proc(press,tempk,qv,fncn,ffcd)
+call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
@@ -392,10 +394,10 @@ integer:: i,j,k,ip
 
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,max_nbins)::ffcd,fncn
-real(8),dimension(nz,nx,10) :: mc,mr
+real(8),dimension(nz,nx,10) :: mc,mr ! moments
 
 !------CALL MICROPHYSICS--------------------
-call micro_proc(press,tempk,qv,fncn,ffcd)
+call micro_proc_tau(press,tempk,qv,fncn,ffcd)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
@@ -406,4 +408,4 @@ do k=1,nz
    enddo
  enddo
 enddo
-end subroutine mp_tau 
+end subroutine mp_tau
