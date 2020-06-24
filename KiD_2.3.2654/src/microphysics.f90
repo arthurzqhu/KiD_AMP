@@ -737,17 +737,47 @@ return
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
-subroutine micro_proc_tau!(DECIDE THE INPUTS)
+subroutine micro_proc_tau(press,tempk,qv,ffcd_mass,ffcd_num)
 use parameters, only: nz, nx, dt
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
-                            dhydrometeors_adv, dhydrometeors_div
-use mphys_tau_bin, only: ADVECTcheck, q_lem, sq_lem, sth_lem, qindices
-use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN
-!use module
+                            dhydrometeors_adv, dhydrometeors_div, ss
+use mphys_tau_bin, only: ADVECTcheck, qindices
+use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
+                                 NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
+                                 iqss, ln2
+use module_mp_tau_bin, only: tau_bin
+use namelists, only: aero_N_init
 
 integer :: j, k, iq, ih, imom
 real :: rdt
+real :: q_lem(JMINP:JMAXP, KKP, NQP)
+real :: th_lem(JMINP:JMAXP, KKP)
+real :: sq_lem(JMINP:JMAXP, KKP, NQP)
+real :: sth_lem(JMINP:JMAXP, KKP)
+real :: w_lem(JMINP:JMAXP, KKP)
+
+!press not needed bc it's currently a constant field -ahu
+
+rdt = 1./dt
+
+! prepare for the tau mphys
+do k = 1, nz
+  do j = jminp, jmaxp
+    th_lem(j,k) = tempk(k,j)/exner(k,j)
+    q_lem(j,k,iqv) = qv(k,j)
+    q_lem(j,k,iqss) = ss(k,j)
+    do iq = 1,ln2
+      q_lem(j,k,iaero_bin(iq)) = aero_N_init
+      !aero_N a constant in TAU standalone, will worry about it later if it's not -ahu
+    end do
+    do iq=1,lk
+      q_lem(j,k,icdkg_bin(iq)) = ffcd_mass(iq)
+      q_lem(j,k,icdnc_bin(iq)) = ffcd_num(iq)
+    end do
+  end do
+end do
+
 
 if (l_advect .or. l_diverge) then
   do j=jminp,jmaxp
@@ -792,9 +822,7 @@ if (l_advect .or. l_diverge) then
 
 end if
 
-rdt = 1./dt
-
-!call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
+call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
 
 
 end subroutine micro_proc_tau

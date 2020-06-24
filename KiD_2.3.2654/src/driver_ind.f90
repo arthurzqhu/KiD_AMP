@@ -384,7 +384,7 @@ enddo
 end subroutine mp_sbm
 
 !---------------------------------------------------------------------
-subroutine mp_tau(ffcd,press,tempk,qv,fncn,mc,mr)
+subroutine mp_tau(ffcd_mass,ffcd_num,press,tempk,qv,mc,mr)
 
 use module_hujisbm
 use micro_prm
@@ -394,11 +394,11 @@ implicit none
 integer:: i,j,k,ip
 
 real, dimension(nz,nx)::tempk,press,qv
-real, dimension(nz,nx,max_nbins)::ffcd,fncn
+real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num
 real(8),dimension(nz,nx,10) :: mc,mr ! moments
 
 !------CALL MICROPHYSICS--------------------
-call micro_proc_tau(press,tempk,qv,fncn,ffcd)
+call micro_proc_tau(press,tempk,qv,ffcd_mass,ffcd_num)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
