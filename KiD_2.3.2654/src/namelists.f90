@@ -31,13 +31,14 @@ module namelists
   implicit none
   integer:: imomc1,imomc2,imomr1,imomr2
   real, dimension(2):: cloud_init,rain_init
-  logical :: docollisions, docondensation, donucleation, dosedimentation
-  
+  logical :: docollisions, docondensation, donucleation, dosedimentation, &
+             dobreakup
+
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
        aero_mom_init, aero_N_init, aero_sig_init, aero_rd_init, aero_names, &
        imomc1,imomc2,imomr1,imomr2,donucleation,docondensation,docollisions, &
-       dosedimentation,cloud_init,rain_init
+       dosedimentation,dobreakup,cloud_init,rain_init
 
   namelist/control/dt, dg_dt, mphys_scheme, mphys_var &
        , wctrl, zctrl, tctrl, pctrl_z, pctrl_v, pctrl_T, ipctrl &

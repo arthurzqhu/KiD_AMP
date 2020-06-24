@@ -44,6 +44,8 @@ module module_mp_tau_bin
 
   Use switches, only: l_sediment, mphys_var, l_fix_aerosols
   Use switches_bin
+  Use namelists, only: dosedimentation, docollisions, docondensation, &
+                       donucleation, dobreakup
 
   IMPLICIT NONE
 
@@ -198,7 +200,7 @@ module module_mp_tau_bin
         ENDDO
      ENDDO
 
-     if (l_sediment) then
+     if (l_sediment .or. dosedimentation) then
 
         CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 
