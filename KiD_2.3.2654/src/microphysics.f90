@@ -1,7 +1,7 @@
 !A. Igel - 5/2013 - Adapting for CLOUD model
 ! This module adapts the SBM from wrf, originally from A. Khain.
 
-Subroutine micro_proc(press,tempk,qv,fncn,ffcd)
+Subroutine micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 
 use module_hujisbm
 use micro_prm
@@ -278,7 +278,7 @@ do i=1,nx
    enddo
 enddo !end loop over i
 RETURN
-END SUBROUTINE micro_proc
+END SUBROUTINE micro_proc_sbm
 
 !---------------------------------------------------------------------------------
 Subroutine micro_init_sbm
@@ -736,6 +736,69 @@ return
 !  endif
 END SUBROUTINE init_dist_sbm
 
+!---------------------------------------------------------------------------------
+subroutine micro_proc_tau(DECIDE THE INPUTS)
+use parameters, only: nz, nx, dt,
+use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
+                            dss_div, daerosol_adv, daerosol_div, &
+                            dhydrometeors_adv, dhydrometeors_div
+use mphys_tau_bin, only: ADVECTcheck, q_lem, sq_lem, sth_lem, qindices
+use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN
+use module
+
+integer :: j, k, iq, ih, imom
+real :: rdt
+
+if (l_advect .or. l_diverge) then
+  do j=jminp,jmaxp
+     sth_lem(j,2:kkp)=dtheta_adv(1:kkp-1,j)+dtheta_div(1:kkp-1,j)
+     sq_lem(j,2:kkp,iqv)=dqv_adv(1:kkp-1,j)+dqv_div(1:kkp-1,j)
+
+     sq_lem(j,2:kkp,iqss)=dss_adv(1:kkp-1,j)+dss_div(1:kkp-1,j)
+
+     do iq=1,ln2
+        ih=qindices(iaero_bin(iq))%ispecies
+        imom=qindices(iaero_bin(iq))%imoment
+        do k=1,nz-1
+           sq_lem(j,k+1,iaero_bin(iq))=(daerosol_adv(k,j,ih)%moments(iq,imom) &
+                + daerosol_div(k,j,ih)%moments(iq,imom))
+        end do
+     enddo
+     do iq=1,lk
+        ih=qindices(icdkg_bin(iq))%ispecies
+        imom=qindices(icdkg_bin(iq))%imoment
+        do k=1,nz-1
+           sq_lem(j,k+1,icdkg_bin(iq))=dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom)
+        end do
+        ih=qindices(icdnc_bin(iq))%ispecies
+        imom=qindices(icdnc_bin(iq))%imoment
+        do k=1,nz-1
+           sq_lem(j,k+1,icdnc_bin(iq))=dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom)
+        end do
+     end do
+   end do
+
+   DO k = 2, nz
+      DO j = jminp,jmaxp
+         DO IQ = 1, LK
+            CALL ADVECTcheck(j,k,iq,DT,Q_lem(j,k,ICDKG_BIN(iq)),              &
+  &                 Q_lem(j,k,ICDNC_BIN(iq)),SQ_lem(j,k,ICDKG_BIN(iq)),  &
+  &                 SQ_lem(j,k,ICDNC_BIN(iq)))
+         ENDDO
+      ENDDO
+   ENDDO
+
+end if
+
+rdt = 1./dt
+
+call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
+
+
+end subroutine micro_proc_tau
+
 !-------------------------------------------------------------------
 subroutine micro_init_tau
 use micro_prm
@@ -832,18 +895,19 @@ ENDDO
 end subroutine micro_init_tau
 
 !-------------------------------------------------------------------
-Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
+Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd_mass,ffcd_num)
 
 use micro_prm, only:nkr
 use parameters, only: max_nbins
 use mphys_tau_bin_declare, only: DIAM, NQP
+use physconst, only: pi, rhoW
 
 implicit none
 
 integer :: kr
 real:: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
-real(8), dimension(max_nbins) :: diams, ffcd
+real(8), dimension(max_nbins) :: diams, ffcd_mass, ffcd_num
 
 diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
 !print*, 'inside init dist',rx,gnu,dn
@@ -858,12 +922,15 @@ n0r=rxr/gamma(gnur+3)
 do kr=1,nkr
   if (rxc>0.) then
     exptermc=exp(-1.*diams(kr)/dnc)
-    ffcd(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
+    ffcd_mass(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
+    ffcd_num(kr) = ffcd_mass(kr)/(diams(kr)**3*pi/6.*rhoW)
   endif
   if (rxr>0.) then
      exptermr=exp(-1.*diams(kr)/dnr)
-     ffcd(kr) = ffcd(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
+     ffcd_mass(kr) = ffcd(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
+     ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/(diams(kr)**3*pi/6.*rhoW)
   endif
+
 !If ffcd(kr) is NaN, set to zero
 !    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
