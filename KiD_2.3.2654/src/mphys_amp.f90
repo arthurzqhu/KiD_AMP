@@ -44,7 +44,6 @@ contains
     real(8), dimension(nz,nx,2,flag_count) :: flag
     character(1) :: Mnum
 
-    call check_bintype
 
     do i=1,nx
        do k=1,nz
@@ -120,7 +119,7 @@ contains
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
       elseif (bintype .eq. 'tau') then
-         call mp_tau(dropsm2d,dropsn2d,p2d,t2d,qv2d,aer2d,mc,mr)
+         call mp_tau(dropsm2d,dropsn2d,p2d,theta,qv2d,aer2d,mc,mr)
       endif
    endif
 

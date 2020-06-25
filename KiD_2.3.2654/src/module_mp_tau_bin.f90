@@ -159,6 +159,7 @@ module module_mp_tau_bin
 !     &  , RELHUM  !function for relative humidty
 !
 !
+
       IF(IMICROBIN == 1.AND.IRAINP == 0) THEN
 
 !Calculate the domain total bin resolved CCN number for regen
@@ -229,6 +230,7 @@ module module_mp_tau_bin
 !b) Set base values after dynamics for use in microphys
            THOLD=TH(J,K) + (STH(J,K)*DT)
            QVOLD(J,K)=Q(J,K,IQV) + (SQ(J,K,IQV)*DT)
+
            DO IQ = 1, LK
               QLOLD(J,K)=QLOLD(J,K)+(Q(J,K,ICDKG_BIN(IQ))               &
      &        +(SQ(J,K,ICDKG_BIN(IQ))*DT))
@@ -237,6 +239,7 @@ module module_mp_tau_bin
            ENDDO
 
            TBASE(J,K)=TREF(K) + THOLD*RPREFRCP(K)
+
 !
 ! 2. calculate saturation functions
 !
@@ -245,6 +248,7 @@ module module_mp_tau_bin
 ! 3. call cloudbin to calculate the bin microphysics (i.e.
 !   nucleation, condensation, evaporation, collection, breakup)
 !
+
             CALL CLOUDBIN(I,J,K,Q,SQ,AMKORIG,ANKORIG,QSATPW,RH,TBASE,TREF,    &
      &                  DQVDT(J,K),DT,RDT,PMB,QVOLD(J,K),QLOLD(J,K),    &
      &                  totevap,totccnreg,DS_0)
@@ -471,6 +475,7 @@ module module_mp_tau_bin
 ! effect of dynamics from this timestep. I do not think this is needed
 ! as all I want is a tendency due ti microphysics. The tendency for aerosol
 ! is calculated in SUBNUC, as this is where nucleation is calculated
+
 
       if (jjp == 1) then
          call save_dg(k,rhon(k),'density', &
@@ -800,7 +805,6 @@ module module_mp_tau_bin
         CN1 = CCN(j,k,ccn_pos)/rhon(k) ! convert to /kg
 
         if (.not. l_fix_aerosols) then
-
            AN2(J,K) = MAX(0.,                                            &
      &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
               CN1)
@@ -812,6 +816,7 @@ module module_mp_tau_bin
            AN2(J,K) = MAX(0.,                                            &
      &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
               CN1-AN1(J,K))
+
 !     &       CCN(J,K,ccn_pos)-AN1(J,K))
 
         endif
@@ -855,12 +860,14 @@ module module_mp_tau_bin
 !             AFTER  CONDENSATION-EVAPORATION
 !*************************************************************
       DO L=1,LK
+
          DIEMC(L)=AMK(J,K,L)-AMKORIG(J,K,L)!AMKORIG is the mass prior to
                 !bin micro, therefore DIEMC (old variable name) is
                 !mass resulting from bin micro
          DIENC(L)=ANK(J,K,L)-ANKORIG(J,K,L)!ANKORIG is the number prior to
                 !bin micro, therefore DIENC (old variable name) is
                 !number resulting from bin micro
+
       ENDDO
 
       if (IRAINBIN == 1.AND.IMICROBIN == 1) then
@@ -988,6 +995,7 @@ module module_mp_tau_bin
       endif
 
       endif
+
 !**********************************************************
 !     Update mass and conc, tendencies due to micro and end
 !**********************************************************
@@ -1021,6 +1029,7 @@ module module_mp_tau_bin
 !AH 0410 - Call microcheck to update the source fields for bin resolved mass
 !          and number with DAMKDT and DANKDT
 !
+
           CALL MICROcheck(J,K,L,DT,AMKORIG(J,K,L), &
                ANKORIG(j,k,l),SQ(J,K,ICDKG_BIN(L)), &
                SQ(J,K,ICDNC_BIN(L)),DAMKDT,DANKDT,RDT,Q(J,K,ICDKG_BIN(L)) &
@@ -1822,6 +1831,7 @@ module module_mp_tau_bin
 !loop counters
       INTEGER J, K, IQ, ISTOPU
 !
+
       QmassFLD = Qmass_orig+((Sourcemass+DAMKDT)*DT)
       Qnumfield = Qnum_orig+((Sourcenum+DANKDT)*DT)
 !
@@ -1834,6 +1844,7 @@ module module_mp_tau_bin
         DANKDT = -0.99999*Qnum*RDT
       ENDIF
 !
+
       Sourcemass = Sourcemass + DAMKDT
       Sourcenum = Sourcenum + DANKDT
 

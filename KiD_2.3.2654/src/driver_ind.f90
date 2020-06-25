@@ -384,29 +384,31 @@ enddo
 end subroutine mp_sbm
 
 !---------------------------------------------------------------------
-subroutine mp_tau(ffcd_mass,ffcd_num,press,tempk,qv,mc,mr)
+subroutine mp_tau(ffcd_mass2d,ffcd_num2d,press,tempk,qv,mc,mr)
 
 use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
-
+use namelists, only: l_advect
 implicit none
 integer:: i,j,k,ip
 
-real, dimension(nz,nx)::tempk,press,qv
-real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num
+real, dimension(nz,nx):: tempk,press,qv
+real, dimension(nz,nx,max_nbins)::ffcd_mass2d,ffcd_num2d
 real(8),dimension(nz,nx,10) :: mc,mr ! moments
 
 !------CALL MICROPHYSICS--------------------
-call micro_proc_tau(press,tempk,qv,ffcd_mass,ffcd_num)
+call micro_proc_tau(press,tempk,qv,ffcd_mass2d,ffcd_num2d)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
    do i=1,10
-      mc(k,j,i)=sum(ffcd(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
-      mr(k,j,i)=sum(ffcd(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+      mc(k,j,i)=sum(ffcd_mass2d(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
+      mr(k,j,i)=sum(ffcd_mass2d(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
    enddo
  enddo
 enddo
+! there might be a better way to calculate moments, but will leave it like that for now. -ahu
+
 end subroutine mp_tau
