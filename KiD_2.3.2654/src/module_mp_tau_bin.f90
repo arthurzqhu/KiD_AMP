@@ -159,7 +159,6 @@ module module_mp_tau_bin
 !     &  , RELHUM  !function for relative humidty
 !
 !
-
       IF(IMICROBIN == 1.AND.IRAINP == 0) THEN
 
 !Calculate the domain total bin resolved CCN number for regen
@@ -207,7 +206,6 @@ module module_mp_tau_bin
 
      endif                    ! sedimentation calculation
 
-
      totevap = 0.0
      totevap2 = 0.0
      totccnreg = 0.0
@@ -217,7 +215,14 @@ module module_mp_tau_bin
      QLNEW(:,:) = 0.0
      NQLNEW(:,:) = 0.0
 
+
+
      DO K=2,KKP
+
+!if (q(1,40,2) .ne. q(1,40,2)) THEN
+!    print*, 'q', q(1,40,:)
+!    stop
+!endif
         PMB = 0.01*PREFN(K)
         DO J=JMINP,JMAXP
 ! 1. set base values
@@ -253,6 +258,8 @@ module module_mp_tau_bin
      &                  DQVDT(J,K),DT,RDT,PMB,QVOLD(J,K),QLOLD(J,K),    &
      &                  totevap,totccnreg,DS_0)
 
+
+
 !
 ! 4. calculate the change in theta due to bin microphysics
 !
@@ -260,8 +267,8 @@ module module_mp_tau_bin
             DTHDT(J,K)=(THNEW-THOLD)*RDT
             totevap = totevap + CDNCEVAP(J,K)
         ENDDO
-
       ENDDO
+
 !
 !regeneration for single prognostic CCN variable
       if (.not. l_fix_aerosols) then
@@ -360,7 +367,9 @@ module module_mp_tau_bin
             ENDIF
           ENDDO
         ENDDO
-!
+
+
+
       END subroutine TAU_BIN
 
 !***********************************************************************
@@ -476,7 +485,6 @@ module module_mp_tau_bin
 ! as all I want is a tendency due ti microphysics. The tendency for aerosol
 ! is calculated in SUBNUC, as this is where nucleation is calculated
 
-
       if (jjp == 1) then
          call save_dg(k,rhon(k),'density', &
               i_dgtime, units='kg/m3',dim='z')
@@ -494,7 +502,8 @@ module module_mp_tau_bin
       DO L=1,LK
         AMKOLD(J,K,L)=AMKORIG(J,K,L)
         ANKOLD(J,K,L)=ANKORIG(J,K,L)
-      ENDDO
+      END DO
+
 
 !****************************************************************
 !          DS() IS THE SUPERSATURATED QUANTITY

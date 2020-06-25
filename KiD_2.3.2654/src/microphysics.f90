@@ -746,7 +746,7 @@ use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
 use mphys_tau_bin, only: ADVECTcheck, qindices
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
-                                 iqss, ln2
+                                 iqss, ln2, nqp
 use module_mp_tau_bin, only: tau_bin
 use namelists, only: aero_N_init,l_advect,l_diverge
 use micro_prm, only: col
@@ -812,7 +812,9 @@ if (l_advect .or. l_diverge) then
         end do
      end do
    end do
-
+!do k = 1,nz
+!print*, k, dss_adv(k,1)
+!enddo
    DO k = 2, nz
       DO j = jminp,jmaxp
          DO IQ = 1, LK
@@ -842,6 +844,19 @@ do j=jminp,jmaxp
 enddo
 
 !print*, sq_lem(1,61,1)
+
+do k=1,nz
+    do j=jminp,jmaxp
+        do iq=1,nqp
+            if (q_lem(j,k,iq) .ne. q_lem(j,k,iq)) then
+                print*,'q', k,iq
+            end if
+            if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
+                print*,'sq', k,iq
+            end if
+        enddo
+    enddo
+enddo
 
 if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then 
     print*, 'q', q_lem(1,40,:)
