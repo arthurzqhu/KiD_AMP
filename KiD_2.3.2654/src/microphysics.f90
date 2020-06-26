@@ -762,7 +762,7 @@ real :: w_lem(JMINP:JMAXP, KKP)
 real, dimension(nz,nx) :: press, tempk, qv,ss
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 
-!press & tempk currently not used 
+!press & tempk currently not used
 
 rdt = 1./dt
 
@@ -859,7 +859,7 @@ do k=1,nz
     enddo
 enddo
 
-if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then 
+if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
     print*, 'q', q_lem(1,58,:)
     print*, 'sq', sq_lem(1,58,:)
 !    print*, ffcd_mass2d(40,1,:)
@@ -952,7 +952,6 @@ use micro_prm
 use module_bin_init
 use mphys_tau_bin_declare
 use module_bin_init
-use mphys_tau_bin, only: set_micro,q_lem,th_lem,sq_lem,sth_lem,w_lem,i,l_ice,qindex,qindices,nqs
 implicit none
 
 integer :: j,k
@@ -1041,6 +1040,77 @@ DO IQ = 1, Ln2
 ENDDO
 
 end subroutine micro_init_tau
+
+! sub-subroutine for micro_init_tau ------------
+subroutine set_micro
+Use parameters, only : num_h_moments, num_h_bins, &
+     nspecies, mom_names, h_names, mom_units, max_char_len, &
+     num_aero_moments,num_aero_bins, aero_mom_init
+Use mphys_tau_bin_declare
+Use micro_prm
+implicit none
+
+integer :: i
+
+rdt=1./dt
+
+! vapour
+
+iq=1
+iqv=iq
+
+if (num_h_bins(1) >= 11) then
+  IMICROBIN=1
+  IRAINBIN=1
+
+  call qcount(iqss, iq)   ! advected supersat.
+
+!      call qcount(iql, iq)   ! total water for diag
+
+  if (num_aero_moments(1) >= 1) then
+     do i = 1,ln2
+        call qcount(IAERO_BIN(i),iq) ! aerosol bins
+     enddo
+  end if
+  do i = 1,lk
+    call qcount(ICDKG_BIN(i),iq) ! cloud mass bins
+  enddo
+  do i = 1,lk
+    call qcount(ICDNC_BIN(i),iq) ! cloud number bins
+  enddo
+
+  nqs=aero_bin+ln2+lk+lk+1
+
+  allocate(qindices(nqs))
+
+  ! Set qindices for later use
+  if (num_aero_moments(1) >= 1) then
+     do i = 1,ln2
+        qindices(IAERO_BIN(i))%ispecies=1
+        qindices(IAERO_BIN(i))%imoment=1
+     enddo
+  end if
+  if (num_h_bins(1) >= 4)then ! cloud mass
+     do i = 1,lk
+        qindices(ICDKG_BIN(i))%ispecies=1
+        qindices(ICDKG_BIN(i))%imoment=1
+        qindices(ICDNC_BIN(i))%ispecies=1
+        qindices(ICDNC_BIN(i))%imoment=2
+     enddo
+  end if
+
+end if ! bin model selected
+
+end subroutine set_micro
+
+! sub-subroutine for micro_init_tau ------------
+subroutine qcount(var, count)
+integer, intent(out) :: var
+integer, intent(inout) ::  count
+
+count=count+1
+var=count
+end subroutine qcount
 
 !-------------------------------------------------------------------
 Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd_mass,ffcd_num)
