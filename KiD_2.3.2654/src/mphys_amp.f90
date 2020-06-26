@@ -31,7 +31,7 @@ contains
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
     integer :: i, j, k, imom
-    real, dimension(nz,nx) :: t2d, p2d, qv2d
+    real, dimension(nz,nx) :: t2d, p2d, qv2d, ss2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
@@ -59,6 +59,7 @@ contains
           !else
             t2d(k,i) = theta(k,i)*exner(k,i)
             qv2d(k,i) = qv(k,i)
+            ss2d(k,i) = ss(k,i)
           !endif
           p2d(k,i) = p0*exner(k,i)**(1./r_on_cp)
 
@@ -119,7 +120,7 @@ contains
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
       elseif (bintype .eq. 'tau') then
-         call mp_tau(dropsm2d,dropsn2d,p2d,theta,qv2d,aer2d,mc,mr)
+         call mp_tau(dropsm2d,dropsn2d,p2d,t2d,qv2d,ss2d,mc,mr)
       endif
    endif
 

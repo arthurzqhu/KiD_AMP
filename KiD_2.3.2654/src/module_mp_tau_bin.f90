@@ -587,7 +587,7 @@ module module_mp_tau_bin
             DS_force = tau(j,k)
             tau_dum(j,k) = tau(j,k)
          endif
-
+    !print*, j,k,AM1(J,K), AM1OLD(J,K)
          IF (DS_force >  eps) THEN
 !*****************************************************************
 !        CONDENSATION

@@ -737,12 +737,13 @@ return
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
-subroutine micro_proc_tau(press,tempk,qv,ffcd_mass2d,ffcd_num2d)
+subroutine micro_proc_tau(press,tempk,qv,ss,ffcd_mass2d,ffcd_num2d)
 use parameters, only: nz, nx, dt, max_nbins
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
-                            dhydrometeors_adv, dhydrometeors_div, ss, exner, &
-                            dtheta_mphys,dqv_mphys, daerosol_mphys, dhydrometeors_mphys
+                            dhydrometeors_adv, dhydrometeors_div, exner, &
+                            dtheta_mphys,dqv_mphys, daerosol_mphys, dhydrometeors_mphys, &
+                            dss_mphys
 use mphys_tau_bin, only: ADVECTcheck, qindices
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
@@ -758,7 +759,7 @@ real :: th_lem(JMINP:JMAXP, KKP)
 real :: sq_lem(JMINP:JMAXP, KKP, NQP)
 real :: sth_lem(JMINP:JMAXP, KKP)
 real :: w_lem(JMINP:JMAXP, KKP)
-real, dimension(nz,nx) :: press, tempk, qv
+real, dimension(nz,nx) :: press, tempk, qv,ss
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 
 !press & tempk currently not used 
@@ -812,9 +813,7 @@ if (l_advect .or. l_diverge) then
         end do
      end do
    end do
-!do k = 1,nz
-!print*, k, dss_adv(k,1)
-!enddo
+
    DO k = 2, nz
       DO j = jminp,jmaxp
          DO IQ = 1, LK
@@ -836,6 +835,8 @@ call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)
 ! output to ffcd after mphys, might not be right -ahu
 do j=jminp,jmaxp
     do k=1,nz
+        qv(k,j) = q_lem(j,k,iqv)
+        ss(k,j) = q_lem(j,k,iqss)
         do iq=1,lk
             ffcd_mass2d(k,j,iq) = (q_lem(j,k,icdkg_bin(iq)) + sq_lem(j,k,icdkg_bin(iq))*dt)/col
             ffcd_num2d(k,j,iq) = (q_lem(j,k,icdnc_bin(iq)) + sq_lem(j,k,icdnc_bin(iq))*dt)/col
@@ -859,9 +860,8 @@ do k=1,nz
 enddo
 
 if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then 
-    print*, 'q', q_lem(1,40,:)
-    print*, 'sq', sq_lem(1,40,:)
-
+    print*, 'q', q_lem(1,58,:)
+    print*, 'sq', sq_lem(1,58,:)
 !    print*, ffcd_mass2d(40,1,:)
 !    print*, ffcd_num2d(40,1,:)
     print*, '**at least the mphys routine finished**'
@@ -973,6 +973,7 @@ rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
 ! shouldn't make a difference for microphysics if we
 ! just set it to be the current profile (i.e. th'=0)
 tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
+
 
 ! Set up microphysics species
 call set_micro
