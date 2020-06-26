@@ -737,29 +737,23 @@ return
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
-subroutine micro_proc_tau(press,tempk,qv,ss,ffcd_mass2d,ffcd_num2d)
+subroutine micro_proc_tau(thpert,qv,ss,ffcd_mass2d,ffcd_num2d)
 use parameters, only: nz, nx, dt, max_nbins
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
                             dtheta_mphys,dqv_mphys, daerosol_mphys, dhydrometeors_mphys, &
                             dss_mphys
-use mphys_tau_bin, only: ADVECTcheck, qindices
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
                                  iqss, ln2, nqp
 use module_mp_tau_bin, only: tau_bin
 use namelists, only: aero_N_init,l_advect,l_diverge
-use micro_prm, only: col
+use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 
 integer :: j, k, iq, ih, imom
 real :: rdt
-real :: q_lem(JMINP:JMAXP, KKP, NQP)
-real :: th_lem(JMINP:JMAXP, KKP)
-real :: sq_lem(JMINP:JMAXP, KKP, NQP)
-real :: sth_lem(JMINP:JMAXP, KKP)
-real :: w_lem(JMINP:JMAXP, KKP)
-real, dimension(nz,nx) :: press, tempk, qv,ss
+real, dimension(nz,nx) :: thpert, qv,ss
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 
 !press & tempk currently not used
@@ -771,6 +765,7 @@ do k = 1, nz
   do j = jminp, jmaxp
     q_lem(j,k,iqv) = qv(k,j)
     q_lem(j,k,iqss) = ss(k,j)
+    th_lem(j,k) = thpert(k,j)
     do iq = 1,ln2
       q_lem(j,k,iaero_bin(iq)) = aero_N_init(1) ! this (1) might be problematic in the future
                                                 ! but will leave it here for now
@@ -837,6 +832,7 @@ do j=jminp,jmaxp
     do k=1,nz
         qv(k,j) = q_lem(j,k,iqv)
         ss(k,j) = q_lem(j,k,iqss)
+        thpert(k,j) = th_lem(j,k)
         do iq=1,lk
             ffcd_mass2d(k,j,iq) = (q_lem(j,k,icdkg_bin(iq)) + sq_lem(j,k,icdkg_bin(iq))*dt)/col
             ffcd_num2d(k,j,iq) = (q_lem(j,k,icdnc_bin(iq)) + sq_lem(j,k,icdnc_bin(iq))*dt)/col
@@ -1183,3 +1179,68 @@ return
 !    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
 !  endif
 END SUBROUTINE init_dist_tau
+
+! ------------ originally part of mphys_tau_bin ------------
+SUBROUTINE  ADVECTcheck(j,k,IQ,DT,ZQmass,ZQnum,Sourcemass,&
+     Sourcenum)
+!SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+IMPLICIT NONE
+
+!CALL PRAMETR
+!CALL RI
+!CALL XD
+!CALL GRID1
+!local variable
+REAL :: QmassFLD, ZQmass, Qmass
+REAL :: Qnumfield, ZQnum, Qnum
+REAL :: Sourcemass
+REAL :: Sourcenum
+REAL :: AVG, AVGinit
+REAL :: DT,RDT
+!loop counters
+INTEGER j, k, IQ
+
+RDT = 1.0/DT
+
+!First calculate the new field
+QmassFLD=(ZQmass+(DT*Sourcemass))
+Qnumfield = (ZQnum+(DT*Sourcenum))
+!Change units to microphys units (just for consistency
+
+QmassFLD = (QmassFLD*rhon(k))/1.e3
+Qnumfield = (Qnumfield*rhon(k))/1.e6
+Sourcemass = (Sourcemass*rhon(k))/1.e3
+Sourcenum = (Sourcenum*rhon(k))/1.e6
+
+!calculate the average particle size for the bin
+
+IF(Qnumfield  >  0.0)THEN
+  AVG =QmassFLD/Qnumfield
+  IF(AVG >  (2.*X_BIN(IQ))) THEN
+    sourcenum=((QmassFLD/(2.*X_BIN(IQ)-1.e-20))-                        &
+&                             ((ZQnum*rhon(k))/1.e6))*RDT
+  ENDIF
+  IF(AVG <  X_BIN(IQ).AND.AVG >  0.0) THEN
+    sourcenum=((QmassFLD/(X_BIN(IQ)+1.e-20))-                           &
+&                             ((ZQnum*rhon(k))/1.e6))*RDT
+  ENDIF
+
+ENDIF
+!
+Sourcemass = (Sourcemass*1.e3)/rhon(k)
+Sourcenum  = (Sourcenum*1.e6)/rhon(k)
+
+!do positivity check after normalisation as changing SQ by normalisation
+!can lead to negatives
+IF((ZQmass+(DT*Sourcemass) <  0.0).or.                            &
+&                    (ZQnum+(DT*Sourcenum) <  0.0)) THEN
+  Sourcemass = -0.99999 * ZQmass/DT
+  Sourcenum =  -0.99999 * ZQnum/DT
+ENDIF
+
+IF (ABS(Sourcemass) <  1.e-20.OR. ABS(Sourcenum) <  1.e-20) THEN
+    Sourcemass = 0.0
+    Sourcenum = 0.0
+ENDIF
+
+END subroutine ADVECTcheck

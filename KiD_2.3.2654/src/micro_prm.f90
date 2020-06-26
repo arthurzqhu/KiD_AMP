@@ -3,8 +3,26 @@ use parameters, only: max_nbins
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype
+use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP
+
 !use parameters, only:nx,nz,num_h_moments
 implicit none
+
+! ***** variables for TAU ***** !
+real :: q_lem(JMINP:JMAXP, KKP, NQP)
+real :: th_lem(JMINP:JMAXP, KKP)
+real :: sq_lem(JMINP:JMAXP, KKP, NQP)
+real :: sth_lem(JMINP:JMAXP, KKP)
+real :: w_lem(JMINP:JMAXP, KKP)
+real :: thpert(nz,nx) ! just a transpose of th_lem (potential temp perturbation)
+
+type qindex
+    integer :: ispecies ! Species index
+    integer :: imoment  ! moment index
+ end type qindex
+
+ type(qindex), allocatable :: qindices(:)
+ integer :: nqs ! number of qindices (possibly different from nqp)
 
 !*****Variables originally from RAMS*******!
 real, parameter ::                    &
@@ -228,7 +246,7 @@ integer :: idx &
 contains
     subroutine check_bintype
     implicit none
- 
+
     if (bintype .eq. 'sbm') then
         nkr=33
     elseif (bintype .eq. 'tau') then
