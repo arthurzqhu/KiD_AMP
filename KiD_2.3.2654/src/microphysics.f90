@@ -830,9 +830,9 @@ call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)
 ! output to ffcd after mphys, might not be right -ahu
 do j=jminp,jmaxp
     do k=1,nz
-        qv(k,j) = q_lem(j,k,iqv)
-        ss(k,j) = q_lem(j,k,iqss)
-        thpert(k,j) = th_lem(j,k)
+!        qv(k,j) = q_lem(j,k,iqv)
+!        ss(k,j) = q_lem(j,k,iqss)
+!        thpert(k,j) = th_lem(j,k)
         do iq=1,lk
             ffcd_mass2d(k,j,iq) = (q_lem(j,k,icdkg_bin(iq)) + sq_lem(j,k,icdkg_bin(iq))*dt)/col
             ffcd_num2d(k,j,iq) = (q_lem(j,k,icdnc_bin(iq)) + sq_lem(j,k,icdnc_bin(iq))*dt)/col
@@ -856,8 +856,8 @@ do k=1,nz
 enddo
 
 if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
-    print*, 'q', q_lem(1,58,:)
-    print*, 'sq', sq_lem(1,58,:)
+    print*, 'q', q_lem(1,43,:)
+    print*, 'sq', sq_lem(1,43,:)
 !    print*, ffcd_mass2d(40,1,:)
 !    print*, ffcd_num2d(40,1,:)
     print*, '**at least the mphys routine finished**'
@@ -1184,6 +1184,7 @@ END SUBROUTINE init_dist_tau
 SUBROUTINE  ADVECTcheck(j,k,IQ,DT,ZQmass,ZQnum,Sourcemass,&
      Sourcenum)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+use mphys_tau_bin_declare, only: X_BIN, rhon
 IMPLICIT NONE
 
 !CALL PRAMETR

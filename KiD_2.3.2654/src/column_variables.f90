@@ -32,6 +32,7 @@
          ,v(nz, 0:nx+1)    =0  &   ! horizontal velocity (m/s)
          ,rho(nz)          &   ! density (kg/m3)
          ,theta(nz, 0:nx+1)    &   ! potential temperature(K)
+         ,thpert(nz,0:nx+1)        &   ! potential temperature perturbation (K)
          ,qv(nz, 0:nx+1)       &   ! water vapour mixing ratio (kg/kg)
          ,ss(nz, 0:nx+1)   =0      ! supersaturation (transported as a
                            ! passive scalar)

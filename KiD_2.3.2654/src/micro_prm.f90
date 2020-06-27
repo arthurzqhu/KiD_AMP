@@ -14,7 +14,6 @@ real :: th_lem(JMINP:JMAXP, KKP)
 real :: sq_lem(JMINP:JMAXP, KKP, NQP)
 real :: sth_lem(JMINP:JMAXP, KKP)
 real :: w_lem(JMINP:JMAXP, KKP)
-real :: thpert(nz,nx) ! just a transpose of th_lem (potential temp perturbation)
 
 type qindex
     integer :: ispecies ! Species index
