@@ -201,6 +201,7 @@ contains
     end if
 
     ! This bit doesn't yet use the switches on advection...
+    ! setting the tendency due to adv and div as input -ahu
     do j=jminp,jmaxp
        sth_lem(j,2:kkp)=dtheta_adv(1:kkp-1,j)+dtheta_div(1:kkp-1,j)
        sq_lem(j,2:kkp,iqv)=dqv_adv(1:kkp-1,j)+dqv_div(1:kkp-1,j)
@@ -244,6 +245,9 @@ contains
 
      call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt )
 
+     ! sq and sth were tendencies due to mphys + adv + div.
+     ! set them as only due to mphys.
+     
      do j=jminp,jmaxp
         sth_lem(j,2:kkp)=sth_lem(j,2:kkp)-(dtheta_adv(1:kkp-1,j)+dtheta_div(1:kkp-1,j))
         sq_lem(j,2:kkp,iqv)=sq_lem(j,2:kkp,iqv)-(dqv_adv(1:kkp-1,j)+dqv_div(1:kkp-1,j))
