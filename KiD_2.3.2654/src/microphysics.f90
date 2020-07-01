@@ -737,14 +737,14 @@ return
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
-subroutine micro_proc_tau(thpert,qv,ffcd_mass2d,ffcd_num2d)
+subroutine micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 use parameters, only: nz, nx, dt, max_nbins
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
                             dtheta_mphys,dqv_mphys, daerosol_mphys, dhydrometeors_mphys, &
                             dss_mphys, ss, aerosol, w_half, dz_half, rho, dz, theta, &
-                            hydrometeors 
+                            hydrometeors
 
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
@@ -757,7 +757,7 @@ use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 
 integer :: j, k, iq, ih, imom
 real :: rdt
-real, dimension(nz,nx) :: thpert, qv
+real, dimension(nz,nx) :: tempk, qv, thpert
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
 
@@ -785,54 +785,36 @@ rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
 tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
 
 do j = jminp,jmaxp
-    q_lem(j,(1+offset):kkp,iqv) = qv(1:(kkp-offset),j)
-    q_lem(j,(1+offset):kkp,iqss) = ss(1:(kkp-offset),j)
+    q_lem(j,1+offset:kkp,iqv) = qv(1:kkp-offset,j)
+    q_lem(j,1+offset:kkp,iqss) = ss(1:kkp-offset,j)
     do iq=1,ln2
         ih=qindices(IAERO_BIN(iq))%ispecies
         imom=qindices(IAERO_BIN(iq))%imoment
-        do k=1,nz-1
-            q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
+        do k=1,nz-offset
+            q_lem (j, k+offset, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
         end do
     enddo
     do iq=1,lk
         ! mass bins
         ih=qindices(ICDKG_BIN(iq))%ispecies
         imom=qindices(ICDKG_BIN(iq))%imoment
-        do k=1,nz-1
-            q_lem (j, k+1, ICDKG_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+        do k=1,nz-offset
+            ! q_lem (j, k+offset, ICDKG_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+            q_lem(j,k+offset,icdkg_bin(iq)) = ffcd_mass2d(k,j,iq)*col
         end do
         ! number bins
         ih=qindices(ICDNC_BIN(iq))%ispecies
         imom=qindices(ICDNC_BIN(iq))%imoment
-        do k=1,nz-1
-            q_lem (j, k+1, ICDNC_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+        do k=1,nz-offset
+            ! q_lem (j, k+offset, ICDNC_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+            q_lem(j,k+offset,icdnc_bin(iq)) = ffcd_num2d(k,j,iq)*col
         end do
     enddo
     th_lem (j, :) = 0.0
-    w_lem(j,2:kkp)=w_half(1:kkp-1,j)
+    w_lem(j,1+offset:kkp)=w_half(1:kkp-offset,j)
 enddo
 
-!do k = 1, nz-offset
-!  do j = jminp, jmaxp
-!    q_lem(j,k+offset,iqv) = qv(k,j)
-!    q_lem(j,k+offset,iqss) = ss(k,j)
-!    th_lem (j, k) = 0.0
-!    w_lem(j,1+offset:kkp)=w_half(1:kkp-offset,j)
-!    do iq = 1,ln2
-!        ih=qindices(ICDKG_BIN(iq))%ispecies
-!        imom=qindices(ICDKG_BIN(iq))%imoment
-!        q_lem(j,k+offset,iaero_bin(iq)) = aerosol(k,j,ih)%moments(iq,imom) ! this (1) might be problematic in the future
-!                                                ! but will leave it here for now
-!      !aero_N a constant in TAU standalone, will worry about it later if it's not -ahu
-!    end do
-!    do iq=1,lk
-!      q_lem(j,k+offset,icdkg_bin(iq)) = ffcd_mass2d(k,j,iq)*col
-!      q_lem(j,k+offset,icdnc_bin(iq)) = ffcd_num2d(k,j,iq)*col
-!    end do
-!  end do
-!end do
-
-if (l_advect .or. l_diverge) then
+if (l_advect .or. l_diverge) then ! set the tendency due to adv and div as input -ahu
   do j=jminp,jmaxp
      sth_lem(j,1+offset:kkp)=dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j)
      sq_lem(j,1+offset:kkp,iqv)=dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j)
@@ -852,13 +834,13 @@ if (l_advect .or. l_diverge) then
         imom=qindices(icdkg_bin(iq))%imoment
         do k=1,nz-offset
            sq_lem(j,k+offset,icdkg_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom))*col
         end do
         ih=qindices(icdnc_bin(iq))%ispecies
         imom=qindices(icdnc_bin(iq))%imoment
         do k=1,nz-offset
            sq_lem(j,k+offset,icdnc_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom))*col
         end do
      end do
    end do
@@ -879,8 +861,12 @@ call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)
 
 do j=jminp,jmaxp
     if (l_advect .or. l_diverge) then
-        sth_lem(j,1+offset:kkp)=sth_lem(j,1+offset:kkp)-(dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j))
-        sq_lem(j,1+offset:kkp,iqv)=sq_lem(j,1+offset:kkp,iqv)-(dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j))
+        ! sq and sth were tendencies due to mphys + adv + div.
+        ! set them as only due to mphys.
+        sth_lem(j,1+offset:kkp)=sth_lem(j,1+offset:kkp)    &
+            - (dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j))
+        sq_lem(j,1+offset:kkp,iqv)=sq_lem(j,1+offset:kkp,iqv)    &
+            - (dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j))
 
         do iq=1,ln2
             ih=qindices(iaero_bin(iq))%ispecies
@@ -898,29 +884,33 @@ do j=jminp,jmaxp
             do k=1,nz-offset
                 sq_lem(j,k+offset,icdkg_bin(iq))= sq_lem(j,k+offset,icdkg_bin(iq))      &
                     - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))*col
             end do
             ih=qindices(icdnc_bin(iq))%ispecies
             imom=qindices(icdnc_bin(iq))%imoment
             do k=1,nz-offset
                 sq_lem(j,k+offset,icdnc_bin(iq))= sq_lem(j,k+offset,icdnc_bin(iq))      &
                     - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))*col
             end do
         end do
     end if
 !   For now set no microphysics on the bottom level - this would be
 !   better done by having a subterranian level 0 in column variables
-if (offset==1)    sq_lem(j,1,1)=0
+    if (offset==1)  sq_lem(j,1,1)=0
 
-    dtheta_mphys(1:kkp-offset,j)=sth_lem(j,1+offset:kkp)
-    dqv_mphys(1:kkp-offset,j)=sq_lem(j,1+offset:kkp,iqv)
+    tempk(1:kkp-offset,j) = ((tempk(1:kkp-offset,j)/exner(1:kkp-offset,j)) &
+                                + sth_lem(j,1+offset:kkp)*dt)*exner(1:kkp-offset,j)
+    qv(1:kkp-offset,j) = qv(1:kkp-offset,j) + sq_lem(j,1+offset:kkp,iqv)*dt
+    ! dtheta_mphys(1:kkp-offset,j)=sth_lem(j,1+offset:kkp)
+    ! dqv_mphys(1:kkp-offset,j)=sq_lem(j,1+offset:kkp,iqv)
 
 !
 !   update supersaturation field here (not in step fields)
 !
     ss(1:kkp-offset,j) = q_lem(j,1+offset:kkp,iqss)
 
+!   daerosol_mphys is not yet updated in the main amp routine -ahu
     do iq=1,ln2
         ih=qindices(iaero_bin(iq))%ispecies
         imom=qindices(iaero_bin(iq))%imoment
@@ -931,17 +921,19 @@ if (offset==1)    sq_lem(j,1,1)=0
     enddo
 
     do iq=1,lk
-        ih=qindices(icdkg_bin(iq))%ispecies
-        imom=qindices(icdkg_bin(iq))%imoment
+        ! ih=qindices(icdkg_bin(iq))%ispecies
+        ! imom=qindices(icdkg_bin(iq))%imoment
         do k=1,nz-offset
-            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =         &
-                   sq_lem(j,k+offset,icdkg_bin(iq))!/col
+            ! dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =         &
+            !        sq_lem(j,k+offset,icdkg_bin(iq))!/col
+            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k+offset,icdkg_bin(iq))*dt/col
         end do
-        ih=qindices(icdnc_bin(iq))%ispecies
-        imom=qindices(icdnc_bin(iq))%imoment
+        ! ih=qindices(icdnc_bin(iq))%ispecies
+        ! imom=qindices(icdnc_bin(iq))%imoment
         do k=1,nz-offset
-            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =        &
-                sq_lem(j,k+offset,icdnc_bin(iq))!/col
+            ! dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =        &
+            !     sq_lem(j,k+offset,icdnc_bin(iq))!/col
+            ffcd_num2d(k,j,iq) = ffcd_num2d(k,j,iq) + sq_lem(j,k+offset,icdnc_bin(iq))*dt/col
         end do
     end do
 end do
