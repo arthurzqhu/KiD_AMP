@@ -31,7 +31,7 @@ contains
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
     integer :: i, j, k, imom
-    real, dimension(nz,nx) :: t2d, p2d, qv2d, ss2d
+    real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
@@ -43,7 +43,6 @@ contains
     real(8), dimension(nz,max_nbins) :: fielddp2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
     character(1) :: Mnum
-
 
     do i=1,nx
        do k=1,nz
@@ -59,11 +58,10 @@ contains
           !else
             t2d(k,i) = theta(k,i)*exner(k,i)
             qv2d(k,i) = qv(k,i)
-            ss2d(k,i) = ss(k,i)
           !endif
           p2d(k,i) = p0*exner(k,i)**(1./r_on_cp)
 
-          if (num_h_bins(1)==1) then
+          if (ampORbin .eq. 'amp') then
              do imom=1,num_h_moments(1)
                 Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
          !       Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom) &
@@ -86,6 +84,11 @@ contains
          !            + (dhydrometeors_adv(k,i,1)%moments(j,1) &
          !            + dhydrometeors_div(k,i,1)%moments(j,1))*dt
              enddo
+             if (bintype .eq. 'tau')  then
+                do j=1,nkr
+                    dropsn2d(k,i,j)=hydrometeors(k,i,2)%moments(j,2)
+                enddo
+             end if
           endif
        enddo
    enddo
@@ -120,12 +123,13 @@ contains
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
       elseif (bintype .eq. 'tau') then
-         call mp_tau(dropsm2d,dropsn2d,thpert,qv2d,ss2d,mc,mr)
+         call mp_tau(dropsm2d,dropsn2d,thpert,qv2d,mc,mr)
       endif
    endif
 
   ! back out tendencies
 
+if (bintype .ne. 'tau') then
    dqv_mphys = 0.
    dtheta_mphys = 0.
    do imom=1,num_h_moments(1)
@@ -187,7 +191,7 @@ contains
          endif
       enddo
    enddo
-
+endif
 ! Save some diagnostics
 !fitting flag
 !if (imomc1.ne.3) then

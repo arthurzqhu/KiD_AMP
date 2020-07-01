@@ -737,220 +737,35 @@ return
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
-subroutine micro_proc_tau(thpert,qv,ss,ffcd_mass2d,ffcd_num2d)
+subroutine micro_proc_tau(thpert,qv,ffcd_mass2d,ffcd_num2d)
 use parameters, only: nz, nx, dt, max_nbins
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
                             dtheta_mphys,dqv_mphys, daerosol_mphys, dhydrometeors_mphys, &
-                            dss_mphys
+                            dss_mphys, ss, aerosol, w_half, dz_half, rho, dz, theta, &
+                            hydrometeors 
+
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
-                                 iqss, ln2, nqp
+                                 iqss, ln2, nqp, rprefrcp, prefrcp, prefn, dzn, &
+                                 rhon, rdz_on_rhon, tref
 use module_mp_tau_bin, only: tau_bin
 use namelists, only: aero_N_init,l_advect,l_diverge
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
+use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 
 integer :: j, k, iq, ih, imom
 real :: rdt
-real, dimension(nz,nx) :: thpert, qv,ss
+real, dimension(nz,nx) :: thpert, qv
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
+integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
 
 !press & tempk currently not used
 
 rdt = 1./dt
 
 ! prepare for the tau mphys
-do k = 1, nz
-  do j = jminp, jmaxp
-    q_lem(j,k,iqv) = qv(k,j)
-    q_lem(j,k,iqss) = ss(k,j)
-    th_lem(j,k) = thpert(k,j)
-    do iq = 1,ln2
-      q_lem(j,k,iaero_bin(iq)) = aero_N_init(1) ! this (1) might be problematic in the future
-                                                ! but will leave it here for now
-      !aero_N a constant in TAU standalone, will worry about it later if it's not -ahu
-    end do
-    do iq=1,lk
-      q_lem(j,k,icdkg_bin(iq)) = ffcd_mass2d(k,j,iq)*col
-      q_lem(j,k,icdnc_bin(iq)) = ffcd_num2d(k,j,iq)*col
-    end do
-  end do
-end do
-
-if (l_advect .or. l_diverge) then
-  do j=jminp,jmaxp
-     sth_lem(j,2:kkp)=dtheta_adv(1:kkp-1,j)+dtheta_div(1:kkp-1,j)
-     sq_lem(j,2:kkp,iqv)=dqv_adv(1:kkp-1,j)+dqv_div(1:kkp-1,j)
-
-     sq_lem(j,2:kkp,iqss)=dss_adv(1:kkp-1,j)+dss_div(1:kkp-1,j)
-
-     do iq=1,ln2
-        ih=qindices(iaero_bin(iq))%ispecies
-        imom=qindices(iaero_bin(iq))%imoment
-        do k=1,nz-1
-           sq_lem(j,k+1,iaero_bin(iq))=(daerosol_adv(k,j,ih)%moments(iq,imom) &
-                + daerosol_div(k,j,ih)%moments(iq,imom))
-        end do
-     enddo
-     do iq=1,lk
-        ih=qindices(icdkg_bin(iq))%ispecies
-        imom=qindices(icdkg_bin(iq))%imoment
-        do k=1,nz-1
-           sq_lem(j,k+1,icdkg_bin(iq))=dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom)
-        end do
-        ih=qindices(icdnc_bin(iq))%ispecies
-        imom=qindices(icdnc_bin(iq))%imoment
-        do k=1,nz-1
-           sq_lem(j,k+1,icdnc_bin(iq))=dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom)
-        end do
-     end do
-   end do
-
-   DO k = 2, nz
-      DO j = jminp,jmaxp
-         DO IQ = 1, LK
-            CALL ADVECTcheck(j,k,iq,DT,Q_lem(j,k,ICDKG_BIN(iq)),              &
-  &                 Q_lem(j,k,ICDNC_BIN(iq)),SQ_lem(j,k,ICDKG_BIN(iq)),  &
-  &                 SQ_lem(j,k,ICDNC_BIN(iq)))
-         ENDDO
-      ENDDO
-   ENDDO
-
-end if
-
-call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)
-
-!print*, 'q_lem mass1',q_lem(1,30,icdkg_bin(1))
-!print*, 'q_lem num1',q_lem(1,30,icdnc_bin(1))
-!stop
-
-! output to ffcd after mphys, might not be right -ahu
-do j=jminp,jmaxp
-    do k=1,nz
-!        qv(k,j) = q_lem(j,k,iqv)
-!        ss(k,j) = q_lem(j,k,iqss)
-!        thpert(k,j) = th_lem(j,k)
-        do iq=1,lk
-            ffcd_mass2d(k,j,iq) = (q_lem(j,k,icdkg_bin(iq)) + sq_lem(j,k,icdkg_bin(iq))*dt)/col
-            ffcd_num2d(k,j,iq) = (q_lem(j,k,icdnc_bin(iq)) + sq_lem(j,k,icdnc_bin(iq))*dt)/col
-        enddo
-    enddo
-enddo
-
-!print*, sq_lem(1,61,1)
-
-do k=1,nz
-    do j=jminp,jmaxp
-        do iq=1,nqp
-            if (q_lem(j,k,iq) .ne. q_lem(j,k,iq)) then
-                print*,'q', k,iq
-            end if
-            if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
-                print*,'sq', k,iq
-            end if
-        enddo
-    enddo
-enddo
-
-if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
-    print*, 'q', q_lem(1,43,:)
-    print*, 'sq', sq_lem(1,43,:)
-!    print*, ffcd_mass2d(40,1,:)
-!    print*, ffcd_num2d(40,1,:)
-    print*, '**at least the mphys routine finished**'
-stop
-
-end if
-
-!print*, q_lem(1,30,15), sq_lem(1,30,15)
-!print*, 'mass',ffcd_mass2d(30,1,1)
-!print*, 'num', ffcd_num2d(30,1,1)
-
-
-do j=jminp,jmaxp
-    if (l_advect .or. l_diverge) then
-        sth_lem(j,2:kkp)=sth_lem(j,2:kkp)-(dtheta_adv(1:kkp-1,j)+dtheta_div(1:kkp-1,j))
-        sq_lem(j,2:kkp,iqv)=sq_lem(j,2:kkp,iqv)-(dqv_adv(1:kkp-1,j)+dqv_div(1:kkp-1,j))
-
-        do iq=1,ln2
-            ih=qindices(iaero_bin(iq))%ispecies
-            imom=qindices(iaero_bin(iq))%imoment
-            do k=1,nz-1
-                sq_lem(j,k+1,iaero_bin(iq))=sq_lem(j,k+1,iaero_bin(iq))       &
-                    - (daerosol_adv(k,j,ih)%moments(iq,imom)                &
-                    + daerosol_div(k,j,ih)%moments(iq,imom))
-            end do
-        enddo
-
-        do iq=1,lk
-            ih=qindices(icdkg_bin(iq))%ispecies
-            imom=qindices(icdkg_bin(iq))%imoment
-            do k=1,nz-1
-                sq_lem(j,k+1,icdkg_bin(iq))= sq_lem(j,k+1,icdkg_bin(iq))      &
-                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
-            end do
-            ih=qindices(icdnc_bin(iq))%ispecies
-            imom=qindices(icdnc_bin(iq))%imoment
-            do k=1,nz-1
-                sq_lem(j,k+1,icdnc_bin(iq))= sq_lem(j,k+1,icdnc_bin(iq))      &
-                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
-            end do
-        end do
-    end if
-!   For now set no microphysics on the bottom level - this would be
-!   better done by having a subterranian level 0 in column variables
-    sq_lem(j,1,1)=0
-
-    dtheta_mphys(1:kkp-1,j)=sth_lem(j,2:kkp)
-
-    dqv_mphys(1:kkp-1,j)=sq_lem(j,2:kkp,iqv)
-
-!
-!   update supersaturation field here (not in step fields)
-!
-    ss(1:kkp-1,j) = q_lem(j,2:kkp,iqss)
-
-    do iq=1,ln2
-        ih=qindices(iaero_bin(iq))%ispecies
-        imom=qindices(iaero_bin(iq))%imoment
-        do k=1,nz-1
-           daerosol_mphys(k,j,ih)%moments(iq,imom) =              &
-               sq_lem(j,k+1,iaero_bin(iq))
-        end do
-    enddo
-
-    do iq=1,lk
-        ih=qindices(icdkg_bin(iq))%ispecies
-        imom=qindices(icdkg_bin(iq))%imoment
-        do k=1,nz-1
-            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =         &
-                   sq_lem(j,k+1,icdkg_bin(iq))
-        end do
-        ih=qindices(icdnc_bin(iq))%ispecies
-        imom=qindices(icdnc_bin(iq))%imoment
-        do k=1,nz-1
-            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =        &
-                sq_lem(j,k+1,icdnc_bin(iq))
-        end do
-    end do
-end do
-
-end subroutine micro_proc_tau
-
-!-------------------------------------------------------------------
-subroutine micro_init_tau
-use micro_prm
-use module_bin_init
-use mphys_tau_bin_declare
-use module_bin_init
-implicit none
-
-integer :: j,k
 rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
 ! AH - 04/03/10, line below leads to divide by 0
 !      corrected by setting array to 2:kkp. Problem highlighted
@@ -969,40 +784,225 @@ rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
 ! just set it to be the current profile (i.e. th'=0)
 tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
 
+do j = jminp,jmaxp
+    q_lem(j,(1+offset):kkp,iqv) = qv(1:(kkp-offset),j)
+    q_lem(j,(1+offset):kkp,iqss) = ss(1:(kkp-offset),j)
+    do iq=1,ln2
+        ih=qindices(IAERO_BIN(iq))%ispecies
+        imom=qindices(IAERO_BIN(iq))%imoment
+        do k=1,nz-1
+            q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
+        end do
+    enddo
+    do iq=1,lk
+        ! mass bins
+        ih=qindices(ICDKG_BIN(iq))%ispecies
+        imom=qindices(ICDKG_BIN(iq))%imoment
+        do k=1,nz-1
+            q_lem (j, k+1, ICDKG_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+        end do
+        ! number bins
+        ih=qindices(ICDNC_BIN(iq))%ispecies
+        imom=qindices(ICDNC_BIN(iq))%imoment
+        do k=1,nz-1
+            q_lem (j, k+1, ICDNC_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
+        end do
+    enddo
+    th_lem (j, :) = 0.0
+    w_lem(j,2:kkp)=w_half(1:kkp-1,j)
+enddo
+
+!do k = 1, nz-offset
+!  do j = jminp, jmaxp
+!    q_lem(j,k+offset,iqv) = qv(k,j)
+!    q_lem(j,k+offset,iqss) = ss(k,j)
+!    th_lem (j, k) = 0.0
+!    w_lem(j,1+offset:kkp)=w_half(1:kkp-offset,j)
+!    do iq = 1,ln2
+!        ih=qindices(ICDKG_BIN(iq))%ispecies
+!        imom=qindices(ICDKG_BIN(iq))%imoment
+!        q_lem(j,k+offset,iaero_bin(iq)) = aerosol(k,j,ih)%moments(iq,imom) ! this (1) might be problematic in the future
+!                                                ! but will leave it here for now
+!      !aero_N a constant in TAU standalone, will worry about it later if it's not -ahu
+!    end do
+!    do iq=1,lk
+!      q_lem(j,k+offset,icdkg_bin(iq)) = ffcd_mass2d(k,j,iq)*col
+!      q_lem(j,k+offset,icdnc_bin(iq)) = ffcd_num2d(k,j,iq)*col
+!    end do
+!  end do
+!end do
+
+if (l_advect .or. l_diverge) then
+  do j=jminp,jmaxp
+     sth_lem(j,1+offset:kkp)=dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j)
+     sq_lem(j,1+offset:kkp,iqv)=dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j)
+
+     sq_lem(j,1+offset:kkp,iqss)=dss_adv(1:kkp-offset,j)+dss_div(1:kkp-offset,j)
+
+     do iq=1,ln2
+        ih=qindices(iaero_bin(iq))%ispecies
+        imom=qindices(iaero_bin(iq))%imoment
+        do k=1,nz-offset
+           sq_lem(j,k+offset,iaero_bin(iq))=(daerosol_adv(k,j,ih)%moments(iq,imom) &
+                + daerosol_div(k,j,ih)%moments(iq,imom))
+        end do
+     enddo
+     do iq=1,lk
+        ih=qindices(icdkg_bin(iq))%ispecies
+        imom=qindices(icdkg_bin(iq))%imoment
+        do k=1,nz-offset
+           sq_lem(j,k+offset,icdkg_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+        end do
+        ih=qindices(icdnc_bin(iq))%ispecies
+        imom=qindices(icdnc_bin(iq))%imoment
+        do k=1,nz-offset
+           sq_lem(j,k+offset,icdnc_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+        end do
+     end do
+   end do
+
+   DO k = 1+offset, nz
+      DO j = jminp,jmaxp
+         DO IQ = 1, LK
+            CALL ADVECTcheck(j,k,iq,DT,Q_lem(j,k,ICDKG_BIN(iq)),              &
+  &                 Q_lem(j,k,ICDNC_BIN(iq)),SQ_lem(j,k,ICDKG_BIN(iq)),  &
+  &                 SQ_lem(j,k,ICDNC_BIN(iq)))
+         ENDDO
+      ENDDO
+   ENDDO
+
+end if
+
+call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)
+
+do j=jminp,jmaxp
+    if (l_advect .or. l_diverge) then
+        sth_lem(j,1+offset:kkp)=sth_lem(j,1+offset:kkp)-(dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j))
+        sq_lem(j,1+offset:kkp,iqv)=sq_lem(j,1+offset:kkp,iqv)-(dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j))
+
+        do iq=1,ln2
+            ih=qindices(iaero_bin(iq))%ispecies
+            imom=qindices(iaero_bin(iq))%imoment
+            do k=1,nz-offset
+                sq_lem(j,k+offset,iaero_bin(iq))=sq_lem(j,k+offset,iaero_bin(iq))       &
+                    - (daerosol_adv(k,j,ih)%moments(iq,imom)                &
+                    + daerosol_div(k,j,ih)%moments(iq,imom))
+            end do
+        enddo
+
+        do iq=1,lk
+            ih=qindices(icdkg_bin(iq))%ispecies
+            imom=qindices(icdkg_bin(iq))%imoment
+            do k=1,nz-offset
+                sq_lem(j,k+offset,icdkg_bin(iq))= sq_lem(j,k+offset,icdkg_bin(iq))      &
+                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+            end do
+            ih=qindices(icdnc_bin(iq))%ispecies
+            imom=qindices(icdnc_bin(iq))%imoment
+            do k=1,nz-offset
+                sq_lem(j,k+offset,icdnc_bin(iq))= sq_lem(j,k+offset,icdnc_bin(iq))      &
+                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*col
+            end do
+        end do
+    end if
+!   For now set no microphysics on the bottom level - this would be
+!   better done by having a subterranian level 0 in column variables
+if (offset==1)    sq_lem(j,1,1)=0
+
+    dtheta_mphys(1:kkp-offset,j)=sth_lem(j,1+offset:kkp)
+    dqv_mphys(1:kkp-offset,j)=sq_lem(j,1+offset:kkp,iqv)
+
+!
+!   update supersaturation field here (not in step fields)
+!
+    ss(1:kkp-offset,j) = q_lem(j,1+offset:kkp,iqss)
+
+    do iq=1,ln2
+        ih=qindices(iaero_bin(iq))%ispecies
+        imom=qindices(iaero_bin(iq))%imoment
+        do k=1,nz-offset
+           daerosol_mphys(k,j,ih)%moments(iq,imom) =              &
+               sq_lem(j,k+offset,iaero_bin(iq))
+        end do
+    enddo
+
+    do iq=1,lk
+        ih=qindices(icdkg_bin(iq))%ispecies
+        imom=qindices(icdkg_bin(iq))%imoment
+        do k=1,nz-offset
+            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =         &
+                   sq_lem(j,k+offset,icdkg_bin(iq))!/col
+        end do
+        ih=qindices(icdnc_bin(iq))%ispecies
+        imom=qindices(icdnc_bin(iq))%imoment
+        do k=1,nz-offset
+            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =        &
+                sq_lem(j,k+offset,icdnc_bin(iq))!/col
+        end do
+    end do
+end do
+
+! output to ffcd after mphys, might not be right -ahu
+do j=jminp,jmaxp
+    do k=1,nz-1
+!        qv(k,j) = qv(k,j)+sq_lem(j,k,iqv)
+!        ss(k,j) = ss(k,j)+sq_lem(j,k,iqss)
+!        thpert(k,j) = th_lem(j,k)
+        do iq=1,lk
+            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k,icdkg_bin(iq))*dt/col
+            ffcd_num2d(k,j,iq) = ffcd_num2d(k,j,iq) + sq_lem(j,k,icdnc_bin(iq))*dt/col
+        enddo
+    enddo
+enddo
+
+
+! check NaN
+do k=1,nz
+    do j=jminp,jmaxp
+        do iq=1,nqp
+            if (q_lem(j,k,iq) .ne. q_lem(j,k,iq)) then
+                print*,'q', k,iq
+            end if
+            if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
+                print*,'sq', k,iq
+            end if
+        enddo
+    enddo
+enddo
+
+if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
+!    print*, 'q', q_lem(1,38,:)
+!    print*, 'sq', sq_lem(1,38,:)
+!    print*, ffcd_mass2d(40,1,:)
+!    print*, ffcd_num2d(40,1,:)
+!    print*, '**at least the mphys routine finished**'
+stop
+
+end if
+
+!print*, q_lem(1,30,15), sq_lem(1,30,15)
+!print*, 'mass',ffcd_mass2d(30,1,1)
+!print*, 'num', ffcd_num2d(30,1,1)
+
+
+end subroutine micro_proc_tau
+
+!-------------------------------------------------------------------
+subroutine micro_init_tau
+use micro_prm
+use module_bin_init
+use mphys_tau_bin_declare
+use module_bin_init
+implicit none
+
+integer :: j,k
 
 ! Set up microphysics species
 call set_micro
-
-do j=jminp,jmaxp
-   q_lem (j, 2:kkp, iqv) = qv(1:kkp-1, j)
-   q_lem (j, 2:kkp, iqss) = ss(1:kkp-1, j)
-
-   do iq=1,ln2
-     ih=qindices(IAERO_BIN(iq))%ispecies
-     imom=qindices(IAERO_BIN(iq))%imoment
-     do k=1,nz-1
-         q_lem (j, k+1, IAERO_BIN(iq)) = aerosol(k,j,ih)%moments(iq,imom)
-     end do
-   enddo
-
-   do iq=1,lk
-     ! mass bins
-     ih=qindices(ICDKG_BIN(iq))%ispecies
-     imom=qindices(ICDKG_BIN(iq))%imoment
-     do k=1,nz-1
-        q_lem (j, k+1, ICDKG_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
-     end do
-     ! number bins
-     ih=qindices(ICDNC_BIN(iq))%ispecies
-     imom=qindices(ICDNC_BIN(iq))%imoment
-     do k=1,nz-1
-        q_lem (j, k+1, ICDNC_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
-     end do
-   enddo
-   th_lem (j, :) = 0.0
-   w_lem(j,2:kkp)=w_half(1:kkp-1,j)
-end do
-
 call bin_init !initialises the cloud bin categories
 call data     !reads in and sets the coll-coal kernal
 
@@ -1037,7 +1037,7 @@ ENDDO
 
 end subroutine micro_init_tau
 
-! sub-subroutine for micro_init_tau ------------
+!----------- sub-subroutine for micro_init_tau ------------
 subroutine set_micro
 Use parameters, only : num_h_moments, num_h_bins, &
      nspecies, mom_names, h_names, mom_units, max_char_len, &
@@ -1099,7 +1099,7 @@ end if ! bin model selected
 
 end subroutine set_micro
 
-! sub-subroutine for micro_init_tau ------------
+! ------------ sub-subroutine for micro_init_tau ------------
 subroutine qcount(var, count)
 integer, intent(out) :: var
 integer, intent(inout) ::  count

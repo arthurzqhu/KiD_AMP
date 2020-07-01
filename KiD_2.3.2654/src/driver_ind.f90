@@ -384,28 +384,29 @@ enddo
 end subroutine mp_sbm
 
 !---------------------------------------------------------------------
-subroutine mp_tau(ffcd_mass2d,ffcd_num2d,thpert,qv,ss,mc,mr)
+subroutine mp_tau(ffcd_mass2d,ffcd_num2d,thpert,qv,mc,mr)
 
 use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
 use namelists, only: l_advect
+use mphys_tau_bin_declare, only: lk_cloud,xk
 implicit none
 integer:: i,j,k,ip
 
-real, dimension(nz,nx):: thpert,qv,ss
+real, dimension(nz,nx):: thpert,qv
 real, dimension(nz,nx,max_nbins)::ffcd_mass2d,ffcd_num2d
 real(8),dimension(nz,nx,10) :: mc,mr ! moments
 
 !------CALL MICROPHYSICS--------------------
-call micro_proc_tau(thpert,qv,ss,ffcd_mass2d,ffcd_num2d)
+call micro_proc_tau(thpert,qv,ffcd_mass2d,ffcd_num2d)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
    do i=1,10
-      mc(k,j,i)=sum(ffcd_mass2d(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
-      mr(k,j,i)=sum(ffcd_mass2d(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+      mc(k,j,i)=sum(ffcd_mass2d(k,j,1:lk_cloud)/xk(1:lk_cloud)*diams(1:lk_cloud)**(i-1))*col*1000000.
+      mr(k,j,i)=sum(ffcd_mass2d(k,j,lk_cloud+1:nkr)/xk(lk_cloud+1:nkr)*diams(lk_cloud+1:nkr)**(i-1))*col*1000000.
    enddo
  enddo
 enddo

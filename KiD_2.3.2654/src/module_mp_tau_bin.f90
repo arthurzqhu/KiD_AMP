@@ -190,6 +190,8 @@ module module_mp_tau_bin
                    (SQ(J,K,ICDKG_BIN(IQ))*DT)
               ANKORIG(J,K,IQ)=Q(J,K,ICDNC_BIN(IQ)) + &
                    (SQ(J,K,ICDNC_BIN(IQ))*DT)
+
+
               if (AMKORIG(J,K,IQ) < eps .or.         &
                    ANKORIG(J,K,IQ) < eps .or.        &
                    AMKORIG(J,K,IQ) > ANKORIG(J,K,IQ)) then ! a check for large mass? -ahu
@@ -218,11 +220,6 @@ module module_mp_tau_bin
 
 
      DO K=2,KKP
-
-!if (q(1,40,2) .ne. q(1,40,2)) THEN
-!    print*, 'q', q(1,40,:)
-!    stop
-!endif
         PMB = 0.01*PREFN(K)
         DO J=JMINP,JMAXP
 ! 1. set base values
@@ -332,6 +329,7 @@ module module_mp_tau_bin
          DO J = JMINP,JMAXP
             STH(J,K) = STH(J,K) + DTHDT(J,K)
             SQ(J,K,IQV) = SQ(J,K,IQV)+DQVDT(J,K)
+
             DO IQ=1,LK
 !Call microcheck to update the source fields for bin resolved mass
 !and number, and check that small numbers are not causing erroneous
@@ -353,7 +351,9 @@ module module_mp_tau_bin
             DQLDT(J,K)=(QLNEW(J,K)-QLOLD(J,K))*RDT
             DNQLDT(J,K)=(NQLNEW(J,K)-NQLOLD(J,K))*RDT
          ENDDO
+
       ENDDO
+
 ! 6. calculate effective radius for radiation
         CALL REFFCALC(Q,SQ,DT,RDT)
  !
@@ -368,9 +368,19 @@ module module_mp_tau_bin
           ENDDO
         ENDDO
 
+do j=jminp,jmaxp
+    do k=1,kkp
+        do iq=1,lk
+            if (q(j,k,icdkg_bin(iq))>.1) then
+                !print*, 'q', j,k,iq,q(j,k,icdkg_bin(iq))
+                !print*, 'sq', j,k,iq,sq(j,k,icdkg_bin(iq))
+                !stop
+            endif
+        enddo
+    enddo
+enddo
 
-
-      END subroutine TAU_BIN
+     END subroutine TAU_BIN
 
 !***********************************************************************
       SUBROUTINE CLOUDBIN(I,J,K,Q,SQ,AMKORIG,ANKORIG,QST,RH,TBASE,TREF, &
@@ -587,7 +597,7 @@ module module_mp_tau_bin
             DS_force = tau(j,k)
             tau_dum(j,k) = tau(j,k)
          endif
-    !print*, j,k,AM1(J,K), AM1OLD(J,K)
+
          IF (DS_force >  eps) THEN
 !*****************************************************************
 !        CONDENSATION
@@ -604,6 +614,7 @@ module module_mp_tau_bin
             CALL COND_new(J,K,DM,TBASE,QST,RH,Q,SQ,DT,RDT,PMB,QVNEW,      &
                  TAU_dum,it,LT)
 !***************************************************************
+
 
             CALL REBIN(J,K)
 
@@ -664,7 +675,7 @@ module module_mp_tau_bin
 
                CALL EVAP_new(I,J,K,DM,TBASE,QST,RH,Q,SQ,DT,RDT,PMB,      &
                     QVNEW,TAU_dum,EA,it,LT,inhom_evap,delm)
-               !
+
                CALL REBIN(J,K)
                !
                AN1(J,K) = 0.0
@@ -724,11 +735,14 @@ module module_mp_tau_bin
          do l = 1,lk
             dm = dm + (amk(j,k,l) - amkorig(j,k,l))
          enddo
+
 ! AH 0410 - Update thermodynamic field once evap and cond
 !           finished
          if ( it .ne. lt )  DS_0 = EN(j,k)
+
          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
          QVNEW = QVNEW - DM
+
          QST(J,K)=QSATURATION(TBASE(J,K),PMB)
          DS(J,K)=QVNEW-QST(J,K)
 
@@ -1066,6 +1080,7 @@ module module_mp_tau_bin
 ! Finally calc the microphys change in QV
       DQVDT=(QVNEW-QVOLD)*RDT
 !
+
       END subroutine CLOUDBIN
 
 !*******************************************************************
