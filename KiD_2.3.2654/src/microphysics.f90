@@ -772,7 +772,7 @@ use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
-                             XACT
+                             XACT, CLOUDBIN
 
 implicit none
 
@@ -800,7 +800,7 @@ REAL :: cool_kday,sth_lwmax,qttol
 INTEGER,DIMENSION(JMINP:JMAXP) ::  K_BL_TOP
 ! Subprogram arguments
 ! IN
-INTEGER, INTENT(IN) :: I
+INTEGER :: I
 REAL, DIMENSION(JMINP:JMAXP,KKP) ::                       &
 &    TH       ! potential temperature perturbation
 REAL, DIMENSION(JMINP:JMAXP,KKP,NQP) ::                   &
@@ -1090,597 +1090,597 @@ DO K=2,KKP
     ! 3. call cloudbin to calculate the bin microphysics (i.e.
     !   nucleation, condensation, evaporation, collection, breakup)
 
-    ! CALL CLOUDBIN(I,J,K,Q,SQ,AMKORIG,ANKORIG,QSATPW,RH,TBASE,TREF,    &
-    !           DQVDT(J,K),DT,RDT,PMB,QVOLD(J,K),QLOLD(J,K),    &
-    !           totevap,totccnreg,DS_0)
-
-    ! Set values of bins before microphysics, these values do not include the
-    ! effect of dynamics from this timestep. I do not think this is needed
-    ! as all I want is a tendency due ti microphysics. The tendency for aerosol
-    ! is calculated in SUBNUC, as this is where nucleation is calculated
-
-    if (jjp == 1) then
-       call save_dg(k,rhon(k),'density', i_dgtime, units='kg/m3',dim='z')
-    endif
-
-    QVNEW = QVOLD(J,K)
-    DO L=1,LN2
-      CCNOLD(J,K,L)=Q(J,K,IAERO_BIN(L)) + (SQ(J,K,IAERO_BIN(L))*DT)
-      CCN(J,K,L) = CCNOLD(J,K,L) !this line is required so that
-      !CCN does not equal zero if DS < 0, i.e. for calc of aerosol
-                              !tendency
-    ENDDO
-
-    DO L=1,LK
-      AMKOLD(J,K,L)=AMKORIG(J,K,L)
-      ANKOLD(J,K,L)=ANKORIG(J,K,L)
-    END DO
-
-
-
-    !****************************************************************
-    !          DS() IS THE SUPERSATURATED QUANTITY
-    !****************************************************************
-    DS(J,K)=QVNEW-QSATPW(J,K)
-    DUS(J,K)=DS(J,K)/QSATPW(J,K)
-    QST_nuc = QSATPW(J,K) !used in activation calculation
-    TEMP_NUC = TBASE(J,K)
-    DS_FORCE = 0.0
-
-    IF (DT.GT.4.0) THEN
-     LT = CEILING(DT/1.0)
-     DTcalc = DT/REAL(LT)
-    ELSE
-     LT=1
-     DTcalc=DT
-    ENDIF
-
-    CDNCEVAP(j,k) = 0.0
-    am1_diag(j,k) = 0.0
-    an1_diag(j,k) = 0.0
-
-    !AH 0410 - moving all unit conversion outside
-    !        the calls for get_force, cond and evap_new
-    !        to minimise precision errors, also don't change
-    !        amkold or ankold
-    DO L=1,LK
-     IF(AMKOLD(J,K,L) > eps .AND.       &
-          ANKOLD(J,K,L) > eps )THEN
-        am0(l)=(amkold(j,k,l)*Rhon(k))/1.E3
-        an0(l)=(ankold(j,k,l)*Rhon(k))/1.E6
-        AMN(L)=am0(L)/an0(L)
-     ELSE
-        AMN(L)=0.
-        am0(l)=0.
-        an0(l)=0.
-     ENDIF
-     am1_diag(j,k) = am1_diag(j,k)+am0(l)
-     an1_diag(j,k) = an1_diag(j,k)+an0(l)
-    ENDDO
-
-    ! 3.1 nucleation happens after cond/evap for now
-
-    DO it = 1,lt
-
-       IF(IINHOM_mix == 0) then
-          VSW(J,K) = MIN(1.,-1.E+10*MAX(DS(j,k),DS_0))
-          CALL GET_FORCING(J,K,QSATPW,TBASE,DS_0,DS,                      &
-               AM0,AN0,DTcalc,TAU,EN,EA,VSW(J,K))
-
-          inhom_evap = 0
-
-       ENDIF
-
-       DM=0.0
-       dm_cloud_evap = 0.0
-       dm_rain_evap = 0.0
-       NCC(J,K)=0.0
-       MCC(J,K)=0.0
-       DUS1(J,K)=0.0
-       tevap_bb(j,k) = 0.0
-       tevap_squires(j,k) = 0.0
-       t_mix(j,k) = 0.0
-       t_mix_approx(J,K) = 0.0
-       da_no(J,K) = 0.0
-       da_no_rat(J,K) = 0.0
-       r_int(j,k) = 0.0
-       r_bar(j,k) = 0.0
-       ssat(j,k) = 0.0
-       evap_a(j,K) = 0.0
-
-       ssat(J,K) = EA(J,K)/QSATPW(J,K)
-
-       DO L=1,LK
-          DIEMC(L)=0.0
-          DIENC(L)=0.0
-          DIEMD(L)=0.0
-          DIEND(L)=0.0
-          ANK(J,k,L) = 0.0
-          AMK(j,k,l) = 0.0
-       ENDDO
-       IF (IINHOM_MIX == 0) then
-          DS_force = tau(j,k)
-          tau_dum(j,k) = tau(j,k)
-       endif
-
-    ! 3.2
-       IF (DS_force > eps .and. docondensation) THEN
-    !*****************************************************************
-    !        CONDENSATION
-    !     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
-    !****************************************************************
-          AN1OLD(J,K) = 0.0
-          AM1OLD(j,k) = 0.0
-          DO L=1,LK
-             AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
-             AM1OLD(j,K) = AM1OLD(j,K)+am0(l)
-          ENDDO
-
-
-       !***************************************************************
-          CALL COND_new(J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,QVNEW,      &
-               TAU_dum,it,LT)
-       !***************************************************************
-
-
-          CALL REBIN(J,K)
-
-          AN1(J,K) = 0.0
-          AM1(j,k) = 0.0
-          DO L=1,LK
-             AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
-             AM1(J,K) = AM1(j,k) + (AMK(j,k,l))
-          ENDDO
-
-          IF(ABS((AN1(J,K))-(AN1OLD(J,K))) >  1.) THEN
-             print *, 'cond conservation prob after rebin'
-             print *, 'AN1OLD', AN1OLD(j,k),k,j
-             print *, 'AN1', AN1(j,k),k,j
-          ENDIF
-
-       ! new code to calc the change in total mass and num from
-       ! rain dropsize bins due to condensation. This is
-       ! sort-of equivalent to the autoconversion in the Bulk scheme
-          auto_mass(k) = 0.0
-          auto_num(k) = 0.0
-          DO L = 16, LK
-
-             auto_mass(k) = auto_mass(k) + (AMK(J,K,L) - AM0(L))
-             auto_num(k) = auto_num(k) + (ANK(J,K,L) - AN0(L))
-
-          enddo
-
-          if (auto_mass(k) < 0.0 .or. auto_num(k) < 0.0 ) then
-             auto_mass(k) = 0.0
-             auto_num(k) = 0.0
-          endif
-
-          if (jjp == 1) then
-             call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
-                  i_dgtime, units='kg/kg/s',dim='z')
-             call save_dg(k,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
-                  i_dgtime, units='#/kg/s',dim='z')
-          else
-             call save_dg(k,j,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
-                  i_dgtime, units='kg/kg/s',dim='z,x')
-             call save_dg(k,j,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
-                  i_dgtime, units='#/kg/s',dim='z,x')
-          endif
-
-       ELSEIF(DS_force < -eps) then !DS_force < 0.0
-    !****************************************************************
-    !                     EVAPORATION
-    !     EVAP RECEIVES MKD,NKD RETURNS MK,NK
-    !***********************************************************
-           AN1OLD(J,K) = 0.0
-
-           DO L=1,LK
-              AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
-           ENDDO
-
-           IF (AN1OLD(J,K) > eps) then
-
-              CALL EVAP_new(I,J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,      &
-                   QVNEW,TAU_dum,EA,it,LT,inhom_evap,delm)
-
-              CALL REBIN(J,K)
-              !
-              AN1(J,K) = 0.0
-              DO L=1,LK
-                 AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
-              ENDDO
-
-           ELSE
-              DO L=1,LK
-                 AMK(J,K,L)=AM0(L)
-                 ANK(J,K,L)=AN0(L)
-              ENDDO
-           ENDIF
-        ELSE
-
-           DO L=1,LK
-              AMK(J,K,L)=am0(L)
-              ANK(J,K,L)=an0(L)
-           ENDDO
-       ENDIF
-
-         !update fields
-         an1old(j,k) = 0.0
-         an1(j,k) = 0.0
-         DO L=1,LK
-            ! n0 and m0 in cjs units for next lt iteration if
-            ! needed
-            AN0(L)=ank(j,k,L)
-            AM0(L)=amk(j,k,L)
-            IF(AM0(L) >  eps .AND.                       &
-                 AN0(L) > eps)THEN
-               AMN(L)=AM0(L)/AN0(L)
-            ELSE
-               AMN(L)=0.
-            ENDIF
-    !
-    ! AH 0410 - convert mass and number back to kg/kg and #/kg
-    !           respectively for source term calc and thermodynamic
-    !           updates
-    !
-            amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)
-            ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)
-            if(amk(j,k,l) < eps.or.                 &
-                 ank(j,k,l) < eps) then
-               amk(j,k,l) = 0.0
-               ank(j,k,l) = 0.0
-            endif
-            an1old(j,k) = an1old(j,k) + ankorig(j,k,l)
-            an1(j,k) = an1(j,k) + ank(j,k,l)
-
-         ENDDO
-
-    ! AH 0410 - work out total mass and number change due to cond
-    !           and evap
-         dm = 0.0
-         do l = 1,lk
-            dm = dm + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-
-    ! AH 0410 - Update thermodynamic field once evap and cond
-    !           finished
-         if ( it .ne. lt )  DS_0 = EN(j,k)
-
-         TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
-         QVNEW = QVNEW - DM
-
-         QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
-         DS(J,K)=QVNEW-QSATPW(J,K)
-    ENDDO               !end of iteration over LT
-
-    !subtract total number after evaporation, from total number before evap
-    !this value tells the number of droplets that have evaporated completely
-    !
-      IF (AN1(J,K) >  AN1OLD(J,K)) THEN
-         CDNCEVAP(J,K) = 0.0
-      ELSE
-         CDNCEVAP(J,K) = (AN1OLD(J,K) - (AN1(J,K)))
-      ENDIF
-
-      if (jjp > 1) then
-         !    diagnostics for total cond/evap rate liquid water (change in mass)
-         call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
-         !    cond/evap rate of cloud
-         do l = 1,lk_cloud
-            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
-         !     cond/evap rate of rain
-         do l = lk_cloud+1, lk
-            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,j,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
-      else
-         !    diagnostics for total cond/evap rate liquid water (change in mass)
-         call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
-              units='kg/kg/s',dim='z')
-         !    cond/evap rate of cloud
-         do l = 1,lk_cloud
-            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,dm_cloud_evap/dt,'dm_cloud', i_dgtime, &
-              units='kg/kg/s',dim='z')
-         !     cond/evap rate of rain
-         do l = lk_cloud+1, lk
-            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,dm_rain_evap/dt,'dm_rain', i_dgtime, &
-              units='kg/kg/s',dim='z')
-      endif
-    ! 3.2 do activation after cond/evap, using updated supersat for timestep
-    EA(J,K) = DS(J,K)
-
-    IF(EA(J,K) >  0.0) THEN
-
-      AN1OLD(J,K) = 0.0
-      AM1OLD(J,K) = 0.0
-      CCNTOT(J,K) = 0.0
-      DO L = 1, LK
-        AN1OLD(J,K)  = AN1OLD(J,K) +ANK(J,K,L)
-        AM1OLD(J,K)  = AM1OLD(J,K) +AMK(J,K,L)
-      ENDDO
-
-      DO L = 1, LN2
-        CCNTOT(J,K) =  CCNTOT(J,K) + CCNOLD(J,K,L)
-      ENDDO
-
-      AN1(J,K) = 0.0
-      AM1(J,K) = 0.0
-      amkcc(1) = 0.0
-      ankcc(1) = 0.0
-
-      DO L = 1, LK
-        AN1(J,K) = AN1(J,K) + ANK(J,K,L)
-      ENDDO
-
-      AM1(J,K) = AMK(J,K,1)
-      DDDD=(EA(J,K)/QSATPW(J,K))*100
-
-      ccn_pos = 1
-      cloud_pos = 1
-
-      CN1 = CCN(j,k,ccn_pos)/rhon(k) ! convert to /kg
-
-      if (.not. l_fix_aerosols) then
-         AN2(J,K) = MAX(0.,                                            &
-    &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
-            CN1)
-
-         !adjust CCN to show the removal of CCN by activation
-          CCN(j,k,ccn_pos) = (CN1 - AN2(J,K))*rhon(k) ! convert to /m^3
-
-      else
-         AN2(J,K) = MAX(0.,                                            &
-    &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
-            CN1-AN1(J,K))
-
-    !     &       CCN(J,K,ccn_pos)-AN1(J,K))
-
-      endif
-
-      dqn_act(J,K) = AN2(J,K)/dt
-
-      ANK(J,K,1) = ANK(J,K,1) + AN2(J,K)
-      ! the 0.25 factor attempts to accomodate for the fact
-      ! that not all CCN will grow to the size of the 1st bin
-      AMK(J,K,1) = AMK(J,K,1) + AN2(J,K)*XK(1)*0.25
-      AMK(J,K,1) = MAX(ANK(J,K,1)*XK(1)*1.01, AMK(J,K,1))
-
-      MCC(J,K) = AMK(J,K,1) - AM1(J,K)
-
-      AM1(j,k) = 0.0
-      DO L = 1, LK
-        AM1(J,K) = AM1(J,K) + AMK(J,K,L)
-      ENDDO
-
-    !calculate the new termodynamic fields following activation
-      TBASE(J,K)=TBASE(J,K)+AL/CPBIN*MCC(J,K)
-      QVNEW = QVNEW - MCC(J,K)
-      QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
-    ENDIF                          ! end of do activation
-
-    AN1(j,k) = 0.0
-    DO L = 1, LK
-      AN1(J,K) = AN1(J,K) + ANK(J,K,L)
-    ENDDO
-
-    ! AH 0410 - to update supersat for advection. The update of ss is
-    !           performed here not in stepfields (code commented out in
-    !           stepfields)
-    !
-    DS(J,K) =  QVNEW - QSATPW(J,K)
-    q(j,k,iqss) = DS(j,k)
-
-!*************************************************************
-!        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
-!             AFTER  CONDENSATION-EVAPORATION
-!*************************************************************
-
-        DO L=1,LK
-            DIEMC(L)=AMK(J,K,L)-AMKORIG(J,K,L)!AMKORIG is the mass prior to
-                !bin micro, therefore DIEMC (old variable name) is
-                !mass resulting from bin micro
-            DIENC(L)=ANK(J,K,L)-ANKORIG(J,K,L)!ANKORIG is the number prior to
-                !bin micro, therefore DIENC (old variable name) is
-                !number resulting from bin micro
-        ENDDO
-
-        if (IRAINBIN == 1.AND.IMICROBIN == 1) then
+    CALL CLOUDBIN(I,J,K,Q,SQ,AMKORIG,ANKORIG,QSATPW,RH,TBASE,TREF,    &
+              DQVDT(J,K),DT,RDT,PMB,QVOLD(J,K),QLOLD(J,K),    &
+              totevap,totccnreg,DS_0)
 !
-!************************************************************
-!            COLLECTION + BREAKUP
-!************************************************************
+!     ! Set values of bins before microphysics, these values do not include the
+!     ! effect of dynamics from this timestep. I do not think this is needed
+!     ! as all I want is a tendency due ti microphysics. The tendency for aerosol
+!     ! is calculated in SUBNUC, as this is where nucleation is calculated
 !
-! AH 0410 - The collision-coalescence code uses the original format
-!           of the TAU model (so is an older version than that used
-!           in RAMS). AMKORIG and ANKORIG, which are the same as
-!           AMKOLD and ANKOLD) are used to initialise calculations in
-!           SXY, SCONC and BREAK. Unit conversions are performed
-!           in the respective subroutines (this is not neccesary and
-!           should be moved out so that AN0 and AM0 are used
+!     if (jjp == 1) then
+!        call save_dg(k,rhon(k),'density', i_dgtime, units='kg/m3',dim='z')
+!     endif
 !
-            rmass_cw(k) = 0.0
-
-            loop_count = 0
-            count = 0
-            DO L=1,LK
-              AMK(J,K,L)=AMKORIG(J,K,L)
-              ANK(J,K,L)=ANKORIG(J,K,L)
-            ENDDO
-
-            AM1(J,K)=0.0
-            AN1(J,K)=0.0
-            DO L=1,LK
-              AM1(J,K)=AM1(J,K)+AMKORIG(J,K,L)
-              AN1(J,K)=AN1(J,K)+ANKORIG(J,K,L)
-            ENDDO
-
-
-            IF(AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
-
-              if (l_coll_coal .or. docollisions) then
-
-
-                 CALL SXY(J,K,DT)
-                 CALL SCONC(J,K,DT)
-
-                 if (l_break .or. dobreakup) then
-                    CALL BREAK(J,K,DT)
-                 endif
-
-              endif
-
-!*************************************************************
-!        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
-!             AFTER  COLLECTION & BREAKUP
-!*************************************************************
-              DO L=1,LK
-                 DIEMD(L)=AMK(J,K,L)-AMKORIG(J,K,L)
-                 DIEND(L)=ANK(J,K,L)-ANKORIG(J,K,L)
-              ENDDO
-
-              d_rmass(k) = 0.0
-
-              do l = 16, lk
-                 d_rmass(k) = d_rmass(k) + DIEMD(L)
-              enddo
-
-              if (jjp == 1) then
-                 call save_dg(k,d_rmass(k)/dt,'drain_tot', i_dgtime, &
-                      units='kg/kg/s',dim='z')
-              else
-                 call save_dg(k,j,d_rmass(k)/dt,'drain_tot', i_dgtime, &
-                      units='kg/kg/s',dim='z,x')
-              endif
-            ELSE
-              DO L=1,LK
-               DIEMD(L) = 0.0
-               DIEND(L)= 0.0
-             ENDDO
-           ENDIF
-        ENDIF    !if IRAINBIN == 1.AND.IMICROBIN == 1
-
-!***********************************************************
-!     UPDATING MASS & CONCENTRATION AFTER MICROPHYSICS
-!***********************************************************
-!      AM1(J,K)=0.0
-!      AN1(J,K)=0.0
-
-        DO L=1,LK
-            IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
-                !add microphysical change resulting from  nuc,cond/evap,
-                !collision-coalscence, breakup and sedimentation
-                AMK(J,K,L)=DIEMC(L)+AMKORIG(J,K,L)+DIEMD(L)+QL_SED(J,K,L)
-                ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)+DIEND(L)+QLN_SED(J,K,L)
-            ELSE!only add microphysical change resulting from  nuc,cond/evap
-                AMK(J,K,L)=DIEMC(L)+AMKORIG(J,K,L)
-                ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)
-            ENDIF
-        ENDDO
+!     QVNEW = QVOLD(J,K)
+!     DO L=1,LN2
+!       CCNOLD(J,K,L)=Q(J,K,IAERO_BIN(L)) + (SQ(J,K,IAERO_BIN(L))*DT)
+!       CCN(J,K,L) = CCNOLD(J,K,L) !this line is required so that
+!       !CCN does not equal zero if DS < 0, i.e. for calc of aerosol
+!                               !tendency
+!     ENDDO
 !
-!     Calculate the change in "rain bin" mass and number
-!     (i.e. bin greater than  100 microns diameter)
-      if (j == 0) then
-          rmass_tot_orig = 0.0
-          rmass_tot_new = 0.0
-          !  d_rmass(k) = 0.0
-          auto_con_mass(k) = 0.0
-
-          do l=16,lk
-              rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
-              rmass_tot_new = rmass_tot_new + AMK(J,K,L)
-          enddo
-
-          ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
-
-          auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
-
-          if (jjp == 1) then
-             call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-                  units='kg/kg/s',dim='z')
-
-             call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-                  units='kg/kg/s',dim='z')
-          else
-             call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-                  units='kg/kg/s',dim='z,x')
-
-             call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-                  units='kg/kg/s',dim='z,x')
-
-          endif
-
-      endif
-
-!**********************************************************
-!     Update mass and conc, tendencies due to micro and end
-!**********************************************************
-!First update change in aerosol (if aerosol is not fixed)
-
-        if (.not. l_fix_aerosols) then
-           DO L = 1,LN2
-              DCCNDT=(CCN(J,K,L)-CCNOLD(J,K,L))*RDT
-              IF ((Q(J,K,IAERO_BIN(L))+(SQ(J,K,IAERO_BIN(L))+DCCNDT)*DT)     &
-        &         <  0.0) THEN
-                 DCCNDT=-0.9999*CCNOLD(J,K,L)*RDT
-              ENDIF
-              SQ(J,K,IAERO_BIN(L))=SQ(J,K,IAERO_BIN(L))+DCCNDT
-           ENDDO
-        endif
-
-        DO L=1,LK
-!AH 0410 - Calculate the change in mass and number due to microphysics i.e.
-!          nucleation, cond, evap, collection and sedimentation
+!     DO L=1,LK
+!       AMKOLD(J,K,L)=AMKORIG(J,K,L)
+!       ANKOLD(J,K,L)=ANKORIG(J,K,L)
+!     END DO
 !
-            IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
-            ! sum the effects of cond/evap+coll/coal+sedi
-            ! on mass and number
-             DAMKDT=(DIEMC(L)+DIEMD(L)+QL_SED(J,K,L)) * RDT
-             DANKDT=(DIENC(L)+DIEND(L)+QLN_SED(J,K,L)) * RDT
-            ELSE
-             ! only use the term from cond/evap (and nuc)
-             DAMKDT = DIEMC(L) * RDT
-             DANKDT = DIENC(L) * RDT
-            ENDIF
-
-!AH 0410 - Call microcheck to update the source fields for bin resolved mass
-!          and number with DAMKDT and DANKDT
 !
-
-            CALL MICROcheck(J,K,L,DT,AMKORIG(J,K,L), &
-               ANKORIG(j,k,l),SQ(J,K,ICDKG_BIN(L)), &
-               SQ(J,K,ICDNC_BIN(L)),DAMKDT,DANKDT,RDT,Q(J,K,ICDKG_BIN(L)) &
-               ,Q(J,K,ICDNC_BIN(L)))
-
-        ENDDO
-
-        dD(1)=xkk1(1)*2.0*1.e6
-        do l = 2, lk
-           dD(l)=(xkk1(l)-xkk1(l-1))*2.0*1.e6
-        end do
-
-        call save_binData((xkk1(:)*2.0*1.e6),'bins_D_upper', &
-             units='microns', longname='upper bound of droplet diameter')
-        call save_binData(xk(:),'bins_mass_upper', &
-             units='kg', longname='upper bound of droplet mass')
-        call save_binData(xkmean(:),'bins', &
-             units='kg', longname='mean droplet mass')
-        call save_binData(((xkmean(:)*6./3141.59)**(1./3.)*1.e6), &
-             'bins_D', units='microns' &
-             , longname='mean droplet diameter')
-        call save_binData(dD(:), 'dD', units='microns' &
-             , longname='width of bin')
-
-! Finally calc the microphys change in QV
-        DQVDT(j,k)=(QVNEW-QVOLD(J,K))*RDT
+!
+!     !****************************************************************
+!     !          DS() IS THE SUPERSATURATED QUANTITY
+!     !****************************************************************
+!     DS(J,K)=QVNEW-QSATPW(J,K)
+!     DUS(J,K)=DS(J,K)/QSATPW(J,K)
+!     QST_nuc = QSATPW(J,K) !used in activation calculation
+!     TEMP_NUC = TBASE(J,K)
+!     DS_FORCE = 0.0
+!
+!     IF (DT.GT.4.0) THEN
+!      LT = CEILING(DT/1.0)
+!      DTcalc = DT/REAL(LT)
+!     ELSE
+!      LT=1
+!      DTcalc=DT
+!     ENDIF
+!
+!     CDNCEVAP(j,k) = 0.0
+!     am1_diag(j,k) = 0.0
+!     an1_diag(j,k) = 0.0
+!
+!     !AH 0410 - moving all unit conversion outside
+!     !        the calls for get_force, cond and evap_new
+!     !        to minimise precision errors, also don't change
+!     !        amkold or ankold
+!     DO L=1,LK
+!      IF(AMKOLD(J,K,L) > eps .AND.       &
+!           ANKOLD(J,K,L) > eps )THEN
+!         am0(l)=(amkold(j,k,l)*Rhon(k))/1.E3
+!         an0(l)=(ankold(j,k,l)*Rhon(k))/1.E6
+!         AMN(L)=am0(L)/an0(L)
+!      ELSE
+!         AMN(L)=0.
+!         am0(l)=0.
+!         an0(l)=0.
+!      ENDIF
+!      am1_diag(j,k) = am1_diag(j,k)+am0(l)
+!      an1_diag(j,k) = an1_diag(j,k)+an0(l)
+!     ENDDO
+!
+!     ! 3.1 nucleation happens after cond/evap for now
+!
+!     DO it = 1,lt
+!
+!        IF(IINHOM_mix == 0) then
+!           VSW(J,K) = MIN(1.,-1.E+10*MAX(DS(j,k),DS_0))
+!           CALL GET_FORCING(J,K,QSATPW,TBASE,DS_0,DS,                      &
+!                AM0,AN0,DTcalc,TAU,EN,EA,VSW(J,K))
+!
+!           inhom_evap = 0
+!
+!        ENDIF
+!
+!        DM=0.0
+!        dm_cloud_evap = 0.0
+!        dm_rain_evap = 0.0
+!        NCC(J,K)=0.0
+!        MCC(J,K)=0.0
+!        DUS1(J,K)=0.0
+!        tevap_bb(j,k) = 0.0
+!        tevap_squires(j,k) = 0.0
+!        t_mix(j,k) = 0.0
+!        t_mix_approx(J,K) = 0.0
+!        da_no(J,K) = 0.0
+!        da_no_rat(J,K) = 0.0
+!        r_int(j,k) = 0.0
+!        r_bar(j,k) = 0.0
+!        ssat(j,k) = 0.0
+!        evap_a(j,K) = 0.0
+!
+!        ssat(J,K) = EA(J,K)/QSATPW(J,K)
+!
+!        DO L=1,LK
+!           DIEMC(L)=0.0
+!           DIENC(L)=0.0
+!           DIEMD(L)=0.0
+!           DIEND(L)=0.0
+!           ANK(J,k,L) = 0.0
+!           AMK(j,k,l) = 0.0
+!        ENDDO
+!        IF (IINHOM_MIX == 0) then
+!           DS_force = tau(j,k)
+!           tau_dum(j,k) = tau(j,k)
+!        endif
+!
+!     ! 3.2
+!        IF (DS_force > eps .and. docondensation) THEN
+!     !*****************************************************************
+!     !        CONDENSATION
+!     !     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
+!     !****************************************************************
+!           AN1OLD(J,K) = 0.0
+!           AM1OLD(j,k) = 0.0
+!           DO L=1,LK
+!              AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
+!              AM1OLD(j,K) = AM1OLD(j,K)+am0(l)
+!           ENDDO
+!
+!
+!        !***************************************************************
+!           CALL COND_new(J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,QVNEW,      &
+!                TAU_dum,it,LT)
+!        !***************************************************************
+!
+!
+!           CALL REBIN(J,K)
+!
+!           AN1(J,K) = 0.0
+!           AM1(j,k) = 0.0
+!           DO L=1,LK
+!              AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
+!              AM1(J,K) = AM1(j,k) + (AMK(j,k,l))
+!           ENDDO
+!
+!           IF(ABS((AN1(J,K))-(AN1OLD(J,K))) >  1.) THEN
+!              print *, 'cond conservation prob after rebin'
+!              print *, 'AN1OLD', AN1OLD(j,k),k,j
+!              print *, 'AN1', AN1(j,k),k,j
+!           ENDIF
+!
+!        ! new code to calc the change in total mass and num from
+!        ! rain dropsize bins due to condensation. This is
+!        ! sort-of equivalent to the autoconversion in the Bulk scheme
+!           auto_mass(k) = 0.0
+!           auto_num(k) = 0.0
+!           DO L = 16, LK
+!
+!              auto_mass(k) = auto_mass(k) + (AMK(J,K,L) - AM0(L))
+!              auto_num(k) = auto_num(k) + (ANK(J,K,L) - AN0(L))
+!
+!           enddo
+!
+!           if (auto_mass(k) < 0.0 .or. auto_num(k) < 0.0 ) then
+!              auto_mass(k) = 0.0
+!              auto_num(k) = 0.0
+!           endif
+!
+!           if (jjp == 1) then
+!              call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+!                   i_dgtime, units='kg/kg/s',dim='z')
+!              call save_dg(k,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
+!                   i_dgtime, units='#/kg/s',dim='z')
+!           else
+!              call save_dg(k,j,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+!                   i_dgtime, units='kg/kg/s',dim='z,x')
+!              call save_dg(k,j,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
+!                   i_dgtime, units='#/kg/s',dim='z,x')
+!           endif
+!
+!        ELSEIF(DS_force < -eps) then !DS_force < 0.0
+!     !****************************************************************
+!     !                     EVAPORATION
+!     !     EVAP RECEIVES MKD,NKD RETURNS MK,NK
+!     !***********************************************************
+!            AN1OLD(J,K) = 0.0
+!
+!            DO L=1,LK
+!               AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
+!            ENDDO
+!
+!            IF (AN1OLD(J,K) > eps) then
+!
+!               CALL EVAP_new(I,J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,      &
+!                    QVNEW,TAU_dum,EA,it,LT,inhom_evap,delm)
+!
+!               CALL REBIN(J,K)
+!               !
+!               AN1(J,K) = 0.0
+!               DO L=1,LK
+!                  AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
+!               ENDDO
+!
+!            ELSE
+!               DO L=1,LK
+!                  AMK(J,K,L)=AM0(L)
+!                  ANK(J,K,L)=AN0(L)
+!               ENDDO
+!            ENDIF
+!         ELSE
+!
+!            DO L=1,LK
+!               AMK(J,K,L)=am0(L)
+!               ANK(J,K,L)=an0(L)
+!            ENDDO
+!        ENDIF
+!
+!          !update fields
+!          an1old(j,k) = 0.0
+!          an1(j,k) = 0.0
+!          DO L=1,LK
+!             ! n0 and m0 in cjs units for next lt iteration if
+!             ! needed
+!             AN0(L)=ank(j,k,L)
+!             AM0(L)=amk(j,k,L)
+!             IF(AM0(L) >  eps .AND.                       &
+!                  AN0(L) > eps)THEN
+!                AMN(L)=AM0(L)/AN0(L)
+!             ELSE
+!                AMN(L)=0.
+!             ENDIF
+!     !
+!     ! AH 0410 - convert mass and number back to kg/kg and #/kg
+!     !           respectively for source term calc and thermodynamic
+!     !           updates
+!     !
+!             amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)
+!             ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)
+!             if(amk(j,k,l) < eps.or.                 &
+!                  ank(j,k,l) < eps) then
+!                amk(j,k,l) = 0.0
+!                ank(j,k,l) = 0.0
+!             endif
+!             an1old(j,k) = an1old(j,k) + ankorig(j,k,l)
+!             an1(j,k) = an1(j,k) + ank(j,k,l)
+!
+!          ENDDO
+!
+!     ! AH 0410 - work out total mass and number change due to cond
+!     !           and evap
+!          dm = 0.0
+!          do l = 1,lk
+!             dm = dm + (amk(j,k,l) - amkorig(j,k,l))
+!          enddo
+!
+!     ! AH 0410 - Update thermodynamic field once evap and cond
+!     !           finished
+!          if ( it .ne. lt )  DS_0 = EN(j,k)
+!
+!          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
+!          QVNEW = QVNEW - DM
+!
+!          QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
+!          DS(J,K)=QVNEW-QSATPW(J,K)
+!     ENDDO               !end of iteration over LT
+!
+!     !subtract total number after evaporation, from total number before evap
+!     !this value tells the number of droplets that have evaporated completely
+!     !
+!       IF (AN1(J,K) >  AN1OLD(J,K)) THEN
+!          CDNCEVAP(J,K) = 0.0
+!       ELSE
+!          CDNCEVAP(J,K) = (AN1OLD(J,K) - (AN1(J,K)))
+!       ENDIF
+!
+!       if (jjp > 1) then
+!          !    diagnostics for total cond/evap rate liquid water (change in mass)
+!          call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
+!               units='kg/kg/s',dim='z,x')
+!          !    cond/evap rate of cloud
+!          do l = 1,lk_cloud
+!             dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+!          enddo
+!          call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
+!               units='kg/kg/s',dim='z,x')
+!          !     cond/evap rate of rain
+!          do l = lk_cloud+1, lk
+!             dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+!          enddo
+!          call save_dg(k,j,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
+!               units='kg/kg/s',dim='z,x')
+!       else
+!          !    diagnostics for total cond/evap rate liquid water (change in mass)
+!          call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
+!               units='kg/kg/s',dim='z')
+!          !    cond/evap rate of cloud
+!          do l = 1,lk_cloud
+!             dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+!          enddo
+!          call save_dg(k,dm_cloud_evap/dt,'dm_cloud', i_dgtime, &
+!               units='kg/kg/s',dim='z')
+!          !     cond/evap rate of rain
+!          do l = lk_cloud+1, lk
+!             dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+!          enddo
+!          call save_dg(k,dm_rain_evap/dt,'dm_rain', i_dgtime, &
+!               units='kg/kg/s',dim='z')
+!       endif
+!     ! 3.2 do activation after cond/evap, using updated supersat for timestep
+!     EA(J,K) = DS(J,K)
+!
+!     IF(EA(J,K) >  0.0) THEN
+!
+!       AN1OLD(J,K) = 0.0
+!       AM1OLD(J,K) = 0.0
+!       CCNTOT(J,K) = 0.0
+!       DO L = 1, LK
+!         AN1OLD(J,K)  = AN1OLD(J,K) +ANK(J,K,L)
+!         AM1OLD(J,K)  = AM1OLD(J,K) +AMK(J,K,L)
+!       ENDDO
+!
+!       DO L = 1, LN2
+!         CCNTOT(J,K) =  CCNTOT(J,K) + CCNOLD(J,K,L)
+!       ENDDO
+!
+!       AN1(J,K) = 0.0
+!       AM1(J,K) = 0.0
+!       amkcc(1) = 0.0
+!       ankcc(1) = 0.0
+!
+!       DO L = 1, LK
+!         AN1(J,K) = AN1(J,K) + ANK(J,K,L)
+!       ENDDO
+!
+!       AM1(J,K) = AMK(J,K,1)
+!       DDDD=(EA(J,K)/QSATPW(J,K))*100
+!
+!       ccn_pos = 1
+!       cloud_pos = 1
+!
+!       CN1 = CCN(j,k,ccn_pos)/rhon(k) ! convert to /kg
+!
+!       if (.not. l_fix_aerosols) then
+!          AN2(J,K) = MAX(0.,                                            &
+!     &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
+!             CN1)
+!
+!          !adjust CCN to show the removal of CCN by activation
+!           CCN(j,k,ccn_pos) = (CN1 - AN2(J,K))*rhon(k) ! convert to /m^3
+!
+!       else
+!          AN2(J,K) = MAX(0.,                                            &
+!     &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
+!             CN1-AN1(J,K))
+!
+!     !     &       CCN(J,K,ccn_pos)-AN1(J,K))
+!
+!       endif
+!
+!       dqn_act(J,K) = AN2(J,K)/dt
+!
+!       ANK(J,K,1) = ANK(J,K,1) + AN2(J,K)
+!       ! the 0.25 factor attempts to accomodate for the fact
+!       ! that not all CCN will grow to the size of the 1st bin
+!       AMK(J,K,1) = AMK(J,K,1) + AN2(J,K)*XK(1)*0.25
+!       AMK(J,K,1) = MAX(ANK(J,K,1)*XK(1)*1.01, AMK(J,K,1))
+!
+!       MCC(J,K) = AMK(J,K,1) - AM1(J,K)
+!
+!       AM1(j,k) = 0.0
+!       DO L = 1, LK
+!         AM1(J,K) = AM1(J,K) + AMK(J,K,L)
+!       ENDDO
+!
+!     !calculate the new termodynamic fields following activation
+!       TBASE(J,K)=TBASE(J,K)+AL/CPBIN*MCC(J,K)
+!       QVNEW = QVNEW - MCC(J,K)
+!       QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
+!     ENDIF                          ! end of do activation
+!
+!     AN1(j,k) = 0.0
+!     DO L = 1, LK
+!       AN1(J,K) = AN1(J,K) + ANK(J,K,L)
+!     ENDDO
+!
+!     ! AH 0410 - to update supersat for advection. The update of ss is
+!     !           performed here not in stepfields (code commented out in
+!     !           stepfields)
+!     !
+!     DS(J,K) =  QVNEW - QSATPW(J,K)
+!     q(j,k,iqss) = DS(j,k)
+!
+! !*************************************************************
+! !        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
+! !             AFTER  CONDENSATION-EVAPORATION
+! !*************************************************************
+!
+!         DO L=1,LK
+!             DIEMC(L)=AMK(J,K,L)-AMKORIG(J,K,L)!AMKORIG is the mass prior to
+!                 !bin micro, therefore DIEMC (old variable name) is
+!                 !mass resulting from bin micro
+!             DIENC(L)=ANK(J,K,L)-ANKORIG(J,K,L)!ANKORIG is the number prior to
+!                 !bin micro, therefore DIENC (old variable name) is
+!                 !number resulting from bin micro
+!         ENDDO
+!
+!         if (IRAINBIN == 1.AND.IMICROBIN == 1) then
+! !
+! !************************************************************
+! !            COLLECTION + BREAKUP
+! !************************************************************
+! !
+! ! AH 0410 - The collision-coalescence code uses the original format
+! !           of the TAU model (so is an older version than that used
+! !           in RAMS). AMKORIG and ANKORIG, which are the same as
+! !           AMKOLD and ANKOLD) are used to initialise calculations in
+! !           SXY, SCONC and BREAK. Unit conversions are performed
+! !           in the respective subroutines (this is not neccesary and
+! !           should be moved out so that AN0 and AM0 are used
+! !
+!             rmass_cw(k) = 0.0
+!
+!             loop_count = 0
+!             count = 0
+!             DO L=1,LK
+!               AMK(J,K,L)=AMKORIG(J,K,L)
+!               ANK(J,K,L)=ANKORIG(J,K,L)
+!             ENDDO
+!
+!             AM1(J,K)=0.0
+!             AN1(J,K)=0.0
+!             DO L=1,LK
+!               AM1(J,K)=AM1(J,K)+AMKORIG(J,K,L)
+!               AN1(J,K)=AN1(J,K)+ANKORIG(J,K,L)
+!             ENDDO
+!
+!
+!             IF(AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
+!
+!               if (l_coll_coal .or. docollisions) then
+!
+!
+!                  CALL SXY(J,K,DT)
+!                  CALL SCONC(J,K,DT)
+!
+!                  if (l_break .or. dobreakup) then
+!                     CALL BREAK(J,K,DT)
+!                  endif
+!
+!               endif
+!
+! !*************************************************************
+! !        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
+! !             AFTER  COLLECTION & BREAKUP
+! !*************************************************************
+!               DO L=1,LK
+!                  DIEMD(L)=AMK(J,K,L)-AMKORIG(J,K,L)
+!                  DIEND(L)=ANK(J,K,L)-ANKORIG(J,K,L)
+!               ENDDO
+!
+!               d_rmass(k) = 0.0
+!
+!               do l = 16, lk
+!                  d_rmass(k) = d_rmass(k) + DIEMD(L)
+!               enddo
+!
+!               if (jjp == 1) then
+!                  call save_dg(k,d_rmass(k)/dt,'drain_tot', i_dgtime, &
+!                       units='kg/kg/s',dim='z')
+!               else
+!                  call save_dg(k,j,d_rmass(k)/dt,'drain_tot', i_dgtime, &
+!                       units='kg/kg/s',dim='z,x')
+!               endif
+!             ELSE
+!               DO L=1,LK
+!                DIEMD(L) = 0.0
+!                DIEND(L)= 0.0
+!              ENDDO
+!            ENDIF
+!         ENDIF    !if IRAINBIN == 1.AND.IMICROBIN == 1
+!
+! !***********************************************************
+! !     UPDATING MASS & CONCENTRATION AFTER MICROPHYSICS
+! !***********************************************************
+! !      AM1(J,K)=0.0
+! !      AN1(J,K)=0.0
+!
+!         DO L=1,LK
+!             IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
+!                 !add microphysical change resulting from  nuc,cond/evap,
+!                 !collision-coalscence, breakup and sedimentation
+!                 AMK(J,K,L)=DIEMC(L)+AMKORIG(J,K,L)+DIEMD(L)+QL_SED(J,K,L)
+!                 ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)+DIEND(L)+QLN_SED(J,K,L)
+!             ELSE!only add microphysical change resulting from  nuc,cond/evap
+!                 AMK(J,K,L)=DIEMC(L)+AMKORIG(J,K,L)
+!                 ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)
+!             ENDIF
+!         ENDDO
+! !
+! !     Calculate the change in "rain bin" mass and number
+! !     (i.e. bin greater than  100 microns diameter)
+!       if (j == 0) then
+!           rmass_tot_orig = 0.0
+!           rmass_tot_new = 0.0
+!           !  d_rmass(k) = 0.0
+!           auto_con_mass(k) = 0.0
+!
+!           do l=16,lk
+!               rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
+!               rmass_tot_new = rmass_tot_new + AMK(J,K,L)
+!           enddo
+!
+!           ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
+!
+!           auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
+!
+!           if (jjp == 1) then
+!              call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+!                   units='kg/kg/s',dim='z')
+!
+!              call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+!                   units='kg/kg/s',dim='z')
+!           else
+!              call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+!                   units='kg/kg/s',dim='z,x')
+!
+!              call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+!                   units='kg/kg/s',dim='z,x')
+!
+!           endif
+!
+!       endif
+!
+! !**********************************************************
+! !     Update mass and conc, tendencies due to micro and end
+! !**********************************************************
+! !First update change in aerosol (if aerosol is not fixed)
+!
+!         if (.not. l_fix_aerosols) then
+!            DO L = 1,LN2
+!               DCCNDT=(CCN(J,K,L)-CCNOLD(J,K,L))*RDT
+!               IF ((Q(J,K,IAERO_BIN(L))+(SQ(J,K,IAERO_BIN(L))+DCCNDT)*DT)     &
+!         &         <  0.0) THEN
+!                  DCCNDT=-0.9999*CCNOLD(J,K,L)*RDT
+!               ENDIF
+!               SQ(J,K,IAERO_BIN(L))=SQ(J,K,IAERO_BIN(L))+DCCNDT
+!            ENDDO
+!         endif
+!
+!         DO L=1,LK
+! !AH 0410 - Calculate the change in mass and number due to microphysics i.e.
+! !          nucleation, cond, evap, collection and sedimentation
+! !
+!             IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
+!             ! sum the effects of cond/evap+coll/coal+sedi
+!             ! on mass and number
+!              DAMKDT=(DIEMC(L)+DIEMD(L)+QL_SED(J,K,L)) * RDT
+!              DANKDT=(DIENC(L)+DIEND(L)+QLN_SED(J,K,L)) * RDT
+!             ELSE
+!              ! only use the term from cond/evap (and nuc)
+!              DAMKDT = DIEMC(L) * RDT
+!              DANKDT = DIENC(L) * RDT
+!             ENDIF
+!
+! !AH 0410 - Call microcheck to update the source fields for bin resolved mass
+! !          and number with DAMKDT and DANKDT
+! !
+!
+!             CALL MICROcheck(J,K,L,DT,AMKORIG(J,K,L), &
+!                ANKORIG(j,k,l),SQ(J,K,ICDKG_BIN(L)), &
+!                SQ(J,K,ICDNC_BIN(L)),DAMKDT,DANKDT,RDT,Q(J,K,ICDKG_BIN(L)) &
+!                ,Q(J,K,ICDNC_BIN(L)))
+!
+!         ENDDO
+!
+!         dD(1)=xkk1(1)*2.0*1.e6
+!         do l = 2, lk
+!            dD(l)=(xkk1(l)-xkk1(l-1))*2.0*1.e6
+!         end do
+!
+!         call save_binData((xkk1(:)*2.0*1.e6),'bins_D_upper', &
+!              units='microns', longname='upper bound of droplet diameter')
+!         call save_binData(xk(:),'bins_mass_upper', &
+!              units='kg', longname='upper bound of droplet mass')
+!         call save_binData(xkmean(:),'bins', &
+!              units='kg', longname='mean droplet mass')
+!         call save_binData(((xkmean(:)*6./3141.59)**(1./3.)*1.e6), &
+!              'bins_D', units='microns' &
+!              , longname='mean droplet diameter')
+!         call save_binData(dD(:), 'dD', units='microns' &
+!              , longname='width of bin')
+!
+! ! Finally calc the microphys change in QV
+!         DQVDT(j,k)=(QVNEW-QVOLD(J,K))*RDT
 
 ! 4. calculate the change in theta due to bin microphysics
         THNEW=(TBASE(J,K) - TREF(K))*PREFRCP(K)
