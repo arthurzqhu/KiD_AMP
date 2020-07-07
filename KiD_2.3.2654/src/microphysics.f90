@@ -772,7 +772,7 @@ use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
-                             XACT, CLOUDBIN
+                             XACT 
 
 implicit none
 
