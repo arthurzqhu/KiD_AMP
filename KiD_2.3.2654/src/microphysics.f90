@@ -751,7 +751,6 @@ use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dtheta_mphys,dqv_mphys, daerosol_mphys, &
                             dhydrometeors_mphys, dss_mphys, ss, aerosol, &
                             w_half, dz_half, rho, dz, theta, hydrometeors
-
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
                                  iqss, ln2, nqp, rprefrcp, prefrcp, prefn, dzn, &
@@ -766,8 +765,8 @@ use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  AM1OLD, AN0, AM0, AN1, AM1, AMKCC, ANKCC,AN2, &
                                  DG1, SG1, dcrit, dqn_act, XK, IRAINBIN, &
                                  IMICROBIN, rmass_cw, QL_SED, QLN_SED, dD, &
-                                 xkk1, xkmean,
-
+                                 xkk1, xkmean, IRAINP, lk_cloud, CCNORIGAVG, &
+                                 dqn_reg, l_dodgs, dth_dt, dq_dt,
 use namelists, only: aero_N_init,l_advect,l_diverge
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
@@ -795,7 +794,6 @@ real, dimension(KKP,JMINP:JMAXP):: field_2d ! field for 2-D KiD diagnostics
 & ,SWF_UP    ! Upward SW flux (W/m2)
 REAL, DIMENSION(jjp) ::                                           &
 &  Z_BL_TOP  ! BL top used in radiation (m)
-REAL, DIMENSION(JJP,KKP) :: QL, QV
 REAL, DIMENSION(jjp,kkp) :: fnt_lw, sth_lw
 !     variables for fixed cooling rate
 REAL :: cool_kday,sth_lwmax,qttol
@@ -803,15 +801,15 @@ INTEGER,DIMENSION(JMINP:JMAXP) ::  K_BL_TOP
 ! Subprogram arguments
 ! IN
 INTEGER, INTENT(IN) :: I
-REAL, INTENT(IN), DIMENSION(JMINP:JMAXP,KKP) ::                       &
+REAL, DIMENSION(JMINP:JMAXP,KKP) ::                       &
 &    TH       ! potential temperature perturbation
-REAL, INTENT(IN), DIMENSION(JMINP:JMAXP,KKP,NQP) ::                   &
+REAL, DIMENSION(JMINP:JMAXP,KKP,NQP) ::                   &
 &    Q        ! moisture fields
 
 ! INOUT
-REAL, INTENT(INOUT), DIMENSION(JMINP:JMAXP,KKP) ::                    &
+REAL, DIMENSION(JMINP:JMAXP,KKP) ::                    &
 &    STH      ! potential temperature tendency
-REAL, INTENT(INOUT), DIMENSION(JMINP:JMAXP,KKP,NQP) ::                &
+REAL, DIMENSION(JMINP:JMAXP,KKP,NQP) ::                &
 &    SQ        ! moisture fields' tendency
 !
 integer ijj,ikk
@@ -864,7 +862,6 @@ real :: t
 !
 INTEGER, DIMENSION(JMINP:JMAXP) :: KQLINV
 INTEGER :: KQLMAX
-INTEGER J,K,IQ, N
 character(2) :: str2
 
 !vars in CLOUDBIN subroutine
@@ -1682,7 +1679,7 @@ DO K=2,KKP
         call save_binData(dD(:), 'dD', units='microns' &
              , longname='width of bin')
 
-  ! Finally calc the microphys change in QV
+! Finally calc the microphys change in QV
         DQVDT(j,k)=(QVNEW-QVOLD(J,K))*RDT
 
 ! 4. calculate the change in theta due to bin microphysics
@@ -1710,8 +1707,8 @@ if (.not. l_fix_aerosols) then
     DO IQ = 1, LN2
         DO J = JMINP, JMAXP
             DO K = 2, KKP
-                IF(CCNNEWAVG(IQ) <  CCNORIGAVG(IQ)                        &
-                &           .AND.CDNCEVAP(J,K) >  0.0) THEN
+                IF(CCNNEWAVG(IQ) <  CCNORIGAVG(IQ)   &
+                    & .AND.CDNCEVAP(J,K) >  0.0) THEN
                     DCCNDT = CDNCEVAP(J,K)*RDT
                     SQ(J,K,IAERO_BIN(IQ)) = SQ(J,K,IAERO_BIN(IQ)) + DCCNDT
                     dqn_reg(J,K) = DCCNDT
@@ -1748,7 +1745,8 @@ if (jjp == 1) then
             field_2d(k, j) = dqn_act(j,k)
         enddo
     enddo
-    call save_dg(field_2d(1:kkp,1:jjp), 'ccn_act', i_dgtime, units, dim='z,x')
+    call save_dg(field_2d(1:kkp,1:jjp), 'ccn_act', i_dgtime, units='#/kg/s',&
+        dim='z,x')
 endif
 
 DO K = 2,KKP
