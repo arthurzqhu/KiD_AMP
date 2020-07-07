@@ -766,7 +766,7 @@ use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  DG1, SG1, dcrit, dqn_act, XK, IRAINBIN, &
                                  IMICROBIN, rmass_cw, QL_SED, QLN_SED, dD, &
                                  xkk1, xkmean, IRAINP, lk_cloud, CCNORIGAVG, &
-                                 dqn_reg, l_dodgs, dth_dt, dq_dt,
+                                 dqn_reg, l_dodgs, dth_dt, dq_dt
 use namelists, only: aero_N_init,l_advect,l_diverge
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
