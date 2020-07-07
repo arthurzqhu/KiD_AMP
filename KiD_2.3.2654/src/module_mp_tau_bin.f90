@@ -698,7 +698,7 @@ endif                    ! sedimentation calculation
 
          ENDIF
 
-            !update fields
+         !update fields
          an1old(j,k) = 0.0
          an1(j,k) = 0.0
          DO L=1,LK
@@ -794,7 +794,7 @@ endif                    ! sedimentation calculation
 
 
 ! do activation after cond/evap, using updated supersat for timestep
-       EA(J,K) = DS(J,K)
+      EA(J,K) = DS(J,K)
 
       IF(EA(J,K) >  0.0) THEN
 
@@ -988,34 +988,34 @@ endif                    ! sedimentation calculation
 !     Calculate the change in "rain bin" mass and number
 !     (i.e. bin greater than  100 microns diameter)
       if (j == 0) then
-        rmass_tot_orig = 0.0
-        rmass_tot_new = 0.0
-      !  d_rmass(k) = 0.0
-        auto_con_mass(k) = 0.0
+          rmass_tot_orig = 0.0
+          rmass_tot_new = 0.0
+          !  d_rmass(k) = 0.0
+          auto_con_mass(k) = 0.0
 
-        do l=16,lk
-          rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
-          rmass_tot_new = rmass_tot_new + AMK(J,K,L)
-      enddo
+          do l=16,lk
+            rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
+            rmass_tot_new = rmass_tot_new + AMK(J,K,L)
+          enddo
 
-     ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
+          ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
 
-      auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
+          auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
 
-      if (jjp == 1) then
-         call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-              units='kg/kg/s',dim='z')
+          if (jjp == 1) then
+             call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+                  units='kg/kg/s',dim='z')
 
-         call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-              units='kg/kg/s',dim='z')
-      else
-         call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
+             call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+                  units='kg/kg/s',dim='z')
+          else
+             call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+                  units='kg/kg/s',dim='z,x')
 
-         call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
+             call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+                  units='kg/kg/s',dim='z,x')
 
-      endif
+          endif
 
       endif
 

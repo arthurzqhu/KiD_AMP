@@ -739,31 +739,179 @@ END SUBROUTINE init_dist_sbm
 !---------------------------------------------------------------------------------
 subroutine micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 use parameters, only: nz, nx, dt, max_nbins
+use common_physics, only: qsaturation
+Use diagnostics, only: save_dg, i_dgtime, save_binData
+Use switches, only: l_sediment, mphys_var, l_fix_aerosols
+Use switches_bin
+Use namelists, only: dosedimentation, docollisions, docondensation, &
+                     donucleation, dobreakup, l_coll_coal, l_break
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
-                            dtheta_mphys,dqv_mphys, daerosol_mphys, dhydrometeors_mphys, &
-                            dss_mphys, ss, aerosol, w_half, dz_half, rho, dz, theta, &
-                            hydrometeors 
+                            dtheta_mphys,dqv_mphys, daerosol_mphys, &
+                            dhydrometeors_mphys, dss_mphys, ss, aerosol, &
+                            w_half, dz_half, rho, dz, theta, hydrometeors
 
 use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
                                  iqss, ln2, nqp, rprefrcp, prefrcp, prefn, dzn, &
-                                 rhon, rdz_on_rhon, tref
-use module_mp_tau_bin, only: tau_bin
+                                 rhon, rdz_on_rhon, tref, IMICROBIN, IMICROBIN, &
+                                 CCNNEWTOT, CCNNEWAVG, CCNORIGTOT, eps, &
+                                 AMKORIG, ANKORIG, QSATPW, JJP, CCNOLD, CCN, &
+                                 AMKOLD, ANKOLD, DS, DUS, CDNCEVAP, am1_diag, &
+                                 an1_diag, AM0, AN0, AMN, IINHOM_mix, DUS1, &
+                                 tevap_bb, tevap_squires, t_mix, t_mix_approx, &
+                                 da_no, da_no_rat, r_int, r_bar, ssat, evap_a, &
+                                 DIEMC, DIENC, DIEMD, DIEND, ANK, AMK, AN1OLD, &
+                                 AM1OLD, AN0, AM0, AN1, AM1, AMKCC, ANKCC,AN2, &
+                                 DG1, SG1, dcrit, dqn_act, XK, IRAINBIN, &
+                                 IMICROBIN, rmass_cw, QL_SED, QLN_SED, dD, &
+                                 xkk1, xkmean,
+
 use namelists, only: aero_N_init,l_advect,l_diverge
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
+use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
+                             SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
+                             XACT
 
-integer :: j, k, iq, ih, imom
+implicit none
+
+!generic 1d and 2d KiD arrays for diagnostics
+real, dimension(KKP) :: field ! field for 1-D KiD diagnostics
+real, dimension(KKP,JMINP:JMAXP):: field_2d ! field for 2-D KiD diagnostics
+
+!variables for fixed radiative flux
+!CALL RAD_MOD
+ REAL ::                                                          &
+&  RADFAC                                                          &
+            ! factor to change from flux to heating rate
+& ,QL_1D                                                           &
+            ! q_l
+& ,SWF_NET                                                         &
+            ! Net SW flux (W/m2)
+& ,SWF_DN                                                          &
+            ! Downward SW flux (W/m2)
+& ,SWF_UP    ! Upward SW flux (W/m2)
+REAL, DIMENSION(jjp) ::                                           &
+&  Z_BL_TOP  ! BL top used in radiation (m)
+REAL, DIMENSION(JJP,KKP) :: QL, QV
+REAL, DIMENSION(jjp,kkp) :: fnt_lw, sth_lw
+!     variables for fixed cooling rate
+REAL :: cool_kday,sth_lwmax,qttol
+INTEGER,DIMENSION(JMINP:JMAXP) ::  K_BL_TOP
+! Subprogram arguments
+! IN
+INTEGER, INTENT(IN) :: I
+REAL, INTENT(IN), DIMENSION(JMINP:JMAXP,KKP) ::                       &
+&    TH       ! potential temperature perturbation
+REAL, INTENT(IN), DIMENSION(JMINP:JMAXP,KKP,NQP) ::                   &
+&    Q        ! moisture fields
+
+! INOUT
+REAL, INTENT(INOUT), DIMENSION(JMINP:JMAXP,KKP) ::                    &
+&    STH      ! potential temperature tendency
+REAL, INTENT(INOUT), DIMENSION(JMINP:JMAXP,KKP,NQP) ::                &
+&    SQ        ! moisture fields' tendency
+!
+integer ijj,ikk
+!
+!END of RADIATION DECLARATIONS
+!
+! Local variables
+!
+
+REAL,DIMENSION(JMINP:JMAXP,KKP) :: DQLDT,DNQLDT,QLOLD,QLNEW           &
+&                             , NQLOLD,NQLNEW, RAINOLD,RAINNOOLD   &
+&                             ,RAINNEW,RAINNONEW,DRAINDT,DRAINNODT &
+&                             , QSATMIX                            &
+                                       !saturation mixing ratio
+&                             , RH, RH2                            &
+                                       !relative humidity
+&                             , DTHDT                              &
+                                     ! microphysical tendency
+                                     ! in potential temperature
+&                             , DQVDT                              &
+                                     ! microphysical tendency
+                                     ! in water vapour
+&                             , TBASE                              &
+                                     !value of T around which
+                                     !saturation functions base
+&                             ,QVOLD,QTOT
+!
+REAL,DIMENSION(JMINP:JMAXP,KKP,LN2) :: CCNfrac_loc
+REAL :: THOLD                                                     &
+              !potential temp pertubation
+& ,      THNEW                                                     &
+              !potential temp pertubation after bin microphysics
+& ,      PMB                                                       &
+              !reference pressure in millibars
+& ,      vapour                                                    &
+               !total water vapour for the whole grid
+& ,      water                                                     &
+              ! total water for the whole grid
+& , u0, T_OLD, totloss, dccndt,TH2T,qln_tot
+REAL :: TOTCCNNUC, TOTEVAP,totevap2,TOTCCNREG,fein_ccnfrac
+REAL, DIMENSION(JMINP:JMAXP, KKP) :: cell_ccnreg
+REAL, DIMENSION(JMINP:JMAXP, KKP) :: t_0, qst_0
+REAL :: cloudrop
+REAL, DIMENSION(JMINP:JMAXP, KKP) :: ds_0_temp ! supersat @ beginning of the timestep
+REAL :: ds_0      ! dynamic term for supersaturation total trans
+REAL :: QmassFLD,QnumFLD
+real :: t
+!
+!local integers
+!
+INTEGER, DIMENSION(JMINP:JMAXP) :: KQLINV
+INTEGER :: KQLMAX
+INTEGER J,K,IQ, N
+character(2) :: str2
+
+!vars in CLOUDBIN subroutine
+REAL,PARAMETER :: AL=597  !latent heat of evaporation and cond
+REAL,PARAMETER :: CPBIN=0.24 !specific heat of water vapour
+REAL, DIMENSION(JMINP:JMAXP,KKP) :: CCNTOT
+REAL :: CN1
+REAL DM !the condensated mass calced in EVAP and COND routines
+real dm_cloud_evap ! the evaporated mass
+real dm_rain_evap ! the evaporated mass
+REAL DDDD!supersat percentage
+REAL DAMKDT!tendency in bin resolved mass cloud due to microphysics
+REAL DANKDT!tendency in bin resolved number cloud due to microhysics
+REAL QVNEW!vapour mixing ratio after the nucleation, before code
+          !proceeds to evap or cond, after evap or cond, this var
+          !QV + change due to nucleation and cond or evap. It is
+          !used to calc DQVDT
+REAL,DIMENSION(JMINP:JMAXP,KKP) :: TAU                                &
+                                   !microphys forcing
+&                ,VSW                                              &
+&                ,EN                                               &
+                      !estimated ETA for end of timestep
+&                ,EA   !average ETA for the timestep
+REAL :: QST_nuc,ds_force,temp_nuc,mpos
+      !added 28/04/08 for new inhom mixing method
+REAL,DIMENSION(JMINP:JMAXP,KKP) :: tau_dum
+REAL ::  delm
+
+REAL,DIMENSION(JMINP:JMAXP,KKP) :: NCC,MCC
+real, dimension(kkp) :: auto_mass, auto_num, auto_con_mass, d_rmass
+real :: rmass_tot_orig, rmass_tot_new
+real :: dtcalc
+INTEGER :: LT, IT, inhom_evap
+INTEGER :: ccn_pos, cloud_pos, count, loop_count
+
+integer :: j, k, l, iq, ih, imom
 real :: rdt
 real, dimension(nz,nx) :: tempk, qv
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
 
+
+
 !press & tempk currently not used
 
 rdt = 1./dt
+i=1
 
 ! prepare for the tau mphys
 rprefrcp(1+offset:kkp)=exner(1:kkp-offset,nx) ! I think this is upside-down in LEM
@@ -799,14 +947,12 @@ do j = jminp,jmaxp
         ih=qindices(ICDKG_BIN(iq))%ispecies
         imom=qindices(ICDKG_BIN(iq))%imoment
         do k=1,nz-offset
-!            q_lem (j, k+offset, ICDKG_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
             q_lem (j, k+offset, ICDKG_BIN(iq)) = ffcd_mass2d(k,j,iq)*col
         end do
         ! number bins
         ih=qindices(ICDNC_BIN(iq))%ispecies
         imom=qindices(ICDNC_BIN(iq))%imoment
         do k=1,nz-1
-!            q_lem (j, k+offset, ICDNC_BIN(iq)) = hydrometeors(k,j,ih)%moments(iq,imom)
             q_lem(j,k+offset,icdnc_bin(iq)) = ffcd_num2d(k,j,iq)*col
         end do
     enddo
@@ -814,7 +960,8 @@ do j = jminp,jmaxp
     w_lem(j,1+offset:kkp)=w_half(1:kkp-offset,j)
 enddo
 
-if (l_advect .or. l_diverge) then ! set the tendency due to adv and div as input -ahu
+! -------------- set the tendency due to adv and div as input -ahu ------------
+if (l_advect .or. l_diverge) then
   do j=jminp,jmaxp
      sth_lem(j,1+offset:kkp)=dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j)
      sq_lem(j,1+offset:kkp,iqv)=dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j)
@@ -857,8 +1004,816 @@ if (l_advect .or. l_diverge) then ! set the tendency due to adv and div as input
 
 end if
 
-call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)
+! ------------------------------ mphys starts ----------------------------------
+! call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)  !expand this part later -ahu
 
+TH = th_lem
+Q = q_lem
+STH = sth_lem
+SQ = sq_lem
+
+IF(IMICROBIN == 1.AND.IRAINP == 0) THEN
+
+!Calculate the domain total bin resolved CCN number for regen
+!when Ln2 >  3
+
+TOTCCNNUC = 0.0
+DO IQ = 1, Ln2
+   CCNNEWTOT(IQ) = 0.0
+   CCNNEWAVG(IQ) = 0.0
+   DO K = 2, KKP
+      DO J = JMINP, JMAXP
+         CCNNEWTOT(IQ) =  CCNNEWTOT(IQ) +(Q(J,K,IAERO_BIN(IQ))+    &
+              (SQ(J,K,IAERO_BIN(IQ))*DT))
+      ENDDO
+   ENDDO
+   TOTCCNNUC = TOTCCNNUC + (CCNORIGTOT(IQ) - CCNNEWTOT(IQ))
+ENDDO
+
+ENDIF
+
+eps = epsilon(1.0d0)
+
+do K = 2, KKP
+do J = JMINP,JMAXP
+   DO IQ=1,LK
+!AMKORIG and ANKORIG for use in positivity check of mass and number
+!change due to bin microphysics
+      AMKORIG(J,K,IQ)=Q(J,K,ICDKG_BIN(IQ)) + &
+           (SQ(J,K,ICDKG_BIN(IQ))*DT)
+      ANKORIG(J,K,IQ)=Q(J,K,ICDNC_BIN(IQ)) + &
+           (SQ(J,K,ICDNC_BIN(IQ))*DT)
+
+      if (AMKORIG(J,K,IQ) < eps .or.         &
+           ANKORIG(J,K,IQ) < eps .or.        &
+           AMKORIG(J,K,IQ) > ANKORIG(J,K,IQ)) then ! a check for large mass? -ahu
+         AMKORIG(J,K,IQ) = 0.0
+         ANKORIG(J,K,IQ) = 0.0
+      endif
+   ENDDO
+ENDDO
+ENDDO
+
+totevap = 0.0
+totevap2 = 0.0
+totccnreg = 0.0
+DS_0 = 0.0
+QLOLD(:,:) = 0.0
+NQLOLD(:,:) = 0.0
+QLNEW(:,:) = 0.0
+NQLNEW(:,:) = 0.0
+
+DO K=2,KKP
+    PMB = 0.01*PREFN(K)
+    DO J=JMINP,JMAXP
+    ! 1. set base values
+    ! a) calc ss at beginning of DT for Get_forcing
+    T_0(j,k) = TREF(K) + TH(j,k)*RPREFRCP(K)
+    QST_0(j,k) = QSATURATION(t_0(j,k),PMB)
+    DS_0 = q(j,k,IQSS) + (SQ(J,K,IQSS)*DT)
+
+    ! b) Set base values after dynamics for use in microphys
+    THOLD=TH(J,K) + (STH(J,K)*DT)
+    QVOLD(J,K)=Q(J,K,IQV) + (SQ(J,K,IQV)*DT)
+
+    DO IQ = 1, LK
+       QLOLD(J,K)=QLOLD(J,K)+(Q(J,K,ICDKG_BIN(IQ))               &
+        +(SQ(J,K,ICDKG_BIN(IQ))*DT))
+       NQLOLD(J,K)=NQLOLD(J,K)+(Q(J,K,ICDNC_BIN(IQ))               &
+        +(SQ(J,K,ICDNC_BIN(IQ))*DT))
+    ENDDO
+
+    TBASE(J,K)=TREF(K) + THOLD*RPREFRCP(K)
+
+    !
+    ! 2. calculate saturation functions
+    !
+    QSATPW(J,K)  = QSATURATION(TBASE(J,K),PMB)
+
+    ! 3. call cloudbin to calculate the bin microphysics (i.e.
+    !   nucleation, condensation, evaporation, collection, breakup)
+
+    ! CALL CLOUDBIN(I,J,K,Q,SQ,AMKORIG,ANKORIG,QSATPW,RH,TBASE,TREF,    &
+    !           DQVDT(J,K),DT,RDT,PMB,QVOLD(J,K),QLOLD(J,K),    &
+    !           totevap,totccnreg,DS_0)
+
+    ! Set values of bins before microphysics, these values do not include the
+    ! effect of dynamics from this timestep. I do not think this is needed
+    ! as all I want is a tendency due ti microphysics. The tendency for aerosol
+    ! is calculated in SUBNUC, as this is where nucleation is calculated
+
+    if (jjp == 1) then
+       call save_dg(k,rhon(k),'density', i_dgtime, units='kg/m3',dim='z')
+    endif
+
+    QVNEW = QVOLD(J,K)
+    DO L=1,LN2
+      CCNOLD(J,K,L)=Q(J,K,IAERO_BIN(L)) + (SQ(J,K,IAERO_BIN(L))*DT)
+      CCN(J,K,L) = CCNOLD(J,K,L) !this line is required so that
+      !CCN does not equal zero if DS < 0, i.e. for calc of aerosol
+                              !tendency
+    ENDDO
+
+    DO L=1,LK
+      AMKOLD(J,K,L)=AMKORIG(J,K,L)
+      ANKOLD(J,K,L)=ANKORIG(J,K,L)
+    END DO
+
+
+
+    !****************************************************************
+    !          DS() IS THE SUPERSATURATED QUANTITY
+    !****************************************************************
+    DS(J,K)=QVNEW-QSATPW(J,K)
+    DUS(J,K)=DS(J,K)/QSATPW(J,K)
+    QST_nuc = QSATPW(J,K) !used in activation calculation
+    TEMP_NUC = TBASE(J,K)
+    DS_FORCE = 0.0
+
+    IF (DT.GT.4.0) THEN
+     LT = CEILING(DT/1.0)
+     DTcalc = DT/REAL(LT)
+    ELSE
+     LT=1
+     DTcalc=DT
+    ENDIF
+
+    CDNCEVAP(j,k) = 0.0
+    am1_diag(j,k) = 0.0
+    an1_diag(j,k) = 0.0
+
+    !AH 0410 - moving all unit conversion outside
+    !        the calls for get_force, cond and evap_new
+    !        to minimise precision errors, also don't change
+    !        amkold or ankold
+    DO L=1,LK
+     IF(AMKOLD(J,K,L) > eps .AND.       &
+          ANKOLD(J,K,L) > eps )THEN
+        am0(l)=(amkold(j,k,l)*Rhon(k))/1.E3
+        an0(l)=(ankold(j,k,l)*Rhon(k))/1.E6
+        AMN(L)=am0(L)/an0(L)
+     ELSE
+        AMN(L)=0.
+        am0(l)=0.
+        an0(l)=0.
+     ENDIF
+     am1_diag(j,k) = am1_diag(j,k)+am0(l)
+     an1_diag(j,k) = an1_diag(j,k)+an0(l)
+    ENDDO
+
+    ! 3.1 nucleation happens after cond/evap for now
+
+    DO it = 1,lt
+
+       IF(IINHOM_mix == 0) then
+          VSW(J,K) = MIN(1.,-1.E+10*MAX(DS(j,k),DS_0))
+          CALL GET_FORCING(J,K,QSATPW,TBASE,DS_0,DS,                      &
+               AM0,AN0,DTcalc,TAU,EN,EA,VSW(J,K))
+
+          inhom_evap = 0
+
+       ENDIF
+
+       DM=0.0
+       dm_cloud_evap = 0.0
+       dm_rain_evap = 0.0
+       NCC(J,K)=0.0
+       MCC(J,K)=0.0
+       DUS1(J,K)=0.0
+       tevap_bb(j,k) = 0.0
+       tevap_squires(j,k) = 0.0
+       t_mix(j,k) = 0.0
+       t_mix_approx(J,K) = 0.0
+       da_no(J,K) = 0.0
+       da_no_rat(J,K) = 0.0
+       r_int(j,k) = 0.0
+       r_bar(j,k) = 0.0
+       ssat(j,k) = 0.0
+       evap_a(j,K) = 0.0
+
+       ssat(J,K) = EA(J,K)/QSATPW(J,K)
+
+       DO L=1,LK
+          DIEMC(L)=0.0
+          DIENC(L)=0.0
+          DIEMD(L)=0.0
+          DIEND(L)=0.0
+          ANK(J,k,L) = 0.0
+          AMK(j,k,l) = 0.0
+       ENDDO
+       IF (IINHOM_MIX == 0) then
+          DS_force = tau(j,k)
+          tau_dum(j,k) = tau(j,k)
+       endif
+
+    ! 3.2
+       IF (DS_force > eps .and. docondensation) THEN
+    !*****************************************************************
+    !        CONDENSATION
+    !     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
+    !****************************************************************
+          AN1OLD(J,K) = 0.0
+          AM1OLD(j,k) = 0.0
+          DO L=1,LK
+             AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
+             AM1OLD(j,K) = AM1OLD(j,K)+am0(l)
+          ENDDO
+
+
+       !***************************************************************
+          CALL COND_new(J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,QVNEW,      &
+               TAU_dum,it,LT)
+       !***************************************************************
+
+
+          CALL REBIN(J,K)
+
+          AN1(J,K) = 0.0
+          AM1(j,k) = 0.0
+          DO L=1,LK
+             AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
+             AM1(J,K) = AM1(j,k) + (AMK(j,k,l))
+          ENDDO
+
+          IF(ABS((AN1(J,K))-(AN1OLD(J,K))) >  1.) THEN
+             print *, 'cond conservation prob after rebin'
+             print *, 'AN1OLD', AN1OLD(j,k),k,j
+             print *, 'AN1', AN1(j,k),k,j
+          ENDIF
+
+       ! new code to calc the change in total mass and num from
+       ! rain dropsize bins due to condensation. This is
+       ! sort-of equivalent to the autoconversion in the Bulk scheme
+          auto_mass(k) = 0.0
+          auto_num(k) = 0.0
+          DO L = 16, LK
+
+             auto_mass(k) = auto_mass(k) + (AMK(J,K,L) - AM0(L))
+             auto_num(k) = auto_num(k) + (ANK(J,K,L) - AN0(L))
+
+          enddo
+
+          if (auto_mass(k) < 0.0 .or. auto_num(k) < 0.0 ) then
+             auto_mass(k) = 0.0
+             auto_num(k) = 0.0
+          endif
+
+          if (jjp == 1) then
+             call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+                  i_dgtime, units='kg/kg/s',dim='z')
+             call save_dg(k,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
+                  i_dgtime, units='#/kg/s',dim='z')
+          else
+             call save_dg(k,j,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+                  i_dgtime, units='kg/kg/s',dim='z,x')
+             call save_dg(k,j,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
+                  i_dgtime, units='#/kg/s',dim='z,x')
+          endif
+
+       ELSEIF(DS_force < -eps) then !DS_force < 0.0
+    !****************************************************************
+    !                     EVAPORATION
+    !     EVAP RECEIVES MKD,NKD RETURNS MK,NK
+    !***********************************************************
+           AN1OLD(J,K) = 0.0
+
+           DO L=1,LK
+              AN1OLD(J,K) =AN1OLD(J,K)+AN0(l)
+           ENDDO
+
+           IF (AN1OLD(J,K) > eps) then
+
+              CALL EVAP_new(I,J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,      &
+                   QVNEW,TAU_dum,EA,it,LT,inhom_evap,delm)
+
+              CALL REBIN(J,K)
+              !
+              AN1(J,K) = 0.0
+              DO L=1,LK
+                 AN1(J,K) = AN1(J,K) + (ANK(J,K,L))
+              ENDDO
+
+           ELSE
+              DO L=1,LK
+                 AMK(J,K,L)=AM0(L)
+                 ANK(J,K,L)=AN0(L)
+              ENDDO
+           ENDIF
+        ELSE
+
+           DO L=1,LK
+              AMK(J,K,L)=am0(L)
+              ANK(J,K,L)=an0(L)
+           ENDDO
+       ENDIF
+
+         !update fields
+         an1old(j,k) = 0.0
+         an1(j,k) = 0.0
+         DO L=1,LK
+            ! n0 and m0 in cjs units for next lt iteration if
+            ! needed
+            AN0(L)=ank(j,k,L)
+            AM0(L)=amk(j,k,L)
+            IF(AM0(L) >  eps .AND.                       &
+                 AN0(L) > eps)THEN
+               AMN(L)=AM0(L)/AN0(L)
+            ELSE
+               AMN(L)=0.
+            ENDIF
+    !
+    ! AH 0410 - convert mass and number back to kg/kg and #/kg
+    !           respectively for source term calc and thermodynamic
+    !           updates
+    !
+            amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)
+            ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)
+            if(amk(j,k,l) < eps.or.                 &
+                 ank(j,k,l) < eps) then
+               amk(j,k,l) = 0.0
+               ank(j,k,l) = 0.0
+            endif
+            an1old(j,k) = an1old(j,k) + ankorig(j,k,l)
+            an1(j,k) = an1(j,k) + ank(j,k,l)
+
+         ENDDO
+
+    ! AH 0410 - work out total mass and number change due to cond
+    !           and evap
+         dm = 0.0
+         do l = 1,lk
+            dm = dm + (amk(j,k,l) - amkorig(j,k,l))
+         enddo
+
+    ! AH 0410 - Update thermodynamic field once evap and cond
+    !           finished
+         if ( it .ne. lt )  DS_0 = EN(j,k)
+
+         TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
+         QVNEW = QVNEW - DM
+
+         QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
+         DS(J,K)=QVNEW-QSATPW(J,K)
+    ENDDO               !end of iteration over LT
+
+    !subtract total number after evaporation, from total number before evap
+    !this value tells the number of droplets that have evaporated completely
+    !
+      IF (AN1(J,K) >  AN1OLD(J,K)) THEN
+         CDNCEVAP(J,K) = 0.0
+      ELSE
+         CDNCEVAP(J,K) = (AN1OLD(J,K) - (AN1(J,K)))
+      ENDIF
+
+      if (jjp > 1) then
+         !    diagnostics for total cond/evap rate liquid water (change in mass)
+         call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
+              units='kg/kg/s',dim='z,x')
+         !    cond/evap rate of cloud
+         do l = 1,lk_cloud
+            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+         enddo
+         call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
+              units='kg/kg/s',dim='z,x')
+         !     cond/evap rate of rain
+         do l = lk_cloud+1, lk
+            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+         enddo
+         call save_dg(k,j,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
+              units='kg/kg/s',dim='z,x')
+      else
+         !    diagnostics for total cond/evap rate liquid water (change in mass)
+         call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
+              units='kg/kg/s',dim='z')
+         !    cond/evap rate of cloud
+         do l = 1,lk_cloud
+            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+         enddo
+         call save_dg(k,dm_cloud_evap/dt,'dm_cloud', i_dgtime, &
+              units='kg/kg/s',dim='z')
+         !     cond/evap rate of rain
+         do l = lk_cloud+1, lk
+            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+         enddo
+         call save_dg(k,dm_rain_evap/dt,'dm_rain', i_dgtime, &
+              units='kg/kg/s',dim='z')
+      endif
+    ! 3.2 do activation after cond/evap, using updated supersat for timestep
+    EA(J,K) = DS(J,K)
+
+    IF(EA(J,K) >  0.0) THEN
+
+      AN1OLD(J,K) = 0.0
+      AM1OLD(J,K) = 0.0
+      CCNTOT(J,K) = 0.0
+      DO L = 1, LK
+        AN1OLD(J,K)  = AN1OLD(J,K) +ANK(J,K,L)
+        AM1OLD(J,K)  = AM1OLD(J,K) +AMK(J,K,L)
+      ENDDO
+
+      DO L = 1, LN2
+        CCNTOT(J,K) =  CCNTOT(J,K) + CCNOLD(J,K,L)
+      ENDDO
+
+      AN1(J,K) = 0.0
+      AM1(J,K) = 0.0
+      amkcc(1) = 0.0
+      ankcc(1) = 0.0
+
+      DO L = 1, LK
+        AN1(J,K) = AN1(J,K) + ANK(J,K,L)
+      ENDDO
+
+      AM1(J,K) = AMK(J,K,1)
+      DDDD=(EA(J,K)/QSATPW(J,K))*100
+
+      ccn_pos = 1
+      cloud_pos = 1
+
+      CN1 = CCN(j,k,ccn_pos)/rhon(k) ! convert to /kg
+
+      if (.not. l_fix_aerosols) then
+         AN2(J,K) = MAX(0.,                                            &
+    &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
+            CN1)
+
+         !adjust CCN to show the removal of CCN by activation
+          CCN(j,k,ccn_pos) = (CN1 - AN2(J,K))*rhon(k) ! convert to /m^3
+
+      else
+         AN2(J,K) = MAX(0.,                                            &
+    &       XACT(tbase(j,k),DDDD,DG1,SG1,dcrit(j,k))*                  &
+            CN1-AN1(J,K))
+
+    !     &       CCN(J,K,ccn_pos)-AN1(J,K))
+
+      endif
+
+      dqn_act(J,K) = AN2(J,K)/dt
+
+      ANK(J,K,1) = ANK(J,K,1) + AN2(J,K)
+      ! the 0.25 factor attempts to accomodate for the fact
+      ! that not all CCN will grow to the size of the 1st bin
+      AMK(J,K,1) = AMK(J,K,1) + AN2(J,K)*XK(1)*0.25
+      AMK(J,K,1) = MAX(ANK(J,K,1)*XK(1)*1.01, AMK(J,K,1))
+
+      MCC(J,K) = AMK(J,K,1) - AM1(J,K)
+
+      AM1(j,k) = 0.0
+      DO L = 1, LK
+        AM1(J,K) = AM1(J,K) + AMK(J,K,L)
+      ENDDO
+
+    !calculate the new termodynamic fields following activation
+      TBASE(J,K)=TBASE(J,K)+AL/CPBIN*MCC(J,K)
+      QVNEW = QVNEW - MCC(J,K)
+      QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
+    ENDIF                          ! end of do activation
+
+    AN1(j,k) = 0.0
+    DO L = 1, LK
+      AN1(J,K) = AN1(J,K) + ANK(J,K,L)
+    ENDDO
+
+    ! AH 0410 - to update supersat for advection. The update of ss is
+    !           performed here not in stepfields (code commented out in
+    !           stepfields)
+    !
+    DS(J,K) =  QVNEW - QSATPW(J,K)
+    q(j,k,iqss) = DS(j,k)
+
+!*************************************************************
+!        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
+!             AFTER  CONDENSATION-EVAPORATION
+!*************************************************************
+
+        DO L=1,LK
+            DIEMC(L)=AMK(J,K,L)-AMKORIG(J,K,L)!AMKORIG is the mass prior to
+                !bin micro, therefore DIEMC (old variable name) is
+                !mass resulting from bin micro
+            DIENC(L)=ANK(J,K,L)-ANKORIG(J,K,L)!ANKORIG is the number prior to
+                !bin micro, therefore DIENC (old variable name) is
+                !number resulting from bin micro
+        ENDDO
+
+        if (IRAINBIN == 1.AND.IMICROBIN == 1) then
+!
+!************************************************************
+!            COLLECTION + BREAKUP
+!************************************************************
+!
+! AH 0410 - The collision-coalescence code uses the original format
+!           of the TAU model (so is an older version than that used
+!           in RAMS). AMKORIG and ANKORIG, which are the same as
+!           AMKOLD and ANKOLD) are used to initialise calculations in
+!           SXY, SCONC and BREAK. Unit conversions are performed
+!           in the respective subroutines (this is not neccesary and
+!           should be moved out so that AN0 and AM0 are used
+!
+            rmass_cw(k) = 0.0
+
+            loop_count = 0
+            count = 0
+            DO L=1,LK
+              AMK(J,K,L)=AMKORIG(J,K,L)
+              ANK(J,K,L)=ANKORIG(J,K,L)
+            ENDDO
+
+            AM1(J,K)=0.0
+            AN1(J,K)=0.0
+            DO L=1,LK
+              AM1(J,K)=AM1(J,K)+AMKORIG(J,K,L)
+              AN1(J,K)=AN1(J,K)+ANKORIG(J,K,L)
+            ENDDO
+
+
+            IF(AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
+
+              if (l_coll_coal .or. docollisions) then
+
+
+                 CALL SXY(J,K,DT)
+                 CALL SCONC(J,K,DT)
+
+                 if (l_break .or. dobreakup) then
+                    CALL BREAK(J,K,DT)
+                 endif
+
+              endif
+
+!*************************************************************
+!        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
+!             AFTER  COLLECTION & BREAKUP
+!*************************************************************
+              DO L=1,LK
+                 DIEMD(L)=AMK(J,K,L)-AMKORIG(J,K,L)
+                 DIEND(L)=ANK(J,K,L)-ANKORIG(J,K,L)
+              ENDDO
+
+              d_rmass(k) = 0.0
+
+              do l = 16, lk
+                 d_rmass(k) = d_rmass(k) + DIEMD(L)
+              enddo
+
+              if (jjp == 1) then
+                 call save_dg(k,d_rmass(k)/dt,'drain_tot', i_dgtime, &
+                      units='kg/kg/s',dim='z')
+              else
+                 call save_dg(k,j,d_rmass(k)/dt,'drain_tot', i_dgtime, &
+                      units='kg/kg/s',dim='z,x')
+              endif
+            ELSE
+              DO L=1,LK
+               DIEMD(L) = 0.0
+               DIEND(L)= 0.0
+             ENDDO
+           ENDIF
+        ENDIF    !if IRAINBIN == 1.AND.IMICROBIN == 1
+
+!***********************************************************
+!     UPDATING MASS & CONCENTRATION AFTER MICROPHYSICS
+!***********************************************************
+!      AM1(J,K)=0.0
+!      AN1(J,K)=0.0
+
+        DO L=1,LK
+            IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
+                !add microphysical change resulting from  nuc,cond/evap,
+                !collision-coalscence, breakup and sedimentation
+                AMK(J,K,L)=DIEMC(L)+AMKORIG(J,K,L)+DIEMD(L)+QL_SED(J,K,L)
+                ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)+DIEND(L)+QLN_SED(J,K,L)
+            ELSE!only add microphysical change resulting from  nuc,cond/evap
+                AMK(J,K,L)=DIEMC(L)+AMKORIG(J,K,L)
+                ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)
+            ENDIF
+        ENDDO
+!
+!     Calculate the change in "rain bin" mass and number
+!     (i.e. bin greater than  100 microns diameter)
+      if (j == 0) then
+          rmass_tot_orig = 0.0
+          rmass_tot_new = 0.0
+          !  d_rmass(k) = 0.0
+          auto_con_mass(k) = 0.0
+
+          do l=16,lk
+              rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
+              rmass_tot_new = rmass_tot_new + AMK(J,K,L)
+          enddo
+
+          ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
+
+          auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
+
+          if (jjp == 1) then
+             call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+                  units='kg/kg/s',dim='z')
+
+             call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+                  units='kg/kg/s',dim='z')
+          else
+             call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+                  units='kg/kg/s',dim='z,x')
+
+             call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+                  units='kg/kg/s',dim='z,x')
+
+          endif
+
+      endif
+
+!**********************************************************
+!     Update mass and conc, tendencies due to micro and end
+!**********************************************************
+!First update change in aerosol (if aerosol is not fixed)
+
+        if (.not. l_fix_aerosols) then
+           DO L = 1,LN2
+              DCCNDT=(CCN(J,K,L)-CCNOLD(J,K,L))*RDT
+              IF ((Q(J,K,IAERO_BIN(L))+(SQ(J,K,IAERO_BIN(L))+DCCNDT)*DT)     &
+        &         <  0.0) THEN
+                 DCCNDT=-0.9999*CCNOLD(J,K,L)*RDT
+              ENDIF
+              SQ(J,K,IAERO_BIN(L))=SQ(J,K,IAERO_BIN(L))+DCCNDT
+           ENDDO
+        endif
+
+        DO L=1,LK
+!AH 0410 - Calculate the change in mass and number due to microphysics i.e.
+!          nucleation, cond, evap, collection and sedimentation
+!
+            IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
+            ! sum the effects of cond/evap+coll/coal+sedi
+            ! on mass and number
+             DAMKDT=(DIEMC(L)+DIEMD(L)+QL_SED(J,K,L)) * RDT
+             DANKDT=(DIENC(L)+DIEND(L)+QLN_SED(J,K,L)) * RDT
+            ELSE
+             ! only use the term from cond/evap (and nuc)
+             DAMKDT = DIEMC(L) * RDT
+             DANKDT = DIENC(L) * RDT
+            ENDIF
+
+!AH 0410 - Call microcheck to update the source fields for bin resolved mass
+!          and number with DAMKDT and DANKDT
+!
+
+            CALL MICROcheck(J,K,L,DT,AMKORIG(J,K,L), &
+               ANKORIG(j,k,l),SQ(J,K,ICDKG_BIN(L)), &
+               SQ(J,K,ICDNC_BIN(L)),DAMKDT,DANKDT,RDT,Q(J,K,ICDKG_BIN(L)) &
+               ,Q(J,K,ICDNC_BIN(L)))
+
+        ENDDO
+
+        dD(1)=xkk1(1)*2.0*1.e6
+        do l = 2, lk
+           dD(l)=(xkk1(l)-xkk1(l-1))*2.0*1.e6
+        end do
+
+        call save_binData((xkk1(:)*2.0*1.e6),'bins_D_upper', &
+             units='microns', longname='upper bound of droplet diameter')
+        call save_binData(xk(:),'bins_mass_upper', &
+             units='kg', longname='upper bound of droplet mass')
+        call save_binData(xkmean(:),'bins', &
+             units='kg', longname='mean droplet mass')
+        call save_binData(((xkmean(:)*6./3141.59)**(1./3.)*1.e6), &
+             'bins_D', units='microns' &
+             , longname='mean droplet diameter')
+        call save_binData(dD(:), 'dD', units='microns' &
+             , longname='width of bin')
+
+  ! Finally calc the microphys change in QV
+        DQVDT(j,k)=(QVNEW-QVOLD(J,K))*RDT
+
+! 4. calculate the change in theta due to bin microphysics
+        THNEW=(TBASE(J,K) - TREF(K))*PREFRCP(K)
+        DTHDT(J,K)=(THNEW-THOLD)*RDT
+        totevap = totevap + CDNCEVAP(J,K)
+    ENDDO
+ENDDO
+
+!
+!regeneration for single prognostic CCN variable
+if (.not. l_fix_aerosols) then
+    DO IQ = 1, LN2
+        CCNNEWTOT(IQ) = 0.0
+        CCNNEWAVG(IQ) = 0.0
+        DO J = JMINP, JMAXP
+            DO K = 2, KKP
+                CCNNEWTOT(IQ) =  CCNNEWTOT(IQ) + (Q(J,K,IAERO_BIN(IQ))+   &
+                &          (SQ(J,K,IAERO_BIN(IQ))*DT))
+            ENDDO
+        ENDDO
+        TOTCCNNUC = TOTCCNNUC + (CCNORIGTOT(IQ) - CCNNEWTOT(IQ))
+        CCNNEWAVG(IQ) = CCNNEWTOT(IQ)/(JJP*(KKP))
+    ENDDO
+    DO IQ = 1, LN2
+        DO J = JMINP, JMAXP
+            DO K = 2, KKP
+                IF(CCNNEWAVG(IQ) <  CCNORIGAVG(IQ)                        &
+                &           .AND.CDNCEVAP(J,K) >  0.0) THEN
+                    DCCNDT = CDNCEVAP(J,K)*RDT
+                    SQ(J,K,IAERO_BIN(IQ)) = SQ(J,K,IAERO_BIN(IQ)) + DCCNDT
+                    dqn_reg(J,K) = DCCNDT
+                    CDNCEVAP(J,K) = 0.0
+                ELSE
+                    dqn_reg(j,k) = 0.0
+                    CDNCEVAP(J,K) = 0.0
+              ENDIF
+            ENDDO
+        ENDDO
+    ENDDO
+
+    if (jjp == 1) then
+        field(:) = dqn_reg(jjp,:)
+        call save_dg(field,'ccn_reg', i_dgtime, &
+             units='#/kg/s',dim='z')
+    else
+        do K = 2,KKP
+            do J = JMINP, JMAXP
+            field_2d(k, j) = dqn_reg(j,k)
+            enddo
+        enddo
+        call save_dg(field_2d(1:kkp,1:jjp),'ccn_reg', i_dgtime, &
+            units='#/kg/s',dim='z,x')
+    endif
+endif
+
+if (jjp == 1) then
+    field(:) = dqn_act(jjp,:)
+    call save_dg(field,'ccn_act', i_dgtime, units='#/kg/s',dim='z')
+    else
+    do  K = 2,KKP
+        do J = JMINP, JMAXP
+            field_2d(k, j) = dqn_act(j,k)
+        enddo
+    enddo
+    call save_dg(field_2d(1:kkp,1:jjp), 'ccn_act', i_dgtime, units, dim='z,x')
+endif
+
+DO K = 2,KKP
+    DO J = JMINP,JMAXP
+        STH(J,K) = STH(J,K) + DTHDT(J,K)
+        SQ(J,K,IQV) = SQ(J,K,IQV)+DQVDT(J,K)
+
+        DO IQ=1,LK
+        !Call microcheck to update the source fields for bin resolved mass
+        !and number, and check that small numbers are not causing erroneous
+        !values of mass and number that lead to numerical instabilities
+
+            IF((Q(J,K,ICDKG_BIN(IQ))+(SQ(J,K,ICDKG_BIN(IQ))*DT)) < 0.0 &
+            .or.(Q(J,K,ICDNC_BIN(IQ))+(SQ(J,K,ICDNC_BIN(IQ))*DT)) < 0.0) THEN
+                QLNEW(J,K)=QLNEW(J,K)
+                NQLNEW(J,K)=NQLNEW(J,K)
+            ELSE
+                QLNEW(J,K)=QLNEW(J,K)+(Q(J,K,ICDKG_BIN(IQ))               &
+                              +(SQ(J,K,ICDKG_BIN(IQ))*DT))
+                NQLNEW(J,K)=NQLNEW(J,K)+(Q(J,K,ICDNC_BIN(IQ))             &
+                              +(SQ(J,K,ICDNC_BIN(IQ))*DT))
+            ENDIF
+        ENDDO
+        DQLDT(J,K)=(QLNEW(J,K)-QLOLD(J,K))*RDT
+        DNQLDT(J,K)=(NQLNEW(J,K)-NQLOLD(J,K))*RDT
+    ENDDO
+
+ENDDO
+
+! 6. calculate effective radius for radiation
+CALL REFFCALC(Q,SQ,DT,RDT)
+ !
+! 7. update diagnostic fields if necessary
+!
+DO K = 2, KKP
+    DO J = JMINP, JMAXP
+        IF(l_dodgs)THEN
+            dth_dt(j,k) = DTHDT(J,K)
+            dq_dt(j,k,iqv) = DQVDT(J,K)
+        ENDIF
+    ENDDO
+ENDDO
+
+do j=jminp,jmaxp
+    do k=1,kkp
+        do iq=1,lk
+            if (q(j,k,icdkg_bin(iq))>.1) then
+                !print*, 'q', j,k,iq,q(j,k,icdkg_bin(iq))
+                !print*, 'sq', j,k,iq,sq(j,k,icdkg_bin(iq))
+                stop
+            endif
+        enddo
+    enddo
+enddo
+
+if (l_sediment .or. dosedimentation) then
+
+    CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
+
+endif                    ! sedimentation calculation
+
+! ------------------------------- mphys ends -----------------------------------
+
+! ---------- sq and sth were tendencies due to mphys + adv + div. -------------
+! ---------------------- set them as only due to mphys. -----------------------
 do j=jminp,jmaxp
     if (l_advect .or. l_diverge) then
         sth_lem(j,1+offset:kkp)=sth_lem(j,1+offset:kkp)     &
@@ -898,10 +1853,7 @@ do j=jminp,jmaxp
     if (offset==1) sq_lem(j,1,1)=0
     tempk(1:kkp-offset,j) = ((tempk(1:kkp-offset,j)/exner(1:kkp-offset,j)) &
                             + sth_lem(j,1+offset:kkp)*dt)*exner(1:kkp-offset,j)
-    qv(1:kkp-offset,j) = qv(1:kkp-offset,j) + sq_lem(j,1+offset:kkp,iqv)*dt    
-
-!    dtheta_mphys(1:kkp-offset,j)=sth_lem(j,1+offset:kkp)
-!    dqv_mphys(1:kkp-offset,j)=sq_lem(j,1+offset:kkp,iqv)
+    qv(1:kkp-offset,j) = qv(1:kkp-offset,j) + sq_lem(j,1+offset:kkp,iqv)*dt
 
 !
 !   update supersaturation field here (not in step fields)
@@ -919,35 +1871,14 @@ do j=jminp,jmaxp
     enddo
 
     do iq=1,lk
-!        ih=qindices(icdkg_bin(iq))%ispecies
-!        imom=qindices(icdkg_bin(iq))%imoment
         do k=1,nz-offset
-!            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =         &
-!                   sq_lem(j,k+offset,icdkg_bin(iq))!/col
             ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k+offset,icdkg_bin(iq))*dt/col
         end do
-!        ih=qindices(icdnc_bin(iq))%ispecies
-!        imom=qindices(icdnc_bin(iq))%imoment
         do k=1,nz-offset
-!            dhydrometeors_mphys(k,j,ih)%moments(iq,imom) =        &
-!                sq_lem(j,k+offset,icdnc_bin(iq))!/col
             ffcd_num2d(k,j,iq) = ffcd_num2d(k,j,iq) + sq_lem(j,k+offset,icdnc_bin(iq))*dt/col
         end do
     end do
 end do
-
-! output to ffcd after mphys, might not be right -ahu
-!do j=jminp,jmaxp
-!    do k=1,nz-1
-!!        qv(k,j) = qv(k,j)+sq_lem(j,k,iqv)
-!!        ss(k,j) = ss(k,j)+sq_lem(j,k,iqss)
-!!        thpert(k,j) = th_lem(j,k)
-!        do iq=1,lk
-!            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k,icdkg_bin(iq))*dt/col
-!            ffcd_num2d(k,j,iq) = ffcd_num2d(k,j,iq) + sq_lem(j,k,icdnc_bin(iq))*dt/col
-!        enddo
-!    enddo
-!enddo
 
 
 ! check NaN
@@ -970,13 +1901,9 @@ if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
 !    print*, ffcd_mass2d(40,1,:)
 !    print*, ffcd_num2d(40,1,:)
 !    print*, '**at least the mphys routine finished**'
-stop
+    stop
 
 end if
-
-!print*, q_lem(1,30,15), sq_lem(1,30,15)
-!print*, 'mass',ffcd_mass2d(30,1,1)
-!print*, 'num', ffcd_num2d(30,1,1)
 
 
 end subroutine micro_proc_tau
