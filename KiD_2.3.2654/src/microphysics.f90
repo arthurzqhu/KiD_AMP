@@ -772,7 +772,7 @@ use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
-                             XACT 
+                             XACT
 
 implicit none
 
@@ -1051,6 +1051,12 @@ do J = JMINP,JMAXP
 ENDDO
 ENDDO
 
+if (l_sediment .or. dosedimentation) then
+
+    CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
+
+endif                    ! sedimentation calculation
+
 totevap = 0.0
 totevap2 = 0.0
 totccnreg = 0.0
@@ -1158,8 +1164,6 @@ DO K=2,KKP
      an1_diag(j,k) = an1_diag(j,k)+an0(l)
     ENDDO
 
-    ! 3.1 nucleation happens after cond/evap for now
-
     DO it = 1,lt
 
        IF(IINHOM_mix == 0) then
@@ -1203,12 +1207,13 @@ DO K=2,KKP
           tau_dum(j,k) = tau(j,k)
        endif
 
-    ! 3.2
+! 3.1 cond/evap
+
        IF (DS_force > eps .and. docondensation) THEN
-    !*****************************************************************
-    !        CONDENSATION
-    !     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
-    !****************************************************************
+!*****************************************************************
+!        CONDENSATION
+!     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
+!****************************************************************
           AN1OLD(J,K) = 0.0
           AM1OLD(j,k) = 0.0
           DO L=1,LK
@@ -1217,10 +1222,10 @@ DO K=2,KKP
           ENDDO
 
 
-       !***************************************************************
+!***************************************************************
           CALL COND_new(J,K,DM,TBASE,QSATPW,RH,Q,SQ,DT,RDT,PMB,QVNEW,      &
                TAU_dum,it,LT)
-       !***************************************************************
+!***************************************************************
 
 
           CALL REBIN(J,K)
@@ -1268,7 +1273,7 @@ DO K=2,KKP
           endif
 
        ELSEIF(DS_force < -eps) then !DS_force < 0.0
-    !****************************************************************
+!****************************************************************
     !                     EVAPORATION
     !     EVAP RECEIVES MKD,NKD RETURNS MK,NK
     !***********************************************************
@@ -1395,7 +1400,8 @@ DO K=2,KKP
          call save_dg(k,dm_rain_evap/dt,'dm_rain', i_dgtime, &
               units='kg/kg/s',dim='z')
       endif
-    ! 3.2 do activation after cond/evap, using updated supersat for timestep
+
+! 3.2 do activation after cond/evap, using updated supersat for timestep
     EA(J,K) = DS(J,K)
 
     IF(EA(J,K) >  0.0) THEN
@@ -1494,7 +1500,8 @@ DO K=2,KKP
         ENDDO
 
         if (IRAINBIN == 1.AND.IMICROBIN == 1) then
-!
+
+! 3.3 
 !************************************************************
 !            COLLECTION + BREAKUP
 !************************************************************
@@ -1801,12 +1808,6 @@ do j=jminp,jmaxp
         enddo
     enddo
 enddo
-
-if (l_sediment .or. dosedimentation) then
-
-    CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
-
-endif                    ! sedimentation calculation
 
 th_lem = TH
 q_lem = Q

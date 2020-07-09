@@ -202,6 +202,12 @@ module module_mp_tau_bin
         ENDDO
      ENDDO
 
+     if (l_sediment .or. dosedimentation) then
+
+        CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
+
+     endif                    ! sedimentation calculation
+
      totevap = 0.0
      totevap2 = 0.0
      totccnreg = 0.0
@@ -373,12 +379,6 @@ do j=jminp,jmaxp
         enddo
     enddo
 enddo
-
-if (l_sediment .or. dosedimentation) then
-
-   CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
-
-endif                    ! sedimentation calculation
 
      END subroutine TAU_BIN
 
