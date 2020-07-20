@@ -208,7 +208,7 @@ contains
     end do
 
     !hydrometeors
-    
+
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))
@@ -216,26 +216,33 @@ contains
           do k=1,nz
              field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
              if (num_h_bins(ih) > 1) then
-                field_bin_c(k) = sum(hydrometeors(k,nx,ih)%moments(1:split_bins,imom))
-                field_bin_r(k) = sum(hydrometeors(k,nx,ih)%moments(split_bins+1:max_nbins,imom))
+                 if (ih==1) then
+                     field(k) = sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))
+                 elseif (if==2) then
+                     field(k) = sum(hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
+                 endif
              endif
           end do
+
           call save_dg(field, name, i_dgtime,  units,dim=dims)
 
-          if (num_h_bins(ih) > 1) then
-             name=trim('cloud_only_'//trim(mom_names(imom)))
-             call save_dg(field_bin_c, name, i_dgtime, units, dim=dims)
-             name=trim('rain_only_'//trim(mom_names(imom)))
-             call save_dg(field_bin_r, name, i_dgtime, units, dim=dims)
-             do ibin= 1,num_h_bins(ih)
-                field_bin(:,ibin) = 0.0
-                do k=1,nz
-                   field_bin(k,ibin) = hydrometeors(k,nx,ih)%moments(ibin,imom)
-                end do
-             end do
-             name=trim(h_names(ih))//'_bin_'//trim(mom_names(imom))
-             call save_dg('bin',field_bin, name, i_dgtime,  units,dim=dims)
-          end if
+          ! if (num_h_bins(ih) > 1) then
+          !    name=trim('cloud_only_'//trim(mom_names(imom)))
+          !    call save_dg(field_bin_c, name, i_dgtime, units, dim=dims)
+          !    name=trim('rain_only_'//trim(mom_names(imom)))
+          !    call save_dg(field_bin_r, name, i_dgtime, units, dim=dims)
+          !    do ibin= 1,num_h_bins(ih)
+          !       field_bin(:,ibin) = 0.0
+          !       do k=1,nz
+          !          field_bin(k,ibin) = hydrometeors(k,nx,ih)%moments(ibin,imom)
+          !       end do
+          !    end do
+          !
+          !    ! cloud_bin and rain_bin can be derived at analysis,
+          !    ! commented out for smaller file size -ahu
+          !    ! name=trim(h_names(ih))//'_bin_'//trim(mom_names(imom))
+          !    ! call save_dg('bin',field_bin, name, i_dgtime,  units,dim=dims)
+          ! end if
        end do
     end do
 
@@ -945,7 +952,7 @@ contains
 
     ! We're assuming diagnostics are instant for now
     ! could put in an optional argument later to do
-    ! averaged, accumulated, etc. later. 
+    ! averaged, accumulated, etc. later.
     dg=>instant_column
     dg_index=>ID_instant_column
 
@@ -1244,7 +1251,7 @@ contains
        dg(ivar)%longname=trim(clongname)
     end if
     dg(ivar)%data(itime)=value
- 
+
   end subroutine save_dg_scalar_sp
 
   subroutine save_dg_1d_dp(field, name, itime, units, dim, longname)
