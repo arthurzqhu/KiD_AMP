@@ -214,8 +214,9 @@ contains
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))
           units=trim(mom_units(imom))
           do k=1,nz
-             field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
-             if (num_h_bins(ih) > 1) then
+             if (num_h_bins(ih) == 1) then
+                 field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
+             elseif (num_h_bins(ih) > 1) then
                  if (ih==1) then
                      field(k) = sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))
                  elseif (if==2) then
@@ -280,9 +281,19 @@ contains
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_adv'
           units=trim(mom_units(imom))//'/s'
-          do k=1,nz
-             field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
-          end do
+          if (num_h_bins(ih) == 1)then
+              do k=1,nz
+                 field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
+              end do
+          elseif (num_h_bins(ih) > 1)then
+              if (ih==1) then
+                  field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))
+              elseif (ih==2) then
+                  field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+max_nbins,imom))
+              else
+                  ! need in case there's ice -ahu
+              endif
+          endif
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
@@ -316,9 +327,20 @@ contains
           do imom=1,num_h_moments(ih)
              name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_div'
              units=trim(mom_units(imom)//'/s')
-             do k=1,nz
-                field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
-             enddo
+
+             if (num_h_bins(ih) == 1)then
+                 do k=1,nz
+                    field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
+                 end do
+             elseif (num_h_bins(ih) > 1)then
+                 if (ih==1) then
+                     field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))
+                 elseif (ih==2) then
+                     field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+max_nbins,imom))
+                 else
+                      ! need in case there's ice -ahu
+                 endif
+             endif
              call save_dg(field, name, i_dgtime,  units,dim=dims)
           end do
        end do
@@ -352,9 +374,21 @@ contains
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_mphys'
           units=trim(mom_units(imom)//'/s')
-          do k=1,nz
-             field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
-          end do
+
+          if (num_h_bins(ih) == 1)then
+              do k=1,nz
+                 field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
+              end do
+          elseif (num_h_bins(ih) > 1)then
+              if (ih==1) then
+                  field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))
+              elseif (ih==2) then
+                  field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+max_nbins,imom))
+              else
+                  ! need in case there's ice -ahu
+              endif
+          endif
+
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
@@ -375,9 +409,20 @@ contains
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_force'
           units=trim(mom_units(imom))//'/s'
-          do k=1,nz
-             field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
-          end do
+
+          if (num_h_bins(ih) == 1)then
+              do k=1,nz
+                 field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
+              end do
+          elseif (num_h_bins(ih) > 1)then
+              if (ih==1) then
+                  field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))
+              elseif (ih==2) then
+                  field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+max_nbins,imom))
+              else
+                  ! need in case there's ice -ahu
+              endif
+          endif
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
@@ -429,29 +474,46 @@ contains
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
           units=trim(mom_units(imom))//' kg/m2'
-          do k=1,nz
-             field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
-          end do
+
+          if (num_h_bins(ih) == 1)then
+              do k=1,nz
+                 field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
+              end do
+          elseif (num_h_bins(ih) > 1)then
+              if (ih==1) then
+                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))
+              elseif (ih==2) then
+                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+max_nbins,imom))
+              else
+                  ! need in case there's ice -ahu
+              endif
+          endif
+
           call save_dg(sum(field), name, i_dgtime,  units,dim='time')
        end do
     end do
 
     do ih=1,nspecies
        if (num_h_bins(ih) > 1)then
-          field_bin_c(:)=0.0
-          field_bin_r(:)=0.0
+          field(:)=0.0
+          ! field_bin_r(:)=0.0
           do k=1,nz
-             field_bin_c(k)= sum(rho(k)*dz(k)* &
-                  hydrometeors(k,nx,ih)%moments(1:split_bins,1))
-             field_bin_r(k)= field_bin_r(k) + &
-                  sum(rho(k)*dz(k)* &
-                  hydrometeors(k,nx,ih)%moments(split_bins+1:max_nbins,1))
+              if (ih==1) then
+                  field(k)= sum(rho(k)*dz(k)* &
+                      hydrometeors(k,nx,1)%moments(1:split_bins,1))
+              elseif (ih==2) then
+                  field(k)= sum(rho(k)*dz(k)* &
+                      hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1))
+              endif
           enddo
 
-          call save_dg(sum(field_bin_c), 'cloud_water_path',&
-               i_dgtime, units='kg/m2',dim='time')
-          call save_dg(sum(field_bin_r), 'rain_water_path',&
-               i_dgtime, units='kg/m2',dim='time')
+          if (ih==1) then
+              call save_dg(sum(field), 'cloud_water_path',&
+                   i_dgtime, units='kg/m2',dim='time')
+          elseif (ih==2) then
+              call save_dg(sum(field), 'rain_water_path',&
+                   i_dgtime, units='kg/m2',dim='time')
+          endif
        endif
     enddo
 
@@ -540,6 +602,9 @@ contains
     end do
 
     !hydrometeors
+    ! might still having trouble saving rain_only stuff,
+    ! cant test now so will leave for later -ahu
+
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))
