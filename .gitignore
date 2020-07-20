@@ -35,5 +35,8 @@ cu_2d.nml
 .DS_Store
 core-cheyenne*
 
+# output files
+*.nc
+
 # supercomputer specific
 compiler_options.inc
