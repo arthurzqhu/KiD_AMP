@@ -243,20 +243,25 @@ enddo
    enddo
 
 !bin distributions
-  fielddp2d(:,:)=dropsm2d(:,nx,:)
-  name='mass_dist'
-  units='kg/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+if (ampORbin .eq. 'bin') then
+    fielddp2d(:,:)=dropsm2d(:,nx,:)
+    name='mass_dist'
+    units='kg/kg/ln(r)'
+    call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
-  fielddp2d(:,:)=dropsn2d(:,nx,:)
-  name='num_dist'
-  units='1/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+    if (bintype .eq. 'tau') then
+        fielddp2d(:,:)=dropsn2d(:,nx,:)
+        name='num_dist'
+        units='1/kg/ln(r)'
+        call save_dg('bin',fielddp2d,name,i_dgtime,units)
+    endif
 
-  fielddp2d(:,:)=dropsinit2d(:,nx,:)
-  name='drops_init'
-  units='kg/kg/ln(r)'
-  call save_dg('bin',fielddp2d,name,i_dgtime,units)
+elseif (ampORbin .eq. 'amp') then
+    fielddp2d(:,:)=dropsinit2d(:,nx,:)
+    name='drops_init'
+    units='kg/kg/ln(r)'
+    call save_dg('bin',fielddp2d,name,i_dgtime,units)
+endif
 
 !parameters
   field(:)=guessc2d(:,nx,1)
