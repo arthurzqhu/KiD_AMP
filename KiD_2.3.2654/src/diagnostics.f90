@@ -1958,7 +1958,8 @@ contains
         outfile = trim(outdir)//trim(KiD_outfile)
       else
         outfile=trim(outdir)//trim(modelName)//'_m-'//trim(mphys_id)// &
-           '_u-'//trim(username)//'_c-'//char4//'_v-0001.nc'
+          '_b-'//trim(ampORbin)//'+'//trim(bintype)// '_u-'// &
+          trim(username)//'_c-'//char4//'_v-0001.nc'
       endif
       offset=10
       call sanitize(outfile)

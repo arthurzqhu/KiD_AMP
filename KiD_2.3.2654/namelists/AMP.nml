@@ -18,7 +18,7 @@ rain_init=0.0,0.0
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
-num_h_moments= 3,3
+num_h_moments=3,3 
 num_h_bins=1,1
 
 !AMP control - which moments to predict
@@ -36,7 +36,7 @@ dosedimentation = .true.
 ! Aerosol initialization
 num_aero_moments=0
 num_aero_bins=1
-aero_N_init=300.e6 !or CCN at 1% SS
+aero_N_init=950.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -47,7 +47,7 @@ mom_init=0,0,0
 /
 
 &case
-icase=101
+icase=107
 /
 
 &control
@@ -77,7 +77,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-bintype='sbm'
+KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/AMP/2020-07-10/c06r06/'
 ampORbin='amp'
-KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/AMP/'
+bintype='sbm'
 /

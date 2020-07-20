@@ -10,4 +10,4 @@
 ### Set TMPDIR as recommended
 
 ### Run the executable
-./run_nuc_tests.sh
+./run_amp_tests.sh
