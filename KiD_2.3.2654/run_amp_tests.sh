@@ -36,11 +36,11 @@ imr2=6 # III moment for rain
 #do
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
-for ((ia=550; ia<1000; ia=ia+100))
+for ((ia=50; ia<1000; ia=ia+100))
 do
 echo $ia
 		echo $imc1 $imc2
-		outdir=/glade/scratch/$USER/KiD_AMP_output/AMP/$(date +'%Y-%m-%d')/c${imc1}${imc2}r${imr1}${imr2}/
+		outdir=output/AMP/$(date +'%Y-%m-%d')/c${imc1}${imc2}r${imr1}${imr2}/
 		for ((ic=0; ic<case_num; ic++))
 		do
 			if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
