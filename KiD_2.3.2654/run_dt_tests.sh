@@ -31,7 +31,7 @@ do
 
 &mphys
 ! hydrometeor names
-h_names='cloud','rain'  
+h_names='cloud','rain'
 
 !Moment names
 mom_names='M1','M2','M3'

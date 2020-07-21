@@ -281,19 +281,19 @@ contains
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_adv'
           units=trim(mom_units(imom))//'/s'
-          if (num_h_bins(ih) == 1)then
-              do k=1,nz
-                 field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
-              end do
-          elseif (num_h_bins(ih) > 1)then
-              if (ih==1) then
-                  field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))
-              elseif (ih==2) then
-                  field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))
-              else
-                  ! need in case there's ice -ahu
+          do k=1,nz
+              if (num_h_bins(ih) == 1)then
+                  field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
+              elseif (num_h_bins(ih) > 1)then
+                  if (ih==1) then
+                      field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))
+                  elseif (ih==2) then
+                      field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))
+                  else
+                      ! need in case there's ice -ahu
+                  endif
               endif
-          endif
+          end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
@@ -328,19 +328,20 @@ contains
              name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_div'
              units=trim(mom_units(imom)//'/s')
 
-             if (num_h_bins(ih) == 1)then
-                 do k=1,nz
-                    field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
-                 end do
-             elseif (num_h_bins(ih) > 1)then
-                 if (ih==1) then
-                     field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))
-                 elseif (ih==2) then
-                     field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))
-                 else
-                      ! need in case there's ice -ahu
+
+             do k=1,nz
+                 if (num_h_bins(ih) == 1)then
+                     field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
+                 elseif (num_h_bins(ih) > 1)then
+                     if (ih==1) then
+                         field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))
+                     elseif (ih==2) then
+                         field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))
+                     else
+                          ! need in case there's ice -ahu
+                     endif
                  endif
-             endif
+             end do
              call save_dg(field, name, i_dgtime,  units,dim=dims)
           end do
        end do
@@ -375,19 +376,19 @@ contains
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_mphys'
           units=trim(mom_units(imom)//'/s')
 
-          if (num_h_bins(ih) == 1)then
-              do k=1,nz
-                 field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
-              end do
-          elseif (num_h_bins(ih) > 1)then
-              if (ih==1) then
-                  field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))
-              elseif (ih==2) then
-                  field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))
-              else
-                  ! need in case there's ice -ahu
+          do k=1,nz
+              if (num_h_bins(ih) == 1)then
+                  field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
+              elseif (num_h_bins(ih) > 1)then
+                  if (ih==1) then
+                      field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))
+                  elseif (ih==2) then
+                      field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))
+                  else
+                      ! need in case there's ice -ahu
+                  endif
               endif
-          endif
+          end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
@@ -408,19 +409,19 @@ contains
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_force'
           units=trim(mom_units(imom))//'/s'
 
-          if (num_h_bins(ih) == 1)then
-              do k=1,nz
-                 field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
-              end do
-          elseif (num_h_bins(ih) > 1)then
-              if (ih==1) then
-                  field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))
-              elseif (ih==2) then
-                  field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))
-              else
-                  ! need in case there's ice -ahu
+          do k=1,nz
+              if (num_h_bins(ih) == 1)then
+                  field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
+              elseif (num_h_bins(ih) > 1)then
+                  if (ih==1) then
+                      field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))
+                  elseif (ih==2) then
+                      field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))
+                  else
+                      ! need in case there's ice -ahu
+                  endif
               endif
-          endif
+          end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
@@ -473,19 +474,19 @@ contains
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
           units=trim(mom_units(imom))//' kg/m2'
 
-          if (num_h_bins(ih) == 1)then
-              do k=1,nz
-                 field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
-              end do
-          elseif (num_h_bins(ih) > 1)then
-              if (ih==1) then
-                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))
-              elseif (ih==2) then
-                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
-              else
-                  ! need in case there's ice -ahu
+          do k=1,nz
+              if (num_h_bins(ih) == 1)then
+                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
+              elseif (num_h_bins(ih) > 1)then
+                  if (ih==1) then
+                      field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))
+                  elseif (ih==2) then
+                      field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
+                  else
+                      ! need in case there's ice -ahu
+                  endif
               endif
-          endif
+          end do
 
           call save_dg(sum(field), name, i_dgtime,  units,dim='time')
        end do

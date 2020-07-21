@@ -35,8 +35,12 @@ cu_2d.nml
 core-cheyenne*
 
 # output files
-*.nc
+KiD_2.3.2654/output/*
 *.out
 *.err
+
 # supercomputer specific
 compiler_options.inc
+
+# misc
+.remote-sync.json

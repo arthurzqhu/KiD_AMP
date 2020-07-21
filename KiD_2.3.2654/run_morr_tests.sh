@@ -18,7 +18,7 @@ ia=300
 #do
 	#for icinm in 0 30 100 300 #initial number mixing ratio
 	#do
-	
+
 #for isp_c in 2 15
 #do
 #	for isp_r in 2 15
@@ -50,7 +50,7 @@ ia=300
 
 &mphys
 ! hydrometeor names
-h_names='cloud','rain'  
+h_names='cloud','rain'
 
 !Moment names
 mom_names='M1','M2','M3'

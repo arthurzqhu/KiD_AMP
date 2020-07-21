@@ -50,14 +50,14 @@ echo $ia
 				zc="3000.,600.,900."
 			fi
 			if [ ! -d $outdir ]; then
-			    mkdir -p $outdir 
+			    mkdir -p $outdir
 			fi
 			echo “${caselist[ic]}”
 			cat > namelists/AMP.nml << END
 
 &mphys
 ! hydrometeor names
-h_names='cloud','rain'  
+h_names='cloud','rain'
 
 !Moment names
 mom_names='M1','M2','M3'
