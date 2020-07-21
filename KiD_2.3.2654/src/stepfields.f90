@@ -16,8 +16,8 @@ module stepfields
 
   integer:: k, j
 
- contains 
-   
+ contains
+
    subroutine step_column
      Use parameters, only : dt, nspecies, &
           num_h_moments, num_h_bins, num_aero_moments, num_aero_bins, nz, &
@@ -44,7 +44,7 @@ module stepfields
        field_mask(:,nx)=0.
        field_mask(:,nx+1)=0.
      end if
-       
+     
 
      !-----
      !theta
@@ -154,7 +154,7 @@ module stepfields
      !hydrometeors
      !------------
      ! Advective part
-     
+
      if (.not. l_noadv_hydrometeors)then
 	!if (maxval(dhydrometeors_adv(:,:,1))/=0. .or. minval(dhydrometeors_adv(:,:,1)/=0.)) then
         !   print*, 'max=',maxval(dhydrometeors_adv(:,:,1)), 'min=',minval(dhydrometeors_adv(:,:,1))
@@ -174,9 +174,9 @@ module stepfields
            end do
         end do
      end if
-     field = dhydrometeors_adv(:,:,1)%moments(1,1)
-    ! print*, 'hydro adv bin1',maxval(field)
-     field = dhydrometeors_adv(:,:,1)%moments(2,1)
+    !  field = dhydrometeors_adv(:,:,1)%moments(1,1)
+    ! ! print*, 'hydro adv bin1',maxval(field)
+    !  field = dhydrometeors_adv(:,:,1)%moments(2,1)
      !print*, 'hydro adv bin2',maxval(field)
 
     ! mphys part
@@ -194,9 +194,9 @@ module stepfields
            end do
         end do
      end do
-     field = dhydrometeors_mphys(:,:,1)%moments(1,1)
-     !print*, 'hydro mphys bin1',maxval(field)
-     field = dhydrometeors_mphys(:,:,1)%moments(2,1)
+     ! field = dhydrometeors_mphys(:,:,1)%moments(1,1)
+     ! !print*, 'hydro mphys bin1',maxval(field)
+     ! field = dhydrometeors_mphys(:,:,1)%moments(2,1)
      !print*, 'hydro mphys bin2',maxval(field)
 
 
@@ -210,7 +210,7 @@ module stepfields
                     hydrometeors(k,j,ih)%moments(ibin,imom)=            &
                          hydrometeors(k,j,ih)%moments(ibin,imom) + (    &
                          dhydrometeors_div(k,j,ih)%moments(ibin,imom)   &
-                         )*field_mask(k,j)*dt 
+                         )*field_mask(k,j)*dt
                  end do
                  end do
               end do
@@ -308,4 +308,3 @@ module stepfields
    end subroutine step_column
 
  end module stepfields
-
