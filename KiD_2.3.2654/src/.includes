@@ -1,86 +1,86 @@
-../obj/divergence.o: divergence.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/diagnostics.o ../obj/switches.o 
-
-../obj/input_variables.o: input_variables.f90 ../obj/typeKind.o 
-
-../obj/parameters.o: parameters.f90 ../obj/typeKind.o 
-
-../obj/switches_bin.o: switches_bin.f90 
-
-../obj/aerosols.o: aerosols.f90 ../obj/class_species.o ../obj/column_variables.o ../obj/parameters.o ../obj/switches.o ../obj/physconst.o 
-
-../obj/class_species.o: class_species.f90 ../obj/typeKind.o ../obj/parameters.o 
-
-../obj/column_variables.o: column_variables.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/class_species.o 
-
-../obj/mphys_tau_bin_declare.o: mphys_tau_bin_declare.f90 ../obj/parameters.o 
-
-../obj/header_data.o: header_data.f90 ../obj/parameters.o 
-
-../obj/diagnostics.o: diagnostics.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/column_variables.o ../obj/runtime.o ../obj/physconst.o ../obj/common_physics.o ../obj/header_data.o ../obj/switches.o ../obj/namelists.o ../obj/switches.o ../obj/namelists.o 
-
-../obj/mphys_thompson07.o: mphys_thompson07.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_mp_thompson07.o ../obj/diagnostics.o 
-
-../obj/derived_fields.o: derived_fields.f90 ../obj/column_variables.o ../obj/interpolation.o ../obj/physconst.o 
-
-../obj/test_cases.o: test_cases.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/common_physics.o ../obj/column_variables.o ../obj/input_variables.o ../obj/derived_fields.o ../obj/physconst.o ../obj/interpolation.o ../obj/switches.o ../obj/class_species.o ../obj/aerosols.o 
-
-../obj/typeKind.o: typeKind.f90 
-
-../obj/mphys_amp.o: mphys_amp.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/diagnostics.o ../obj/switches.o ../obj/namelists.o ../obj/parameters.o 
+../obj/physconst.o: physconst.f90 ../obj/typeKind.o 
 
 ../obj/stepfields.o: stepfields.f90 ../obj/runtime.o ../obj/typeKind.o ../obj/parameters.o ../obj/physconst.o ../obj/switches.o ../obj/column_variables.o 
 
-../obj/physconst.o: physconst.f90 ../obj/typeKind.o 
-
-../obj/module_bin_init.o: module_bin_init.f90 ../obj/column_variables.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o ../obj/switches.o ../obj/switches_bin.o ../obj/namelists.o 
-
-../obj/micro_prm.o: micro_prm.f90 ../obj/parameters.o ../obj/namelists.o ../obj/mphys_tau_bin_declare.o 
-
-../obj/module_model_constants.o: module_model_constants.f90 
-
-../obj/KiD.o: KiD.f90 ../obj/main.o 
-
-../obj/microphysics.o: microphysics.f90 ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/common_physics.o ../obj/diagnostics.o ../obj/switches.o ../obj/switches_bin.o ../obj/namelists.o ../obj/column_variables.o ../obj/mphys_tau_bin_declare.o ../obj/namelists.o ../obj/micro_prm.o ../obj/physconst.o ../obj/module_mp_tau_bin.o ../obj/micro_prm.o ../obj/module_bin_init.o ../obj/mphys_tau_bin_declare.o ../obj/module_bin_init.o ../obj/parameters.o ../obj/mphys_tau_bin_declare.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/mphys_tau_bin_declare.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o 
-
-../obj/runtime.o: runtime.f90 ../obj/typeKind.o 
-
-../obj/mphys_thompson09.o: mphys_thompson09.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_mp_thompson09.o ../obj/diagnostics.o 
-
-../obj/find_params.o: find_params.f90 ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/parameters.o 
-
-../obj/advection_interface.o: advection_interface.f90 ../obj/runtime.o ../obj/parameters.o ../obj/column_variables.o ../obj/ultf2d_mod.o ../obj/switches.o 
-
-../obj/test_cases_2d.o: test_cases_2d.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/common_physics.o ../obj/column_variables.o ../obj/input_variables.o ../obj/derived_fields.o ../obj/diagnostics.o ../obj/physconst.o ../obj/interpolation.o ../obj/switches.o ../obj/class_species.o ../obj/test_cases.o ../obj/aerosols.o 
-
-../obj/interpolation.o: interpolation.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/column_variables.o ../obj/physconst.o ../obj/switches.o ../obj/input_variables.o ../obj/class_species.o ../obj/parameters.o ../obj/column_variables.o ../obj/input_variables.o ../obj/runtime.o ../obj/switches.o 
-
-../obj/mphys_morr_two_moment.o: mphys_morr_two_moment.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_mp_morr_two_moment.o ../obj/diagnostics.o 
-
-../obj/module_mp_thompson09.o: module_mp_thompson09.f90 ../obj/typeKind.o ../obj/switches.o ../obj/diagnostics.o ../obj/namelists.o ../obj/parameters.o 
-
-../obj/main.o: main.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/namelists.o ../obj/runtime.o ../obj/switches.o ../obj/set_profiles.o ../obj/interpolation.o ../obj/diagnostics.o ../obj/derived_fields.o ../obj/advection_interface.o ../obj/mphys_interface.o ../obj/stepfields.o ../obj/divergence.o ../obj/micro_prm.o ../obj/column_variables.o 
-
-../obj/module_mp_tau_bin.o: module_mp_tau_bin.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o ../obj/diagnostics.o ../obj/common_physics.o ../obj/switches.o ../obj/switches_bin.o ../obj/namelists.o 
-
-../obj/mphys_interface.o: mphys_interface.f90 ../obj/mphys_thompson07.o ../obj/mphys_thompson09.o ../obj/mphys_morr_two_moment.o ../obj/mphys_tau_bin.o ../obj/mphys_amp.o ../obj/switches.o 
-
-../obj/driver_ind.o: driver_ind.f90 ../obj/switches.o ../obj/parameters.o ../obj/column_variables.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/switches.o ../obj/parameters.o ../obj/column_variables.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/switches.o ../obj/parameters.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/namelists.o ../obj/mphys_tau_bin_declare.o 
-
-../obj/set_profiles.o: set_profiles.f90 ../obj/typeKind.o ../obj/input_variables.o ../obj/switches.o ../obj/parameters.o ../obj/test_cases.o ../obj/test_cases_2d.o 
-
-../obj/ultf2d_mod.o: ultf2d_mod.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/switches.o ../obj/column_variables.o 
-
-../obj/namelists.o: namelists.f90 ../obj/parameters.o ../obj/header_data.o ../obj/switches.o ../obj/switches_bin.o 
-
-../obj/module_hujisbm.o: module_hujisbm.f90 ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o 
-
-../obj/module_mp_thompson07.o: module_mp_thompson07.f90 ../obj/typeKind.o ../obj/switches.o ../obj/diagnostics.o ../obj/namelists.o ../obj/parameters.o 
-
 ../obj/common_physics.o: common_physics.f90 ../obj/typeKind.o ../obj/physconst.o 
+
+../obj/typeKind.o: typeKind.f90 
 
 ../obj/module_mp_morr_two_moment.o: module_mp_morr_two_moment.f90 ../obj/diagnostics.o ../obj/parameters.o 
 
+../obj/KiD.o: KiD.f90 ../obj/main.o 
+
+../obj/mphys_morr_two_moment.o: mphys_morr_two_moment.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_mp_morr_two_moment.o ../obj/diagnostics.o 
+
+../obj/advection_interface.o: advection_interface.f90 ../obj/runtime.o ../obj/parameters.o ../obj/column_variables.o ../obj/ultf2d_mod.o ../obj/switches.o 
+
+../obj/input_variables.o: input_variables.f90 ../obj/typeKind.o 
+
+../obj/mphys_thompson07.o: mphys_thompson07.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_mp_thompson07.o ../obj/diagnostics.o 
+
+../obj/mphys_interface.o: mphys_interface.f90 ../obj/mphys_thompson07.o ../obj/mphys_thompson09.o ../obj/mphys_morr_two_moment.o ../obj/mphys_tau_bin.o ../obj/mphys_amp.o ../obj/switches.o 
+
+../obj/set_profiles.o: set_profiles.f90 ../obj/typeKind.o ../obj/input_variables.o ../obj/switches.o ../obj/parameters.o ../obj/test_cases.o ../obj/test_cases_2d.o 
+
+../obj/divergence.o: divergence.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/diagnostics.o ../obj/switches.o 
+
+../obj/microphysics.o: microphysics.f90 ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/common_physics.o ../obj/diagnostics.o ../obj/switches.o ../obj/switches_bin.o ../obj/namelists.o ../obj/column_variables.o ../obj/mphys_tau_bin_declare.o ../obj/namelists.o ../obj/micro_prm.o ../obj/physconst.o ../obj/module_mp_tau_bin.o ../obj/micro_prm.o ../obj/module_bin_init.o ../obj/mphys_tau_bin_declare.o ../obj/module_bin_init.o ../obj/parameters.o ../obj/mphys_tau_bin_declare.o ../obj/micro_prm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/mphys_tau_bin_declare.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o 
+
+../obj/find_params.o: find_params.f90 ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/namelists.o ../obj/micro_prm.o ../obj/parameters.o 
+
+../obj/test_cases.o: test_cases.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/common_physics.o ../obj/column_variables.o ../obj/input_variables.o ../obj/derived_fields.o ../obj/physconst.o ../obj/interpolation.o ../obj/switches.o ../obj/class_species.o ../obj/aerosols.o 
+
+../obj/module_model_constants.o: module_model_constants.f90 
+
+../obj/mphys_tau_bin_declare.o: mphys_tau_bin_declare.f90 ../obj/parameters.o 
+
+../obj/module_mp_thompson09.o: module_mp_thompson09.f90 ../obj/typeKind.o ../obj/switches.o ../obj/diagnostics.o ../obj/namelists.o ../obj/parameters.o 
+
+../obj/column_variables.o: column_variables.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/class_species.o 
+
+../obj/derived_fields.o: derived_fields.f90 ../obj/column_variables.o ../obj/interpolation.o ../obj/physconst.o 
+
+../obj/namelists.o: namelists.f90 ../obj/parameters.o ../obj/header_data.o ../obj/switches.o ../obj/switches_bin.o 
+
+../obj/module_bin_init.o: module_bin_init.f90 ../obj/column_variables.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o ../obj/switches.o ../obj/switches_bin.o ../obj/namelists.o 
+
+../obj/diagnostics.o: diagnostics.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/column_variables.o ../obj/runtime.o ../obj/physconst.o ../obj/common_physics.o ../obj/header_data.o ../obj/switches.o ../obj/namelists.o ../obj/switches.o ../obj/namelists.o 
+
 ../obj/mphys_tau_bin.o: mphys_tau_bin.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o ../obj/switches_bin.o ../obj/module_mp_tau_bin.o ../obj/module_bin_init.o 
 
+../obj/ultf2d_mod.o: ultf2d_mod.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/switches.o ../obj/column_variables.o 
+
+../obj/module_mp_thompson07.o: module_mp_thompson07.f90 ../obj/typeKind.o ../obj/switches.o ../obj/diagnostics.o ../obj/namelists.o ../obj/parameters.o 
+
+../obj/module_hujisbm.o: module_hujisbm.f90 ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/micro_prm.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o ../obj/parameters.o 
+
+../obj/test_cases_2d.o: test_cases_2d.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/common_physics.o ../obj/column_variables.o ../obj/input_variables.o ../obj/derived_fields.o ../obj/diagnostics.o ../obj/physconst.o ../obj/interpolation.o ../obj/switches.o ../obj/class_species.o ../obj/test_cases.o ../obj/aerosols.o 
+
+../obj/class_species.o: class_species.f90 ../obj/typeKind.o ../obj/parameters.o 
+
+../obj/module_mp_tau_bin.o: module_mp_tau_bin.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/mphys_tau_bin_declare.o ../obj/diagnostics.o ../obj/common_physics.o ../obj/switches.o ../obj/switches_bin.o ../obj/namelists.o 
+
+../obj/interpolation.o: interpolation.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/runtime.o ../obj/column_variables.o ../obj/physconst.o ../obj/switches.o ../obj/input_variables.o ../obj/class_species.o ../obj/parameters.o ../obj/column_variables.o ../obj/input_variables.o ../obj/runtime.o ../obj/switches.o 
+
+../obj/main.o: main.f90 ../obj/typeKind.o ../obj/parameters.o ../obj/namelists.o ../obj/runtime.o ../obj/switches.o ../obj/set_profiles.o ../obj/interpolation.o ../obj/diagnostics.o ../obj/derived_fields.o ../obj/advection_interface.o ../obj/mphys_interface.o ../obj/stepfields.o ../obj/divergence.o ../obj/micro_prm.o ../obj/column_variables.o 
+
+../obj/switches_bin.o: switches_bin.f90 
+
+../obj/mphys_amp.o: mphys_amp.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/diagnostics.o ../obj/switches.o ../obj/namelists.o ../obj/parameters.o 
+
 ../obj/switches.o: switches.f90 ../obj/typeKind.o ../obj/parameters.o 
+
+../obj/runtime.o: runtime.f90 ../obj/typeKind.o 
+
+../obj/parameters.o: parameters.f90 ../obj/typeKind.o 
+
+../obj/micro_prm.o: micro_prm.f90 ../obj/parameters.o ../obj/namelists.o ../obj/mphys_tau_bin_declare.o 
+
+../obj/header_data.o: header_data.f90 ../obj/parameters.o 
+
+../obj/driver_ind.o: driver_ind.f90 ../obj/switches.o ../obj/parameters.o ../obj/column_variables.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/switches.o ../obj/parameters.o ../obj/column_variables.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/switches.o ../obj/parameters.o ../obj/column_variables.o ../obj/micro_prm.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/module_hujisbm.o ../obj/micro_prm.o ../obj/parameters.o ../obj/namelists.o ../obj/mphys_tau_bin_declare.o 
+
+../obj/mphys_thompson09.o: mphys_thompson09.f90 ../obj/parameters.o ../obj/column_variables.o ../obj/physconst.o ../obj/module_mp_thompson09.o ../obj/diagnostics.o 
+
+../obj/aerosols.o: aerosols.f90 ../obj/class_species.o ../obj/column_variables.o ../obj/parameters.o ../obj/switches.o ../obj/physconst.o 
 

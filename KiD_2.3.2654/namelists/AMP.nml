@@ -77,7 +77,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/AMP/2020-07-10/c06r06/'
+KiD_outdir='output/'
 ampORbin='amp'
 bintype='sbm'
 /

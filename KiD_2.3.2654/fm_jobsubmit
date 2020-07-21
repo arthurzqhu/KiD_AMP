@@ -1,0 +1,11 @@
+#!/bin/bash -l
+#SBATCH -J KiD
+#SBATCH -o KiD-%j.out
+#SBATCH -e KiD-%j.err
+#SBATCH -t 5
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --mail-type=END
+#SBATCH --mail-user=azqhu@ucdavis.edu
+
+./bin/KiD_1D.exe namelists/SBM.nml

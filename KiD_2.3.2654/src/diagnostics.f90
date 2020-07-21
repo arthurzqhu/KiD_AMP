@@ -219,7 +219,7 @@ contains
              elseif (num_h_bins(ih) > 1) then
                  if (ih==1) then
                      field(k) = sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))
-                 elseif (if==2) then
+                 elseif (ih==2) then
                      field(k) = sum(hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                  endif
              endif
@@ -289,7 +289,7 @@ contains
               if (ih==1) then
                   field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))
               elseif (ih==2) then
-                  field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+max_nbins,imom))
+                  field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))
               else
                   ! need in case there's ice -ahu
               endif
@@ -336,7 +336,7 @@ contains
                  if (ih==1) then
                      field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))
                  elseif (ih==2) then
-                     field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+max_nbins,imom))
+                     field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                  else
                       ! need in case there's ice -ahu
                  endif
@@ -383,7 +383,7 @@ contains
               if (ih==1) then
                   field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))
               elseif (ih==2) then
-                  field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+max_nbins,imom))
+                  field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))
               else
                   ! need in case there's ice -ahu
               endif
@@ -418,7 +418,7 @@ contains
               if (ih==1) then
                   field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))
               elseif (ih==2) then
-                  field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+max_nbins,imom))
+                  field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))
               else
                   ! need in case there's ice -ahu
               endif
@@ -483,7 +483,7 @@ contains
               if (ih==1) then
                   field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))
               elseif (ih==2) then
-                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+max_nbins,imom))
+                  field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
               else
                   ! need in case there's ice -ahu
               endif

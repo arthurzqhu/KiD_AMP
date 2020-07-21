@@ -79,5 +79,5 @@ l_periodic_bound=.False.
 &addcontrol
 bintype='sbm'
 AMPorBIN='bin'
-KiD_outdir='/glade/scratch/arthurhu/KiD_AMP_output/SBM/'
+KiD_outdir='output/'
 /
