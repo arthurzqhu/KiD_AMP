@@ -28,7 +28,6 @@
 
 # Executables
 *.exe
-*.out
 *.swp
 KiD_AMP.o*
 cu_2d.nml
@@ -37,6 +36,7 @@ core-cheyenne*
 
 # output files
 *.nc
-
+*.out
+*.err
 # supercomputer specific
 compiler_options.inc
