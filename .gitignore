@@ -38,5 +38,9 @@ core-cheyenne*
 *.nc
 *.out
 *.err
+
 # supercomputer specific
 compiler_options.inc
+
+# misc
+.remote-sync.json
