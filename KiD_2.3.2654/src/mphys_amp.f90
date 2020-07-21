@@ -79,11 +79,12 @@ contains
           else !bin
              Mpc2d=0.;Mpr2d=0.
              do j=1,nkr
-                dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
+                dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)
          !       dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1) &
          !            + (dhydrometeors_adv(k,i,1)%moments(j,1) &
          !            + dhydrometeors_div(k,i,1)%moments(j,1))*dt
                  if (bintype .eq. 'tau')  then
+                     dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
                      dropsn2d(k,i,j)=hydrometeors(k,i,1)%moments(j,2)/col
                  end if
              enddo
@@ -180,14 +181,17 @@ do i=1,nx
       else ! when bin
          do j=1,nkr
             dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-                 (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
-         !   if (l_advect) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
+                   (dropsm2d(k,i,j)-hydrometeors(k,i,1)%moments(j,1))/dt
+        !   if (l_advect) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
          !                 dhydrometeors_mphys(k,i,1)%moments(j,1) &
          !                 -dhydrometeors_adv(k,i,1)%moments(j,1)
          !   if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
          !                  dhydrometeors_mphys(k,i,1)%moments(j,1) &
          !                  -dhydrometeors_div(k,i,1)%moments(j,1)
             if (bintype .eq. 'tau') then
+                dhydrometeors_mphys(k,i,1)%moments(j,1)= &
+                   (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
+                
                 dhydrometeors_mphys(k,i,1)%moments(j,2)= &
                      (dropsn2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,2))/dt
             endif

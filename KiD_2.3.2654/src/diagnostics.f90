@@ -388,11 +388,9 @@ contains
                   ! need in case there's ice -ahu
               endif
           endif
-
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
-
     !----------------
     !
     ! Imposed forcing
