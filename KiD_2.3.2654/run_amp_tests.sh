@@ -40,7 +40,7 @@ for ((ia=50; ia<1000; ia=ia+100))
 do
 echo $ia
 		echo $imc1 $imc2
-		outdir=output/AMP/$(date +'%Y-%m-%d')/c${imc1}${imc2}r${imr1}${imr2}/
+		outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
 		for ((ic=0; ic<case_num; ic++))
 		do
 			if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
