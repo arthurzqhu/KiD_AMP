@@ -99,7 +99,7 @@ integer, parameter :: NHYDR=5,NHYDRO=7                &
              ,K0L_GL=16,K0G_GL=16                     & !Bins that have turbulent enhancement
              ,KRMINL_GL=1,KRMAXL_GL=24                &
              ,KRMING_GL=1,KRMAXG_GL=33                &
-             ,KRDROP=14                               & !First Bin number that is rain in FFCD
+             ,KRDROP=15                               & !First Bin number that is rain in FFCD
              ,JMAX=33,JBREAK = 18                       !For rain breakup routines
 integer,dimension(ICEMAX), parameter::    &
          KRPRIS=(/14,16,16/)                              !First Bin number that is RAMS snow for each
@@ -121,7 +121,7 @@ REAL, PARAMETER :: BFREEZMAX=0.66E0
 
 !c other parameters and thresholds
 real, parameter :: AFREEZMY=0.3333E-04,BFREEZMY=0.6600E00
-real, parameter :: cloud_mr_th=1d-8, rain_mr_th=1d-10 !cloud/rain mixing ratio threshold, in units of kg/g
+real, parameter :: cloud_mr_th=1d-9, rain_mr_th=1d-9 !cloud/rain mixing ratio threshold, in units of kg/g
 
 !c Parameters are used in algorithm of diffusional growth
 !c NCOND determine timestep (DT/NCOND) with diffusional growth
