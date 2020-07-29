@@ -5,6 +5,7 @@ Subroutine micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 
 use module_hujisbm
 use micro_prm
+use physconst, only: pi
 use parameters, only: nx,nz,dt,aero_N_init,max_nbins
 use column_variables, only:z_half
 

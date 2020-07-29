@@ -99,7 +99,7 @@ integer, parameter :: NHYDR=5,NHYDRO=7                &
              ,K0L_GL=16,K0G_GL=16                     & !Bins that have turbulent enhancement
              ,KRMINL_GL=1,KRMAXL_GL=24                &
              ,KRMING_GL=1,KRMAXG_GL=33                &
-             ,KRDROP=15                               & !First Bin number that is rain in FFCD
+             ,KRDROP=15                               & !First Bin number that is rain in FFCD, should be the same as split_bins in paramters.f90
              ,JMAX=33,JBREAK = 18                       !For rain breakup routines
 integer,dimension(ICEMAX), parameter::    &
          KRPRIS=(/14,16,16/)                              !First Bin number that is RAMS snow for each
