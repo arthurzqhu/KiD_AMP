@@ -945,7 +945,7 @@ do j = jminp,jmaxp
         ih=qindices(ICDKG_BIN(iq))%ispecies
         imom=qindices(ICDKG_BIN(iq))%imoment
         do k=1,nz-offset
-            q_lem (j, k+offset, ICDKG_BIN(iq)) = ffcd_mass2d(k,j,iq)*col
+            q_lem (j, k+offset, ICDKG_BIN(iq)) = ffcd_mass2d(k,j,iq)*col*(pi/6*1000.)
         end do
         ! number bins
         ih=qindices(ICDNC_BIN(iq))%ispecies
@@ -979,7 +979,7 @@ if (l_advect .or. l_diverge) then
         imom=qindices(icdkg_bin(iq))%imoment
         do k=1,nz-offset
            sq_lem(j,k+offset,icdkg_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+                + dhydrometeors_div(k,j,ih)%moments(iq,imom))*(pi/6*1000.)
         end do
         ih=qindices(icdnc_bin(iq))%ispecies
         imom=qindices(icdnc_bin(iq))%imoment
@@ -1052,7 +1052,7 @@ do J = JMINP,JMAXP
 ENDDO
 ENDDO
 
-if (l_sediment .or. dosedimentation) then
+if (dosedimentation) then
 
     CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 
@@ -1842,7 +1842,7 @@ do j=jminp,jmaxp
             do k=1,nz-offset
                 sq_lem(j,k+offset,icdkg_bin(iq))= sq_lem(j,k+offset,icdkg_bin(iq))      &
                     - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))*(pi/6*1000.)
             end do
             ih=qindices(icdnc_bin(iq))%ispecies
             imom=qindices(icdnc_bin(iq))%imoment
@@ -1877,7 +1877,7 @@ do j=jminp,jmaxp
 
     do iq=1,lk
         do k=1,nz-offset
-            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k+offset,icdkg_bin(iq))*dt/col
+            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k+offset,icdkg_bin(iq))*dt/col/(pi/6*1000.)
         end do
         do k=1,nz-offset
             ffcd_num2d(k,j,iq) = ffcd_num2d(k,j,iq) + sq_lem(j,k+offset,icdnc_bin(iq))*dt/col
@@ -1891,18 +1891,18 @@ do k=1,nz
     do j=jminp,jmaxp
         do iq=1,nqp
             if (q_lem(j,k,iq) .ne. q_lem(j,k,iq)) then
-                print*,'q', k,iq
+                !print*,'q', k,iq
             end if
             if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
-                print*,'sq', k,iq
+                !print*,'sq', k,iq
             end if
         enddo
     enddo
 enddo
 
 if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
-!    print*, 'q', q_lem(1,38,:)
-!    print*, 'sq', sq_lem(1,38,:)
+    !print*, 'q', q_lem(1,78,:)
+    !print*, 'sq', sq_lem(1,78,:)
 !    print*, ffcd_mass2d(40,1,:)
 !    print*, ffcd_num2d(40,1,:)
 !    print*, '**at least the mphys routine finished**'

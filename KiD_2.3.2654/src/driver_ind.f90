@@ -390,7 +390,7 @@ use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
 use namelists, only: l_advect
-use mphys_tau_bin_declare, only: lk_cloud,xk
+use mphys_tau_bin_declare, only: lk_cloud,x_bin
 implicit none
 integer:: i,j,k,ip
 
@@ -405,8 +405,8 @@ call micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 do k=1,nz
  do j=1,nx
    do i=1,10
-      mc(k,j,i)=sum(ffcd_mass2d(k,j,1:lk_cloud)/xk(1:lk_cloud)*diams(1:lk_cloud)**(i-1))*col
-      mr(k,j,i)=sum(ffcd_mass2d(k,j,lk_cloud+1:nkr)/xk(lk_cloud+1:nkr)*diams(lk_cloud+1:nkr)**(i-1))*col
+      mc(k,j,i)=sum(ffcd_mass2d(k,j,1:lk_cloud)/x_bin(2:lk_cloud+1)*diams(1:lk_cloud)**(i-1))*col*1.e6
+      mr(k,j,i)=sum(ffcd_mass2d(k,j,lk_cloud+1:nkr)/x_bin(lk_cloud+2:nkr+1)*diams(lk_cloud+1:nkr)**(i-1))*col*1.e6
    enddo
  enddo
 enddo

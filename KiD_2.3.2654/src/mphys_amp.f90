@@ -85,6 +85,7 @@ contains
          !            + dhydrometeors_div(k,i,1)%moments(j,1))*dt
                  if (bintype .eq. 'tau')  then
 !                     dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
+                     dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
                      dropsn2d(k,i,j)=hydrometeors(k,i,1)%moments(j,2)/col
                  end if
              enddo
@@ -189,8 +190,8 @@ do i=1,nx
          !                  dhydrometeors_mphys(k,i,1)%moments(j,1) &
          !                  -dhydrometeors_div(k,i,1)%moments(j,1)
             if (bintype .eq. 'tau') then
-!                dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-!                   (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
+                dhydrometeors_mphys(k,i,1)%moments(j,1)= &
+                   (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
                 dhydrometeors_mphys(k,i,1)%moments(j,2)= &
                      (dropsn2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,2))/dt
             endif
