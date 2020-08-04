@@ -30,13 +30,13 @@ imomr2 = 6  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .true.
 docondensation = .true.
-docollisions = .true.
+docollisions = .false.
 dosedimentation = .true.
 
 ! Aerosol initialization
 num_aero_moments=0
 num_aero_bins=1
-aero_N_init=950.e6 !or CCN at 1% SS
+aero_N_init=250.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -77,7 +77,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/AMP/2020-07-21/c06r06/'
+KiD_outdir='output/AMP/2020-07-29/a250/'
 ampORbin='amp'
 bintype='sbm'
 /

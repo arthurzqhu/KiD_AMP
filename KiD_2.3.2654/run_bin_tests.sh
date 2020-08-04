@@ -36,7 +36,7 @@ imr2=6 # III moment for rain
 #do
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
-for ((ia=50; ia<100; ia=ia+100))
+for ((ia=250; ia<300; ia=ia+100))
 do
 echo $ia
 		echo $imc1 $imc2

@@ -9,16 +9,16 @@ icinm=0.0
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
-imc2=0 # III moment for cloud
+imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=0 # III moment for rain
-ia=300
+imr2=6 # III moment for rain
+#ia=50
 
 #for icimm in 0.0 0.0003 0.001 0.003 #initial cloud mass mixing ratio
 #do
 	#for icinm in 0 30 100 300 #initial number mixing ratio
 	#do
-
+	
 #for isp_c in 2 15
 #do
 #	for isp_r in 2 15
@@ -36,8 +36,11 @@ ia=300
 #do
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
+for ((ia=50; ia<1000; ia=ia+100))
+do
+echo $ia
 		echo $imc1 $imc2
-		outdir=/glade/scratch/$USER/KiD_AMP_output/TAU/$(date +'%Y-%m-%d')/
+		outdir=output/TAU/$(date +'%Y-%m-%d')/a${ia}/
 		for ((ic=0; ic<case_num; ic++))
 		do
 			if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
@@ -50,7 +53,7 @@ ia=300
 			    mkdir -p $outdir
 			fi
 			echo “${caselist[ic]}”
-			cat > namelists/AMP_testtau.nml << END
+			cat > namelists/TIA.nml << END
 
 &mphys
 ! hydrometeor names
@@ -71,7 +74,7 @@ rain_init=0.0,0.0
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
-num_h_moments= 2,0
+num_h_moments=2,1
 num_h_bins=34,1
 
 !AMP control - which moments to predict
@@ -104,7 +107,7 @@ icase=${caselist[ic]}
 /
 
 &control
-mphys_scheme='tau_bin'
+mphys_scheme='amp'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
@@ -131,11 +134,13 @@ l_periodic_bound=.False.
 
 &addcontrol
 KiD_outdir='$outdir'
+ampORbin='bin'
+bintype='tau'
 /
 END
-		./bin/KiD_1D.exe namelists/AMP_testtau.nml
+		./bin/KiD_1D.exe namelists/TIA.nml
 				#done
 			#done
 #		done
-#	done
+	done
 done
