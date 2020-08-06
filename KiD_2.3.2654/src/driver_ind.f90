@@ -266,7 +266,7 @@ print*,Mpc(k,j,:),Mpr(k,j,:)
 stop
 endif
    !Calculate moments - most of the time they're the same as what we used to find parameters
-   !But in the case that parameters could be found, we want to know what the actual moment
+   !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
    do i=1,10
      mc0(k,j,i)=sum(ffcloud(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
