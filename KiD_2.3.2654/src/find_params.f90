@@ -2,7 +2,6 @@ subroutine fcn_2p(n,x,fvec,iflag)
 use micro_prm, only:ihyd,nubounds,dnbounds,nkr,diams,M3p,Mxp,Myp,momx,momy,skr,ekr,relax,nkr
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
-use namelists, only: bintype
 implicit none
 integer n,iflag
 double precision x(n),fvec(n)
@@ -55,7 +54,6 @@ subroutine fcn_1p(n,x,fvec,iflag)
 use micro_prm, only:nkr,diams,Mxp,M3p,skr,ekr,nug,momx,nkr
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
-use namelists, only: bintype
 implicit none
 integer n,iflag
 double precision x(n),fvec(n)
@@ -102,7 +100,6 @@ subroutine calcerr(rx,nu,dn,error)
 use micro_prm, only:diams,M3p,Mxp,Myp,col,nkr,skr,ekr,relax,momx,momy
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
-use namelists, only: bintype
 implicit none
 double precision :: ratio,m3,mx,my,md(max_nbins),error(2),rx,nu,dn
 
@@ -193,7 +190,6 @@ subroutine calcdist(x,md)
 use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
-use namelists, only:bintype
 implicit none
 double precision x(2)
 integer n
