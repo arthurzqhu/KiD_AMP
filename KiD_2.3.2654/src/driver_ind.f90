@@ -12,7 +12,7 @@ character(len=100)::lutfolder
 real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
-real(8),dimension(max_nbins) :: ffcd
+real(8),dimension(max_nbins) :: ffcd_mass, ffcd_num
 real(8),dimension(num_h_moments(1)) :: mc
 real(8),dimension(num_h_moments(2)) :: mr
 real :: dnc,dnr
@@ -75,9 +75,13 @@ else !Run AMP
 endif
 
 !call microphysics initialization routines
-CALL micro_init_sbm()
-CALL micro_init_sbm2()
-CALL kernalsdt()
+if (bintype .eq. 'sbm') then
+    CALL micro_init_sbm()
+    CALL micro_init_sbm2()
+    CALL kernalsdt()
+elseif (bintype .eq. 'tau') then
+    CALL micro_init_tau()
+endif
 
 !Set up initial distribution and set moment values and parameter guesses
 if (npm==3) then
@@ -85,22 +89,30 @@ if (npm==3) then
 else
   dnc=0.;dnr=0.
 endif
+
 if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
 if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
 if(cloud_init(1)>0. .or. rain_init(1)>0.) then
-   CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+    if (bintype .eq. 'sbm') then
+        CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),&
+                           h_shape(2),dnr,diams,ffcd_mass)
+    elseif (bintype .eq. 'tau') then
+        CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),%
+                           h_shape(2),dnr,diams,ffcd_mass,ffcd_num)
+    endif
 else
-   ffcd(:)=0.
+   ffcd_mass(:)=0.
+   if (bintype .eq. 'tau') ffcd_num(:)=0.
 endif
 
 guessc2d(:,:,2)=dnc
 guessr2d(:,:,2)=dnr
 
 do i=1,num_h_moments(1)
-  mc(i)=sum(ffcd(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**pmomsc(i))*col*1000.
+    mc(i)=sum(ffcd_mass(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**pmomsc(i))*col*1000.
 enddo
 do i=1,num_h_moments(2)
-  mr(i)=sum(ffcd(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**pmomsr(i))*col*1000.
+    mr(i)=sum(ffcd_mass(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**pmomsr(i))*col*1000.
 enddo
 
 do i=1,nx
@@ -199,11 +211,13 @@ enddo
 
 end subroutine tau_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd,mc,mr,flag,ffcdinit)
+subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd_mass,&
+    ffcd_num,mc,mr,flag,ffcd_massinit,ffcd_numinit)
 
 use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,flag_count,max_nbins
+use mphys_tau_bin_declare, only: XKmean
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
@@ -212,12 +226,13 @@ integer:: i,j,k,ip
 real(8),dimension(nz,nx,2,flag_count)::flag
 
 real, dimension(nz,nx)::tempk,press,qv
-real, dimension(nz,nx,max_nbins)::ffcd,fncn,ffcdinit
+real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num,fncn,ffcd_massinit,&
+                                  ffcd_numinit
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,10) :: mc,mr,mc0,mr0
-real(8),dimension(max_nbins) :: ffcloud,ffrain
+real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
 
@@ -236,9 +251,15 @@ do k=1,nz
    momy=pmomsc(3) !pmomsc(1)=3 always
 !if(k==18)print*,k,Mp
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud,flag(k,j,1,:))
+      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,1,:))
+      if (bintype .eq. 'tau') then
+          ! assuming a single droplet size for all drops in a bin for now
+          ! CHECK UNITS! -ahu!!!
+          ffcloud_num=ffcloud_mass/XKmean
+      endif
    else
-      ffcloud=0.
+      ffcloud_mass=0.
+      ffcloud_num=0.
       flag(k,j,1,1)=-1
       flag(k,j,1,2:flag_count)=nan
    endif
@@ -249,44 +270,63 @@ do k=1,nz
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
-      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain,flag(k,j,2,:))
+      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,2,:))
+      if (bintype .eq. 'tau') then
+          ffrain_num=ffrain_mass/XKmean
+      endif
    else
-      ffrain=0.
+      ffrain_mass=0.
+      ffrain_num=0.
       flag(k,j,2,1)=-1
       flag(k,j,2,2:flag_count)=nan
    endif
    !----------SUM the Cloud and Rain Distributions-----------
-   ffcd(k,j,:) = ffcloud+ffrain
-   ffcdinit(k,j,:)=ffcd(k,j,:)
+   ffcd_mass(k,j,:) = ffcloud_mass+ffrain_mass
+   ffcd_num(k,j,:) = ffcloud_num+ffrain_num
+   ffcd_massinit(k,j,:)=ffcd_mass(k,j,:)
+   ffcd_numinit(k,j,:)=ffcd_num(k,j,:)
 
-if(ffcd(k,j,1).ne.ffcd(k,j,1))then
-print*,'NaNs in ffcd'
-print*,'NaN',k,j,ffcloud(1),ffrain(1)
-print*,Mpc(k,j,:),Mpr(k,j,:)
-stop
+if(ffcd_mass(k,j,1).ne.ffcd_mass(k,j,1))then
+    print*,'NaNs in ffcd_mass'
+    print*,'NaN',k,j,ffcloud_mass(1),ffrain_mass(1)
+    print*,Mpc(k,j,:),Mpr(k,j,:)
+    stop
 endif
+
+if(ffcd_num(k,j,1).ne.ffcd_num(k,j,1))then
+    print*,'NaNs in ffcd_num'
+    print*,'NaN',k,j,ffcloud_num(1),ffrain_num(1)
+    stop
+endif
+
    !Calculate moments - most of the time they're the same as what we used to find parameters
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
-   do i=1,10
-     mc0(k,j,i)=sum(ffcloud(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
-     mr0(k,j,i)=sum(ffrain(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
-   enddo
+   call calcmom(ffcd_mass,mc0(k,j,:),mr0(k,j,:))
+   ! do i=1,10
+   !   mc0(k,j,i)=sum(ffcloud_mass(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
+   !   mr0(k,j,i)=sum(ffrain_mass(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+   ! enddo
  enddo
 enddo
 !print*, Mpc(25,1,1),mc0(25,1,4),flag(25,1,1)
 !print*,Mpc(25,1,2),mc0(25,1,momx+1)
 !------CALL MICROPHYSICS--------------------
 
-call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
+if (bintype .eq. 'sbm') then
+    call micro_proc_sbm(press,tempk,qv,fncn,ffcd_mass)
+elseif (bintype .eq. 'tau') then
+    call micro_proc_tau(tempk,qv,ffcd_mass,ffcd_num)
+endif
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-   do i=1,10
-      mc(k,j,i)=sum(ffcd(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
-      mr(k,j,i)=sum(ffcd(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
-   enddo
+     call calcmom(ffcd_mass,mc(k,j,:),mr(k,j,:))
+   ! do i=1,10
+   !    mc(k,j,i)=sum(ffcd_mass(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
+   !    mr(k,j,i)=sum(ffcd_mass(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+   ! enddo
 
    !---------UPDATE MOMENTS---------------------------------
    !Mp=predicted value before microphysics. m0=value after finding parameters
@@ -410,6 +450,28 @@ do k=1,nz
    enddo
  enddo
 enddo
-! there might be a better way to calculate moments, but will leave it like that for now. -ahu
+! there might be a better way to calculate moments, but will leave it like that for now. -ahu!!!
 
 end subroutine mp_tau
+
+subroutine calcmom(ffcd_mass,mc,mr)
+
+use micro_prm
+use mphys_tau_bin_declare, only: lk_cloud,x_bin
+Use namelists, only: bintype
+implicit none
+integer :: i,j,k,ip
+real, dimension(max_nbins)::ffcd_mass
+real(8),dimension(10) :: mc,mr ! moments
+
+do i=1,10
+    if (bintype .eq. 'sbm') then
+        mc=sum(ffcd_mass(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
+        mr=sum(ffcd_mass(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+    elseif (bintype .eq. 'tau') then
+        mc=sum(ffcd_mass(1:lk_cloud)/x_bin(2:lk_cloud+1)*diams(1:lk_cloud)**(i-1))*col*1.e6
+        mr=sum(ffcd_mass(lk_cloud+1:nkr)/x_bin(lk_cloud+2:nkr+1)*diams(lk_cloud+1:nkr)**(i-1))*col*1.e6
+    endif
+enddo
+
+end subroutine calcmom
