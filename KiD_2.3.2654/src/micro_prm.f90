@@ -1,8 +1,9 @@
 module micro_prm
-use parameters, only: max_nbins
+use parameters, only: max_nbins, num_h_moments, num_h_bins
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
-                    cloud_init,rain_init,bintype
+                    cloud_init,rain_init,bintype,num_h_moments, &
+                    num_h_bins, ampORbin
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP
 
 !use parameters, only:nx,nz,num_h_moments
@@ -248,8 +249,18 @@ contains
 
     if (bintype .eq. 'sbm') then
         nkr=33
+
+        if (ampORbin .eq. 'bin') then
+            num_h_moments=(/1,1/)
+            num_h_bins=(/33,33/)
+        end if
     elseif (bintype .eq. 'tau') then
         nkr=34
+
+        if (ampORbin .eq. 'bin') then
+            num_h_moments=(/2,2/)
+            num_h_bins=(/34,34/)
+        endif
     endif
 
     end subroutine check_bintype
