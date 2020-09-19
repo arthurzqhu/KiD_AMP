@@ -325,7 +325,7 @@ INTEGER, PARAMETER::INDTVDSP = 2 - (ITVDSCALP + 2) / (ITVDSCALP + &
           ! To minimise the size of ADV_ arrays if TVD not used
 
 real :: eps ! machine dependent small number, epsilon(1d.0)
-
+real :: epss ! single precision small number, epsilon(1e.0)
 COMMON / MOIST / QSAT, QSATFAC, TSTARPR, DQSATDT, TREF, QSATPW
 ! Arrays for moist processes
 ! Note that at V2.3 arrays only used in MOISTRI(2) and Taylor series
@@ -1153,8 +1153,9 @@ COMMON/BA/CCN
 !CCN is new number of aerosol following activation
 !
 !*COMDECK CC
-COMMON/CC/XKK1,DUS,DUS1
+COMMON/CC/XKK1,Dgmean,DUS,DUS1
  REAL,DIMENSION(LK) :: XKK1
+ REAL(8),DIMENSION(LK) :: dgmean
  REAL,DIMENSION(JMINP:JMAXP,KKP) :: DUS,DUS1
 !
 !*COMDECK X123
@@ -1219,8 +1220,8 @@ COMMON/WM/AM1,AN1,AN2
 !
 !*COMDECK RI
   COMMON/RI/XK,DIEMC,DIENC,DIONE,XKmean, XKlocal, &
-  XKlayer,XK_gr
-  REAL,DIMENSION(LK)::XK,DIEMC,DIENC,DIONE,XKmean,XK_gr
+  XKlayer,XK_gr,XKgmean
+  REAL,DIMENSION(LK)::XK,DIEMC,DIENC,DIONE,XKmean,XK_gr,XKgmean
   REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: XKlocal
   REAL, DIMENSION(KKP,LK) :: XKlayer
 !
