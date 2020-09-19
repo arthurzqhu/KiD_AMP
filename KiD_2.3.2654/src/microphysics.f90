@@ -768,8 +768,9 @@ use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
                                  IMICROBIN, rmass_cw, QL_SED, QLN_SED, dD, &
                                  xkk1, xkmean, IRAINP, lk_cloud, CCNORIGAVG, &
                                  dqn_reg, l_dodgs, dth_dt, dq_dt
-use namelists, only: aero_N_init,l_advect,l_diverge
-use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem
+use namelists, only: aero_N_init,l_advect,l_diverge,ampORbin
+use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem, &
+                     ffcdprev_mass, ffcdprev_num
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
@@ -945,7 +946,7 @@ do j = jminp,jmaxp
         ih=qindices(ICDKG_BIN(iq))%ispecies
         imom=qindices(ICDKG_BIN(iq))%imoment
         do k=1,nz-offset
-            q_lem (j, k+offset, ICDKG_BIN(iq)) = ffcd_mass2d(k,j,iq)*col*(pi/6*1000.)
+            q_lem (j, k+offset, ICDKG_BIN(iq)) = ffcd_mass2d(k,j,iq)*col!*(pi/6*1000.)
         end do
         ! number bins
         ih=qindices(ICDNC_BIN(iq))%ispecies
@@ -959,7 +960,7 @@ do j = jminp,jmaxp
 enddo
 
 ! -------------- set the tendency due to adv and div as input -ahu ------------
-if (l_advect .or. l_diverge) then
+!if (l_advect .or. l_diverge) then
   do j=jminp,jmaxp
      sth_lem(j,1+offset:kkp)=dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j)
      sq_lem(j,1+offset:kkp,iqv)=dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j)
@@ -978,14 +979,24 @@ if (l_advect .or. l_diverge) then
         ih=qindices(icdkg_bin(iq))%ispecies
         imom=qindices(icdkg_bin(iq))%imoment
         do k=1,nz-offset
-           sq_lem(j,k+offset,icdkg_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom))*(pi/6*1000.)
+            if (ampORbin .eq. 'bin') then
+                sq_lem(j,k+offset,icdkg_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*(pi/6*1000.)
+            elseif (ampORbin .eq. 'amp') then
+                sq_lem(j,k+offset,icdkg_bin(iq))=(ffcd_mass2d(k,j,iq) - &
+                    ffcdprev_mass(k,j,iq))*col/dt
+            endif
         end do
         ih=qindices(icdnc_bin(iq))%ispecies
         imom=qindices(icdnc_bin(iq))%imoment
         do k=1,nz-offset
-           sq_lem(j,k+offset,icdnc_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
-                + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+            if (ampORbin .eq. 'bin') then
+                sq_lem(j,k+offset,icdnc_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
+                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+            elseif (ampORbin .eq. 'amp') then
+                sq_lem(j,k+offset,icdnc_bin(iq))=(ffcd_num2d(k,j,iq) - &
+                    ffcdprev_num(k,j,iq))*col/dt
+            endif
         end do
      end do
    end do
@@ -1000,7 +1011,7 @@ if (l_advect .or. l_diverge) then
       ENDDO
    ENDDO
 
-end if
+!end if
 
 ! ------------------------------ mphys starts ----------------------------------
 ! call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)  !expand this part later -ahu
@@ -1048,7 +1059,11 @@ do J = JMINP,JMAXP
          AMKORIG(J,K,IQ) = 0.0
          ANKORIG(J,K,IQ) = 0.0
       endif
+
    ENDDO
+
+!if (k==28 .and. i_dgtime>45) print*,SQ(J,K,ICDKG_BIN(:)),Q(J,K,ICDKG_BIN(:))
+
 ENDDO
 ENDDO
 
@@ -1302,6 +1317,9 @@ DO K=2,KKP
                  ANK(J,K,L)=AN0(L)
               ENDDO
            ENDIF
+!print*, 'evap k',k
+!if (k==31) print*,'amk',amk(j,k,:)*1.e3/rhon(k)
+
         ELSE
 
            DO L=1,LK
@@ -1329,6 +1347,7 @@ DO K=2,KKP
     !           respectively for source term calc and thermodynamic
     !           updates
     !
+
             amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)
             ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)
             if(amk(j,k,l) < eps.or.                 &
@@ -1346,6 +1365,7 @@ DO K=2,KKP
          dm = 0.0
          do l = 1,lk
             dm = dm + (amk(j,k,l) - amkorig(j,k,l))
+!if (k==28 .and. i_dgtime>45) print*, amk(j,k,l), amkorig(j,k,l)
          enddo
 
     ! AH 0410 - Update thermodynamic field once evap and cond
@@ -1354,6 +1374,15 @@ DO K=2,KKP
 
          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
          QVNEW = QVNEW - DM
+if (tbase(j,k)<0) then
+    print*, 'negative temperature', j,k,tbase(j,k)
+    print*, 'dm',dm
+    stop
+endif
+!if (abs(dm)>.01) then
+!    print*, 'dm too big'
+!    stop
+!endif
 
          QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
          DS(J,K)=QVNEW-QSATPW(J,K)
@@ -1406,7 +1435,6 @@ DO K=2,KKP
     EA(J,K) = DS(J,K)
 
     IF(EA(J,K) >  0.0) THEN
-
       AN1OLD(J,K) = 0.0
       AM1OLD(J,K) = 0.0
       CCNTOT(J,K) = 0.0
@@ -1458,11 +1486,20 @@ DO K=2,KKP
       ANK(J,K,1) = ANK(J,K,1) + AN2(J,K)
       ! the 0.25 factor attempts to accomodate for the fact
       ! that not all CCN will grow to the size of the 1st bin
+
       AMK(J,K,1) = AMK(J,K,1) + AN2(J,K)*XK(1)*0.25
+
       AMK(J,K,1) = MAX(ANK(J,K,1)*XK(1)*1.01, AMK(J,K,1))
 
       MCC(J,K) = AMK(J,K,1) - AM1(J,K)
-
+if (AMK(J,K,1) .ne. AMK(J,K,1)) then
+    print*, 'nan AMK(J,K,1)'
+    print*, 'an2',AN2(j,k)
+    print*, 'ank',ank(j,k,1)
+    print*, 'tbase', tbase(j,k)
+    print*, 'ssat', DDDD
+    stop
+endif
       AM1(j,k) = 0.0
       DO L = 1, LK
         AM1(J,K) = AM1(J,K) + AMK(J,K,L)
@@ -1471,6 +1508,10 @@ DO K=2,KKP
     !calculate the new termodynamic fields following activation
       TBASE(J,K)=TBASE(J,K)+AL/CPBIN*MCC(J,K)
       QVNEW = QVNEW - MCC(J,K)
+if (MCC(J,K) .ne. MCC(J,K)) then
+    print*, 'NaN MCC(J,K)'
+    stop
+endif
       QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
     ENDIF                          ! end of do activation
 
@@ -1502,7 +1543,7 @@ DO K=2,KKP
 
         if (IRAINBIN == 1.AND.IMICROBIN == 1) then
 
-! 3.3 
+! 3.3
 !************************************************************
 !            COLLECTION + BREAKUP
 !************************************************************
@@ -1534,7 +1575,7 @@ DO K=2,KKP
 
             IF(AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
 
-              if (l_coll_coal .or. docollisions) then
+              if (docollisions) then
 
 
                  CALL SXY(J,K,DT)
@@ -1643,7 +1684,6 @@ DO K=2,KKP
               SQ(J,K,IAERO_BIN(L))=SQ(J,K,IAERO_BIN(L))+DCCNDT
            ENDDO
         endif
-
         DO L=1,LK
 !AH 0410 - Calculate the change in mass and number due to microphysics i.e.
 !          nucleation, cond, evap, collection and sedimentation
@@ -1658,11 +1698,9 @@ DO K=2,KKP
              DAMKDT = DIEMC(L) * RDT
              DANKDT = DIENC(L) * RDT
             ENDIF
-
 !AH 0410 - Call microcheck to update the source fields for bin resolved mass
 !          and number with DAMKDT and DANKDT
 !
-
             CALL MICROcheck(J,K,L,DT,AMKORIG(J,K,L), &
                ANKORIG(j,k,l),SQ(J,K,ICDKG_BIN(L)), &
                SQ(J,K,ICDNC_BIN(L)),DAMKDT,DANKDT,RDT,Q(J,K,ICDKG_BIN(L)) &
@@ -1690,10 +1728,16 @@ DO K=2,KKP
 ! Finally calc the microphys change in QV
         DQVDT(j,k)=(QVNEW-QVOLD(J,K))*RDT
 
+if (QVNEW .ne. QVNEW) then
+    print*, 'NaN QVNEW'
+    stop
+endif
+
 ! 4. calculate the change in theta due to bin microphysics
         THNEW=(TBASE(J,K) - TREF(K))*PREFRCP(K)
         DTHDT(J,K)=(THNEW-THOLD)*RDT
         totevap = totevap + CDNCEVAP(J,K)
+
     ENDDO
 ENDDO
 
@@ -1761,7 +1805,6 @@ DO K = 2,KKP
     DO J = JMINP,JMAXP
         STH(J,K) = STH(J,K) + DTHDT(J,K)
         SQ(J,K,IQV) = SQ(J,K,IQV)+DQVDT(J,K)
-
         DO IQ=1,LK
         !Call microcheck to update the source fields for bin resolved mass
         !and number, and check that small numbers are not causing erroneous
@@ -1786,6 +1829,7 @@ ENDDO
 
 ! 6. calculate effective radius for radiation
 CALL REFFCALC(Q,SQ,DT,RDT)
+
  !
 ! 7. update diagnostic fields if necessary
 !
@@ -1798,17 +1842,18 @@ DO K = 2, KKP
     ENDDO
 ENDDO
 
-do j=jminp,jmaxp
-    do k=1,kkp
-        do iq=1,lk
-            if (q(j,k,icdkg_bin(iq))>.1) then
+!do j=jminp,jmaxp
+!    do k=1,kkp
+!        do iq=1,lk
+!            if (q(j,k,icdkg_bin(iq))>.1) then
+!                print*, 'liquid too massive'
                 !print*, 'q', j,k,iq,q(j,k,icdkg_bin(iq))
                 !print*, 'sq', j,k,iq,sq(j,k,icdkg_bin(iq))
-                stop
-            endif
-        enddo
-    enddo
-enddo
+!                stop
+!            endif
+!        enddo
+!    enddo
+!enddo
 
 th_lem = TH
 q_lem = Q
@@ -1820,7 +1865,7 @@ sq_lem = SQ
 ! ---------- sq and sth were tendencies due to mphys + adv + div. -------------
 ! ---------------------- set them as only due to mphys. -----------------------
 do j=jminp,jmaxp
-    if (l_advect .or. l_diverge) then
+!    if (l_advect .or. l_diverge) then
         sth_lem(j,1+offset:kkp)=sth_lem(j,1+offset:kkp)     &
             - (dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j))
         sq_lem(j,1+offset:kkp,iqv)=sq_lem(j,1+offset:kkp,iqv)   &
@@ -1840,19 +1885,29 @@ do j=jminp,jmaxp
             ih=qindices(icdkg_bin(iq))%ispecies
             imom=qindices(icdkg_bin(iq))%imoment
             do k=1,nz-offset
-                sq_lem(j,k+offset,icdkg_bin(iq))= sq_lem(j,k+offset,icdkg_bin(iq))      &
-                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))*(pi/6*1000.)
+                if (ampORbin .eq. 'bin') then
+                    sq_lem(j,k+offset,icdkg_bin(iq))= sq_lem(j,k+offset,icdkg_bin(iq))      &
+                        - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
+                        + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*(pi/6*1000.)
+                elseif (ampORbin .eq. 'amp') then
+                    sq_lem(j,k+offset,icdkg_bin(iq)) = sq_lem(j,k+offset,icdkg_bin(iq)) &
+                        - (ffcd_mass2d(k,j,iq) - ffcdprev_mass(k,j,iq))*col/dt
+                endif
             end do
             ih=qindices(icdnc_bin(iq))%ispecies
             imom=qindices(icdnc_bin(iq))%imoment
             do k=1,nz-offset
-                sq_lem(j,k+offset,icdnc_bin(iq))= sq_lem(j,k+offset,icdnc_bin(iq))      &
-                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
-                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+                if (ampORbin .eq. 'bin') then
+                    sq_lem(j,k+offset,icdnc_bin(iq))= sq_lem(j,k+offset,icdnc_bin(iq))      &
+                        - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
+                        + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+                elseif (ampORbin .eq. 'amp') then
+                    sq_lem(j,k+offset,icdnc_bin(iq)) = sq_lem(j,k+offset,icdnc_bin(iq)) &
+                        - (ffcd_num2d(k,j,iq) - ffcdprev_num(k,j,iq))*col/dt
+                endif
             end do
         end do
-    end if
+!    end if
 !   For now set no microphysics on the bottom level - this would be
 !   better done by having a subterranian level 0 in column variables
     if (offset==1) sq_lem(j,1,1)=0
@@ -1877,7 +1932,7 @@ do j=jminp,jmaxp
 
     do iq=1,lk
         do k=1,nz-offset
-            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k+offset,icdkg_bin(iq))*dt/col/(pi/6*1000.)
+            ffcd_mass2d(k,j,iq) = ffcd_mass2d(k,j,iq) + sq_lem(j,k+offset,icdkg_bin(iq))*dt/col!/(pi/6*1000.)
         end do
         do k=1,nz-offset
             ffcd_num2d(k,j,iq) = ffcd_num2d(k,j,iq) + sq_lem(j,k+offset,icdnc_bin(iq))*dt/col
@@ -1885,31 +1940,44 @@ do j=jminp,jmaxp
     end do
 end do
 
+! check big liquid
+do k=1,nz
+    do j=jminp,jmaxp
+        do l=1,lk
+            if (q_lem(j,k,icdkg_bin(l))>.1 .or. sq_lem(j,k,icdkg_bin(l))>.1) then
+                !print*, 'liquid too massive'
+                !print*, 'k=',k, 'l=',l
+                !print*, 'q=',q_lem(j,k,icdkg_bin(l))
+                !print*, 'sq=',sq_lem(j,k,icdkg_bin(l))
+                !stop
+            end if
+        end do
+    end do
+end do
 
 ! check NaN
 do k=1,nz
     do j=jminp,jmaxp
         do iq=1,nqp
             if (q_lem(j,k,iq) .ne. q_lem(j,k,iq)) then
-                !print*,'q', k,iq
+                print*, 'some NaNs here'
+                print*,'q', k,iq
+                stop
             end if
             if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
-                !print*,'sq', k,iq
+                print*, 'some NaNs here'
+                print*,'sq', k,iq
+                stop
             end if
         enddo
     enddo
 enddo
 
-if (any(q_lem .ne. q_lem) .or. any(sq_lem .ne. sq_lem)) then
-    !print*, 'q', q_lem(1,78,:)
-    !print*, 'sq', sq_lem(1,78,:)
-!    print*, ffcd_mass2d(40,1,:)
-!    print*, ffcd_num2d(40,1,:)
-!    print*, '**at least the mphys routine finished**'
-    stop
+do k=1,nz
+    !print*, k,sum(q_lem(j,k,icdkg_bin(:)))
+enddo
 
-end if
-
+!print*,'sq', sq_lem(1,31,icdkg_bin(:))/col
 
 end subroutine micro_proc_tau
 
@@ -1918,7 +1986,6 @@ subroutine micro_init_tau
 use micro_prm
 use module_bin_init
 use mphys_tau_bin_declare
-use module_bin_init
 implicit none
 
 integer :: j,k
@@ -1957,6 +2024,9 @@ DO IQ = 1, Ln2
    CCNORIGAVG(IQ) = CCNORIGTOT(IQ)/(JJP*KKP)
 ENDDO
 
+!diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
+!^ no need to do that bc it's handled by the check_bintype() subroutine
+
 end subroutine micro_init_tau
 
 !----------- sub-subroutine for micro_init_tau ------------
@@ -1966,18 +2036,18 @@ Use parameters, only : num_h_moments, num_h_bins, &
      num_aero_moments,num_aero_bins, aero_mom_init
 Use mphys_tau_bin_declare
 Use micro_prm
+use namelists, only: ampORbin
 implicit none
 
 integer :: i
 
 rdt=1./dt
-
 ! vapour
 
 iq=1
 iqv=iq
 
-if (num_h_bins(1) >= 11) then
+if (num_h_bins(1) >= 11 .or. ampORbin .eq. 'amp') then
   IMICROBIN=1
   IRAINBIN=1
 
@@ -2031,11 +2101,11 @@ var=count
 end subroutine qcount
 
 !-------------------------------------------------------------------
-Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd_mass,ffcd_num)
+Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,ffcd_mass,ffcd_num)
 
-use micro_prm, only:nkr
+use micro_prm, only:nkr, diams, krdrop
 use parameters, only: max_nbins
-use mphys_tau_bin_declare, only: DIAM, NQP
+use mphys_tau_bin_declare, only: DIAM, NQP, xkgmean, dgmean
 use physconst, only: pi, rhoW
 
 implicit none
@@ -2043,9 +2113,9 @@ implicit none
 integer :: kr
 real:: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
-real(8), dimension(max_nbins) :: diams, ffcd_mass, ffcd_num
+real(8), dimension(max_nbins) :: ffcd_mass, ffcd_num
 
-diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
+
 !print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
@@ -2058,21 +2128,23 @@ n0r=rxr/gamma(gnur+3)
 
 do kr=1,nkr
   if (rxc>0.) then
-    exptermc=exp(-1.*diams(kr)/dnc)
-    ffcd_mass(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
-    ffcd_num(kr) = ffcd_mass(kr)/(diams(kr)**3*pi/6.*rhoW)
+    exptermc=exp(-1.*dgmean(kr)/dnc)
+    ffcd_mass(kr) = n0c*exptermc*(dgmean(kr)/dnc)**(gnuc+3)
+    ffcd_num(kr) = ffcd_mass(kr)/xkgmean(kr)!(diams(kr)**3*pi/6.*rhoW)
   endif
   if (rxr>0.) then
-     exptermr=exp(-1.*diams(kr)/dnr)
-     ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
-     ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/(diams(kr)**3*pi/6.*rhoW)
+     exptermr=exp(-1.*dgmean(kr)/dnr)
+     ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(dgmean(kr)/dnr)**(gnur+3)
+     ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/xkgmean(kr)!(diams(kr)**3*pi/6.*rhoW)
+!  else
+!     ffcd_mass(krdrop:nkr)=0.
   endif
 
 !If ffcd(kr) is NaN, set to zero
 !    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
 enddo
-
+!print*, 'right after init', ffcd_mass
 return
 !Diagnose shape parameter
 !  if (mom<0) then
