@@ -27,7 +27,7 @@ if (x(2)<=0. .or. x(2)>dnbounds(2,ihyd) &
 else
   rx=1.e-10 !This is an arbitrary value of rx
   nu=x(1) !Shape parameter
-  dn=x(2)*1.e-6 !Scale diameter multiplied by 1e6 to make its magnitude
+  dn=x(2) !Scale diameter multiplied by 1e6 to make its magnitude
                 !approximately the same as nu
 
   md=0. !Initialize the mass distribution
@@ -35,9 +35,9 @@ else
 !  call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
 
   !Calculate the moments - 0th, 3rd, and xth
-  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)! don't need this part since will cancel in ratio *col*1000.
-  mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
-  my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)!*col*1000.
+  call calcmom(m3,md,3)!sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)! don't need this part since will cancel in ratio *col*1000.
+  call calcmom(mx,md,momx)!sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
+  call calcmom(my,md,momy)!sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)!*col*1000.
 
   !Calculate the errors in the moments
   if (m3>0.) then
@@ -77,14 +77,14 @@ if (x(1)<=0. .or. x(1)>1.e10) then
 else
   rx=1.e-10 !This is an arbitrary value of rx
   nu=nug !nug is the global value of nu
-  dn=x(1)*1.e-6 !x(1) is the scale diameter multiplied by 1e6 to make its magnitude
+  dn=x(1) !x(1) is the scale diameter multiplied by 1e6 to make its magnitude
                 !approximately the same as nu
   md=0. !Initialize the distribution
   call incgamma_norm(rx,nu,dn,skr,ekr,md)
 
   !Calculate the moments - xth and 3rd
-  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)!*col*1000.
-  mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
+  call calcmom(m3,md,3)!sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)!*col*1000.
+  call calcmom(mx,md,momx)!sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)!*col*1000.
 
   !Calculate the errors in the moments
   if (m3>0.) then
@@ -108,9 +108,9 @@ double precision :: ratio,m3,mx,my,md(max_nbins),error(2),rx,nu,dn
 !  call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
 
   !Calculate the moments - 3rd, xth, and yth
-  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3.)*col*1000.
-  mx=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momx)*col*1000.
-  my=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momy)*col*1000.
+  call calcmom(m3,md,3) 
+  call calcmom(mx,md,momx) 
+  call calcmom(my,md,momy)
 
   !Calculate the errors in the moments
   ratio = (Mxp/mx)*(m3/M3p)
@@ -123,9 +123,32 @@ double precision :: ratio,m3,mx,my,md(max_nbins),error(2),rx,nu,dn
 
 End subroutine calcerr
 !------------------------------------------------------------------------
+subroutine calcmom(mom,md,momnum)
+
+use micro_prm, only: diams,col,nkr
+use mphys_tau_bin_declare, only:xk
+use namelists, only: bintype
+use parameters, only: max_nbins
+use module_hujisbm, only:xl
+use mphys_tau_bin_declare, only:dgmean,xkgmean
+
+implicit none
+
+double precision :: mom,md(max_nbins)
+integer :: momnum
+
+if (bintype .eq. 'sbm') then
+    mom=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momnum)*col*1000.
+elseif (bintype .eq. 'tau') then
+    mom=sum(md(1:nkr)/xkgmean(1:nkr)*dgmean(1:nkr)**momnum)*col
+endif
+end subroutine calcmom
+!------------------------------------------------------------------------
 subroutine incgamma(rx,nu,dn,ia,iz,md)
 use micro_prm, only:diams,nkr
-use parameters, only: max_nbins
+use parameters, only: max_nbins 
+use namelists, only: bintype
+use mphys_tau_bin_declare, only:dgmean
 implicit none
 
 double precision :: rx,nu,dn,n0,expterm,md(max_nbins)
@@ -133,8 +156,13 @@ integer :: ia,iz,kr
 
   n0=rx/gamma(nu+3)
   do kr=ia,iz !Loop over bins
-    expterm=exp(-1.*diams(kr)/dn)
-    md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
+    if (bintype .eq. 'sbm') then
+        expterm=exp(-1.*diams(kr)/dn)
+        md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
+    elseif (bintype .eq. 'tau') then
+        expterm=exp(-1.*dgmean(kr)/dn)
+        md(kr)=n0*expterm*(dgmean(kr)/dn)**(nu+3.)
+    endif
     !Check for NaNs
 !    if (md(kr).ne.md(kr) .or. md(kr)*0.0 .ne.0.0 &
 !       .or. md(kr)/md(kr) .ne. 1.0) md(kr)=0.
@@ -144,8 +172,10 @@ return
 End subroutine incgamma
 !------------------------------------------------------------------------
 subroutine incgamma_norm(rx,nu,dn,ia,iz,md)
-use micro_prm, only:diams,nkr
+use micro_prm, only:diams,nkr,ihyd
 use parameters, only: max_nbins
+use namelists, only: bintype
+use mphys_tau_bin_declare, only:dgmean
 implicit none
 
 double precision :: rx,nu,dn,n0,expterm,md(max_nbins)
@@ -153,11 +183,24 @@ integer :: ia,iz,kr
 
   n0=rx
   do kr=ia,iz !Loop over bins
-    expterm=exp(-1.*diams(kr)/dn)
-    md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
+   if (bintype .eq. 'sbm') then
+        expterm=exp(-1.*diams(kr)/dn)
+        md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
+    elseif (bintype .eq. 'tau') then
+        expterm=exp(-1.*dgmean(kr)/dn)
+        md(kr)=n0*expterm*(dgmean(kr)/dn)**(nu+3.)
+    endif
     !Check for NaNs
 !    if (md(kr).ne.md(kr) .or. md(kr)*0.0 .ne.0.0 &
 !       .or. md(kr)/md(kr) .ne. 1.0) md(kr)=0.
+!if (ihyd==1) then
+!    print*, kr, 'exp', expterm 
+!    print*, 'n0', n0
+!    print*, 'diams', diams(kr)
+!    print*, 'dn',dn
+!    print*, 'nu',nu
+!endif
+!print*, n0,expterm,diams(kr),dn,nu
   enddo
 
 return
@@ -190,6 +233,7 @@ subroutine calcdist(x,md)
 use micro_prm, only:nkr,diams,M3p,col,skr,ekr,rxfinal,ihyd,dnbounds
 use module_hujisbm, only:xl
 use parameters, only: max_nbins
+use diagnostics, only: i_dgtime
 implicit none
 double precision x(2)
 integer n
@@ -197,21 +241,28 @@ integer n
 double precision rx, nu, dn, m3
 double precision, dimension(max_nbins):: md
 
+
 !Use this function to force correct 3rd moment
 !Very similar to fcn_2p
   rx=1.e-10
   nu=x(1)
-  dn=x(2)*1.e-6
+  dn=x(2)
   n=0
  do
   n=n+1
   md=0.
-  call incgamma_norm(rx,nu,dn,skr,ekr,md)
-  !call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
-  m3=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)*col*1000.
-!print*, m3
 
+  call incgamma_norm(rx,nu,dn,skr,ekr,md)
+!if (ihyd==1) print*,rx,nu,dn,skr,ekr
+  !call incjohnsonsb(nu,dn*1.e6,skr,ekr,md)
+  call calcmom(m3,md,3)!sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**3)*col*1000.
+
+!print*,'ihyd',ihyd,'dn', dn,'bounds',dnbounds(:,ihyd)
+!print*, 'ihyd',ihyd,'m3', m3
+
+!if (i_dgtime>30) print*,rx,x(1),dn 
 !print*,md/xl*diams**3
+!if (i_dgtime == 1 .or. i_dgtime==20) print*,'sum(md)=',sum(md)
 
   if ((m3==0. .or. dn==0.) .and. M3p<1.e-20) then
     rxfinal=0.
@@ -219,7 +270,7 @@ double precision, dimension(max_nbins):: md
     exit
   elseif (m3==0. .or. dn==0.) then
     print*,'cannot find rxfinal and mass = ',M3p*3.1415/6.*1000
-    print*,m3,nu,dn,ihyd,dnbounds(:,ihyd)
+    print*,m3,rx,nu,dn,ihyd,dnbounds(:,ihyd)
     stop
   endif
   if (M3p/m3 > 1.e10) then !Might need similar condition for M3p/m3< 1.e-10
@@ -227,6 +278,7 @@ double precision, dimension(max_nbins):: md
   else
     rxfinal = M3p/m3*rx
     md = md*rxfinal/rx
+
     exit
   endif
   if (n>1000) then
@@ -247,7 +299,8 @@ implicit none
 real(8) :: guess(2)
 real(8) :: md(max_nbins)
 integer :: ihyd
-real(8),dimension(flag_count) :: flag
+real(8),optional,dimension(flag_count) :: flag
+integer, optional :: k ! vertical level for debugging -ahu
 
 if (npm==3) then !if rain is 2M, then cloud is also 2M
    CALL searchparams3M(guess,ihyd,md,flag)
@@ -264,6 +317,7 @@ use micro_prm, only:relax,Mp,M3p,Mxp,Myp,momx,nkr, &
                cloud_mr_th, rain_mr_th
 use parameters, only:flag_count, max_nbins
 use namelists, only:ovc_factor
+use diagnostics, only:i_dgtime
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
@@ -281,9 +335,10 @@ real(real32) :: nan
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
-flag(:) = 0
+flag(:)=0.
 !This subroutine drives the search for PDF parameters that satisfy the
 !moments.
+
 M3p=Mp(1);Mxp=Mp(2);Myp=Mp(3)
 
 relax=1. !Initial value of relax. Do not change.
@@ -295,7 +350,7 @@ info=0 !Message sent back from minimization routines.
 oguess=guess !oguess is the current best guess
 ovals=0.
 !print*,oguess
-CALL calcerr(100.d0,oguess(1),oguess(2)*1.e-6,ovals)
+CALL calcerr(100.d0,oguess(1),oguess(2),ovals)
 osqval = sqrt(sum(ovals**2))
 
 !First try - previous values
@@ -350,6 +405,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
 
   !Use im1 and im2 to find min and max value of My/M3
   !ihyd1=cloud, ihyd2=rain
+
   minmy1 = mintab(im1,ihyd)
   maxmy1 = maxtab(im1,ihyd)
   minmy2 = mintab(im2,ihyd)
@@ -358,6 +414,7 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
   !Check now to see if MxM3 is out of allowable range and adjust Mx
   min12=min(minmy1,minmy2)
   max12=max(maxmy1,maxmy2)
+
   if (MyM3 < min12) then
     flag(1)=1
     MyM3 = min12*(1.+ovc_factor)
@@ -388,7 +445,6 @@ if (guess(2).eq.0 .or. abs(vals(1))>1.0e-4) then
              wgtm*((1.-wgty2)*nutab(ix1b,im2,ihyd)+wgty2*nutab(ix2b,im2,ihyd))
   guess(2) = (1.-wgtm)*((1.-wgty1)*dntab(iy1a,im1,ihyd)+wgty1*dntab(ix2b,im1,ihyd)) + &
              wgtm*((1.-wgty2)*dntab(ix1b,im2,ihyd)+wgty2*dntab(ix2b,im2,ihyd))
-
   !Use the best-guess. See what happens
   CALL hybrd1(fcn_2p,n,guess,vals,tol,info,wa,lwa)
   sqval = sqrt(sum(vals**2))
@@ -451,14 +507,15 @@ if ((ihyd==1 .and. M3p<cloud_mr_th) .or. (ihyd==2 .and. M3p<rain_mr_th)) then
   flag(2:flag_count) = nan
 end if
 
-!if (ihyd==2 .and. M3p<1e-7) then
-!  flag(1) = -1
-!  flag(2:flag_count) = nan
-!end if
-
+if (guess(1) .ne. guess(1) .or. guess(2) .ne. guess(2)) then
+    print*,'ihyd=',ihyd
+    print*, 'guess=',guess
+endif
 !Force third moment to have no error and calculate final distribution
 !print*,'a',guess
+
 CALL calcdist(guess,md)
+
 !print*,ihyd,guess
 return
 
@@ -469,7 +526,7 @@ Subroutine searchparams2M(guess,md,flag)
 use micro_prm, only:Mp,M3p,Mxp,ntab,skr,ekr,nkr,momx,nug,diams
 use parameters, only: max_nbins
 implicit none
-real(8) :: guess(2),oguess(2),vals,tol,guessin(1)
+real(8) :: guess(2),oguess(2),vals(1),tol,guessin(1)
 real(8) :: MxM3,minmxm3,maxmxm3
 real(8) :: md(max_nbins)
 integer :: info,n,flag
@@ -510,19 +567,20 @@ vals = 2.
 guessin=guess(2)
 CALL hybrd1(fcn_1p,n,guessin,vals,tol,info,wa,lwa)
 
-if (vals==1.) then
+if (vals(1)==1.) then
   guess=oguess
 else
   guess(2)=guessin(1)
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
-if (abs(vals)>tol) flag = 1
+if (abs(vals(1))>tol) flag = 1
 
 !For 3M fitting, we jiggle the values and relax tolerance on Mx
 !No sense in doing that here. The fitting is much easier, and should
 !always give the same answer.
 CALL calcdist(guess,md)
+
 return
 
 End subroutine searchparams2M
