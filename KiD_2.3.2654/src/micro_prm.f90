@@ -1,10 +1,10 @@
 module micro_prm
-use parameters, only: max_nbins, num_h_moments, num_h_bins
+use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
-                    num_h_bins, ampORbin
-use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP
+                    num_h_bins, ampORbin,num_aero_moments
+use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean
 
 !use parameters, only:nx,nz,num_h_moments
 implicit none
@@ -203,7 +203,11 @@ real :: inreg
 ! For idealized ccn distributions
 real :: sig_g, rp_g !cm
 
+
 !
+real, dimension(nz,nx,max_nbins) :: ffcdprev_mass,ffcdprev_num ! mass and number
+! after microphysics 
+
 !double precision, dimension(nkr) :: fncn,ffcd,ffip,ffid,ffic,ffgl,ffhl,ffsn
 !    real, dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 !    real, dimension(nz,nx,num_h_moments(2)) :: Mpr2d
@@ -223,7 +227,6 @@ double precision, dimension(2,10,2) :: minmaxmx
 double precision, dimension(ntab,2) :: mintab,maxtab
 double precision, dimension(2,2) :: nubounds, dnbounds
 real(8),dimension(max_nbins) :: diams
-
 integer, parameter :: r4size = 4, r8size = 8
 INTEGER,PARAMETER :: ISIGN_KO_1 = 0, ISIGN_KO_2 = 0,  ISIGN_3POINT = 1,  &
                       IDebug_Print_DebugModule = 1
@@ -256,6 +259,8 @@ contains
         end if
     elseif (bintype .eq. 'tau') then
         nkr=34
+        num_aero_moments=1
+        diams=dgmean
 
         if (ampORbin .eq. 'bin') then
             num_h_moments=(/2,2/)
@@ -264,5 +269,66 @@ contains
     endif
 
     end subroutine check_bintype
+    
+    real function mean(arr,n,wgt)
+        implicit none 
+        real, dimension(n) :: arr
+        real, optional, dimension(n) :: wgt
+        integer :: n
+
+        ! calculates the mean of an array `arr` given the weights `wgt`
+        if (present(wgt)) then
+            if (any(wgt<0)) then
+                print*, "weights can't be negative"
+                return
+            else
+                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
+                mean=sum(arr*wgt)
+            endif
+        else
+            mean=sum(arr)/n
+        endif
+
+    end function mean
+
+    real function std(arr,n,wgt)
+        implicit none
+        real, dimension(n) :: arr
+        real, optional, dimension(n) :: wgt
+        integer :: n
+        
+        if (present(wgt)) then
+            if (any(wgt<0)) then
+                print*, "weights can't be negative"
+                return
+            else
+                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
+                std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt))
+            endif
+        else
+            std=sqrt(sum((arr-mean(arr,n))**2)/n)
+        end if
+    
+    end function std
+    
+    real function reldisp(arr,n,wgt)
+        implicit none
+        real, dimension(n) :: arr
+        real, optional, dimension(n) :: wgt
+        integer :: n
+
+        reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
+
+    end function reldisp
+
+    real function shparam(arr,n,wgt)
+        implicit none
+        real, dimension(n) :: arr
+        real, optional, dimension(n) :: wgt
+        integer :: n
+
+        shparam=1/reldisp(arr,n,wgt)**2
+
+    end function shparam
 
 end module micro_prm
