@@ -36,7 +36,7 @@ contains
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
-    real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinit2d
+    real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
     real, dimension(nz) :: field
     real(8),dimension(nz,flag_count) :: fieldflag
     real(8), dimension(nz) :: fielddp
@@ -79,7 +79,7 @@ contains
           else !bin
              Mpc2d=0.;Mpr2d=0.
              do j=1,nkr
-                dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col*(pi/6*1000.)
+                dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
          !       dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1) &
          !            + (dhydrometeors_adv(k,i,1)%moments(j,1) &
          !            + dhydrometeors_div(k,i,1)%moments(j,1))*dt
@@ -99,8 +99,9 @@ contains
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
-         guessr2d(:,:,2) = 0.001
-         call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
+         guessr2d(:,:,2) = 0.001 
+         call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d) 
+!print*, Mpc2d,Mpr2d
       elseif (ampORbin .eq. 'bin') then
          if (bintype .eq. 'sbm') then
             call sbm_init(aer2d,dropsm2d)
@@ -114,10 +115,13 @@ contains
    aer2d = 0.
    if (ampORbin .eq. 'amp') then
       dropsm2d=0.
-      dropsinit2d=0.
+      dropsn2d=0.
+      dropsinitm2d=0.
+      dropsinitn2d=0.
 !print*,'s',Mpc2d(18,1,:)
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
-           p2d,t2d,qv2d,aer2d,dropsm2d,mc,mr,flag,dropsinit2d)
+           p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
+           mr,flag,dropsinitm2d,dropsinitn2d)
 !print*,'e',Mpc2d(18,1,:)
    elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
@@ -149,6 +153,8 @@ enddo
 
 do i=1,nx
    do k=1,nz
+!print*, 'cmom',Mpc2d(25,1,:)
+!print*, 'rmom',Mpr2d(25,1,:)
       dtheta_mphys(k,i)=(t2d(k,i)/exner(k,i)-theta(k,i))/dt
       !if (l_advect) dtheta_mphys(k,i)=dtheta_mphys(k,i)-dtheta_adv(k,i)
       !if (l_diverge) dtheta_mphys(k,i)=dtheta_mphys(k,i)-dtheta_div(k,i)
@@ -157,7 +163,7 @@ do i=1,nx
       !if (l_advect) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_adv(k,i)
       !if (l_diverge) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_div(k,i)
 
-      if (ampORbin .eq. 'amp') then ! when bulk
+      if (ampORbin .eq. 'amp') then ! when bulk 
          do imom=1,num_h_moments(1)
             dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
                  (Mpc2d(k,i,imom)-hydrometeors(k,i,1)%moments(1,imom))/dt
@@ -182,7 +188,7 @@ do i=1,nx
       else ! when bin
          do j=1,nkr
             dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-                   (dropsm2d(k,i,j)*col/(pi/6*1000.)-hydrometeors(k,i,1)%moments(j,1))/dt
+                   (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
         !   if (l_advect) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
          !                 dhydrometeors_mphys(k,i,1)%moments(j,1) &
          !                 -dhydrometeors_adv(k,i,1)%moments(j,1)
@@ -201,6 +207,15 @@ do i=1,nx
 
    enddo
 enddo
+
+!print*, aerosol(1,1,1)%moments(1,1)
+!if (ampORbin .eq. 'amp') then
+!    print*, Mpc2d(30,1,2)+Mpr2d(30,1,2)
+!else
+!    if (bintype .eq. 'tau') then
+!        print*, sum(dropsn2d(30,1,:)*col)
+!    endif
+!endif
 
 ! Save some diagnostics
 !fitting flag
@@ -261,10 +276,18 @@ if (ampORbin .eq. 'bin') then
     endif
 
 elseif (ampORbin .eq. 'amp') then
-    fielddp2d(:,:)=dropsinit2d(:,nx,:)
-    name='drops_init'
+    fielddp2d(:,:)=dropsinitm2d(:,nx,:)
+    name='mass_dist_init'
     units='kg/kg/ln(r)'
     call save_dg('bin',fielddp2d,name,i_dgtime,units)
+    
+    if (bintype .eq. 'tau') then
+        fielddp2d(:,:)=dropsinitn2d(:,nx,:)
+        name='num_dist_init'
+        units='1/kg/ln(r)'
+        call save_dg('bin',fielddp2d,name,i_dgtime,units)
+    end if
+
 endif
 
 !parameters
