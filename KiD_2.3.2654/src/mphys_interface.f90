@@ -12,7 +12,6 @@ module mphys_interface
   Use mphys_thompson07, only: mphys_thompson07_interface
   Use mphys_thompson09, only: mphys_thompson09_interface
   Use mphys_morr_two_moment, only: mphys_morrison_interface
-  Use mphys_tau_bin, only: mphys_tau_bin_interface
 #if UM_MICRO ==1
   Use mphys_um7_3, only: mphys_um7_3_interface
 #endif
@@ -20,6 +19,7 @@ module mphys_interface
   Use mphys_4A, only: mphys_4A_interface
 #endif
   Use mphys_amp, only:mphys_amp_interface
+  Use mphys_tau_bin, only:mphys_tau_bin_interface
   Use switches
 
 contains
