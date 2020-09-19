@@ -1,6 +1,6 @@
 #!/bin/bash
 
-caselist=(101 102 103 105 106 107)
+caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 
@@ -86,11 +86,11 @@ imomr2 = $imr2  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .true.
 docondensation = .true.
-docollisions = .false.
+docollisions = .true.
 dosedimentation = .true.
 
 ! Aerosol initialization
-num_aero_moments=0
+num_aero_moments=1
 num_aero_bins=1
 aero_N_init=$ia.e6 !or CCN at 1% SS
 aero_sig_init=1.4
@@ -135,7 +135,7 @@ l_periodic_bound=.False.
 &addcontrol
 KiD_outdir='$outdir'
 ampORbin='amp'
-bintype='sbm'
+bintype='tau'
 /
 END
 		./bin/KiD_1D.exe namelists/AMP.nml

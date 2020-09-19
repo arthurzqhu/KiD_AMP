@@ -70,8 +70,8 @@ contains
     endif
 
     do itime=1,n_times
+print*, itime
 
-       !print*,itime, n_times
        time=time+dt
        time_step=time_step+1
 
@@ -103,7 +103,7 @@ contains
        else
           call save_diagnostics_2d
        endif
-
+!if (itime>1) stop
     end do
 
     if (l_write_dgs) call write_diagnostics

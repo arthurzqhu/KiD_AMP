@@ -8,4 +8,4 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
-./run_bin_tests.sh
+./run_amp_tests.sh

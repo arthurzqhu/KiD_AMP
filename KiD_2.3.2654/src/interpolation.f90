@@ -60,6 +60,7 @@ contains
        end do
     end do
 
+
     ! Initialize hydrometeors and their tendencies 
     do ih=1,nspecies
        do j=0,nx+1
@@ -90,7 +91,6 @@ contains
     else
        itype=iukmo_lem
     end if
-
 
     select case (itype)
     case(itest_case)
