@@ -95,7 +95,7 @@ contains
       DO 109 L=1,LK ! getting radius XKK1, diameter in μm ZRU
         XKK1(L)=((XK(L)*6./3141.59)**(1./3.))/2.
         ZRU=XKK1(L)*2.*1E6
-        PRINT 108,L,XKK1(L),XK(L),ZRU
+        !PRINT 108,L,XKK1(L),XK(L),ZRU
  108    FORMAT (' CATEGORY:',I4,3X,'RADIUS(m): ',E10.4,3X,'MASS: ',     &
      &  E10.4,3X,'DIAMETER(microns):',F11.5)
  109  CONTINUE
@@ -104,7 +104,8 @@ contains
         XKmean(L) = 0.5*(XK(L)+XK(L+1))
       ENDDO
         XKmean(LK) = 0.5*(XK(LK)+(2*XK(LK)))
-
+      XKgmean=XK*sqrt(2.)
+      Dgmean=(XKgmean*6/3141.59)**(1./3.)
 !******************************************************************
 !    CALCULATING THE MASS CATEGORIES TO BE USED IN SUBROUTINES
 !******************************************************************
