@@ -1,7 +1,7 @@
 subroutine amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
 
 use switches, only: zctrl
-use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
+use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins,split_bins
 use column_variables, only: z
 use module_hujisbm
 use micro_prm
@@ -114,17 +114,17 @@ guessr2d(:,:,2)=dnr
 
 do i=1,num_h_moments(1)
   if (bintype .eq. 'sbm') then
-    mc(i)=sum(ffcd_mass(1:krdrop-1)/xl(1:krdrop-1)*diams(1:krdrop-1)**pmomsc(i))*col*1000.
+    mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
   elseif (bintype .eq. 'tau') then
-    mc(i)=sum(ffcd_mass(1:lk_cloud)/xkgmean(1:lk_cloud)*dgmean(1:lk_cloud)**pmomsc(i))*col
+    mc(i)=sum(ffcd_mass(1:split_bins)/xkgmean(1:split_bins)*dgmean(1:split_bins)**pmomsc(i))*col
   endif
 enddo
 
 do i=1,num_h_moments(2)
   if (bintype .eq. 'sbm') then
-    mr(i)=sum(ffcd_mass(krdrop:nkr)/xl(krdrop:nkr)*diams(krdrop:nkr)**pmomsr(i))*col*1000.
+    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
   elseif (bintype .eq. 'tau') then
-    mr(i)=sum(ffcd_mass(lk_cloud+1:nkr)/xkgmean(lk_cloud+1:nkr)*dgmean(lk_cloud+1:nkr)**pmomsc(i))*col
+    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xkgmean(split_bins+1:nkr)*dgmean(split_bins+1:nkr)**pmomsc(i))*col
   end if
 enddo
 
@@ -267,7 +267,7 @@ nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
 do k=1,nz
  do j=1,nx
-    guessc_am(k,j,1) = guessc(k,j,1) 
+    guessc_am(k,j,1) = guessc(k,j,1)
     guessr_am(k,j,1) = guessr(k,j,1)
     guessc_am(k,j,2) = guessc(k,j,2)
     guessr_am(k,j,2) = guessr(k,j,2)
@@ -289,7 +289,7 @@ do k=1,nz
    ihyd=1
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
-   skr=1; ekr=krdrop-1
+   skr=1; ekr=split_bins
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
 
@@ -310,7 +310,7 @@ do k=1,nz
    ihyd=2
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
 
-   skr=krdrop; ekr=nkr
+   skr=split_bins+1; ekr=nkr
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
@@ -411,8 +411,8 @@ do k=1,nz
            newdiam = (Mpc(k,j,1)/Mpc(k,j,i))**(1./(3.-realpmom))
            if (newdiam < diams(1)) then
               Mpc(k,j,i) = Mpc(k,j,1)/(1.01*diams(1))**(3.-realpmom)
-           elseif (newdiam > diams(krdrop-1)) then
-              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(krdrop-1))**(3.-realpmom)
+           elseif (newdiam > diams(split_bins)) then
+              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(split_bins))**(3.-realpmom)
            endif
          endif
          !Could also think about checking diameter in terms of my/mx for 3M ...
@@ -436,8 +436,8 @@ do k=1,nz
          if (i>=2) then !check new mean size
            realpmom = real(pmomsr(i))
            newdiam = (Mpr(k,j,1)/Mpr(k,j,i))**(1./(3.-realpmom))
-           if (newdiam < diams(krdrop)) then
-              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(krdrop))**(3.-realpmom)
+           if (newdiam < diams(split_bins+1)) then
+              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(split_bins+1))**(3.-realpmom)
            elseif (newdiam > diams(nkr)) then
               Mpr(k,j,i) = Mpr(k,j,1)/(0.99*diams(nkr))**(3.-realpmom)
            endif
@@ -461,7 +461,7 @@ do k=1,nz
    ihyd=1
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
-   skr=1; ekr=krdrop-1
+   skr=1; ekr=split_bins
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
    if (Mp(1)>0.) then
@@ -479,7 +479,7 @@ do k=1,nz
   !----------RAIN--------------------------------
    ihyd=2
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
-   skr=krdrop; ekr=nkr
+   skr=split_bins+1; ekr=nkr
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
@@ -589,6 +589,7 @@ use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean
 Use namelists, only: bintype
 Use physconst, only: pi
 use diagnostics, only: i_dgtime
+use parameters, only: split_bins
 
 implicit none
 integer :: i,ib,ip,momnum
@@ -607,12 +608,12 @@ endif
 
 do i=1,momnum
     if (bintype .eq. 'sbm') then
-        mc(i)=sum(ffcd_mass(1:krdrop-1)/xl(1:krdrop-1)*diams(1:krdrop-1)**(i-1))*col*1000.
-        mr(i)=sum(ffcd_mass(krdrop:nkr)/xl(krdrop:nkr)*diams(krdrop:nkr)**(i-1))*col*1000.
+        mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1))*col*1000.
+        mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1))*col*1000.
 
     elseif (bintype .eq. 'tau') then
-        mc(i)=sum(ffcd_num(1:lk_cloud)*diag_D(1:lk_cloud)**(i-1))*col
-        mr(i)=sum(ffcd_num(lk_cloud+1:nkr)*diag_D(lk_cloud+1:nkr)**(i-1))*col
+        mc(i)=sum(ffcd_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
+        mr(i)=sum(ffcd_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
     endif
 enddo
 
