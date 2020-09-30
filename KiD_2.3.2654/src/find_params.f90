@@ -300,7 +300,6 @@ real(8) :: guess(2)
 real(8) :: md(max_nbins)
 integer :: ihyd
 real(8),optional,dimension(flag_count) :: flag
-integer, optional :: k ! vertical level for debugging -ahu
 
 if (npm==3) then !if rain is 2M, then cloud is also 2M
    CALL searchparams3M(guess,ihyd,md,flag)
