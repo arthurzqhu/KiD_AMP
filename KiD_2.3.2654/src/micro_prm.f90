@@ -1,5 +1,5 @@
 module micro_prm
-use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx
+use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
@@ -247,20 +247,23 @@ integer :: idx &
            ,oti(icemax) = (/(idx,idx=1,icemax,1)/) &
            ,oth(nhydro) = (/(idx,idx=1,nhydro,1)/)
 contains
-    subroutine check_bintype
+
+    subroutine check_bintype    
     implicit none
 
     if (bintype .eq. 'sbm') then
         nkr=33
+        split_bins=14
 
         if (ampORbin .eq. 'bin') then
             num_h_moments=(/1,1/)
             num_h_bins=(/33,33/)
         end if
+
     elseif (bintype .eq. 'tau') then
         nkr=34
         num_aero_moments=1
-        diams=dgmean
+        split_bins=15
 
         if (ampORbin .eq. 'bin') then
             num_h_moments=(/2,2/)
