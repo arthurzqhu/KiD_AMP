@@ -6,7 +6,7 @@ use column_variables, only: z
 use module_hujisbm
 use micro_prm
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean,dgmean
-
+use namelists, only: bintype
 implicit none
 character(4)::momstr
 character(len=100)::lutfolder
@@ -43,8 +43,7 @@ if (imomc1>=7 .and. imomc1 .ne. imomc2) then
 else !Run AMP
   !Open and read lookup tables
   if (npm==3) then
-    lutfolder='./src/input_data/lutables/'
-
+    lutfolder='./src/input_data/'//trim(bintype)//'_lutables/'
     write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
     open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
     read(17,*) nutab(:,:,1); close(17)
@@ -115,7 +114,7 @@ guessr2d(:,:,2)=dnr
 
 do i=1,num_h_moments(1)
   if (bintype .eq. 'sbm') then
-    mc(i)=sum(ffcd_mass(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**pmomsc(i))*col*1000.
+    mc(i)=sum(ffcd_mass(1:krdrop-1)/xl(1:krdrop-1)*diams(1:krdrop-1)**pmomsc(i))*col*1000.
   elseif (bintype .eq. 'tau') then
     mc(i)=sum(ffcd_mass(1:lk_cloud)/xkgmean(1:lk_cloud)*dgmean(1:lk_cloud)**pmomsc(i))*col
   endif
@@ -123,7 +122,7 @@ enddo
 
 do i=1,num_h_moments(2)
   if (bintype .eq. 'sbm') then
-    mr(i)=sum(ffcd_mass(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**pmomsr(i))*col*1000.
+    mr(i)=sum(ffcd_mass(krdrop:nkr)/xl(krdrop:nkr)*diams(krdrop:nkr)**pmomsr(i))*col*1000.
   elseif (bintype .eq. 'tau') then
     mr(i)=sum(ffcd_mass(lk_cloud+1:nkr)/xkgmean(lk_cloud+1:nkr)*dgmean(lk_cloud+1:nkr)**pmomsc(i))*col
   end if
@@ -290,7 +289,7 @@ do k=1,nz
    ihyd=1
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
-   skr=1; ekr=krdrop
+   skr=1; ekr=krdrop-1
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
 
@@ -311,7 +310,7 @@ do k=1,nz
    ihyd=2
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
 
-   skr=krdrop+1; ekr=nkr
+   skr=krdrop; ekr=nkr
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
@@ -383,8 +382,8 @@ endif
 !if (i_dgtime>164) then
 !    print*, 'after ffcd_mass', ffcd_mass(25,1,:)
 !    print*, 'after shparam',shparam(real(diams),nkr,real(ffcd_mass(25,1,:)))
-!    print*, 'after mass',sum(ffcd_mass(25,1,:))*col
-!    print*, 'after num', sum(ffcd_num(25,1,:))*col
+    print*, 'after mass',sum(ffcd_mass(25,1,:))*col
+    print*, 'after num', sum(ffcd_num(25,1,:))*col
 !endif
 
 !---------CALC MOMENTS-----------------------
@@ -412,8 +411,8 @@ do k=1,nz
            newdiam = (Mpc(k,j,1)/Mpc(k,j,i))**(1./(3.-realpmom))
            if (newdiam < diams(1)) then
               Mpc(k,j,i) = Mpc(k,j,1)/(1.01*diams(1))**(3.-realpmom)
-           elseif (newdiam > diams(krdrop)) then
-              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(krdrop))**(3.-realpmom)
+           elseif (newdiam > diams(krdrop-1)) then
+              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(krdrop-1))**(3.-realpmom)
            endif
          endif
          !Could also think about checking diameter in terms of my/mx for 3M ...
@@ -437,8 +436,8 @@ do k=1,nz
          if (i>=2) then !check new mean size
            realpmom = real(pmomsr(i))
            newdiam = (Mpr(k,j,1)/Mpr(k,j,i))**(1./(3.-realpmom))
-           if (newdiam < diams(krdrop+1)) then
-              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(krdrop+1))**(3.-realpmom)
+           if (newdiam < diams(krdrop)) then
+              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(krdrop))**(3.-realpmom)
            elseif (newdiam > diams(nkr)) then
               Mpr(k,j,i) = Mpr(k,j,1)/(0.99*diams(nkr))**(3.-realpmom)
            endif
@@ -462,7 +461,7 @@ do k=1,nz
    ihyd=1
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
-   skr=1; ekr=krdrop
+   skr=1; ekr=krdrop-1
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
    if (Mp(1)>0.) then
@@ -480,7 +479,7 @@ do k=1,nz
   !----------RAIN--------------------------------
    ihyd=2
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
-   skr=krdrop+1; ekr=nkr
+   skr=krdrop; ekr=nkr
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
@@ -546,11 +545,6 @@ call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 do k=1,nz
  do j=1,nx
   call calcmoms(ffcd(k,j,:),10,mc(k,j,:),mr(k,j,:))
-!   do i=1,10
-!      mc(k,j,i)=sum(ffcd(k,j,1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
-!      mr(k,j,i)=sum(ffcd(k,j,krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
-!   enddo
-
  enddo
 enddo
 end subroutine mp_sbm
@@ -581,11 +575,6 @@ call micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 do k=1,nz
  do j=1,nx
   call calcmoms(ffcd_mass2d(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcd_num2d(k,j,:))
-!if (k==30) print*, k, 'm3', sum(ffcd_mass2d(k,j,1:lk_cloud)/xk(1:lk_cloud)*diams(1:lk_cloud)**(9))*col 
-!   do i=1,10
-!      mc(k,j,i)=sum(ffcd_mass2d(k,j,1:lk_cloud)/x_bin(2:lk_cloud+1)*diams(1:lk_cloud)**(i-1))*col*1.e6
-!      mr(k,j,i)=sum(ffcd_mass2d(k,j,lk_cloud+1:nkr)/x_bin(lk_cloud+2:nkr+1)*diams(lk_cloud+1:nkr)**(i-1))*col*1.e6
-!   enddo
  enddo
 enddo
 ! there might be a better way to calculate moments, but will leave it like that for now. -ahu!!!
@@ -618,18 +607,13 @@ endif
 
 do i=1,momnum
     if (bintype .eq. 'sbm') then
-        mc(i)=sum(ffcd_mass(1:krdrop)/xl(1:krdrop)*diams(1:krdrop)**(i-1))*col*1000.
-        mr(i)=sum(ffcd_mass(krdrop+1:nkr)/xl(krdrop+1:nkr)*diams(krdrop+1:nkr)**(i-1))*col*1000.
+        mc(i)=sum(ffcd_mass(1:krdrop-1)/xl(1:krdrop-1)*diams(1:krdrop-1)**(i-1))*col*1000.
+        mr(i)=sum(ffcd_mass(krdrop:nkr)/xl(krdrop:nkr)*diams(krdrop:nkr)**(i-1))*col*1000.
 
     elseif (bintype .eq. 'tau') then
         mc(i)=sum(ffcd_num(1:lk_cloud)*diag_D(1:lk_cloud)**(i-1))*col
         mr(i)=sum(ffcd_num(lk_cloud+1:nkr)*diag_D(lk_cloud+1:nkr)**(i-1))*col
-!        mc(i)=sum(ffcd_mass(1:lk_cloud)/xk(1:lk_cloud)*diams(1:lk_cloud)**(i-1))*col
-!        mr(i)=sum(ffcd_mass(lk_cloud+1:nkr)/xk(lk_cloud+1:nkr)*diams(lk_cloud+1:nkr)**(i-1))*col
     endif
 enddo
 
-!if (mc(10).eq.0) print*, mc(10),diag_D**9
-!print*, 
-!print*, 
 end subroutine calcmoms
