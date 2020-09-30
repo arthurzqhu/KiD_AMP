@@ -1995,6 +1995,8 @@ call set_micro
 call bin_init !initialises the cloud bin categories
 call data     !reads in and sets the coll-coal kernal
 
+diams=dgmean
+
 DO IQ = 1,LN2
  ih=qindices(IAERO_BIN(iq))%ispecies
  imom=qindices(IAERO_BIN(iq))%imoment
