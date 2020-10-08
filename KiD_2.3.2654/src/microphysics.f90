@@ -1995,7 +1995,8 @@ call set_micro
 call bin_init !initialises the cloud bin categories
 call data     !reads in and sets the coll-coal kernal
 
-diams=dgmean
+!diams=dgmean
+!print*, diams 
 
 DO IQ = 1,LN2
  ih=qindices(IAERO_BIN(iq))%ispecies
@@ -2026,7 +2027,7 @@ DO IQ = 1, Ln2
    CCNORIGAVG(IQ) = CCNORIGTOT(IQ)/(JJP*KKP)
 ENDDO
 
-!diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
+diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
 !^ no need to do that bc it's handled by the check_bintype() subroutine
 
 end subroutine micro_init_tau
@@ -2130,13 +2131,13 @@ n0r=rxr/gamma(gnur+3)
 
 do kr=1,nkr
   if (rxc>0.) then
-    exptermc=exp(-1.*dgmean(kr)/dnc)
-    ffcd_mass(kr) = n0c*exptermc*(dgmean(kr)/dnc)**(gnuc+3)
+    exptermc=exp(-1.*diams(kr)/dnc)
+    ffcd_mass(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
     ffcd_num(kr) = ffcd_mass(kr)/xkgmean(kr)!(diams(kr)**3*pi/6.*rhoW)
   endif
   if (rxr>0.) then
-     exptermr=exp(-1.*dgmean(kr)/dnr)
-     ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(dgmean(kr)/dnr)**(gnur+3)
+     exptermr=exp(-1.*diams(kr)/dnr)
+     ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
      ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/xkgmean(kr)!(diams(kr)**3*pi/6.*rhoW)
 !  else
 !     ffcd_mass(krdrop:nkr)=0.

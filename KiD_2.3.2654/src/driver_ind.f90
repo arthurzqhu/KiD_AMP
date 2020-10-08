@@ -44,6 +44,7 @@ else !Run AMP
   !Open and read lookup tables
   if (npm==3) then
     lutfolder='./src/input_data/'//trim(bintype)//'_lutables/'
+
     write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
     open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
     read(17,*) nutab(:,:,1); close(17)
@@ -116,7 +117,7 @@ do i=1,num_h_moments(1)
   if (bintype .eq. 'sbm') then
     mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
   elseif (bintype .eq. 'tau') then
-    mc(i)=sum(ffcd_mass(1:split_bins)/xkgmean(1:split_bins)*dgmean(1:split_bins)**pmomsc(i))*col
+    mc(i)=sum(ffcd_mass(1:split_bins)/xkgmean(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
   endif
 enddo
 
@@ -124,7 +125,7 @@ do i=1,num_h_moments(2)
   if (bintype .eq. 'sbm') then
     mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
   elseif (bintype .eq. 'tau') then
-    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xkgmean(split_bins+1:nkr)*dgmean(split_bins+1:nkr)**pmomsc(i))*col
+    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xkgmean(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
   end if
 enddo
 
@@ -380,10 +381,10 @@ elseif (bintype .eq. 'tau') then
     call micro_proc_tau(tempk,qv,ffcd_mass,ffcd_num)
 endif
 !if (i_dgtime>164) then
-!    print*, 'after ffcd_mass', ffcd_mass(25,1,:)
-!    print*, 'after shparam',shparam(real(diams),nkr,real(ffcd_mass(25,1,:)))
-    print*, 'after mass',sum(ffcd_mass(25,1,:))*col
-    print*, 'after num', sum(ffcd_num(25,1,:))*col
+!    print*, 'after ffcd_mass', ffcd_mass(39,1,:)
+!    print*, 'after shparam',shparam(real(diams),nkr,real(ffcd_mass(39,1,:)))
+!    print*, 'after mass',sum(ffcd_mass(39,1,:))*col
+!    print*, 'after num', sum(ffcd_num(39,1,:))*col
 !endif
 
 !---------CALC MOMENTS-----------------------

@@ -140,7 +140,7 @@ integer :: momnum
 if (bintype .eq. 'sbm') then
     mom=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momnum)*col*1000.
 elseif (bintype .eq. 'tau') then
-    mom=sum(md(1:nkr)/xkgmean(1:nkr)*dgmean(1:nkr)**momnum)*col
+    mom=sum(md(1:nkr)/xkgmean(1:nkr)*diams(1:nkr)**momnum)*col
 endif
 end subroutine calcmom
 !------------------------------------------------------------------------
@@ -160,8 +160,8 @@ integer :: ia,iz,kr
         expterm=exp(-1.*diams(kr)/dn)
         md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
     elseif (bintype .eq. 'tau') then
-        expterm=exp(-1.*dgmean(kr)/dn)
-        md(kr)=n0*expterm*(dgmean(kr)/dn)**(nu+3.)
+        expterm=exp(-1.*diams(kr)/dn)
+        md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
     endif
     !Check for NaNs
 !    if (md(kr).ne.md(kr) .or. md(kr)*0.0 .ne.0.0 &
@@ -187,8 +187,8 @@ integer :: ia,iz,kr
         expterm=exp(-1.*diams(kr)/dn)
         md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
     elseif (bintype .eq. 'tau') then
-        expterm=exp(-1.*dgmean(kr)/dn)
-        md(kr)=n0*expterm*(dgmean(kr)/dn)**(nu+3.)
+        expterm=exp(-1.*diams(kr)/dn)
+        md(kr)=n0*expterm*(diams(kr)/dn)**(nu+3.)
     endif
     !Check for NaNs
 !    if (md(kr).ne.md(kr) .or. md(kr)*0.0 .ne.0.0 &
