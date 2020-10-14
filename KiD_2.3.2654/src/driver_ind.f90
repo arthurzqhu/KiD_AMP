@@ -142,8 +142,8 @@ do i=1,nx
          Mpc2d(k,i,1:num_h_moments(1))=mc(1:num_h_moments(1))
          Mpr2d(k,i,1:num_h_moments(2))=mr(1:num_h_moments(2))
          ! for testing only -ahu
-         ffcdprev_mass(k,i,:)=ffcd_mass
-         ffcdprev_num(k,i,:)=ffcd_mass/xkgmean
+         ! ffcdprev_mass(k,i,:)=ffcd_mass
+         ! ffcdprev_num(k,i,:)=ffcd_mass/xkgmean
       endif
    enddo
 enddo
@@ -454,64 +454,65 @@ do k=1,nz
     if (any(mr(k,j,:)==0.)) then
       mr(k,j,:)=0;Mpr(k,j,:)=0
     endif
-!--------- convert moments to binned dist. and save those for tau ---------
-!--------- because tau needs to know the dhyd_adv for all 34 bins ------ahu
 
-!----------------------------------CLOUD-----------------------------------
-   ihyd=1
-   Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
-
-   skr=1; ekr=split_bins
-   momx=pmomsc(2) !momx is a global variable
-   momy=pmomsc(3) !pmomsc(1)=3 always
-   if (Mp(1)>0.) then
-      CALL searchparamsG(guessc_am(k,j,:),ihyd,ffcloud_mass,flag_dummy(k,j,ihyd,:))
-      if (bintype .eq. 'tau') then
-          ffcloud_num=ffcloud_mass/xkgmean
-      endif
-   else
-      ffcloud_mass=0.
-      ffcloud_num=0.
-      flag_dummy(k,j,1,1)=-1
-      flag_dummy(k,j,1,2:flag_count)=nan
-   endif
-
-  !----------RAIN--------------------------------
-   ihyd=2
-   Mp(1:num_h_moments(2))=Mpr(k,j,:)
-   skr=split_bins+1; ekr=nkr
-   momx = pmomsr(2)
-   momy=pmomsr(3) !pmomsr(1)=3 always
-   if (Mp(1)>0.) then
-      CALL searchparamsG(guessr_am(k,j,:),ihyd,ffrain_mass,flag_dummy(k,j,ihyd,:))
-      if (bintype .eq. 'tau') then
-          ffrain_num=ffrain_mass/xkgmean
-      endif
-   else
-      ffrain_mass=0.
-      ffrain_num=0.
-      flag_dummy(k,j,2,1)=-1
-      flag_dummy(k,j,2,2:flag_count)=nan
-   endif
-   !----------SUM the Cloud and Rain Distributions-----------
-   ffcdprev_mass(k,j,:) = ffcloud_mass+ffrain_mass
-   ffcdprev_num(k,j,:) = ffcloud_num+ffrain_num
-
-if(ffcdprev_mass(k,j,1).ne.ffcdprev_mass(k,j,1))then
-    print*,'NaNs in ffcdprev_mass'
-    print*,'NaN',k,j,ffcloud_mass(1),ffrain_mass(1)
-    print*,'cloud moments=',Mpc(k,j,:)
-    print*,'rain moments=',Mpr(k,j,:)
-    stop
-endif
-
-if(ffcdprev_num(k,j,1).ne.ffcdprev_num(k,j,1))then
-    print*,'NaNs in ffcdprev_num'
-    print*,'NaN',k,j,ffcloud_num(1),ffrain_num(1)
-    stop
-endif
- enddo
-enddo
+! !--------- convert moments to binned dist. and save those for tau ---------
+! !--------- because tau needs to know the dhyd_adv for all 34 bins ------ahu
+!
+! !----------------------------------CLOUD-----------------------------------
+!    ihyd=1
+!    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
+!
+!    skr=1; ekr=split_bins
+!    momx=pmomsc(2) !momx is a global variable
+!    momy=pmomsc(3) !pmomsc(1)=3 always
+!    if (Mp(1)>0.) then
+!       CALL searchparamsG(guessc_am(k,j,:),ihyd,ffcloud_mass,flag_dummy(k,j,ihyd,:))
+!       if (bintype .eq. 'tau') then
+!           ffcloud_num=ffcloud_mass/xkgmean
+!       endif
+!    else
+!       ffcloud_mass=0.
+!       ffcloud_num=0.
+!       flag_dummy(k,j,1,1)=-1
+!       flag_dummy(k,j,1,2:flag_count)=nan
+!    endif
+!
+!   !----------RAIN--------------------------------
+!    ihyd=2
+!    Mp(1:num_h_moments(2))=Mpr(k,j,:)
+!    skr=split_bins+1; ekr=nkr
+!    momx = pmomsr(2)
+!    momy=pmomsr(3) !pmomsr(1)=3 always
+!    if (Mp(1)>0.) then
+!       CALL searchparamsG(guessr_am(k,j,:),ihyd,ffrain_mass,flag_dummy(k,j,ihyd,:))
+!       if (bintype .eq. 'tau') then
+!           ffrain_num=ffrain_mass/xkgmean
+!       endif
+!    else
+!       ffrain_mass=0.
+!       ffrain_num=0.
+!       flag_dummy(k,j,2,1)=-1
+!       flag_dummy(k,j,2,2:flag_count)=nan
+!    endif
+!    !----------SUM the Cloud and Rain Distributions-----------
+!    ffcdprev_mass(k,j,:) = ffcloud_mass+ffrain_mass
+!    ffcdprev_num(k,j,:) = ffcloud_num+ffrain_num
+!
+! if(ffcdprev_mass(k,j,1).ne.ffcdprev_mass(k,j,1))then
+!     print*,'NaNs in ffcdprev_mass'
+!     print*,'NaN',k,j,ffcloud_mass(1),ffrain_mass(1)
+!     print*,'cloud moments=',Mpc(k,j,:)
+!     print*,'rain moments=',Mpr(k,j,:)
+!     stop
+! endif
+!
+! if(ffcdprev_num(k,j,1).ne.ffcdprev_num(k,j,1))then
+!     print*,'NaNs in ffcdprev_num'
+!     print*,'NaN',k,j,ffcloud_num(1),ffrain_num(1)
+!     stop
+! endif
+!  enddo
+! enddo
 
 !print*, 'after fp shparam', shparam(real(diams),nkr,real(ffcdprev_mass(25,1,:)))
 !if (i_dgtime >163) then

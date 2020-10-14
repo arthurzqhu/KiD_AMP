@@ -983,8 +983,8 @@ enddo
                 sq_lem(j,k+offset,icdkg_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
                     + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*(pi/6*1000.)
             elseif (ampORbin .eq. 'amp') then
-                sq_lem(j,k+offset,icdkg_bin(iq))=(ffcd_mass2d(k,j,iq) - &
-                    ffcdprev_mass(k,j,iq))*col/dt
+                sq_lem(j,k+offset,icdkg_bin(iq))=0.
+                ! (ffcd_mass2d(k,j,iq) - ffcdprev_mass(k,j,iq))*col/dt
             endif
         end do
         ih=qindices(icdnc_bin(iq))%ispecies
@@ -994,8 +994,8 @@ enddo
                 sq_lem(j,k+offset,icdnc_bin(iq))=(dhydrometeors_adv(k,j,ih)%moments(iq,imom) &
                     + dhydrometeors_div(k,j,ih)%moments(iq,imom))
             elseif (ampORbin .eq. 'amp') then
-                sq_lem(j,k+offset,icdnc_bin(iq))=(ffcd_num2d(k,j,iq) - &
-                    ffcdprev_num(k,j,iq))*col/dt
+                sq_lem(j,k+offset,icdnc_bin(iq))=0.
+                ! (ffcd_num2d(k,j,iq) - ffcdprev_num(k,j,iq))*col/dt
             endif
         end do
      end do
@@ -1894,8 +1894,8 @@ do j=jminp,jmaxp
                         - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
                         + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*(pi/6*1000.)
                 elseif (ampORbin .eq. 'amp') then
-                    sq_lem(j,k+offset,icdkg_bin(iq)) = sq_lem(j,k+offset,icdkg_bin(iq)) &
-                        - (ffcd_mass2d(k,j,iq) - ffcdprev_mass(k,j,iq))*col/dt
+                    ! sq_lem(j,k+offset,icdkg_bin(iq)) = sq_lem(j,k+offset,icdkg_bin(iq)) &
+                    !     - (ffcd_mass2d(k,j,iq) - ffcdprev_mass(k,j,iq))*col/dt
                 endif
             end do
             ih=qindices(icdnc_bin(iq))%ispecies
@@ -1906,8 +1906,8 @@ do j=jminp,jmaxp
                         - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
                         + dhydrometeors_div(k,j,ih)%moments(iq,imom))
                 elseif (ampORbin .eq. 'amp') then
-                    sq_lem(j,k+offset,icdnc_bin(iq)) = sq_lem(j,k+offset,icdnc_bin(iq)) &
-                        - (ffcd_num2d(k,j,iq) - ffcdprev_num(k,j,iq))*col/dt
+                    ! sq_lem(j,k+offset,icdnc_bin(iq)) = sq_lem(j,k+offset,icdnc_bin(iq)) &
+                    !     - (ffcd_num2d(k,j,iq) - ffcdprev_num(k,j,iq))*col/dt
                 endif
             end do
         end do

@@ -63,17 +63,17 @@ contains
 
           if (ampORbin .eq. 'amp') then
              do imom=1,num_h_moments(1)
-                Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
-         !       Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom) &
-         !            + (dhydrometeors_adv(k,i,1)%moments(1,imom) &
-         !            + dhydrometeors_div(k,i,1)%moments(1,imom))*dt
+                ! Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
+               Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom) &
+                    + (dhydrometeors_adv(k,i,1)%moments(1,imom) &
+                    + dhydrometeors_div(k,i,1)%moments(1,imom))*dt
              enddo
              if (any(Mpc2d(k,i,:)==0.)) Mpc2d(k,i,:)=0.
              do imom=1,num_h_moments(2)
-                Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom)
-         !       Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom) &
-         !            + (dhydrometeors_adv(k,i,2)%moments(1,imom) &
-         !            + dhydrometeors_div(k,i,2)%moments(1,imom))*dt
+                ! Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom)
+               Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom) &
+                    + (dhydrometeors_adv(k,i,2)%moments(1,imom) &
+                    + dhydrometeors_div(k,i,2)%moments(1,imom))*dt
              enddo
              if (any(Mpr2d(k,i,:)==0.)) Mpr2d(k,i,:)=0.
           else !bin
@@ -84,8 +84,6 @@ contains
          !            + (dhydrometeors_adv(k,i,1)%moments(j,1) &
          !            + dhydrometeors_div(k,i,1)%moments(j,1))*dt
                  if (bintype .eq. 'tau')  then
-!                     dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
-                     dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
                      dropsn2d(k,i,j)=hydrometeors(k,i,1)%moments(j,2)/col
                  end if
              enddo
@@ -99,8 +97,8 @@ contains
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
-         guessr2d(:,:,2) = 0.001 
-         call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d) 
+         guessr2d(:,:,2) = 0.001
+         call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
 !print*, Mpc2d,Mpr2d
       elseif (ampORbin .eq. 'bin') then
          if (bintype .eq. 'sbm') then
@@ -163,26 +161,26 @@ do i=1,nx
       !if (l_advect) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_adv(k,i)
       !if (l_diverge) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_div(k,i)
 
-      if (ampORbin .eq. 'amp') then ! when bulk 
+      if (ampORbin .eq. 'amp') then ! when bulk
          do imom=1,num_h_moments(1)
             dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
                  (Mpc2d(k,i,imom)-hydrometeors(k,i,1)%moments(1,imom))/dt
-         !   if (l_advect) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
-         !                 dhydrometeors_mphys(k,i,1)%moments(1,imom) &
-         !                 -dhydrometeors_adv(k,i,1)%moments(1,imom)
-         !   if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
-         !                  dhydrometeors_mphys(k,i,1)%moments(1,imom) &
-         !                  -dhydrometeors_div(k,i,1)%moments(1,imom)
+           if (l_advect) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
+                         dhydrometeors_mphys(k,i,1)%moments(1,imom) &
+                         -dhydrometeors_adv(k,i,1)%moments(1,imom)
+           if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
+                          dhydrometeors_mphys(k,i,1)%moments(1,imom) &
+                          -dhydrometeors_div(k,i,1)%moments(1,imom)
          enddo
          do imom=1,num_h_moments(2)
             dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
                  (Mpr2d(k,i,imom)-hydrometeors(k,i,2)%moments(1,imom))/dt
-         !   if (l_advect) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
-         !                 dhydrometeors_mphys(k,i,2)%moments(1,imom) &
-         !                 -dhydrometeors_adv(k,i,2)%moments(1,imom)
-         !   if (l_diverge) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
-         !                  dhydrometeors_mphys(k,i,2)%moments(1,imom) &
-         !                  -dhydrometeors_div(k,i,2)%moments(1,imom)
+           if (l_advect) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
+                         dhydrometeors_mphys(k,i,2)%moments(1,imom) &
+                         -dhydrometeors_adv(k,i,2)%moments(1,imom)
+           if (l_diverge) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
+                          dhydrometeors_mphys(k,i,2)%moments(1,imom) &
+                          -dhydrometeors_div(k,i,2)%moments(1,imom)
          enddo
 
       else ! when bin
@@ -196,8 +194,6 @@ do i=1,nx
          !                  dhydrometeors_mphys(k,i,1)%moments(j,1) &
          !                  -dhydrometeors_div(k,i,1)%moments(j,1)
             if (bintype .eq. 'tau') then
-                dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-                   (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
                 dhydrometeors_mphys(k,i,1)%moments(j,2)= &
                      (dropsn2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,2))/dt
             endif
@@ -280,7 +276,7 @@ elseif (ampORbin .eq. 'amp') then
     name='mass_dist_init'
     units='kg/kg/ln(r)'
     call save_dg('bin',fielddp2d,name,i_dgtime,units)
-    
+
     if (bintype .eq. 'tau') then
         fielddp2d(:,:)=dropsinitn2d(:,nx,:)
         name='num_dist_init'
