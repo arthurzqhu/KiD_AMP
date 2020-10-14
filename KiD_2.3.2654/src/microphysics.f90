@@ -1374,11 +1374,15 @@ DO K=2,KKP
 
          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
          QVNEW = QVNEW - DM
+
+!if (k==39) print*, tbase(j,k)
+
 if (tbase(j,k)<0) then
     print*, 'negative temperature', j,k,tbase(j,k)
     print*, 'dm',dm
     stop
 endif
+
 !if (abs(dm)>.01) then
 !    print*, 'dm too big'
 !    stop
@@ -1713,10 +1717,10 @@ endif
            dD(l)=(xkk1(l)-xkk1(l-1))*2.0*1.e6
         end do
 
-        call save_binData((xkk1(:)*2.0*1.e6),'bins_D_upper', &
-             units='microns', longname='upper bound of droplet diameter')
-        call save_binData(xk(:),'bins_mass_upper', &
-             units='kg', longname='upper bound of droplet mass')
+        call save_binData((xkk1(:)*2.0*1.e6),'bins_D_lower', &
+             units='microns', longname='lower bound of droplet diameter')
+        call save_binData(xk(:),'bins_mass_lower', &
+             units='kg', longname='lower bound of droplet mass')
         call save_binData(xkmean(:),'bins', &
              units='kg', longname='mean droplet mass')
         call save_binData(((xkmean(:)*6./3141.59)**(1./3.)*1.e6), &
@@ -1995,8 +1999,8 @@ call set_micro
 call bin_init !initialises the cloud bin categories
 call data     !reads in and sets the coll-coal kernal
 
-!diams=dgmean
-!print*, diams 
+diams=dgmean
+
 
 DO IQ = 1,LN2
  ih=qindices(IAERO_BIN(iq))%ispecies
@@ -2027,8 +2031,8 @@ DO IQ = 1, Ln2
    CCNORIGAVG(IQ) = CCNORIGTOT(IQ)/(JJP*KKP)
 ENDDO
 
-diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
-!^ no need to do that bc it's handled by the check_bintype() subroutine
+!diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
+
 
 end subroutine micro_init_tau
 
@@ -2108,7 +2112,7 @@ Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,ffcd_mass,ffcd_num)
 
 use micro_prm, only:nkr, diams, krdrop
 use parameters, only: max_nbins
-use mphys_tau_bin_declare, only: DIAM, NQP, xkgmean, dgmean
+use mphys_tau_bin_declare, only: DIAM, NQP, xkgmean, dgmean,xk
 use physconst, only: pi, rhoW
 
 implicit none

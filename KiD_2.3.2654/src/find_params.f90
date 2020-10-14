@@ -126,11 +126,11 @@ End subroutine calcerr
 subroutine calcmom(mom,md,momnum)
 
 use micro_prm, only: diams,col,nkr
-use mphys_tau_bin_declare, only:xk
+use mphys_tau_bin_declare, only:dgmean,xk,xkgmean
 use namelists, only: bintype
 use parameters, only: max_nbins
 use module_hujisbm, only:xl
-use mphys_tau_bin_declare, only:dgmean,xkgmean
+
 
 implicit none
 

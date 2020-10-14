@@ -43,8 +43,7 @@ if (imomc1>=7 .and. imomc1 .ne. imomc2) then
 else !Run AMP
   !Open and read lookup tables
   if (npm==3) then
-    lutfolder='./src/input_data/'//trim(bintype)//'_lutables/'
-
+    lutfolder='./src/input_data/'//trim(bintype)//'_lutables_gmean/'
     write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
     open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
     read(17,*) nutab(:,:,1); close(17)
