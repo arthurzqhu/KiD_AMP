@@ -511,8 +511,8 @@ do k=1,nz
 !     print*,'NaN',k,j,ffcloud_num(1),ffrain_num(1)
 !     stop
 ! endif
-!  enddo
-! enddo
+  enddo
+ enddo
 
 !print*, 'after fp shparam', shparam(real(diams),nkr,real(ffcdprev_mass(25,1,:)))
 !if (i_dgtime >163) then
