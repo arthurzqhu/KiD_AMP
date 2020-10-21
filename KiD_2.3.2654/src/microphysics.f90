@@ -1288,7 +1288,7 @@ DO K=2,KKP
                   i_dgtime, units='#/kg/s',dim='z,x')
           endif
 
-       ELSEIF(DS_force < -eps) then !DS_force < 0.0
+       ELSEIF(DS_force < -eps .and. docondensation) then !DS_force < 0.0
 !****************************************************************
     !                     EVAPORATION
     !     EVAP RECEIVES MKD,NKD RETURNS MK,NK
