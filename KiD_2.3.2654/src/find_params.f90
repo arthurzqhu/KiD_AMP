@@ -125,7 +125,7 @@ End subroutine calcerr
 !------------------------------------------------------------------------
 subroutine calcmom(mom,md,momnum)
 
-use micro_prm, only: diams,col,nkr
+use micro_prm, only: diams,col,nkr,binmass
 use mphys_tau_bin_declare, only:dgmean,xk,xkgmean
 use namelists, only: bintype
 use parameters, only: max_nbins
@@ -140,7 +140,7 @@ integer :: momnum
 if (bintype .eq. 'sbm') then
     mom=sum(md(1:nkr)/xl(1:nkr)*diams(1:nkr)**momnum)*col*1000.
 elseif (bintype .eq. 'tau') then
-    mom=sum(md(1:nkr)/xkgmean(1:nkr)*diams(1:nkr)**momnum)*col
+    mom=sum(md(1:nkr)/binmass(1:nkr)*diams(1:nkr)**momnum)*col
 endif
 end subroutine calcmom
 !------------------------------------------------------------------------

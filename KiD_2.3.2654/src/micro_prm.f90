@@ -227,6 +227,7 @@ double precision, dimension(2,10,2) :: minmaxmx
 double precision, dimension(ntab,2) :: mintab,maxtab
 double precision, dimension(2,2) :: nubounds, dnbounds
 real(8),dimension(max_nbins) :: diams
+real(8),dimension(max_nbins) :: binmass
 integer, parameter :: r4size = 4, r8size = 8
 INTEGER,PARAMETER :: ISIGN_KO_1 = 0, ISIGN_KO_2 = 0,  ISIGN_3POINT = 1,  &
                       IDebug_Print_DebugModule = 1

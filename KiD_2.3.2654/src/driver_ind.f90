@@ -43,7 +43,11 @@ if (imomc1>=7 .and. imomc1 .ne. imomc2) then
 else !Run AMP
   !Open and read lookup tables
   if (npm==3) then
-    lutfolder='./src/input_data/'//trim(bintype)//'_lutables_gmean/'
+    if (bintype .eq. 'tau') then
+        lutfolder='./src/input_data/'//trim(bintype)//'_lutables_gmean/'
+    elseif (bintype .eq. 'sbm') then
+        lutfolder='./src/input_data/'//trim(bintype)//'_lutables/'
+    endif
     write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
     open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
     read(17,*) nutab(:,:,1); close(17)
@@ -116,7 +120,7 @@ do i=1,num_h_moments(1)
   if (bintype .eq. 'sbm') then
     mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
   elseif (bintype .eq. 'tau') then
-    mc(i)=sum(ffcd_mass(1:split_bins)/xkgmean(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
+    mc(i)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
   endif
 enddo
 
@@ -124,7 +128,7 @@ do i=1,num_h_moments(2)
   if (bintype .eq. 'sbm') then
     mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
   elseif (bintype .eq. 'tau') then
-    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xkgmean(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
+    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
   end if
 enddo
 
@@ -143,7 +147,7 @@ do i=1,nx
          Mpr2d(k,i,1:num_h_moments(2))=mr(1:num_h_moments(2))
          ! for testing only -ahu
          ! ffcdprev_mass(k,i,:)=ffcd_mass
-         ! ffcdprev_num(k,i,:)=ffcd_mass/xkgmean
+         ! ffcdprev_num(k,i,:)=ffcd_mass/binmass
       endif
    enddo
 enddo
@@ -258,7 +262,7 @@ real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num,fncn,ffcd_massinit,&
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr,guessc_am,guessr_am
-real(8),dimension(nz,nx,10) :: mc,mr,mc0,mr0
+real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
@@ -289,6 +293,8 @@ do k=1,nz
    ihyd=1
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
+!if (k==34) print*, 'before fit', Mp(2)
+
    skr=1; ekr=split_bins
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
@@ -297,7 +303,7 @@ do k=1,nz
 
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,ihyd,:))
       if (bintype .eq. 'tau') then
-          ffcloud_num=ffcloud_mass/xkgmean
+          ffcloud_num=ffcloud_mass/binmass
       endif
    else
       ffcloud_mass=0.
@@ -317,7 +323,7 @@ do k=1,nz
 
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,ihyd,:))
       if (bintype .eq. 'tau') then
-          ffrain_num=ffrain_mass/xkgmean
+          ffrain_num=ffrain_mass/binmass
       endif
 
    else
@@ -356,9 +362,11 @@ endif
    !Calculate moments - most of the time they're the same as what we used to find parameters
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
-   call calcmoms(ffcd_mass(k,j,:),10,mc0(k,j,:),mr0(k,j,:),ffcd_num(k,j,:))
+   call calcmoms(ffcd_mass(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10),ffcd_num(k,j,:))
  enddo
 enddo
+
+!print*, 'before mphys',sum(ffcd_num(34,j,:))*col,mc0(34,j,0)
 
 !if (i_dgtime>164) then
 !    print*, 'before guess', guessc(25,1,:)
@@ -455,6 +463,7 @@ do k=1,nz
       mr(k,j,:)=0;Mpr(k,j,:)=0
     endif
 
+! if (k==34) print*, 'after mphys', sum(ffcd_num(k,j,:))*col, mc(k,j,1)
 ! !--------- convert moments to binned dist. and save those for tau ---------
 ! !--------- because tau needs to know the dhyd_adv for all 34 bins ------ahu
 !
@@ -468,7 +477,7 @@ do k=1,nz
 !    if (Mp(1)>0.) then
 !       CALL searchparamsG(guessc_am(k,j,:),ihyd,ffcloud_mass,flag_dummy(k,j,ihyd,:))
 !       if (bintype .eq. 'tau') then
-!           ffcloud_num=ffcloud_mass/xkgmean
+!           ffcloud_num=ffcloud_mass/binmass
 !       endif
 !    else
 !       ffcloud_mass=0.
@@ -486,7 +495,7 @@ do k=1,nz
 !    if (Mp(1)>0.) then
 !       CALL searchparamsG(guessr_am(k,j,:),ihyd,ffrain_mass,flag_dummy(k,j,ihyd,:))
 !       if (bintype .eq. 'tau') then
-!           ffrain_num=ffrain_mass/xkgmean
+!           ffrain_num=ffrain_mass/binmass
 !       endif
 !    else
 !       ffrain_mass=0.

@@ -1999,8 +1999,8 @@ call set_micro
 call bin_init !initialises the cloud bin categories
 call data     !reads in and sets the coll-coal kernal
 
-diams=dgmean
-
+diams=dgmean!DIAM(1:max_nbins)*.01
+binmass=xkgmean!xk
 
 DO IQ = 1,LN2
  ih=qindices(IAERO_BIN(iq))%ispecies
@@ -2110,7 +2110,7 @@ end subroutine qcount
 !-------------------------------------------------------------------
 Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,ffcd_mass,ffcd_num)
 
-use micro_prm, only:nkr, diams, krdrop
+use micro_prm, only:nkr, diams, krdrop,binmass
 use parameters, only: max_nbins
 use mphys_tau_bin_declare, only: DIAM, NQP, xkgmean, dgmean,xk
 use physconst, only: pi, rhoW
@@ -2137,12 +2137,12 @@ do kr=1,nkr
   if (rxc>0.) then
     exptermc=exp(-1.*diams(kr)/dnc)
     ffcd_mass(kr) = n0c*exptermc*(diams(kr)/dnc)**(gnuc+3)
-    ffcd_num(kr) = ffcd_mass(kr)/xkgmean(kr)!(diams(kr)**3*pi/6.*rhoW)
+    ffcd_num(kr) = ffcd_mass(kr)/binmass(kr)!(diams(kr)**3*pi/6.*rhoW)
   endif
   if (rxr>0.) then
      exptermr=exp(-1.*diams(kr)/dnr)
      ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
-     ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/xkgmean(kr)!(diams(kr)**3*pi/6.*rhoW)
+     ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/binmass(kr)!(diams(kr)**3*pi/6.*rhoW)
 !  else
 !     ffcd_mass(krdrop:nkr)=0.
   endif
