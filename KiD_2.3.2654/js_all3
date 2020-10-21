@@ -8,4 +8,6 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
-./run_tau_yesinit.sh
+./run_tau_tests.sh
+./run_amp_tests.sh
+./run_sbm_tests.sh

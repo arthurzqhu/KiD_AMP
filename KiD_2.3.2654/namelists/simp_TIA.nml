@@ -10,7 +10,7 @@ mom_names='M1','M2','M3'
 h_shape=4,4
 
 !Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
-cloud_init=0.001,100.e6  !.001,100.e6
+cloud_init=.001,100.e6
 
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
@@ -30,8 +30,8 @@ imomr2 = 6  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .true.
 docondensation = .true.
-docollisions = .true.
-dosedimentation = .true.
+docollisions = .false.
+dosedimentation = .false.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -56,17 +56,17 @@ dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=2.0      !Updraft speed
-tctrl(1)=3600.    !Total length of simulation (s)
+tctrl(1)=1200.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.	  !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
-zctrl=3000.,600.,900. !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
+zctrl=3000.,600.,1500. !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
 /
 
 &switch
-l_advect=.true.
-l_noadv_qv=.false.
-l_noadv_hydrometeors=.false.
+l_advect=.false.
+l_noadv_qv=.true.
+l_noadv_hydrometeors=.true.
 l_noadv_theta=.true.
 l_diverge=.false.
 l_nodiv_hydrometeors=.true.

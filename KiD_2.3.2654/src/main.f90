@@ -103,6 +103,7 @@ print*, itime
        else
           call save_diagnostics_2d
        endif
+!print*, ss(25,1)
 !if (itime>1) stop
     end do
 

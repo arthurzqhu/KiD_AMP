@@ -41,7 +41,7 @@ for ((ia=100; ia<=100; ia=ia+100))
 do
 echo $ia
 		echo $imc1 $imc2
-		outdir=output/TAU/$(date +'%Y-%m-%d')/a${ia}/
+		outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
 		for ((ic=0; ic<case_num; ic++))
 		do
 			if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
@@ -54,7 +54,7 @@ echo $ia
 			    mkdir -p $outdir
 			fi
 			echo “${caselist[ic]}”
-			cat > namelists/TAU.nml << END
+			cat > namelists/AMP_TAU.nml << END
 
 &mphys
 ! hydrometeor names
@@ -75,8 +75,8 @@ rain_init=0.0,0.0
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
-num_h_moments=2,1
-num_h_bins=34,1
+num_h_moments=3,3
+num_h_bins=1,1
 
 !AMP control - which moments to predict
 imomc1 = $imc1  !1st predicted cloud moment
@@ -135,11 +135,11 @@ l_periodic_bound=.False.
 
 &addcontrol
 KiD_outdir='$outdir'
-ampORbin='bin'
+ampORbin='amp'
 bintype='tau'
 /
 END
-		./bin/KiD_1D.exe namelists/TAU.nml
+		./bin/KiD_1D.exe namelists/AMP_TAU.nml
 				#done
 			#done
 #		done
