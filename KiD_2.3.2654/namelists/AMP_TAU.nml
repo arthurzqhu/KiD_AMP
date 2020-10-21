@@ -1,0 +1,83 @@
+
+&mphys
+! hydrometeor names
+h_names='cloud','rain'
+
+!Moment names
+mom_names='M1','M2','M3'
+
+!Initial shape parameter
+h_shape=4,4
+
+!Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
+cloud_init=.001,100.e6  !.001,100.e6
+
+!Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
+rain_init=0.0,0.0
+
+! number of moments for each species
+!To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
+!To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
+num_h_moments=3,3
+num_h_bins=1,1
+
+!AMP control - which moments to predict
+imomc1 = 0  !1st predicted cloud moment
+imomc2 = 6  !2nd predicted cloud moment (if 3M)
+imomr1 = 0  !1st predicted rain moment
+imomr2 = 6  !2nd predicted rain moment (if 3M)
+
+!Microphysics process control
+donucleation = .false.
+docondensation = .false.
+docollisions = .false.
+dosedimentation = .false.
+
+! Aerosol initialization
+num_aero_moments=1
+num_aero_bins=1
+aero_N_init=100.e6 !or CCN at 1% SS
+aero_sig_init=1.4
+aero_rd_init=0.05e-6
+
+! Background values for each moment (assumed the same for all species)
+!This is the original KiD method for initializing hydrometeors. Not
+!recommended (Adele)
+mom_init=0,0,0
+/
+
+&case
+icase=101
+/
+
+&control
+mphys_scheme='amp'
+dt=1.0            !Timestep length (s)
+dgstart=0.0       !When to start diagnostic output
+dg_dt=1.0         !Timestep for diagnostic output
+wctrl(1)=2.0      !Updraft speed
+tctrl(1)=1200.    !Total length of simulation (s)
+tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
+tctrl(3)=1080.	  !For cases 105-107
+tctrl(4)=1200.    !For cases 105-107
+zctrl=3000.,600.,1200. !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
+/
+
+&switch
+l_advect=.false.
+l_noadv_qv=.true.
+l_noadv_hydrometeors=.true.
+l_noadv_theta=.true.
+l_diverge=.false.
+l_nodiv_hydrometeors=.true.
+l_fix_theta=.true.
+l_diverge_advection=.false.
+l_fix_aerosols=.true.
+l_periodic_bound=.False.
+/
+
+&addcontrol
+KiD_outdir='output/AMP/2020-10-21/a100/'
+ampORbin='amp'
+bintype='tau'
+/
