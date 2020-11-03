@@ -15,7 +15,7 @@ Module main
 
   Use typeKind
   Use parameters, only : dt, dg_dt, nx, nz
-  Use namelists, only : read_namelist
+  Use namelists, only : read_namelist,ss_init
   Use runtime, only : time, time_step, n_times
   Use switches
   Use set_profiles,  only : read_profiles
@@ -40,16 +40,17 @@ contains
     ! Start by reading in namelists
     !
     allocate(temp_field(nz,0:nx+1))
-
     if (l_namelists) call read_namelist
+    ss=ss_init 
+
     call check_bintype
     ! Set up the initial fields and forcing
+
     if (l_input_file)then
        call read_profiles(input_file)
     else
        call read_profiles(icase)
     end if
-
 
     call interpolate_input(ifiletype)
 
@@ -70,7 +71,7 @@ contains
     endif
 
     do itime=1,n_times
-print*, itime
+!print*, itime
 
        time=time+dt
        time_step=time_step+1
@@ -104,7 +105,7 @@ print*, itime
           call save_diagnostics_2d
        endif
 !print*, ss(25,1)
-!if (itime>1) stop
+!if (itime>2) stop
     end do
 
     if (l_write_dgs) call write_diagnostics

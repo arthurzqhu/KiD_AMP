@@ -8,4 +8,4 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
-./run_tau_yesinit.sh
+./RUN_a4_test.sh
