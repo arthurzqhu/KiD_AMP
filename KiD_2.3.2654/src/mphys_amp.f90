@@ -17,7 +17,7 @@ module mphys_amp
   Use micro_prm
   Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
   Use switches, only: l_advect,l_diverge
-  Use namelists, only: bintype, ampORbin
+  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors
 
   Implicit None
 
@@ -64,16 +64,20 @@ contains
           if (ampORbin .eq. 'amp') then
              do imom=1,num_h_moments(1)
                 ! Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
-               Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom) &
-                    + (dhydrometeors_adv(k,i,1)%moments(1,imom) &
-                    + dhydrometeors_div(k,i,1)%moments(1,imom))*dt
+               Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
+               if (.not. l_noadv_hydrometeors) Mpc2d(k,i,imom)=Mpc2d(k,i,imom) &
+                    + dhydrometeors_adv(k,i,1)%moments(1,imom)*dt
+               if (l_diverge) Mpc2d(k,i,imom)=Mpc2d(k,i,imom) &
+                    + dhydrometeors_div(k,i,1)%moments(1,imom)*dt
              enddo
              if (any(Mpc2d(k,i,:)==0.)) Mpc2d(k,i,:)=0.
              do imom=1,num_h_moments(2)
                 ! Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom)
-               Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom) &
-                    + (dhydrometeors_adv(k,i,2)%moments(1,imom) &
-                    + dhydrometeors_div(k,i,2)%moments(1,imom))*dt
+               Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom)
+               if (.not. l_noadv_hydrometeors) Mpr2d(k,i,imom)=Mpr2d(k,i,imom) &
+                    + dhydrometeors_adv(k,i,2)%moments(1,imom)*dt
+               if (l_diverge) Mpr2d(k,i,imom)=Mpr2d(k,i,imom) &
+                    + dhydrometeors_div(k,i,2)%moments(1,imom)*dt 
              enddo
              if (any(Mpr2d(k,i,:)==0.)) Mpr2d(k,i,:)=0.
           else !bin
@@ -165,7 +169,7 @@ do i=1,nx
          do imom=1,num_h_moments(1)
             dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
                  (Mpc2d(k,i,imom)-hydrometeors(k,i,1)%moments(1,imom))/dt
-           if (l_advect) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
+           if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
                          dhydrometeors_mphys(k,i,1)%moments(1,imom) &
                          -dhydrometeors_adv(k,i,1)%moments(1,imom)
            if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
@@ -175,7 +179,7 @@ do i=1,nx
          do imom=1,num_h_moments(2)
             dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
                  (Mpr2d(k,i,imom)-hydrometeors(k,i,2)%moments(1,imom))/dt
-           if (l_advect) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
+           if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
                          dhydrometeors_mphys(k,i,2)%moments(1,imom) &
                          -dhydrometeors_adv(k,i,2)%moments(1,imom)
            if (l_diverge) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
@@ -215,16 +219,16 @@ enddo
 
 ! Save some diagnostics
 !fitting flag
-!if (imomc1.ne.3) then
-!   field(:)=flag(:,nx,1,1)
-!   call save_dg(field,'old_fitting_flag_cloud', i_dgtime,units='unitless', dim='z')
-!   field(:)=flag(:,nx,2,1)
-!   call save_dg(field,'old_fitting_flag_rain', i_dgtime,units='unitless', dim='z')
-!
-!   field(:)=flag(:,nx,1,2)
-!   call save_dg(field,'fitting_flag_cloud_oob', i_dgtime,units='unitless', dim='z')
-!   field(:)=flag(:,nx,2,2)
-!   call save_dg(field,'fitting_flag_rain_oob', i_dgtime,units='unitless', dim='z')
+if (ampORbin .eq. 'amp') then
+   field(:)=flag(:,nx,1,1)
+   call save_dg(field,'oflagc', i_dgtime,units='unitless', dim='z')
+   field(:)=flag(:,nx,2,1)
+   call save_dg(field,'oflagr', i_dgtime,units='unitless', dim='z')
+
+   field(:)=flag(:,nx,1,2)
+   call save_dg(field,'flagoobc', i_dgtime,units='unitless', dim='z')
+   field(:)=flag(:,nx,2,2)
+   call save_dg(field,'flagoobr', i_dgtime,units='unitless', dim='z')
 !
 !   field(:)=flag(:,nx,1,3)
 !   call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')
@@ -235,7 +239,7 @@ enddo
 !   call save_dg(field,'fitting_flag_cloud_y_intol', i_dgtime,units='unitless', dim='z')
 !   field(:)=flag(:,nx,2,4)
 !   call save_dg(field,'fitting_flag_rain_y_intol', i_dgtime,units='unitless', dim='z')
-!endif
+endif
 
    ! if (imomc1.ne.3) then
    !       field(:)=flag(:,nx,1)
@@ -259,7 +263,8 @@ enddo
 
 !bin distributions
 if (ampORbin .eq. 'bin') then
-    fielddp2d(:,:)=dropsm2d(:,nx,:)
+!print*, sum(dropsm2d(48,nx,:))*col, sum(dropsm2d(49,nx,:))*col
+!    fielddp2d(:,:)=dropsm2d(:,nx,:)
     name='mass_dist'
     units='kg/kg/ln(r)'
     call save_dg('bin',fielddp2d,name,i_dgtime,units)
@@ -272,6 +277,8 @@ if (ampORbin .eq. 'bin') then
     endif
 
 elseif (ampORbin .eq. 'amp') then
+
+!print*, sum(dropsinitm2d(48,nx,:))*col, sum(dropsinitm2d(49,nx,:))*col
     fielddp2d(:,:)=dropsinitm2d(:,nx,:)
     name='mass_dist_init'
     units='kg/kg/ln(r)'
