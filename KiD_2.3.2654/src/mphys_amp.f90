@@ -264,7 +264,7 @@ endif
 !bin distributions
 if (ampORbin .eq. 'bin') then
 !print*, sum(dropsm2d(48,nx,:))*col, sum(dropsm2d(49,nx,:))*col
-!    fielddp2d(:,:)=dropsm2d(:,nx,:)
+    fielddp2d(:,:)=dropsm2d(:,nx,:)
     name='mass_dist'
     units='kg/kg/ln(r)'
     call save_dg('bin',fielddp2d,name,i_dgtime,units)
