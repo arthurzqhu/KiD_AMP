@@ -3,7 +3,7 @@ use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
-                    num_h_bins, ampORbin,num_aero_moments
+                    num_h_bins, ampORbin,num_aero_moments,ss_init
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean
 
 !use parameters, only:nx,nz,num_h_moments

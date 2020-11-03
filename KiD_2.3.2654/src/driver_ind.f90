@@ -370,7 +370,7 @@ enddo
 
 !if (i_dgtime>164) then
 !    print*, 'before guess', guessc(25,1,:)
-!    print*, 'before flags', flag(25,1,1,2)
+!    print*, 'before flags', flag(30,1,1,2)
 !    print*, 'before ffcd_mass',ffcd_mass(25,1,:)
 !    print*, 'before shparam', shparam(real(diams),nkr,real(ffcd_mass(25,1,:)))
 !    print*, 'before mc',mc0(25,1,:)

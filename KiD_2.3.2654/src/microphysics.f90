@@ -931,6 +931,9 @@ rdz_on_rhon(1+offset:kkp)=1./(dz(1:kkp-offset)*rhon(1+offset:kkp))
 ! just set it to be the current profile (i.e. th'=0)
 tref(1+offset:kkp)=theta(1:kkp-offset,nx)*exner(1:kkp-offset,nx)
 
+
+
+
 do j = jminp,jmaxp
     q_lem(j,1+offset:kkp,iqv) = qv(1:kkp-offset,j)
     q_lem(j,1+offset:kkp,iqss) = ss(1:kkp-offset,j)
@@ -1013,6 +1016,8 @@ enddo
 
 !end if
 
+!print*, q_lem(j,1+offset:kkp,iqss)
+
 ! ------------------------------ mphys starts ----------------------------------
 ! call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)  !expand this part later -ahu
 
@@ -1061,8 +1066,6 @@ do J = JMINP,JMAXP
       endif
 
    ENDDO
-
-!if (k==28 .and. i_dgtime>45) print*,SQ(J,K,ICDKG_BIN(:)),Q(J,K,ICDKG_BIN(:))
 
 ENDDO
 ENDDO
@@ -1711,6 +1714,12 @@ endif
                ,Q(J,K,ICDNC_BIN(L)))
 
         ENDDO
+
+if (k==30) then
+!    print*, 'cond',DIEMC
+!    print*, 'coll',DIEMD
+!    print*, 'sed',QL_SED(j,k,:)
+endif
 
         dD(1)=xkk1(1)*2.0*1.e6
         do l = 2, lk
