@@ -115,6 +115,12 @@ contains
    endif
 
    aer2d = 0.
+
+   ! set rain source if there is one
+   if (rain_source(1)>0.)    
+
+   endif
+
    if (ampORbin .eq. 'amp') then
       dropsm2d=0.
       dropsn2d=0.

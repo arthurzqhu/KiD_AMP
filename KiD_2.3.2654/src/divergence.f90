@@ -69,8 +69,6 @@ contains
           end do
        end do
     end do
-    
-
   end subroutine diverge_column
 
 end module divergence

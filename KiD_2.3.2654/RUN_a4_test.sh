@@ -59,7 +59,7 @@ echo $ia
                     nhb='34,1'
                 fi
             fi
-            outdir=output/sbm_noqvadv_yesdiv/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
+            outdir=output/sbm_noqvadv_nodiv/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
 	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
 	    for ((ic=0; ic<case_num; ic++))
 	    do
@@ -147,7 +147,7 @@ l_advect=.true.
 l_noadv_qv=.true.
 l_noadv_hydrometeors=.false.
 l_noadv_theta=.true.
-l_diverge=.true.
+l_diverge=.false.
 l_nodiv_hydrometeors=.true.
 l_fix_theta=.true.
 l_diverge_advection=.false.

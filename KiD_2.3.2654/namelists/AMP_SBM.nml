@@ -80,7 +80,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/sbm_noqvadv_yesdiv/AMP_SBM/2020-11-05/a100/'
+KiD_outdir='output/sbm_noqvadv_nodiv/AMP_SBM/2020-11-06/a100/'
 ampORbin='amp'
 bintype='sbm'
 /
