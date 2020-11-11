@@ -31,7 +31,8 @@ module advection_interface
     integer :: cscheme_id
 !    real(wp), allocatable :: field(:,:)
     integer :: ih, imom, ibin, k, j
- 
+    real(8) :: norm_factor
+
     if (present(scheme_id))then
        cscheme_id=scheme_id
     else
@@ -123,12 +124,22 @@ module advection_interface
                    field(k,j)=hydrometeors(k,j,ih)%moments(ibin,imom)
                 end do
              enddo
-             !print*,ih, ibin, maxval(hydrometeors(:,:,ih)%moments(ibin,imom)) 
+
+             norm_factor=sum(field)
+              
+             if (norm_factor .ne. 0.) field=1.d8*field/norm_factor
+
              call generic_advection(            &
                   &  field                      &
                   & ,field_adv                  &
                   & ,scheme_id)
-
+            if (norm_factor .ne. 0.) then 
+                field=field*norm_factor/1.d8
+                field_adv=field_adv*norm_factor/1.d8
+            endif
+            
+!            print*, sum(field), sum(field_adv)
+            
              do j=1,nx
                 do k=1,nz
                    if (field(k,j)+dt*field_adv(k,j) < 0.0) &
