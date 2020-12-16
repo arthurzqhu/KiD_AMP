@@ -15,6 +15,9 @@ cloud_init=0.001,100.e6  !.001,100.e6
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
 
+!Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
+rain_source=0.,0.
+
 !Initial supersaturation ratio
 !ss_init=0.1
 
@@ -33,7 +36,7 @@ imomr2 = 6  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .false.
 docondensation = .false.
-docollisions = .false.
+docollisions = .true.
 dosedimentation = .false.
 
 ! Aerosol initialization
@@ -68,10 +71,10 @@ zctrl=3000.,600.,1200. !zctrl(1) is the domain height, (2) and (3) specify the l
 
 &switch
 l_advect=.true.
-l_noadv_qv=.true.
+l_noadv_qv=.false.
 l_noadv_hydrometeors=.false.
 l_noadv_theta=.true.
-l_diverge=.true.
+l_diverge=.false.
 l_nodiv_hydrometeors=.true.
 l_fix_theta=.true.
 l_diverge_advection=.false.
@@ -80,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/sbm_noqvadv_nodiv/AMP_SBM/2020-11-06/a100/'
+KiD_outdir='output/coll_only/AMP_SBM/2020-12-02/a100/'
 ampORbin='amp'
 bintype='sbm'
 /

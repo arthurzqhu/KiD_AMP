@@ -70,6 +70,10 @@ do i=1,nx
             FF1R(KR)=ffcd(k,i,kr)*rhocgs/xl(kr)/xl(kr)/3.0
          END DO
 
+!if (k==nz) then
+!print*, ffcd(k,i,:) 
+!stop
+!endif
          FF2R=0.;FF3R=0.;FF4R=0.;FF5R=0.
          ! ICE
          !IF (ICEPROCS.EQ.1)THEN
@@ -683,7 +687,7 @@ use parameters, only: max_nbins
 implicit none
 
 integer :: kr
-real:: rxc,gnuc,dnc,rxr,gnur,dnr
+real :: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
 real(8), dimension(max_nbins) :: ffcd,diams
 
@@ -694,6 +698,7 @@ real(8), dimension(max_nbins) :: ffcd,diams
 ffcd=0.
 n0c=rxc/gamma(gnuc+3)
 n0r=rxr/gamma(gnur+3)
+
 do kr=1,nkr
   if (rxc>0.) then
     exptermc=exp(-1.*diams(kr)/dnc)
@@ -707,6 +712,8 @@ do kr=1,nkr
 !    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
 enddo
+
+!print*, 'ffcd',ffcd
 
 return
 !Diagnose shape parameter

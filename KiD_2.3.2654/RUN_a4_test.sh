@@ -8,6 +8,8 @@ tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 icimm=0.001
 icinm=100.e6
+rs_dm=0.
+rs_N=0.
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
@@ -59,7 +61,7 @@ echo $ia
                     nhb='34,1'
                 fi
             fi
-            outdir=output/sbm_noqvadv_nodiv/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
+            outdir=output/coll_only/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
 	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
 	    for ((ic=0; ic<case_num; ic++))
 	    do
@@ -91,6 +93,9 @@ cloud_init=$icimm,$icinm  !.001,100.e6
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
 
+!Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
+rain_source=$rs_dm,$rs_N
+
 !Initial supersaturation ratio
 !ss_init=0.1
 
@@ -109,7 +114,7 @@ imomr2 = $imr2  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .false.
 docondensation = .false.
-docollisions = .false.
+docollisions = .true.
 dosedimentation = .false.
 
 ! Aerosol initialization
@@ -144,7 +149,7 @@ zctrl=$zc !zctrl(1) is the domain height, (2) and (3) specify the location to in
 
 &switch
 l_advect=.true.
-l_noadv_qv=.true.
+l_noadv_qv=.false.
 l_noadv_hydrometeors=.false.
 l_noadv_theta=.true.
 l_diverge=.false.
