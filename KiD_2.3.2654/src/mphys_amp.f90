@@ -18,6 +18,7 @@ module mphys_amp
   Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
   Use switches, only: l_advect,l_diverge
   Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors
+  use switches, only: zctrl
 
   Implicit None
 
@@ -30,19 +31,22 @@ contains
 
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
-    integer :: i, j, k, imom
+    integer :: i, j, k, imom, rain_alt
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
-    real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
+    real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
     real, dimension(nz) :: field
     real(8),dimension(nz,flag_count) :: fieldflag
+    real(8),dimension(nz,nx) :: dm
     real(8), dimension(nz) :: fielddp
     real(8), dimension(nz,max_nbins) :: fielddp2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
+    real(8),dimension(num_h_moments(2)) :: mr_s
     character(1) :: Mnum
+    real :: dnr_s,rm_s !source dnr and rain mass
 
     do i=1,nx
        do k=1,nz
@@ -103,7 +107,6 @@ contains
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
          guessr2d(:,:,2) = 0.001
          call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
-!print*, Mpc2d,Mpr2d
       elseif (ampORbin .eq. 'bin') then
          if (bintype .eq. 'sbm') then
             call sbm_init(aer2d,dropsm2d)
@@ -117,20 +120,52 @@ contains
    aer2d = 0.
 
    ! set rain source if there is one
-   if (rain_source(1)>0.)    
+    if (rain_source(1)>0.) then 
+        !set the zctrl(1) to be where the rain source is, which happens to be nz
+        rain_alt=int(zctrl(1)/((zctrl(1))/nz))
+        rm_s=rain_source(1)**3*pi/6*1000*rain_source(2)
+        dnr_s=(rm_s*6./3.14159/1000./rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
 
-   endif
+        do j=1,nx
+            if (bintype .eq. 'sbm') then
+                CALL init_dist_sbm(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
+                     diams,dropsm2d(rain_alt,j,:))
+            elseif (bintype .eq. 'tau') then
+                CALL init_dist_tau(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
+                     dropsm2d(rain_alt,j,:),dropsn2d(rain_alt,j,:))
+            endif
+        enddo
+
+        if (ampORbin .eq. 'amp') then
+            guessr2d(rain_alt,:,2)=dnr_s
+        
+            pmomsr=(/3,imomr1,imomr2/)
+            do j=1,nx
+                do i=1,num_h_moments(2)
+                    if (bintype .eq. 'sbm') then
+                        mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/xl(split_bins+1:nkr)&
+                              *diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
+                    elseif (bintype .eq. 'tau') then
+                        mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/binmass(split_bins+1:nkr)&
+                              *diams(split_bins+1:nkr)**pmomsc(i))*col
+            
+                    end if
+                enddo
+                Mpr2d(rain_alt,j,1:num_h_moments(2))=mr_s(1:num_h_moments(2))
+        !print*, mr_s(1)
+            enddo 
+        endif
+    endif
 
    if (ampORbin .eq. 'amp') then
       dropsm2d=0.
       dropsn2d=0.
       dropsinitm2d=0.
       dropsinitn2d=0.
-!print*,'s',Mpc2d(18,1,:)
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d)
-!print*,'e',Mpc2d(18,1,:)
+
    elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
@@ -140,8 +175,7 @@ contains
    endif
 
   ! back out tendencies
-
-
+!print*, Mpr2d(120,1,1)
 dqv_mphys = 0.
 dtheta_mphys = 0.
 
@@ -156,8 +190,6 @@ do imom=1,num_h_moments(2)
    dhydrometeors_mphys(:,:,2)%moments(i,imom)=0.
   enddo
 enddo
-
-
 
 do i=1,nx
    do k=1,nz
@@ -266,6 +298,16 @@ endif
      fielddp(:)=mr(:,nx,i)
      call save_dg(fielddp,name,i_dgtime,units,dim='z')
    enddo
+
+!diagnose mass mean diameter
+do k=1,nz
+    fielddp(k)=((mr(k,nx,4))/(mr(k,nx,1)))**(1./3.)
+enddo
+
+name='Dm'
+units='micron'
+call save_dg(fielddp,name,i_dgtime,units,dim='z')
+
 
 !bin distributions
 if (ampORbin .eq. 'bin') then

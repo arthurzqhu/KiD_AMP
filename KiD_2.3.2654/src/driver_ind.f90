@@ -164,7 +164,7 @@ use micro_prm
 implicit none
 real(8),dimension(max_nbins) :: ffcd
 real :: dnc,dnr
-real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
+real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
 integer :: i,k
 
 !Set some parameters
@@ -240,8 +240,8 @@ enddo
 
 end subroutine tau_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcd_mass,&
-    ffcd_num,mc,mr,flag,ffcd_massinit,ffcd_numinit)
+subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcdr8_mass,&
+    ffcdr8_num,mc,mr,flag,ffcdr8_massinit,ffcdr8_numinit)
 
 use module_hujisbm
 use micro_prm
@@ -257,8 +257,9 @@ integer:: i,j,k,ip
 real(8),dimension(nz,nx,2,flag_count)::flag,flag_dummy
 
 real, dimension(nz,nx)::tempk,press,qv,mc_temp,mr_temp
-real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num,fncn,ffcd_massinit,&
-                                  ffcd_numinit
+real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass,ffcdr8_num,fncn,ffcdr8_massinit,&
+                                  ffcdr8_numinit
+real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr,guessc_am,guessr_am
@@ -339,21 +340,22 @@ do k=1,nz
 !        ffcd_num(k,j,:)=ffcdprev_num(k,j,:)
 !        ffcd_mass(k,j,:)=ffcdprev_mass(k,j,:)
 !    else
-        ffcd_mass(k,j,:) = ffcloud_mass+ffrain_mass
-        ffcd_num(k,j,:) = ffcloud_num+ffrain_num
+        ffcdr8_mass(k,j,:) = ffcloud_mass+ffrain_mass
+        ffcdr8_num(k,j,:) = ffcloud_num+ffrain_num
 !    endif
 
-   ffcd_massinit(k,j,:)=ffcd_mass(k,j,:)
-   ffcd_numinit(k,j,:)=ffcd_num(k,j,:)
 
-if(ffcd_mass(k,j,1).ne.ffcd_mass(k,j,1))then
-    print*,'NaNs in ffcd_mass'
+   ffcdr8_massinit(k,j,:)=ffcdr8_mass(k,j,:)
+   ffcdr8_numinit(k,j,:)=ffcdr8_num(k,j,:)
+
+if(ffcdr8_mass(k,j,1).ne.ffcdr8_mass(k,j,1))then
+    print*,'NaNs in ffcdr8_mass'
     print*,'NaN:',k,j,ffcloud_mass(1),ffrain_mass(1)
     print*,Mpc(k,j,:),Mpr(k,j,:)
     stop
 endif
 
-if(ffcd_num(k,j,1).ne.ffcd_num(k,j,1))then
+if(ffcdr8_num(k,j,1).ne.ffcdr8_num(k,j,1))then
     print*,'NaNs in ffcd_num'
     print*,'NaN:',k,j,ffcloud_num(1),ffrain_num(1)
     stop
@@ -362,19 +364,21 @@ endif
    !Calculate moments - most of the time they're the same as what we used to find parameters
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
-   call calcmoms(ffcd_mass(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10),ffcd_num(k,j,:))
+   call calcmoms(ffcdr8_mass(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10),ffcdr8_num(k,j,:))
  enddo
 enddo
+
+!print*, sum(ffcdr8_massinit(nz,1,:))*col
 
 !print*, 'before mphys',sum(ffcd_num(34,j,:))*col,mc0(34,j,0)
 
 !if (i_dgtime>164) then
 !    print*, 'before guess', guessc(25,1,:)
 !    print*, 'before flags', flag(30,1,1,2)
-!    print*, 'before ffcd_mass',ffcd_mass(25,1,:)
-!    print*, 'before shparam', shparam(real(diams),nkr,real(ffcd_mass(25,1,:)))
+!    print*, 'before ffcdr8_mass',ffcdr8_mass(25,1,:)
+!    print*, 'before shparam', shparam(real(diams),nkr,real(ffcdr8_mass(25,1,:)))
 !    print*, 'before mc',mc0(25,1,:)
-!    print*, 'before mass',sum(ffcd_mass(25,1,:))*col
+!    print*, 'before mass',sum(ffcdr8_mass(25,1,:))*col
 !    print*, 'before num',sum(ffcd_num(25,1,:))*col
 
 !endif
@@ -382,22 +386,29 @@ enddo
 
 !------CALL MICROPHYSICS--------------------
 
+ffcd_mass=real(ffcdr8_mass)
+
 if (bintype .eq. 'sbm') then
     call micro_proc_sbm(press,tempk,qv,fncn,ffcd_mass)
 elseif (bintype .eq. 'tau') then
+    ffcd_num=real(ffcdr8_num)
     call micro_proc_tau(tempk,qv,ffcd_mass,ffcd_num)
+    ffcdr8_num=dble(ffcd_num)
 endif
+
+ffcdr8_mass=dble(ffcd_mass)
+
 !if (i_dgtime>164) then
-!    print*, 'after ffcd_mass', ffcd_mass(39,1,:)
-!    print*, 'after shparam',shparam(real(diams),nkr,real(ffcd_mass(39,1,:)))
-!    print*, 'after mass',sum(ffcd_mass(39,1,:))*col
+!    print*, 'after ffcdr8_mass', ffcdr8_mass(39,1,:)
+!    print*, 'after shparam',shparam(real(diams),nkr,real(ffcdr8_mass(39,1,:)))
+!    print*, 'after mass',sum(ffcdr8_mass(39,1,:))*col
 !    print*, 'after num', sum(ffcd_num(39,1,:))*col
 !endif
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-     call calcmoms(ffcd_mass(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcd_num(k,j,:))
+     call calcmoms(ffcdr8_mass(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcdr8_num(k,j,:))
   !---------UPDATE MOMENTS---------------------------------
    !Mp=predicted value before microphysics. m0=value after finding parameters
    !If m0 .ne. Mp, then finding parameters failed
@@ -535,7 +546,7 @@ do k=1,nz
 !print*,'after guess', guessc_am(25,1,:)!'after flags', flag_dummy(30,1,1,2)
 end subroutine mp_amp
 !---------------------------------------------------------------------
-subroutine mp_sbm(ffcd,press,tempk,qv,fncn,mc,mr)
+subroutine mp_sbm(ffcdr8,press,tempk,qv,fncn,mc,mr)
 
 use module_hujisbm
 use micro_prm
@@ -546,21 +557,24 @@ integer:: i,j,k,ip
 
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,max_nbins)::ffcd,fncn
+real(8), dimension(nz,nx,max_nbins)::ffcdr8
 real(8),dimension(nz,nx,10) :: mc,mr
 
 !------CALL MICROPHYSICS--------------------
+ffcd=real(ffcdr8)
 call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
+ffcdr8=dble(ffcd)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcd(k,j,:),10,mc(k,j,:),mr(k,j,:))
+  call calcmoms(ffcdr8(k,j,:),10,mc(k,j,:),mr(k,j,:))
  enddo
 enddo
 end subroutine mp_sbm
 
 !---------------------------------------------------------------------
-subroutine mp_tau(ffcd_mass2d,ffcd_num2d,tempk,qv,mc,mr)
+subroutine mp_tau(ffcdr8_mass2d,ffcdr8_num2d,tempk,qv,mc,mr)
 
 use module_hujisbm
 use micro_prm
@@ -571,27 +585,32 @@ implicit none
 integer:: i,j,k,ip
 
 real, dimension(nz,nx):: tempk,qv
+real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass2d,ffcdr8_num2d
 real, dimension(nz,nx,max_nbins)::ffcd_mass2d,ffcd_num2d
 real(8),dimension(nz,nx,10) :: mc,mr ! moments
-!print*, 'before ffcd_mass', ffcd_mass2d(30,1,:)
-!print*, 'before mphys', shparam(real(diams),nkr,real(ffcd_mass2d(30,1,:)))
-!print*, 'before mass',sum(ffcd_mass2d(30,1,:))*col
+!print*, 'before ffcdr8_mass', ffcdr8_mass2d(30,1,:)
+!print*, 'before mphys', shparam(real(diams),nkr,real(ffcdr8_mass2d(30,1,:)))
+!print*, 'before mass',sum(ffcdr8_mass2d(30,1,:))*col
 !------CALL MICROPHYSICS--------------------
+ffcd_mass2d=real(ffcdr8_mass2d)
+ffcd_num2d=real(ffcdr8_num2d)
 call micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
+ffcdr8_mass2d=dble(ffcd_mass2d)
+ffcdr8_num2d=dble(ffcd_num2d)
 !print*, 'after ffcd_mass', ffcd_mass2d(30,1,:)
 !print*, 'after mphys', shparam(real(diams),nkr,real(ffcd_mass2d(30,1,:)))
 !print*, 'after mass',sum(ffcd_mass2d(30,1,:))*col
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcd_mass2d(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcd_num2d(k,j,:))
+  call calcmoms(ffcdr8_mass2d(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcdr8_num2d(k,j,:))
  enddo
 enddo
 ! there might be a better way to calculate moments, but will leave it like that for now. -ahu!!!
 
 end subroutine mp_tau
 
-subroutine calcmoms(ffcd_mass,momnum,mc,mr,ffcd_num)
+subroutine calcmoms(ffcdr8_mass,momnum,mc,mr,ffcdr8_num)
 
 use module_hujisbm
 use micro_prm
@@ -603,13 +622,13 @@ use parameters, only: split_bins
 
 implicit none
 integer :: i,ib,ip,momnum
-real, dimension(max_nbins)::ffcd_mass
-real, optional, dimension(max_nbins) :: ffcd_num
+real(8), dimension(max_nbins)::ffcdr8_mass
+real(8), optional, dimension(max_nbins) :: ffcdr8_num
 real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
 real(8), dimension(10) :: mc,mr ! moments
 
 if (bintype .eq. 'tau') then
-    diag_m=ffcd_mass/ffcd_num
+    diag_m=ffcdr8_mass/ffcdr8_num
     diag_D=(diag_m/(1000.*pi/6))**(1./3.)
     do ib=1,nkr
         if (diag_D(ib) .ne. diag_D(ib)) diag_D(ib)=diams(ib)
@@ -618,12 +637,12 @@ endif
 
 do i=1,momnum
     if (bintype .eq. 'sbm') then
-        mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1))*col*1000.
-        mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1))*col*1000.
+        mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1))*col*1000.
+        mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1))*col*1000.
 
     elseif (bintype .eq. 'tau') then
-        mc(i)=sum(ffcd_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
-        mr(i)=sum(ffcd_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
+        mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
+        mr(i)=sum(ffcdr8_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
     endif
 enddo
 
