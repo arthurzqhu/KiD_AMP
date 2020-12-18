@@ -626,12 +626,12 @@ real(8), dimension(max_nbins)::ffcdr8_mass
 real(8), optional, dimension(max_nbins) :: ffcdr8_num
 real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
 real(8), dimension(10) :: mc,mr ! moments
-
+real(8) :: inf=huge(mc(1))
 if (bintype .eq. 'tau') then
     diag_m=ffcdr8_mass/ffcdr8_num
     diag_D=(diag_m/(1000.*pi/6))**(1./3.)
     do ib=1,nkr
-        if (diag_D(ib) .ne. diag_D(ib)) diag_D(ib)=diams(ib)
+        if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
     end do
 endif
 
