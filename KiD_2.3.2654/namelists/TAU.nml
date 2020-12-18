@@ -28,10 +28,10 @@ imomr1 = 0  !1st predicted rain moment
 imomr2 = 6  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .false.
-docondensation = .false.
-docollisions = .false.
-dosedimentation = .false.
+donucleation = .true.
+docondensation = .true.
+docollisions = .true.
+dosedimentation = .true.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -47,7 +47,7 @@ mom_init=0,0,0
 /
 
 &case
-icase=101
+icase=102
 /
 
 &control
@@ -56,7 +56,7 @@ dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=2.0      !Updraft speed
-tctrl(1)=1200.    !Total length of simulation (s)
+tctrl(1)=3600.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.	  !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
@@ -64,9 +64,9 @@ zctrl=3000.,600.,1200. !zctrl(1) is the domain height, (2) and (3) specify the l
 /
 
 &switch
-l_advect=.false.
-l_noadv_qv=.true.
-l_noadv_hydrometeors=.true.
+l_advect=.true.
+l_noadv_qv=.false.
+l_noadv_hydrometeors=.false.
 l_noadv_theta=.true.
 l_diverge=.false.
 l_nodiv_hydrometeors=.true.
@@ -77,7 +77,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/TAU/2020-10-21/a100/'
+KiD_outdir='output/TAU/2020-12-16/a100/'
 ampORbin='bin'
 bintype='tau'
 /

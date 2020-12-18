@@ -10,3 +10,4 @@
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
 ./RUN_a4_test.sh
+#./bin/KiD_1D.exe namelists/TAU.nml
