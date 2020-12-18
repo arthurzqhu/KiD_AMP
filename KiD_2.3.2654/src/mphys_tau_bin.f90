@@ -8,7 +8,7 @@ module mphys_tau_bin
 
   Use parameters, only : num_h_moments, num_h_bins, &
        nspecies, mom_names, h_names, mom_units, max_char_len, &
-       num_aero_moments,num_aero_bins, aero_mom_init
+       num_aero_moments,num_aero_bins, aero_mom_init, MAX_NBINS
   Use column_variables
   Use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
   Use mphys_tau_bin_declare
@@ -24,7 +24,8 @@ module mphys_tau_bin
   real :: sq_lem(JMINP:JMAXP, KKP, NQP)
   real :: sth_lem(JMINP:JMAXP, KKP)
   real :: w_lem(JMINP:JMAXP, KKP)
-
+  real, dimension(nz,nx,max_nbins) :: dropsm2d, dropsn2d
+  real, dimension(nz,max_nbins) :: fielddp2d
   integer i
 
   !Logical switches
@@ -269,13 +270,16 @@ contains
               sq_lem(j,k+1,icdkg_bin(iq))= sq_lem(j,k+1,icdkg_bin(iq))      &
                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+              dropsm2d(k,j,iq)=q_lem(j,k,icdkg_bin(iq)) ! this is for diagnosing mass dist
            end do
+
            ih=qindices(icdnc_bin(iq))%ispecies
            imom=qindices(icdnc_bin(iq))%imoment
            do k=1,nz-1
               sq_lem(j,k+1,icdnc_bin(iq))= sq_lem(j,k+1,icdnc_bin(iq))      &
                    - (dhydrometeors_adv(k,j,ih)%moments(iq,imom)           &
                    + dhydrometeors_div(k,j,ih)%moments(iq,imom))
+              dropsn2d(k,j,iq)=q_lem(j,k,icdnc_bin(iq)) ! diagnosing num dist
            end do
         end do
 
@@ -315,7 +319,18 @@ contains
                    sq_lem(j,k+1,icdnc_bin(iq))
            end do
         end do
+        
      end do
+
+    fielddp2d(:,:)=dropsm2d(:,nx,:)
+    name='mass_dist'
+    units='kg/kg/ln(r)'
+    call save_dg('bin',fielddp2d,name,i_dgtime,units)
+
+    fielddp2d(:,:)=dropsn2d(:,nx,:)
+    name='num_dist'
+    units='1/kg/ln(r)'
+    call save_dg('bin',fielddp2d,name,i_dgtime,units)
 
    end subroutine mphys_tau_bin_interface
 
