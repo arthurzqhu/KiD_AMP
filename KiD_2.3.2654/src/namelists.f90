@@ -62,7 +62,7 @@ module namelists
   character(200) :: bintype='' ! underlying 'sbm' or 'tau'
   character(200) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
 
-  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, bintype, ampORbin &
+  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, bintype, ampORbin, l_coll_coal &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &
@@ -71,7 +71,7 @@ module namelists
      , p1, p2, p3 &
      , sp1, sp2, sp3 &
      , l_abelshipway, l_cons &
-     , l_coll_coal, l_cond, l_condensation, iopt_act &
+     , l_cond, l_condensation, iopt_act &
      , aerosol_option, l_aaut, l_aacc, l_aevp, l_ased &
      , iopt_tidy, l_warm, l_inuc, iopt_rcrit   &
      , l_active_inarg2000, iopt_inuc, l_cu_cold, l_oneway, l_newoptions &
