@@ -10,10 +10,13 @@ mom_names='M1','M2','M3'
 h_shape=4,4
 
 !Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
-cloud_init=0.0,0.0  !.001,100.e6
+cloud_init=0.001,100.e6  !.001,100.e6
 
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
+
+!Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
+rain_source=0.,0.
 
 !Initial supersaturation ratio
 !ss_init=0.1
@@ -33,8 +36,8 @@ imomr2 = 6  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .true.
 docondensation = .true.
-docollisions = .true.
-dosedimentation = .true.
+docollisions = .false.
+dosedimentation = .false.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -80,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/allon/AMP_TAU/2020-10-27/a100/'
+KiD_outdir='output/condnucadv_only_yesinit/AMP_TAU/2020-12-18/a100/'
 ampORbin='amp'
 bintype='tau'
 /

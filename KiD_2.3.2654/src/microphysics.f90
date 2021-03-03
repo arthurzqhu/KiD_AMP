@@ -1026,7 +1026,6 @@ enddo
 !print*, q_lem(j,1+offset:kkp,iqss)
 
 ! ------------------------------ mphys starts ----------------------------------
-! call tau_bin(1, th_lem, q_lem, sth_lem, sq_lem, dt, rdt)  !expand this part later -ahu
 
 TH = th_lem
 Q = q_lem

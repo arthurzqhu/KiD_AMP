@@ -74,10 +74,13 @@ l_fix_theta=.true.
 l_diverge_advection=.false.
 l_fix_aerosols=.true.
 l_periodic_bound=.False.
+l_sediment=.false.
 /
 
 &addcontrol
-KiD_outdir='output/TAU/2020-12-16/a100/'
+KiD_outdir='output/TAU/2020-12-17/a100/'
 ampORbin='bin'
 bintype='tau'
+
+l_coll_coal=.false.
 /
