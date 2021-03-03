@@ -213,7 +213,7 @@ implicit none
 real :: dnc,dnr
 real(8),dimension(max_nbins) :: ffcd_mass,ffcd_num
 integer :: i,k
-real, dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d
+real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d
 
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
@@ -227,7 +227,8 @@ if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
 
 CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
                    dnr,ffcd_mass,ffcd_num)
-
+!print*, 'mass',ffcd_mass
+!print*, 'num',ffcd_num
 !print*,'ffcd*col=',sum(ffcd_mass)*col,sum(ffcd_num)*col
 do i=1,nx
    do k=1,nz
@@ -397,6 +398,8 @@ elseif (bintype .eq. 'tau') then
 endif
 
 ffcdr8_mass=dble(ffcd_mass)
+
+!print*, 'column water mass', sum(ffcd_mass)
 
 !if (i_dgtime>164) then
 !    print*, 'after ffcdr8_mass', ffcdr8_mass(39,1,:)
@@ -594,6 +597,7 @@ real(8),dimension(nz,nx,10) :: mc,mr ! moments
 !------CALL MICROPHYSICS--------------------
 ffcd_mass2d=real(ffcdr8_mass2d)
 ffcd_num2d=real(ffcdr8_num2d)
+!print*, ffcdr8_mass2d
 call micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 ffcdr8_mass2d=dble(ffcd_mass2d)
 ffcdr8_num2d=dble(ffcd_num2d)
