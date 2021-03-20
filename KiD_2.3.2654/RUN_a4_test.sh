@@ -3,7 +3,7 @@
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("SBM")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 icimm=0. #0.001
@@ -41,41 +41,45 @@ imr2=6 # III moment for rain
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
 
-for ia in 100 #50 100 200 400 800 1600
+
+for iw in .25 .5 1 2 4
 do
-echo $ia
-    for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
+echo $iw
+    for ia in 50 100 200 400 800 1600
     do
-        for ((ibt=0; ibt<${#bintype[@]}; ibt=ibt+1))
+    echo $ia
+        for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
         do
-	    echo ${ampORbin[$iab]}-${bintype[$ibt]}
-            if [ ${ampORbin[$iab]} = 'AMP' ]; then
-                nhm='3,3'
-                nhb='1,1'
-            else
-                if [ ${bintype[$ibt]} = 'SBM' ]; then
-                    nhm='1,1'
-                    nhb='33,33'
+            for ((ibt=0; ibt<${#bintype[@]}; ibt=ibt+1))
+            do
+    	    echo ${ampORbin[$iab]}-${bintype[$ibt]}
+                if [ ${ampORbin[$iab]} = 'AMP' ]; then
+                    nhm='3,3'
+                    nhb='1,1'
                 else
-                    nhm='2,1'
-                    nhb='34,1'
+                    if [ ${bintype[$ibt]} = 'SBM' ]; then
+                        nhm='1,1'
+                        nhb='33,33'
+                    else
+                        nhm='2,1'
+                        nhb='34,1'
+                    fi
                 fi
-            fi
-            outdir=output/SBM_test/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
-	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
-	    for ((ic=0; ic<case_num; ic++))
-	    do
-	        if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
-	        then
-	            zc=0
-		else
-		    zc="3000.,600.,1200."
-		fi
-		if [ ! -d $outdir ]; then
-		    mkdir -p $outdir
-		fi
-		echo "${caselist[ic]}"
-		cat > namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml << END
+                outdir=output/noinit/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}
+    	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
+    	    for ((ic=0; ic<case_num; ic++))
+    	    do
+    	        if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
+    	        then
+    	            zc=0
+    		else
+    		    zc="3000.,600.,1200."
+    		fi
+    		if [ ! -d $outdir ]; then
+    		    mkdir -p $outdir
+    		fi
+    		echo "${caselist[ic]}"
+    		cat > namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml << END
 
 &mphys
 ! hydrometeor names
@@ -139,8 +143,8 @@ mphys_scheme='amp'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
-wctrl(1)=2.0      !Updraft speed
-tctrl(1)=3600.    !Total length of simulation (s)
+wctrl(1)=$iw      !Updraft speed
+tctrl(1)=2400.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
@@ -167,7 +171,7 @@ bintype='${bintype[$ibt],,}'
 /
 END
 		./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
-				#done
+				done
 			done
 		done
 	done
