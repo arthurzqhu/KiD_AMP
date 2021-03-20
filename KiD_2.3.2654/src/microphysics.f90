@@ -127,10 +127,11 @@ do i=1,nx
 
             IF (donucleation) THEN
               IF (DEL1IN.GT.0.) THEN
-                 concccn = aero_N_init(1)*1.e-6*(100.*del1in)**bccn
-                 concdrop = sum(ff1in*xl)*3.*col
+                 !aero_N_init=#/kg, concccn=#/g
+                 concccn = aero_N_init(1)*1.e-3*(100.*del1in)**bccn
+                 concdrop = sum(ff1in*xl)*3.*col/rhocgs
                  IF (concccn>concdrop) THEN
-                    ff1in(1)=ff1in(1)+(concccn-concdrop)/(3.0*col*xl(1))
+                    ff1in(1)=ff1in(1)+(concccn-concdrop)*rhocgs/(3.0*col*xl(1))
                  ENDIF
               ENDIF
 

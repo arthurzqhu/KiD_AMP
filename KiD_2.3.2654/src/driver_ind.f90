@@ -59,9 +59,6 @@ else !Run AMP
     read(17,*) mintab(:,1); close(17)
     open(17,file=trim(lutfolder)//'cloud_maxmy_'//momstr//'.txt')
     read(17,*) maxtab(:,1); close(17)
-    !Find min and max of parameters from the tables
-    dnbounds(1,1)=minval(dntab(:,:,1)); dnbounds(2,1)=maxval(dntab(:,:,1))
-    nubounds(1,1)=minval(nutab(:,:,1)); nubounds(2,1)=maxval(nutab(:,:,1))
 
     write(momstr,'(A,I1,A,I1)') 'M',imomr1,'M',imomr2
     open(17,file=trim(lutfolder)//'rain_nu_'//momstr//'.txt')
@@ -74,8 +71,15 @@ else !Run AMP
     read(17,*) mintab(:,2); close(17)
     open(17,file=trim(lutfolder)//'rain_maxmy_'//momstr//'.txt')
     read(17,*) maxtab(:,2); close(17)
+
+    dntab = dntab * 1.e-6
+    !Find min and max of parameters from the tables
+    dnbounds(1,1)=minval(dntab(:,:,1)); dnbounds(2,1)=maxval(dntab(:,:,1))
+    nubounds(1,1)=minval(nutab(:,:,1)); nubounds(2,1)=maxval(nutab(:,:,1))
+    minmaxmy(1,1)=minval(mintab(:,1)); minmaxmy(2,1)=maxval(maxtab(:,1))
     dnbounds(1,2)=minval(dntab(:,:,2)); dnbounds(2,2)=maxval(dntab(:,:,2))
     nubounds(1,2)=minval(nutab(:,:,2)); nubounds(2,2)=maxval(nutab(:,:,2))
+    minmaxmy(1,2)=minval(mintab(:,2)); minmaxmy(2,2)=maxval(maxtab(:,2))
   endif
 endif
 
@@ -366,6 +370,7 @@ endif
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
    call calcmoms(ffcdr8_mass(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10),ffcdr8_num(k,j,:))
+!print*,mc0(k,j,1),Mpc(k,j,1:3),flag(k,j,1,1)
  enddo
 enddo
 
@@ -561,6 +566,7 @@ integer:: i,j,k,ip
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,max_nbins)::ffcd,fncn
 real(8), dimension(nz,nx,max_nbins)::ffcdr8
+real(8), dimension(max_nbins)::dummy
 real(8),dimension(nz,nx,10) :: mc,mr
 
 !------CALL MICROPHYSICS--------------------
@@ -569,9 +575,11 @@ call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 ffcdr8=dble(ffcd)
 
 !---------CALC MOMENTS-----------------------
+!Adele - fix call to calcmoms to include all arguments. Missing argument not needed for SBM.
+dummy = 0.
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcdr8(k,j,:),10,mc(k,j,:),mr(k,j,:))
+  call calcmoms(ffcdr8(k,j,:),10,mc(k,j,:),mr(k,j,:),dummy)
  enddo
 enddo
 end subroutine mp_sbm

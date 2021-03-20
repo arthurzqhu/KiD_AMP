@@ -225,6 +225,7 @@ integer :: skr,ekr,momx,momy,ihyd
 integer, parameter :: ntab=100
 double precision, dimension(ntab,ntab,2) :: nutab,dntab
 double precision, dimension(2,10,2) :: minmaxmx
+double precision, dimension(2,2) :: minmaxmy
 double precision, dimension(ntab,2) :: mintab,maxtab
 double precision, dimension(2,2) :: nubounds, dnbounds
 real(8),dimension(max_nbins) :: diams
