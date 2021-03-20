@@ -3,11 +3,11 @@
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("TAU")
+bintype=("SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
-icimm=0.001
-icinm=100.e6
+icimm=0. #0.001
+icinm=0. #100.e6
 rs_dm=0.
 rs_N=0.
 isp_c=4  # shape parameter for cloud
@@ -61,7 +61,7 @@ echo $ia
                     nhb='34,1'
                 fi
             fi
-            outdir=output/condnucadv_only_yesinit/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
+            outdir=output/SBM_test/${ampORbin[$iab]}_${bintype[$ibt]}/$(date +'%Y-%m-%d')/a${ia}/
 	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
 	    for ((ic=0; ic<case_num; ic++))
 	    do
@@ -114,8 +114,8 @@ imomr2 = $imr2  !2nd predicted rain moment (if 3M)
 !Microphysics process control
 donucleation = .true.
 docondensation = .true.
-docollisions = .false.
-dosedimentation = .false.
+docollisions = .true.
+dosedimentation = .true.
 
 ! Aerosol initialization
 num_aero_moments=1

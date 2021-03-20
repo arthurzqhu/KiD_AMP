@@ -10,7 +10,7 @@ mom_names='M1','M2','M3'
 h_shape=4,4
 
 !Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
-cloud_init=0.001,100.e6  !.001,100.e6
+cloud_init=0.,0.  !.001,100.e6
 
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
@@ -34,10 +34,10 @@ imomr1 = 0  !1st predicted rain moment
 imomr2 = 6  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .false.
-docondensation = .false.
+donucleation = .true.
+docondensation = .true.
 docollisions = .true.
-dosedimentation = .false.
+dosedimentation = .true.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/coll_only/AMP_SBM/2020-12-02/a100/'
+KiD_outdir='output/SBM_test/AMP_SBM/2021-03-15/a100/'
 ampORbin='amp'
 bintype='sbm'
 /
