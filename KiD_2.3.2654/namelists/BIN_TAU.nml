@@ -42,7 +42,7 @@ dosedimentation = .true.
 ! Aerosol initialization
 num_aero_moments=1
 num_aero_bins=1
-aero_N_init=100.e6 !or CCN at 1% SS
+aero_N_init=800.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -61,8 +61,8 @@ mphys_scheme='amp'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
-wctrl(1)=2.0      !Updraft speed
-tctrl(1)=3600.    !Total length of simulation (s)
+wctrl(1)=2      !Updraft speed
+tctrl(1)=2400.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/condnucadv_only_yesinit/BIN_TAU/2021-03-15/a100/'
+KiD_outdir='output/noinit/2021-03-19/BIN_TAU/a800/w2'
 ampORbin='bin'
 bintype='tau'
 /
