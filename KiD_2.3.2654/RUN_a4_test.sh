@@ -42,12 +42,12 @@ imr2=6 # III moment for rain
 #	do
 
 
-for iw in .25 .5 1 2 4
+for iw in 0.25 0.5 1 2 4
 do
-echo $iw
+echo w=$iw
     for ia in 50 100 200 400 800 1600
     do
-    echo $ia
+    echo Na=$ia
         for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
         do
             for ((ibt=0; ibt<${#bintype[@]}; ibt=ibt+1))
@@ -65,7 +65,7 @@ echo $iw
                         nhb='34,1'
                     fi
                 fi
-                outdir=output/noinit/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}
+                outdir=output/noinit/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
     	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
     	    for ((ic=0; ic<case_num; ic++))
     	    do
