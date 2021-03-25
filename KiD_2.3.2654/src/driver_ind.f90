@@ -236,7 +236,6 @@ use micro_prm
 use parameters, only: nx,nz,num_h_moments,flag_count,max_nbins
 use mphys_tau_bin_declare, only: xk,lk_cloud,xkgmean
 use physconst, only: pi
-use diagnostics, only: i_dgtime
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
@@ -503,7 +502,6 @@ use micro_prm
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean
 Use namelists, only: bintype
 Use physconst, only: pi
-use diagnostics, only: i_dgtime
 use parameters, only: split_bins
 
 implicit none
