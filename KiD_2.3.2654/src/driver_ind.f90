@@ -27,13 +27,6 @@ ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
 pmomsc=(/3,imomc1,imomc2/)
 pmomsr=(/3,imomr1,imomr2/)
 
-!if (imomc1==imomc2) then
-!  npm=2 !Run 2M scheme, Num. Pred. Moments = 2
-!  print*,2
-!else
-!  npm=3 !Run 3M scheme, Num. Pred. Moments = 3
-!  print*,3
-!endif
 npm=num_h_moments(1)
 
 !Open output files, or decide that we don't need to run this combination of moments
@@ -140,18 +133,11 @@ enddo
 ! call calcmoms(ffcd_mass,num_h_moments(1),mc,mr)
 ! the calcmoms subroutine is not yet supported for this calculation, might implement later -ahu
 
-!print*, 'after init',  shparam(real(diams),nkr,real(ffcd_mass))
-!print*, 'after init ffcd_mass', real(ffcd_mass)
-!print*, 'after init mass', sum(ffcd_mass)*col
-!print*, 'after init num', sum(ffcd_num)*col
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
          Mpc2d(k,i,1:num_h_moments(1))=mc(1:num_h_moments(1))
          Mpr2d(k,i,1:num_h_moments(2))=mr(1:num_h_moments(2))
-         ! for testing only -ahu
-         ! ffcdprev_mass(k,i,:)=ffcd_mass
-         ! ffcdprev_num(k,i,:)=ffcd_mass/binmass
       endif
    enddo
 enddo
@@ -231,9 +217,6 @@ if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
 
 CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
                    dnr,ffcd_mass,ffcd_num)
-!print*, 'mass',ffcd_mass
-!print*, 'num',ffcd_num
-!print*,'ffcd*col=',sum(ffcd_mass)*col,sum(ffcd_num)*col
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
@@ -285,10 +268,6 @@ do k=1,nz
 enddo
 
 
-!print*, 'before 1st fp mass', sum(ffcd_mass(25,1,:))*col
-!print*, 'before 1st fp num', sum(ffcd_num(25,1,:))*col
-
-
 do k=1,nz
  do j=1,nx
 
@@ -338,17 +317,9 @@ do k=1,nz
       flag(k,j,2,1)=-1
       flag(k,j,2,2:flag_count)=nan
    endif
-   !----------SUM the Cloud and Rain Distributions-----------
-   !----set it to the initialized distirbution if time==1----
-   !----this also prevents non zero adv term for time==1-----
-!    if (i_dgtime==1) then
-!        ffcd_num(k,j,:)=ffcdprev_num(k,j,:)
-!        ffcd_mass(k,j,:)=ffcdprev_mass(k,j,:)
-!    else
-        ffcdr8_mass(k,j,:) = ffcloud_mass+ffrain_mass
-        ffcdr8_num(k,j,:) = ffcloud_num+ffrain_num
-!    endif
 
+   ffcdr8_mass(k,j,:) = ffcloud_mass+ffrain_mass
+   ffcdr8_num(k,j,:) = ffcloud_num+ffrain_num
 
    ffcdr8_massinit(k,j,:)=ffcdr8_mass(k,j,:)
    ffcdr8_numinit(k,j,:)=ffcdr8_num(k,j,:)
@@ -374,21 +345,6 @@ endif
  enddo
 enddo
 
-!print*, sum(ffcdr8_massinit(nz,1,:))*col
-
-!print*, 'before mphys',sum(ffcd_num(34,j,:))*col,mc0(34,j,0)
-
-!if (i_dgtime>164) then
-!    print*, 'before guess', guessc(25,1,:)
-!    print*, 'before flags', flag(30,1,1,2)
-!    print*, 'before ffcdr8_mass',ffcdr8_mass(25,1,:)
-!    print*, 'before shparam', shparam(real(diams),nkr,real(ffcdr8_mass(25,1,:)))
-!    print*, 'before mc',mc0(25,1,:)
-!    print*, 'before mass',sum(ffcdr8_mass(25,1,:))*col
-!    print*, 'before num',sum(ffcd_num(25,1,:))*col
-
-!endif
-!print*, 'ffcdprev_mass', ffcdprev_mass(30,1,:)
 
 !------CALL MICROPHYSICS--------------------
 
@@ -404,14 +360,6 @@ endif
 
 ffcdr8_mass=dble(ffcd_mass)
 
-!print*, 'column water mass', sum(ffcd_mass)
-
-!if (i_dgtime>164) then
-!    print*, 'after ffcdr8_mass', ffcdr8_mass(39,1,:)
-!    print*, 'after shparam',shparam(real(diams),nkr,real(ffcdr8_mass(39,1,:)))
-!    print*, 'after mass',sum(ffcdr8_mass(39,1,:))*col
-!    print*, 'after num', sum(ffcd_num(39,1,:))*col
-!endif
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
@@ -482,76 +430,9 @@ do k=1,nz
       mr(k,j,:)=0;Mpr(k,j,:)=0
     endif
 
-! if (k==34) print*, 'after mphys', sum(ffcd_num(k,j,:))*col, mc(k,j,1)
-! !--------- convert moments to binned dist. and save those for tau ---------
-! !--------- because tau needs to know the dhyd_adv for all 34 bins ------ahu
-!
-! !----------------------------------CLOUD-----------------------------------
-!    ihyd=1
-!    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
-!
-!    skr=1; ekr=split_bins
-!    momx=pmomsc(2) !momx is a global variable
-!    momy=pmomsc(3) !pmomsc(1)=3 always
-!    if (Mp(1)>0.) then
-!       CALL searchparamsG(guessc_am(k,j,:),ihyd,ffcloud_mass,flag_dummy(k,j,ihyd,:))
-!       if (bintype .eq. 'tau') then
-!           ffcloud_num=ffcloud_mass/binmass
-!       endif
-!    else
-!       ffcloud_mass=0.
-!       ffcloud_num=0.
-!       flag_dummy(k,j,1,1)=-1
-!       flag_dummy(k,j,1,2:flag_count)=nan
-!    endif
-!
-!   !----------RAIN--------------------------------
-!    ihyd=2
-!    Mp(1:num_h_moments(2))=Mpr(k,j,:)
-!    skr=split_bins+1; ekr=nkr
-!    momx = pmomsr(2)
-!    momy=pmomsr(3) !pmomsr(1)=3 always
-!    if (Mp(1)>0.) then
-!       CALL searchparamsG(guessr_am(k,j,:),ihyd,ffrain_mass,flag_dummy(k,j,ihyd,:))
-!       if (bintype .eq. 'tau') then
-!           ffrain_num=ffrain_mass/binmass
-!       endif
-!    else
-!       ffrain_mass=0.
-!       ffrain_num=0.
-!       flag_dummy(k,j,2,1)=-1
-!       flag_dummy(k,j,2,2:flag_count)=nan
-!    endif
-!    !----------SUM the Cloud and Rain Distributions-----------
-!    ffcdprev_mass(k,j,:) = ffcloud_mass+ffrain_mass
-!    ffcdprev_num(k,j,:) = ffcloud_num+ffrain_num
-!
-! if(ffcdprev_mass(k,j,1).ne.ffcdprev_mass(k,j,1))then
-!     print*,'NaNs in ffcdprev_mass'
-!     print*,'NaN',k,j,ffcloud_mass(1),ffrain_mass(1)
-!     print*,'cloud moments=',Mpc(k,j,:)
-!     print*,'rain moments=',Mpr(k,j,:)
-!     stop
-! endif
-!
-! if(ffcdprev_num(k,j,1).ne.ffcdprev_num(k,j,1))then
-!     print*,'NaNs in ffcdprev_num'
-!     print*,'NaN',k,j,ffcloud_num(1),ffrain_num(1)
-!     stop
-! endif
   enddo
  enddo
 
-!print*, 'after fp shparam', shparam(real(diams),nkr,real(ffcdprev_mass(25,1,:)))
-!if (i_dgtime >163) then
-!    print*, 'after fp guess', guessc_am(25,1,:)
-!    print*, 'after fp flag', flag_dummy(25,1,1,2)
-!    print*, 'after fp ffcd', ffcdprev_mass(25,1,:)
-!    print*, 'after fp mass',sum(ffcdprev_mass(25,1,:))*col
-!    print*, 'after fp num', sum(ffcdprev_num(25,1,:))*col
-!    print*, 'after fp "wrong" num', sum(ffcdprev_mass(25,1,1:lk_cloud)/xk(1:lk_cloud))*col
-!endif
-!print*,'after guess', guessc_am(25,1,:)!'after flags', flag_dummy(30,1,1,2)
 end subroutine mp_amp
 !---------------------------------------------------------------------
 subroutine mp_sbm(ffcdr8,press,tempk,qv,fncn,mc,mr)
@@ -599,19 +480,12 @@ real, dimension(nz,nx):: tempk,qv
 real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass2d,ffcdr8_num2d
 real, dimension(nz,nx,max_nbins)::ffcd_mass2d,ffcd_num2d
 real(8),dimension(nz,nx,10) :: mc,mr ! moments
-!print*, 'before ffcdr8_mass', ffcdr8_mass2d(30,1,:)
-!print*, 'before mphys', shparam(real(diams),nkr,real(ffcdr8_mass2d(30,1,:)))
-!print*, 'before mass',sum(ffcdr8_mass2d(30,1,:))*col
 !------CALL MICROPHYSICS--------------------
 ffcd_mass2d=real(ffcdr8_mass2d)
 ffcd_num2d=real(ffcdr8_num2d)
-!print*, ffcdr8_mass2d
 call micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 ffcdr8_mass2d=dble(ffcd_mass2d)
 ffcdr8_num2d=dble(ffcd_num2d)
-!print*, 'after ffcd_mass', ffcd_mass2d(30,1,:)
-!print*, 'after mphys', shparam(real(diams),nkr,real(ffcd_mass2d(30,1,:)))
-!print*, 'after mass',sum(ffcd_mass2d(30,1,:))*col
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
