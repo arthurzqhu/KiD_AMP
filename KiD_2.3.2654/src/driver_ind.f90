@@ -27,7 +27,8 @@ ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
 pmomsc=(/3,imomc1,imomc2/)
 pmomsr=(/3,imomr1,imomr2/)
 
-npm=num_h_moments(1)
+npmc=num_h_moments(1)
+npmr=num_h_moments(2)
 
 !Open output files, or decide that we don't need to run this combination of moments
 if (imomc1>=7 .and. imomc1 .ne. imomc2) then
@@ -35,12 +36,13 @@ if (imomc1>=7 .and. imomc1 .ne. imomc2) then
  stop
 else !Run AMP
   !Open and read lookup tables
-  if (npm==3) then
-    if (bintype .eq. 'tau') then
-        lutfolder='./src/input_data/'//trim(bintype)//'_lutables_gmean/'
-    elseif (bintype .eq. 'sbm') then
-        lutfolder='./src/input_data/'//trim(bintype)//'_lutables/'
-    endif
+  if (bintype .eq. 'tau') then
+      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_gmean/'
+  elseif (bintype .eq. 'sbm') then
+      lutfolder='./src/input_data/'//trim(bintype)//'_lutables/'
+  endif
+
+  if (npmc==3) then
     write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
     open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
     read(17,*) nutab(:,:,1); close(17)
@@ -52,7 +54,9 @@ else !Run AMP
     read(17,*) mintab(:,1); close(17)
     open(17,file=trim(lutfolder)//'cloud_maxmy_'//momstr//'.txt')
     read(17,*) maxtab(:,1); close(17)
+  endif
 
+  if (npmr==3) then
     write(momstr,'(A,I1,A,I1)') 'M',imomr1,'M',imomr2
     open(17,file=trim(lutfolder)//'rain_nu_'//momstr//'.txt')
     read(17,*) nutab(:,:,2); close(17)
@@ -65,6 +69,8 @@ else !Run AMP
     open(17,file=trim(lutfolder)//'rain_maxmy_'//momstr//'.txt')
     read(17,*) maxtab(:,2); close(17)
 
+  endif
+  if (npmr==3 .or. npmc==3) then
     dntab = dntab * 1.e-6
     !Find min and max of parameters from the tables
     dnbounds(1,1)=minval(dntab(:,:,1)); dnbounds(2,1)=maxval(dntab(:,:,1))
@@ -86,10 +92,16 @@ elseif (bintype .eq. 'tau') then
 endif
 
 !Set up initial distribution and set moment values and parameter guesses
-if (npm==3) then
-  dnc=dntab(50,50,1); dnr=dntab(50,50,2)
+if (npmc==3) then
+  dnc=dntab(50,50,1)
 else
-  dnc=0.;dnr=0.
+  dnc=0.
+endif
+
+if (npmr==3) then
+  dnr=dntab(50,50,2)
+else
+  dnr=0.
 endif
 
 if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
@@ -249,22 +261,13 @@ real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass,ffcdr8_num,fncn,ffcdr8_massinit
 real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
-real(8),dimension(nz,nx,2) :: guessc,guessr,guessc_am,guessr_am
+real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
-
-do k=1,nz
- do j=1,nx
-    guessc_am(k,j,1) = guessc(k,j,1)
-    guessr_am(k,j,1) = guessr(k,j,1)
-    guessc_am(k,j,2) = guessc(k,j,2)
-    guessr_am(k,j,2) = guessr(k,j,2)
- enddo
-enddo
 
 
 do k=1,nz
@@ -275,6 +278,7 @@ do k=1,nz
    !searchparamsG returns the distribution bins
    !-----------CLOUD---------------------------------
    ihyd=1
+   npm=npmc
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
 !if (k==34) print*, 'before fit', Mp(2)
@@ -298,6 +302,7 @@ do k=1,nz
 
   !----------RAIN--------------------------------
    ihyd=2
+   npm=npmr
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
 
    skr=split_bins+1; ekr=nkr
@@ -371,7 +376,7 @@ do k=1,nz
    !To avoid, this, scale the change by Mp/m0.
    !mc=diagnosed value after microphysics. If there are no issues
    !then m becomes the new Mp
-   do i=1,npm  !Loop over the moments
+   do i=1,npmc  !Loop over the moments
       ip=pmomsc(i)+1 !pmomsc contains the predicted moments. +1 to get correct index in mc and mc0
       if (mc0(k,j,ip) > 0.) then
          dummy=(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
@@ -398,7 +403,9 @@ do k=1,nz
          Mpc(k,j,i)=mc(k,j,ip)
       endif
       mc(k,j,ip)=Mpc(k,j,i)
-
+   enddo
+   
+   do i=1,npmr
       ip=pmomsr(i)+1
       if (mr0(k,j,ip)>0.) then
          dummy=(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)

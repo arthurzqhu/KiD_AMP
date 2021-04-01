@@ -217,7 +217,7 @@ real, dimension(nz,nx,max_nbins) :: ffcdprev_mass,ffcdprev_num ! mass and number
 integer, dimension(3):: pmomsc,pmomsr
 !real, dimension(2):: cloud_init,rain_init
 double precision :: aeromedrad, naero=0., relax, nug
-integer :: aerotype=1,npm
+integer :: aerotype=1,npm,npmc,npmr
 real :: dtlt
 double precision :: Mp(3),M3p,Mxp,Myp,rxfinal
 logical :: parcel!, docollisions, docondensation, donucleation, dosedimentation
