@@ -13,9 +13,9 @@ rs_N=0.
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
+imc2=0 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+imr2=0 # III moment for rain
 #ia=50
 
 #for icimm in 0.0 0.0003 0.001 0.003 #initial cloud mass mixing ratio
@@ -42,10 +42,10 @@ imr2=6 # III moment for rain
 #	do
 
 
-for iw in 4 #0.25 0.5 1 2 4
+for iw in 2 #0.5 1 2
 do
 echo w=$iw
-    for ia in 1600 # 50 100 200 400 800 1600
+    for ia in 100 #50 100 200 400 800
     do
     echo Na=$ia
         for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
@@ -56,6 +56,9 @@ echo w=$iw
                 if [ ${ampORbin[$iab]} = 'AMP' ]; then
                     nhm='3,3'
                     nhb='1,1'
+                    if [ $imc1 = $imc2 ]; then
+                        nhm='2,2' #this doesnt support different moment orders now -ahu
+                    fi
                 else
                     if [ ${bintype[$ibt]} = 'SBM' ]; then
                         nhm='1,1'
