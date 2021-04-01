@@ -61,7 +61,7 @@ mphys_scheme='amp'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
-wctrl(1)=4      !Updraft speed
+wctrl(1)=2      !Updraft speed
 tctrl(1)=2400.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/noinit/2021-03-22/AMP_SBM/a1600/w4/'
+KiD_outdir='output/noinit/2021-03-24/AMP_SBM/a1600/w2/'
 ampORbin='amp'
 bintype='sbm'
 /

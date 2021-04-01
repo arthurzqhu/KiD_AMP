@@ -274,6 +274,9 @@ contains
         endif
     endif
 
+    skr=1
+    ekr=nkr
+
     end subroutine check_bintype
     
     real function mean(arr,n,wgt)

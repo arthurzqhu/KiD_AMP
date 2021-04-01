@@ -236,6 +236,8 @@ use micro_prm
 use parameters, only: nx,nz,num_h_moments,flag_count,max_nbins
 use mphys_tau_bin_declare, only: xk,lk_cloud,xkgmean
 use physconst, only: pi
+use diagnostics, only: i_dgtime
+
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
@@ -249,23 +251,13 @@ real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass,ffcdr8_num,fncn,ffcdr8_massinit
 real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
-real(8),dimension(nz,nx,2) :: guessc,guessr,guessc_am,guessr_am
+real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
-
-do k=1,nz
- do j=1,nx
-    guessc_am(k,j,1) = guessc(k,j,1)
-    guessr_am(k,j,1) = guessr(k,j,1)
-    guessc_am(k,j,2) = guessc(k,j,2)
-    guessr_am(k,j,2) = guessr(k,j,2)
- enddo
-enddo
-
 
 do k=1,nz
  do j=1,nx
@@ -277,9 +269,8 @@ do k=1,nz
    ihyd=1
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
 
-!if (k==34) print*, 'before fit', Mp(2)
 
-   skr=1; ekr=split_bins
+!   skr=1; ekr=split_bins
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
 
@@ -300,7 +291,7 @@ do k=1,nz
    ihyd=2
    Mp(1:num_h_moments(2))=Mpr(k,j,:)
 
-   skr=split_bins+1; ekr=nkr
+!   skr=split_bins+1; ekr=nkr
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
    if (Mp(1)>0.) then
@@ -341,6 +332,13 @@ endif
    !values are of our distributions
    call calcmoms(ffcdr8_mass(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10),ffcdr8_num(k,j,:))
 !print*,mc0(k,j,1),Mpc(k,j,1:3),flag(k,j,1,1)
+
+!if (i_dgtime>200 .and. k==25) then
+!    print*, 'cloud', ffcloud_mass
+!    print*, 'rain',  ffrain_mass
+!endif
+
+
  enddo
 enddo
 

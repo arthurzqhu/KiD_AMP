@@ -263,7 +263,6 @@ double precision, dimension(max_nbins):: md
   else
     rxfinal = M3p/m3*rx
     md = md*rxfinal/rx
-
     exit
   endif
   if (n>1000) then

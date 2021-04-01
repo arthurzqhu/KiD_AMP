@@ -42,10 +42,10 @@ imr2=6 # III moment for rain
 #	do
 
 
-for iw in 4 #0.25 0.5 1 2 4
+for iw in 2 #0.25 0.5 1 2 4
 do
 echo w=$iw
-    for ia in 1600 # 50 100 200 400 800 1600
+    for ia in 50 100 200 400 800 1600
     do
     echo Na=$ia
         for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
