@@ -57,7 +57,10 @@ echo w=$iw
                     nhm='3,3'
                     nhb='1,1'
                     if [ $imc1 = $imc2 ]; then
-                        nhm='2,2' #this doesnt support different moment orders now -ahu
+                       nhm=${nhm//3,/$'2,'}
+                    fi
+                    if [ $imr1 = $imr2 ]; then
+                       nhm=${nhm//,3/$',2'}
                     fi
                 else
                     if [ ${bintype[$ibt]} = 'SBM' ]; then
