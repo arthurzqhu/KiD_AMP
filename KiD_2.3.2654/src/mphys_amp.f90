@@ -120,42 +120,42 @@ contains
    aer2d = 0.
 
    ! set rain source if there is one
-    if (rain_source(1)>0.) then 
-        !set the zctrl(1) to be where the rain source is, which happens to be nz
-        rain_alt=int(zctrl(1)/((zctrl(1))/nz))
-        rm_s=rain_source(1)**3*pi/6*1000*rain_source(2)
-        dnr_s=(rm_s*6./3.14159/1000./rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   if (rain_source(1)>0.) then 
+       ! set the zctrl(1) to be where the rain source is, which happens to be nz-1
+       ! cant be nz because tau does not sediment moisture from the topmost layer
+       rain_alt=int(zctrl(1)/((zctrl(1))/nz))-1
+       rm_s=rain_source(1)**3*pi/6*1000*rain_source(2)
+       dnr_s=(rm_s*6./3.14159/1000./rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
 
-        do j=1,nx
-            if (bintype .eq. 'sbm') then
-                CALL init_dist_sbm(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
-                     diams,dropsm2d(rain_alt,j,:))
-            elseif (bintype .eq. 'tau') then
-                CALL init_dist_tau(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
-                     dropsm2d(rain_alt,j,:),dropsn2d(rain_alt,j,:))
-            endif
-        enddo
+       do j=1,nx
+           if (bintype .eq. 'sbm') then
+               CALL init_dist_sbm(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
+                    diams,dropsm2d(rain_alt,j,:))
+           elseif (bintype .eq. 'tau') then
+               CALL init_dist_tau(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
+                    dropsm2d(rain_alt,j,:),dropsn2d(rain_alt,j,:))
+           endif
+       enddo
 
-        if (ampORbin .eq. 'amp') then
-            guessr2d(rain_alt,:,2)=dnr_s
-        
-            pmomsr=(/3,imomr1,imomr2/)
-            do j=1,nx
-                do i=1,num_h_moments(2)
-                    if (bintype .eq. 'sbm') then
-                        mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/xl(split_bins+1:nkr)&
-                              *diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
-                    elseif (bintype .eq. 'tau') then
-                        mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/binmass(split_bins+1:nkr)&
-                              *diams(split_bins+1:nkr)**pmomsc(i))*col
-            
-                    end if
-                enddo
-                Mpr2d(rain_alt,j,1:num_h_moments(2))=mr_s(1:num_h_moments(2))
-        !print*, mr_s(1)
-            enddo 
-        endif
-    endif
+       if (ampORbin .eq. 'amp') then
+           guessr2d(rain_alt,:,2)=dnr_s
+       
+           pmomsr=(/3,imomr1,imomr2/)
+           do j=1,nx
+               do i=1,num_h_moments(2)
+                   if (bintype .eq. 'sbm') then
+                       mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/xl(split_bins+1:nkr)&
+                             *diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
+                   elseif (bintype .eq. 'tau') then
+                       mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/binmass(split_bins+1:nkr)&
+                             *diams(split_bins+1:nkr)**pmomsc(i))*col
+           
+                   end if
+               enddo
+               Mpr2d(rain_alt,j,1:num_h_moments(2))=mr_s(1:num_h_moments(2))
+           enddo 
+       endif
+   endif
 
    if (ampORbin .eq. 'amp') then
       dropsm2d=0.

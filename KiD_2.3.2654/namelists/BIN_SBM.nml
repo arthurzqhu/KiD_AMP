@@ -16,7 +16,7 @@ cloud_init=0.,0.  !.001,100.e6
 rain_init=0.0,0.0
 
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
-rain_source=0.,0.
+rain_source=1.e-3,1.e4
 
 !Initial supersaturation ratio
 !ss_init=0.1
@@ -42,7 +42,7 @@ dosedimentation = .true.
 ! Aerosol initialization
 num_aero_moments=1
 num_aero_bins=1
-aero_N_init=1600.e6 !or CCN at 1% SS
+aero_N_init=100.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -61,7 +61,7 @@ mphys_scheme='amp'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
-wctrl(1)=4      !Updraft speed
+wctrl(1)=2      !Updraft speed
 tctrl(1)=2400.    !Total length of simulation (s)
 tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
@@ -70,9 +70,9 @@ zctrl=3000.,600.,1200. !zctrl(1) is the domain height, (2) and (3) specify the l
 /
 
 &switch
-l_advect=.true.
-l_noadv_qv=.false.
-l_noadv_hydrometeors=.false.
+l_advect=.false.
+l_noadv_qv=.true.
+l_noadv_hydrometeors=.true.
 l_noadv_theta=.true.
 l_diverge=.false.
 l_nodiv_hydrometeors=.true.
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/noinit/2021-03-22/BIN_SBM/a1600/w4/'
+KiD_outdir='output/rainshaft/2021-04-08/BIN_SBM/a100/w2/'
 ampORbin='bin'
 bintype='sbm'
 /

@@ -1078,7 +1078,6 @@ ENDDO
 ENDDO
 
 if (dosedimentation) then
-
     CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 
 endif                    ! sedimentation calculation
