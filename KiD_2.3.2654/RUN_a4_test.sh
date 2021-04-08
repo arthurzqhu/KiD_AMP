@@ -1,26 +1,45 @@
 #!/bin/bash
 
+# config of the run
+mconfig='rainshaft'
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
 bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
-icimm=0. #0.001
-icinm=0. #100.e6
-rs_dm=0.
-rs_N=0.
+# initial condition for all cases
+icimm=0. # initial cloud mass kg/kg
+icinm=0. # initial cloud number 1/kg
+rs_dm=1.e-3 # mean-mass diameter (m), ignores the case once this is non-zero
+rs_N=1.e4 # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
-imc2=1 # III moment for cloud
+imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=0 # III moment for rain
+imr2=6 # III moment for rain
+
+# switches
+l_adv_s=false # advection (boolean var that can be read by shell)
+
+
+# set switches in the namelist based on the switches above
+if [ "$l_adv_s" = true ]; then
+    l_adv='.true.'
+    l_noadv_qv='.false.'
+    l_noadv_hyd='.false.'
+else
+    l_adv='.false.'
+    l_noadv_qv='.true.'
+    l_noadv_hyd='.true.'
+fi
+
 #ia=50
 
-#for icimm in 0.0 0.0003 0.001 0.003 #initial cloud mass mixing ratio
+#for icimm in 0.0 0.0003 0.001 0.003
 #do
-	#for icinm in 0 30 100 300 #initial number mixing ratio
+	#for icinm in 0 30 100 300 
 	#do
 
 #for isp_c in 2 15
@@ -56,6 +75,7 @@ echo w=$iw
                 if [ ${ampORbin[$iab]} = 'AMP' ]; then
                     nhm='3,3'
                     nhb='1,1'
+                    # changes nhm based on the input 
                     if [ $imc1 = $imc2 ]; then
                        nhm=${nhm//3,/$'2,'}
                     fi
@@ -71,8 +91,9 @@ echo w=$iw
                         nhb='34,1'
                     fi
                 fi
-                outdir=output/noinit/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
-    	    # outdir=output/AMP/$(date +'%Y-%m-%d')/a${ia}/
+
+                outdir=output/$mconfig/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
+
     	    for ((ic=0; ic<case_num; ic++))
     	    do
     	        if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
@@ -158,9 +179,9 @@ zctrl=$zc !zctrl(1) is the domain height, (2) and (3) specify the location to in
 /
 
 &switch
-l_advect=.true.
-l_noadv_qv=.false.
-l_noadv_hydrometeors=.false.
+l_advect=$l_adv
+l_noadv_qv=$l_noadv_qv
+l_noadv_hydrometeors=$l_noadv_hyd
 l_noadv_theta=.true.
 l_diverge=.false.
 l_nodiv_hydrometeors=.true.
