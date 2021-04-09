@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # config of the run
-mconfig='rainshaft'
-caselist=(102) #(101 102 103 105 106 107)
+mconfig='' # case/folder name. determined automatically if set empty
+caselist=(107) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
 bintype=("SBM" "TAU")
@@ -11,21 +11,20 @@ tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 # initial condition for all cases
 icimm=0. # initial cloud mass kg/kg
 icinm=0. # initial cloud number 1/kg
-rs_dm=1.e-3 # mean-mass diameter (m), ignores the case once this is non-zero
-rs_N=1.e4 # number mixing ratio (#/kg)
+rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
+rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
-imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
-imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+imc1=1 # II moment for cloud
+imc2=1 # III moment for cloud
+imr1=1 # II moment for rain
+imr2=1 # III moment for rain
 
 # switches
-l_adv_s=false # advection (boolean var that can be read by shell)
-
+l_adv_s=true # advection (boolean var that can be read by shell)
 
 # set switches in the namelist based on the switches above
-if [ "$l_adv_s" = true ]; then
+if [ "$l_adv_s" = 1 ]; then
     l_adv='.true.'
     l_noadv_qv='.false.'
     l_noadv_hyd='.false.'
@@ -60,53 +59,50 @@ fi
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
 
-
 for iw in 2 #0.5 1 2
 do
 echo w=$iw
-    for ia in 100 #50 100 200 400 800
+  for ia in 100 #50 100 200 400 800
+  do
+  echo Na=$ia
+    for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
     do
-    echo Na=$ia
-        for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
-        do
-            for ((ibt=0; ibt<${#bintype[@]}; ibt=ibt+1))
-            do
-    	    echo ${ampORbin[$iab]}-${bintype[$ibt]}
-                if [ ${ampORbin[$iab]} = 'AMP' ]; then
-                    nhm='3,3'
-                    nhb='1,1'
-                    # changes nhm based on the input 
-                    if [ $imc1 = $imc2 ]; then
-                       nhm=${nhm//3,/$'2,'}
-                    fi
-                    if [ $imr1 = $imr2 ]; then
-                       nhm=${nhm//,3/$',2'}
-                    fi
-                else
-                    if [ ${bintype[$ibt]} = 'SBM' ]; then
-                        nhm='1,1'
-                        nhb='33,33'
-                    else
-                        nhm='2,1'
-                        nhb='34,1'
-                    fi
-                fi
-
-                outdir=output/$mconfig/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
-
-    	    for ((ic=0; ic<case_num; ic++))
-    	    do
-    	        if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
-    	        then
-    	            zc=0
-    		else
-    		    zc="3000.,600.,1200."
-    		fi
-    		if [ ! -d $outdir ]; then
-    		    mkdir -p $outdir
-    		fi
-    		echo "${caselist[ic]}"
-    		cat > namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml << END
+      for ((ibt=0; ibt<${#bintype[@]}; ibt=ibt+1))
+      do
+    	echo ${ampORbin[$iab]}-${bintype[$ibt]}
+        if [ ${ampORbin[$iab]} = 'AMP' ]; then
+          nhm='3,3'
+          nhb='1,1'
+          # changes nhm based on the input 
+          if [ $imc1 = $imc2 ]; then
+            nhm=${nhm//3,/$'2,'}
+          fi
+          if [ $imr1 = $imr2 ]; then
+            nhm=${nhm//,3/$',2'}
+          fi
+          else
+            if [ ${bintype[$ibt]} = 'SBM' ]; then
+              nhm='1,1'
+              nhb='33,33'
+            else
+              nhm='2,1'
+              nhb='34,1'
+            fi
+          fi
+          outdir=output/$mconfig/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
+    	  for ((ic=0; ic<case_num; ic++))
+    	  do
+    	    if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
+    	    then
+    	      zc=0
+            else
+    	      zc="3000.,600.,1200."
+            fi
+    	    if [ ! -d $outdir ]; then
+    	      mkdir -p $outdir
+    	    fi
+    	    echo "${caselist[ic]}"
+    	    cat > namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml << END
 
 &mphys
 ! hydrometeor names
@@ -197,9 +193,9 @@ ampORbin='${ampORbin[$iab],,}'
 bintype='${bintype[$ibt],,}'
 /
 END
-		./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
-				done
-			done
-		done
-	done
+	  ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
+        done
+      done
+    done
+  done
 done

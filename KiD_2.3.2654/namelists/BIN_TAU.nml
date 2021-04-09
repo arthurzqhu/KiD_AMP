@@ -10,13 +10,13 @@ mom_names='M1','M2','M3'
 h_shape=4,4
 
 !Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
-cloud_init=0.,0.  !.001,100.e6
+cloud_init=0.001,100.e6  !.001,100.e6
 
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
 
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
-rain_source=1.e-3,1.e4
+rain_source=0.,0.
 
 !Initial supersaturation ratio
 !ss_init=0.1
@@ -28,15 +28,15 @@ num_h_moments=2,1
 num_h_bins=34,1
 
 !AMP control - which moments to predict
-imomc1 = 0  !1st predicted cloud moment
-imomc2 = 6  !2nd predicted cloud moment (if 3M)
-imomr1 = 0  !1st predicted rain moment
-imomr2 = 6  !2nd predicted rain moment (if 3M)
+imomc1 = 1  !1st predicted cloud moment
+imomc2 = 1  !2nd predicted cloud moment (if 3M)
+imomr1 = 1  !1st predicted rain moment
+imomr2 = 1  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .true.
-docondensation = .true.
-docollisions = .true.
+donucleation = .false.
+docondensation = .false.
+docollisions = .false.
 dosedimentation = .true.
 
 ! Aerosol initialization
@@ -70,9 +70,9 @@ zctrl=3000.,600.,1200. !zctrl(1) is the domain height, (2) and (3) specify the l
 /
 
 &switch
-l_advect=.false.
-l_noadv_qv=.true.
-l_noadv_hydrometeors=.true.
+l_advect=.true.
+l_noadv_qv=.false.
+l_noadv_hydrometeors=.false.
 l_noadv_theta=.true.
 l_diverge=.false.
 l_nodiv_hydrometeors=.true.
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/rainshaft/2021-04-08/BIN_TAU/a100/w2/'
+KiD_outdir='output/2021-04-09/c0c0s1a1/BIN_TAU/a100/w2/'
 ampORbin='bin'
 bintype='tau'
 /

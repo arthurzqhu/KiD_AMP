@@ -10,13 +10,13 @@ mom_names='M1','M2','M3'
 h_shape=4,4
 
 !Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
-cloud_init=0.,0.  !.001,100.e6
+cloud_init=0.001,100.e6  !.001,100.e6
 
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
 rain_init=0.0,0.0
 
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
-rain_source=1.e-3,1.e4
+rain_source=0.,0.
 
 !Initial supersaturation ratio
 !ss_init=0.1
@@ -24,20 +24,20 @@ rain_source=1.e-3,1.e4
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
-num_h_moments=3,3
+num_h_moments=2,2
 num_h_bins=1,1
 
 !AMP control - which moments to predict
-imomc1 = 0  !1st predicted cloud moment
-imomc2 = 6  !2nd predicted cloud moment (if 3M)
-imomr1 = 0  !1st predicted rain moment
-imomr2 = 6  !2nd predicted rain moment (if 3M)
+imomc1 = 1  !1st predicted cloud moment
+imomc2 = 1  !2nd predicted cloud moment (if 3M)
+imomr1 = 1  !1st predicted rain moment
+imomr2 = 1  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .true.
-docondensation = .true.
+donucleation = .false.
+docondensation = .false.
 docollisions = .true.
-dosedimentation = .true.
+dosedimentation = .false.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/rainshaft/2021-04-08/AMP_TAU/a100/w2/'
+KiD_outdir='output/2021-04-09/c0c1s0a0/AMP_TAU/a100/w2/'
 ampORbin='amp'
 bintype='tau'
 /
