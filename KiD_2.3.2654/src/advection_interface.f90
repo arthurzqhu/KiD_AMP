@@ -31,7 +31,7 @@ module advection_interface
     integer :: cscheme_id
 !    real(wp), allocatable :: field(:,:)
     integer :: ih, imom, ibin, k, j
-    real(8) :: norm_factor, scale_factor=1.d12
+    real(8) :: norm_factor, scale_factor=1!.d12
 
     if (present(scheme_id))then
        cscheme_id=scheme_id
@@ -133,12 +133,10 @@ module advection_interface
                   &  field                      &
                   & ,field_adv                  &
                   & ,scheme_id)
-            if (norm_factor .ne. 0.) then 
+             if (norm_factor .ne. 0.) then 
                 field=field*norm_factor/scale_factor
                 field_adv=field_adv*norm_factor/scale_factor
-            endif
-            
-!            print*, sum(field), sum(field_adv)
+             endif
             
              do j=1,nx
                 do k=1,nz

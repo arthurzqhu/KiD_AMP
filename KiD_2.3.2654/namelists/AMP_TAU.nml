@@ -24,19 +24,19 @@ rain_source=0.,0.
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
-num_h_moments=2,2
+num_h_moments=3,3
 num_h_bins=1,1
 
 !AMP control - which moments to predict
-imomc1 = 1  !1st predicted cloud moment
-imomc2 = 1  !2nd predicted cloud moment (if 3M)
-imomr1 = 1  !1st predicted rain moment
-imomr2 = 1  !2nd predicted rain moment (if 3M)
+imomc1 = 0  !1st predicted cloud moment
+imomc2 = 6  !2nd predicted cloud moment (if 3M)
+imomr1 = 0  !1st predicted rain moment
+imomr2 = 6  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
 donucleation = .false.
 docondensation = .false.
-docollisions = .true.
+docollisions = .false.
 dosedimentation = .false.
 
 ! Aerosol initialization
@@ -70,9 +70,9 @@ zctrl=3000.,600.,1200. !zctrl(1) is the domain height, (2) and (3) specify the l
 /
 
 &switch
-l_advect=.false.
-l_noadv_qv=.true.
-l_noadv_hydrometeors=.true.
+l_advect=.true.
+l_noadv_qv=.false.
+l_noadv_hydrometeors=.false.
 l_noadv_theta=.true.
 l_diverge=.false.
 l_nodiv_hydrometeors=.true.
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/2021-04-09/c0c1s0a0/AMP_TAU/a100/w2/'
+KiD_outdir='output/adv_only/2021-04-11/AMP_TAU/a100/w2/'
 ampORbin='amp'
 bintype='tau'
 /

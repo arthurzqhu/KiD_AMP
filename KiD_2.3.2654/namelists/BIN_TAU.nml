@@ -28,16 +28,16 @@ num_h_moments=2,1
 num_h_bins=34,1
 
 !AMP control - which moments to predict
-imomc1 = 1  !1st predicted cloud moment
-imomc2 = 1  !2nd predicted cloud moment (if 3M)
-imomr1 = 1  !1st predicted rain moment
-imomr2 = 1  !2nd predicted rain moment (if 3M)
+imomc1 = 0  !1st predicted cloud moment
+imomc2 = 6  !2nd predicted cloud moment (if 3M)
+imomr1 = 0  !1st predicted rain moment
+imomr2 = 6  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
 donucleation = .false.
 docondensation = .false.
 docollisions = .false.
-dosedimentation = .true.
+dosedimentation = .false.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -83,7 +83,7 @@ l_periodic_bound=.False.
 /
 
 &addcontrol
-KiD_outdir='output/2021-04-09/c0c0s1a1/BIN_TAU/a100/w2/'
+KiD_outdir='output/adv_only/2021-04-11/BIN_TAU/a100/w2/'
 ampORbin='bin'
 bintype='tau'
 /

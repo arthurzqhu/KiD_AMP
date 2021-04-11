@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # config of the run
-mconfig='' # case/folder name. determined automatically if set empty
-caselist=(107) #(101 102 103 105 106 107)
+mconfig='adv_only' # case/folder name. determined automatically if set empty
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
 bintype=("SBM" "TAU")
@@ -15,23 +15,38 @@ rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
-imc1=1 # II moment for cloud
-imc2=1 # III moment for cloud
-imr1=1 # II moment for rain
-imr2=1 # III moment for rain
+imc1=0 # II moment for cloud
+imc2=6 # III moment for cloud
+imr1=0 # II moment for rain
+imr2=6 # III moment for rain
 
 # switches
-l_adv_s=true # advection (boolean var that can be read by shell)
+l_nuc_cond_s=0
+l_coll_s=0
+l_sed_s=0
+l_adv_s=1
 
 # set switches in the namelist based on the switches above
+if [ $l_nuc_cond_s -eq 1 ]; then 
+   l_nuc_cond_f='.true.'
+   icimm=0.
+   icinm=0.      
+else # set initial water if nucleation/condensation is turned off 
+   l_nuc_cond_f='.false.'
+   icimm=0.001     
+   icinm=100.e6  
+fi
+
+if [ $l_coll_s -eq 1 ]; then l_coll_f='.true.'; else l_coll_f='.false.'; fi
+if [ $l_sed_s -eq 1 ]; then l_sed_f='.true.'; else l_sed_f='.false.'; fi
 if [ "$l_adv_s" = 1 ]; then
-    l_adv='.true.'
-    l_noadv_qv='.false.'
-    l_noadv_hyd='.false.'
+   l_adv='.true.'
+   l_noadv_qv='.false.'
+   l_noadv_hyd='.false.'
 else
-    l_adv='.false.'
-    l_noadv_qv='.true.'
-    l_noadv_hyd='.true.'
+   l_adv='.false.'
+   l_noadv_qv='.true.'
+   l_noadv_hyd='.true.'
 fi
 
 #ia=50
@@ -139,10 +154,10 @@ imomr1 = $imr1  !1st predicted rain moment
 imomr2 = $imr2  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .true.
-docondensation = .true.
-docollisions = .true.
-dosedimentation = .true.
+donucleation = $l_nuc_cond_f
+docondensation = $l_nuc_cond_f
+docollisions = $l_coll_f
+dosedimentation = $l_sed_f
 
 ! Aerosol initialization
 num_aero_moments=1
