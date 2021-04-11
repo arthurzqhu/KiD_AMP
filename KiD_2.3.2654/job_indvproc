@@ -9,4 +9,4 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
-./RUN_indv_proc.sh
+./indv_proc.sh
