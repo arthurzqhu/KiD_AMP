@@ -4,8 +4,8 @@
 mconfig='adv_only' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+ampORbin=("BIN")
+bintype=("TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -104,7 +104,7 @@ echo w=$iw
               nhb='34,1'
             fi
           fi
-          outdir=output/$mconfig/$(date +'%Y-%m-%d')/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
+          outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
     	  for ((ic=0; ic<case_num; ic++))
     	  do
     	    if [ ${caselist[ic]} -gt 104 ] && [ ${caselist[ic]} -lt 200 ]
