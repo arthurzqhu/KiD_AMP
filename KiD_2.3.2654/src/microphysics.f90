@@ -1445,6 +1445,7 @@ endif
       endif
 
 ! 3.2 do activation after cond/evap, using updated supersat for timestep
+if (donucleation) then
     EA(J,K) = DS(J,K)
 
     IF(EA(J,K) >  0.0) THEN
@@ -1527,6 +1528,7 @@ if (MCC(J,K) .ne. MCC(J,K)) then
 endif
       QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
     ENDIF                          ! end of do activation
+endif
 
     AN1(j,k) = 0.0
     DO L = 1, LK
