@@ -37,18 +37,20 @@ do
    l_sed_s=$(echo ${l_sw:2:1})
    l_adv_s=$(echo ${l_sw:3:1})
 
-   if [ $l_nuc_cond_s -eq 1 ]; then 
-      l_nuc_cond_f='.true.'
-      icimm=0.
-      icinm=0.      
-   else # set initial water if nucleation/condensation is turned off 
-      l_nuc_cond_f='.false.'
+   # set initial water if nucleation/condensation and/or adv is turned off 
+   if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
       icimm=0.001     
       icinm=100.e6  
+   else 
+      icimm=0.
+      icinm=0.      
    fi
 
-   if [ $l_coll_s -eq 1 ]; then l_coll_f='.true.'; else l_coll_f='.false.'; fi
-   if [ $l_sed_s -eq 1 ]; then l_sed_f='.true.'; else l_sed_f='.false.'; fi
+   # one line: []==if, &&==then, ||=else
+   [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
+   [ $l_coll_s -eq 1 ] && l_coll_f='.true.' || l_coll_f='.false.'
+   [ $l_sed_s -eq 1 ] && l_sed_f='.true.' || l_sed_f='.false.'
+
    if [ "$l_adv_s" = 1 ]; then
       l_adv='.true.'
       l_noadv_qv='.false.'
