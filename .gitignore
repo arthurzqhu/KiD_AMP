@@ -39,6 +39,10 @@ KiD_2.3.2654/output/*
 *.out
 *.err
 .includes
+AMP_SBM.nml
+AMP_TAU.nml
+BIN_SBM.nml
+BIN_TAU.nml
 
 # misc
 .remote-sync.json

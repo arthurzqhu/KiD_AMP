@@ -74,9 +74,8 @@ module stepfields
         ! Advective part
         if (l_advect) then
         if (.not. l_noadv_qv)then
-	   if (maxval(dqv_adv(:,:))/=0. .or. minval(dqv_adv(:,:))/=0.) then
-	      !print*,shape(dqv_adv),dqv_adv(:,1)
-	   end if
+           if (maxval(dqv_adv(:,:))/=0. .or. minval(dqv_adv(:,:))/=0.) then
+           end if
            if (l_posadv_qv)then
               qv(:,:)=qv(:,:)+max(0.,dqv_adv(:,:))*field_mask(:,:)*dt
            else
@@ -156,9 +155,6 @@ module stepfields
      ! Advective part
 
      if (.not. l_noadv_hydrometeors)then
-	!if (maxval(dhydrometeors_adv(:,:,1))/=0. .or. minval(dhydrometeors_adv(:,:,1)/=0.)) then
-        !   print*, 'max=',maxval(dhydrometeors_adv(:,:,1)), 'min=',minval(dhydrometeors_adv(:,:,1))
-        !end if
         do ih=1,nspecies
            do imom=1,num_h_moments(ih)
               do ibin=1,num_h_bins(ih)
@@ -174,10 +170,6 @@ module stepfields
            end do
         end do
      end if
-    !  field = dhydrometeors_adv(:,:,1)%moments(1,1)
-    ! ! print*, 'hydro adv bin1',maxval(field)
-    !  field = dhydrometeors_adv(:,:,1)%moments(2,1)
-     !print*, 'hydro adv bin2',maxval(field)
 
     ! mphys part
      do ih=1,nspecies
@@ -194,10 +186,6 @@ module stepfields
            end do
         end do
      end do
-     ! field = dhydrometeors_mphys(:,:,1)%moments(1,1)
-     ! !print*, 'hydro mphys bin1',maxval(field)
-     ! field = dhydrometeors_mphys(:,:,1)%moments(2,1)
-     !print*, 'hydro mphys bin2',maxval(field)
 
 
      ! divergence part
