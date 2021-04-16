@@ -46,7 +46,7 @@ do
       icinm=0.      
    fi
 
-   # one line: []==if, &&==then, ||=else
+   # one line: []==if, &&==then, ||==else
    [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
    [ $l_coll_s -eq 1 ] && l_coll_f='.true.' || l_coll_f='.false.'
    [ $l_sed_s -eq 1 ] && l_sed_f='.true.' || l_sed_f='.false.'
