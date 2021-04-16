@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # config of the run
-mconfig='adv_only' # case/folder name. determined automatically if set empty
+mconfig='allon' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN")
-bintype=("TAU")
+ampORbin=("AMP" "BIN")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -21,24 +21,26 @@ imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 
 # switches
-l_nuc_cond_s=0
-l_coll_s=0
-l_sed_s=0
+l_nuc_cond_s=1
+l_coll_s=1
+l_sed_s=1
 l_adv_s=1
 
-# set switches in the namelist based on the switches above
-if [ $l_nuc_cond_s -eq 1 ]; then 
-   l_nuc_cond_f='.true.'
-   icimm=0.
-   icinm=0.      
-else # set initial water if nucleation/condensation is turned off 
-   l_nuc_cond_f='.false.'
+
+# set initial water if nucleation/condensation and/or adv is turned off 
+if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
    icimm=0.001     
    icinm=100.e6  
+else 
+   icimm=0.
+   icinm=0.      
 fi
 
-if [ $l_coll_s -eq 1 ]; then l_coll_f='.true.'; else l_coll_f='.false.'; fi
-if [ $l_sed_s -eq 1 ]; then l_sed_f='.true.'; else l_sed_f='.false.'; fi
+# one line: []==if, &&==then, ||=else
+[ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
+[ $l_coll_s -eq 1 ] && l_coll_f='.true.' || l_coll_f='.false.'
+[ $l_sed_s -eq 1 ] && l_sed_f='.true.' || l_sed_f='.false.'
+
 if [ "$l_adv_s" = 1 ]; then
    l_adv='.true.'
    l_noadv_qv='.false.'
@@ -48,6 +50,7 @@ else
    l_noadv_qv='.true.'
    l_noadv_hyd='.true.'
 fi
+
 
 #ia=50
 
