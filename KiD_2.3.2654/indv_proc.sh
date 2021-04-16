@@ -60,6 +60,7 @@ do
       l_noadv_qv='.true.'
       l_noadv_hyd='.true.'
    fi
+
    mconfig=c"$l_nuc_cond_s"c"$l_coll_s"s"$l_sed_s"a"$l_adv_s"
    echo $mconfig
 
