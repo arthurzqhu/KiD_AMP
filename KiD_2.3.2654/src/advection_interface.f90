@@ -31,7 +31,7 @@ module advection_interface
     integer :: cscheme_id
 !    real(wp), allocatable :: field(:,:)
     integer :: ih, imom, ibin, k, j
-    real(8) :: norm_factor, scale_factor=1!.d12
+    real(8) :: norm_factor, scale_factor=1.d12
 
     if (present(scheme_id))then
        cscheme_id=scheme_id

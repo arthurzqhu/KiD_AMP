@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # config of the run
-mconfig='allon' # case/folder name. determined automatically if set empty
+mconfig='adv_coll' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
@@ -21,9 +21,9 @@ imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 
 # switches
-l_nuc_cond_s=1
+l_nuc_cond_s=0
 l_coll_s=1
-l_sed_s=1
+l_sed_s=0
 l_adv_s=1
 
 
