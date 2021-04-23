@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # config of the run
-caselist=(102) #(101 102 103 105 106 107)
+caselist=(102 107) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
 bintype=("SBM" "TAU")
@@ -27,11 +27,13 @@ do
    l_string[isw]=$(echo "ibase=10; obase=2; $isw" | BC_LINE_LENGTH=9999 bc | awk '{ printf "%04d\n", $0 }')
 done
 
-for isw in $(seq 1 $((2**4-1)))
+# specify l_string if you dont want to run all possible combination
+# each digit is a switch for nucleation/condensation, collision, sedimentation, and advection
+l_string=("1001" "0101" "1101")
+
+for l_sw in "${l_string[@]}"
 do
    # set the switches correctly 
-   l_sw=${l_string[isw]}
-
    l_nuc_cond_s=$(echo ${l_sw:0:1})
    l_coll_s=$(echo ${l_sw:1:1})
    l_sed_s=$(echo ${l_sw:2:1})
@@ -61,7 +63,12 @@ do
       l_noadv_hyd='.true.'
    fi
 
-   mconfig=c"$l_nuc_cond_s"c"$l_coll_s"s"$l_sed_s"a"$l_adv_s"
+for icimm in 0.0003 0.001 0.003 0.01
+do
+	for icinm in 100.e6 # 30.e6 100.e6 300.e6 
+	do
+
+   mconfig=m"$icimm"n"$icinm"_c"$l_nuc_cond_s"c"$l_coll_s"s"$l_sed_s"a"$l_adv_s"
    echo $mconfig
 
    for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
@@ -193,6 +200,8 @@ bintype='${bintype[$ibt],,}'
 /
 END
 	    ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
+               done
+            done
          done
       done
    done

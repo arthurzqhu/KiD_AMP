@@ -54,10 +54,11 @@ fi
 
 #ia=50
 
-#for icimm in 0.0 0.0003 0.001 0.003
-#do
-	#for icinm in 0 30 100 300 
-	#do
+for icimm in 0.0003 0.001 0.003 0.01
+do
+	for icinm in 30 100 300 
+	do
+      mconfig=m"icimm"n"icinm"
 
 #for isp_c in 2 15
 #do
@@ -212,6 +213,8 @@ bintype='${bintype[$ibt],,}'
 /
 END
 	  ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
+            done
+          done
         done
       done
     done
