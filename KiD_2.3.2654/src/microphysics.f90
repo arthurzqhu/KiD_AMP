@@ -7,6 +7,7 @@ use module_hujisbm
 use micro_prm
 use physconst, only: pi
 use parameters, only: nx,nz,dt,aero_N_init,max_nbins
+Use diagnostics, only: save_dg, i_dgtime, save_binData
 use column_variables, only:z_half
 
 IMPLICIT NONE
@@ -753,7 +754,7 @@ Use diagnostics, only: save_dg, i_dgtime, save_binData
 Use switches, only: l_sediment, mphys_var, l_fix_aerosols
 Use switches_bin
 Use namelists, only: dosedimentation, docollisions, docondensation, &
-                     donucleation, dobreakup, l_coll_coal, l_break
+                     donucleation, dobreakup, l_coll_coal, l_break, mp_proc_dg
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
@@ -1273,7 +1274,7 @@ DO K=2,KKP
        ! sort-of equivalent to the autoconversion in the Bulk scheme
           auto_mass(k) = 0.0
           auto_num(k) = 0.0
-          DO L = 16, LK
+          DO L = 16, LK ! CAUTION: rain bin hard-coded here. -ahu
 
              auto_mass(k) = auto_mass(k) + (AMK(J,K,L) - AM0(L))
              auto_num(k) = auto_num(k) + (ANK(J,K,L) - AN0(L))
@@ -1285,16 +1286,17 @@ DO K=2,KKP
              auto_num(k) = 0.0
           endif
 
-          if (jjp == 1) then
-             call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
-                  i_dgtime, units='kg/kg/s',dim='z')
-             call save_dg(k,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
-                  i_dgtime, units='#/kg/s',dim='z')
-          else
+          if (jjp > 1) then
+             print*, 'save autoconversion'
              call save_dg(k,j,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
                   i_dgtime, units='kg/kg/s',dim='z,x')
              call save_dg(k,j,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
                   i_dgtime, units='#/kg/s',dim='z,x')
+          else
+             call save_dg(k,(auto_mass(k)*1.e3/rhon(k))/dt,'cond_c_r_mass', &
+                  i_dgtime, units='kg/kg/s',dim='z')
+             call save_dg(k,(auto_num(k)*1.e6/rhon(k))/dt,'cond_c_r_num', &
+                  i_dgtime, units='#/kg/s',dim='z')
           endif
 
        ELSEIF(DS_force < -eps .and. docondensation) then !DS_force < 0.0
@@ -1326,8 +1328,6 @@ DO K=2,KKP
                  ANK(J,K,L)=AN0(L)
               ENDDO
            ENDIF
-!print*, 'evap k',k
-!if (k==31) print*,'amk',amk(j,k,:)*1.e3/rhon(k)
 
         ELSE
 
@@ -1384,18 +1384,11 @@ DO K=2,KKP
          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
          QVNEW = QVNEW - DM
 
-!if (k==39) print*, tbase(j,k)
-
 if (tbase(j,k)<0) then
     print*, 'negative temperature', j,k,tbase(j,k)
     print*, 'dm',dm
     stop
 endif
-
-!if (abs(dm)>.01) then
-!    print*, 'dm too big'
-!    stop
-!endif
 
          QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
          DS(J,K)=QVNEW-QSATPW(J,K)
