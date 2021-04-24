@@ -61,8 +61,10 @@ module namelists
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   character(200) :: bintype='' ! underlying 'sbm' or 'tau'
   character(200) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
+  logical :: mp_proc_dg
 
-  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, bintype, ampORbin, l_coll_coal &
+  namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, &
+          mp_proc_dg, bintype, ampORbin, l_coll_coal &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &
