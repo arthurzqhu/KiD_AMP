@@ -307,7 +307,6 @@ call save_dg(fielddp,name,i_dgtime,units,dim='z')
 
 !bin distributions
 if (ampORbin .eq. 'bin') then
-!print*, sum(dropsm2d(48,nx,:))*col, sum(dropsm2d(49,nx,:))*col
     fielddp2d(:,:)=dropsm2d(:,nx,:)
     name='mass_dist'
     units='kg/kg/ln(r)'
@@ -321,8 +320,6 @@ if (ampORbin .eq. 'bin') then
     endif
 
 elseif (ampORbin .eq. 'amp') then
-
-!print*, sum(dropsinitm2d(48,nx,:))*col, sum(dropsinitm2d(49,nx,:))*col
     fielddp2d(:,:)=dropsinitm2d(:,nx,:)
     name='mass_dist_init'
     units='kg/kg/ln(r)'
