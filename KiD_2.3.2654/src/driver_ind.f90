@@ -344,7 +344,7 @@ endif
    !Calculate moments - most of the time they're the same as what we used to find parameters
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
-   call calcmoms(ffcdr8_mass(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10),ffcdr8_num(k,j,:))
+   call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10))
 !print*,mc0(k,j,1),Mpc(k,j,1:3),flag(k,j,1,1)
  enddo
 enddo
@@ -368,7 +368,7 @@ ffcdr8_mass=dble(ffcd_mass)
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-     call calcmoms(ffcdr8_mass(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcdr8_num(k,j,:))
+     call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc(k,j,:),mr(k,j,:))
   !---------UPDATE MOMENTS---------------------------------
    !Mp=predicted value before microphysics. m0=value after finding parameters
    !If m0 .ne. Mp, then finding parameters failed
@@ -462,11 +462,9 @@ call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 ffcdr8=dble(ffcd)
 
 !---------CALC MOMENTS-----------------------
-!Adele - fix call to calcmoms to include all arguments. Missing argument not needed for SBM.
-dummy = 0.
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcdr8(k,j,:),10,mc(k,j,:),mr(k,j,:),dummy)
+  call calcmoms(ffcdr8(k,j,:),10,mc(k,j,:),mr(k,j,:))
  enddo
 enddo
 end subroutine mp_sbm
@@ -495,14 +493,14 @@ ffcdr8_num2d=dble(ffcd_num2d)
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcdr8_mass2d(k,j,:),10,mc(k,j,:),mr(k,j,:),ffcdr8_num2d(k,j,:))
+  call calcmoms(ffcdr8_mass2d(k,j,:),ffcdr8_num2d(k,j,:),10,mc(k,j,:),mr(k,j,:))
  enddo
 enddo
 ! there might be a better way to calculate moments, but will leave it like that for now. -ahu!!!
 
 end subroutine mp_tau
 
-subroutine calcmoms(ffcdr8_mass,momnum,mc,mr,ffcdr8_num)
+subroutine calcmoms(ffcdr8_mass,ffcdr8_num,momnum,mc,mr)
 
 use module_hujisbm
 use micro_prm
