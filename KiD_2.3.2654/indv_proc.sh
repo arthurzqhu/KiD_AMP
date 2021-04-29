@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # config of the run
-caselist=(102 107) #(101 102 103 105 106 107)
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
 bintype=("SBM" "TAU")
@@ -197,6 +197,7 @@ l_periodic_bound=.False.
 KiD_outdir='$outdir'
 ampORbin='${ampORbin[$iab],,}'
 bintype='${bintype[$ibt],,}'
+mp_proc_dg=.true.
 /
 END
 	    ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
