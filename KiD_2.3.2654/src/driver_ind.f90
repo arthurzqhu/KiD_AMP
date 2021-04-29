@@ -464,7 +464,7 @@ ffcdr8=dble(ffcd)
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcdr8(k,j,:),10,mc(k,j,:),mr(k,j,:))
+  call calcmoms(ffcdr8(k,j,:),,10,mc(k,j,:),mr(k,j,:)) !skips the number conc argument
  enddo
 enddo
 end subroutine mp_sbm
