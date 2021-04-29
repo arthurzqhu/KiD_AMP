@@ -281,16 +281,16 @@ do i=1,nx
 
                   proc_cmass=0.
                   proc_rmass=0.
-                  proc_tmass=0.
+!                  proc_tmass=0.
 
                   do kr=1,split_bins
                      proc_cmass = proc_cmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
-                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+!                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                   enddo
 
                   do kr=split_bins,nkr
                      proc_rmass = proc_rmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
-                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+!                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                   enddo
 
                   if (nx==1) then
@@ -1179,23 +1179,25 @@ ENDDO
 
 if (dosedimentation) then
    CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
+
+   if (mp_proc_dg) then
+      do k=2,kkp
+         do j=jminp,jmaxp
+            proc_tmass=0.0
+            proc_tnum=0.0
+            do l=1,lk
+                proc_tmass=proc_tmass+ql_sed(j,k,l)
+                proc_tnum=proc_tnum+qln_sed(j,k,l)
+            enddo
+   
+            call save_dgproc(proc_tmass/dt,proc_tnum/dt, &
+                   'dm_sed', 'dn_sed', k, j)
+         enddo 
+      enddo
+   endif
+
 endif                    ! sedimentation calculation
 
-if (mp_proc_dg) then
-   do k=2,kkp
-      do j=jminp,jmaxp
-         proc_tmass=0.0
-         proc_tnum=0.0
-         do l=1,lk
-             proc_tmass=proc_tmass+ql_sed(j,k,l)
-             proc_tnum=proc_tnum+qln_sed(j,k,l)
-         enddo
-
-         call save_dgproc(proc_tmass/dt,proc_tnum/dt, &
-                'dm_sed', 'dn_sed', k, j)
-      enddo 
-   enddo
-endif
 
 totevap = 0.0
 totevap2 = 0.0
