@@ -3,8 +3,8 @@ Please see the documentation in doc/KiD.pdf for further details.
 Update by Arthur Hu
 ===================================
 
-Note: avoid running the shell script on the login node. All jobs that take 
-more than half a minute should be put into a job script. 
+Just in case: please avoid running the shell script on the login node. 
+All jobs that take more than half a minute should be put into a job script. 
 Learn more: https://wiki.cse.ucdavis.edu/support/hpc/software/slurm?s[]=slurm
 
 Run a series of cases with different initial condition via `./indv_proc.sh`,
