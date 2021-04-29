@@ -6,10 +6,10 @@ Subroutine micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 use module_hujisbm
 use micro_prm
 use physconst, only: pi
-use parameters, only: nx,nz,dt,aero_N_init,max_nbins
+use parameters, only: nx,nz,dt,aero_N_init,max_nbins,split_bins
 Use diagnostics, only: save_dg, i_dgtime, save_binData
-use column_variables, only:z_half
-
+use column_variables, only: z_half
+use namelists, only: mp_proc_dg
 IMPLICIT NONE
 
 REAL::pcgs,rhocgs
@@ -23,6 +23,12 @@ REAL, DIMENSION(nz) :: rhocgs_z,pcgs_z,zcgs_z
 REAL, DIMENSION(nz,max_nbins) :: vr1z,ff1z
 
 REAL :: SUP2_OLD,dthalf
+
+! tmp vars to calculate process rate. not necessary but make the code look cleaner -ahu
+real, dimension(max_nbins) :: ff1r_prev
+REAL, DIMENSION(nz,max_nbins) :: ff1z_prev
+real :: proc_tmass, proc_cmass, proc_rmass
+
 DOUBLE PRECISION :: ss_max=0.003d0
 double precision del1in_limit
 DOUBLE PRECISION DEL1NR,DEL2NR,DEL12R,DEL12RD,ES1N,ES2N,EW1N,EW1PN
@@ -71,10 +77,6 @@ do i=1,nx
             FF1R(KR)=ffcd(k,i,kr)*rhocgs/xl(kr)/xl(kr)/3.0
          END DO
 
-!if (k==nz) then
-!print*, ffcd(k,i,:) 
-!stop
-!endif
          FF2R=0.;FF3R=0.;FF4R=0.;FF5R=0.
          ! ICE
          !IF (ICEPROCS.EQ.1)THEN
@@ -111,9 +113,9 @@ do i=1,nx
             ES2N=AA2_MY*DEXP(-BB2_MY/TT)
             EW1N=QQ*PP/(0.622+0.378*QQ)
             DIV1=EW1N/ES1N        !Saturation ratio wrt liquid
-            DEL1IN=EW1N/ES1N-1.
+            DEL1IN=EW1N/ES1N-1.   !supersat ratio wrt liquid
             DIV2=EW1N/ES2N        !Saturation ratio wrt ice
-            DEL2IN=EW1N/ES2N-1.
+            DEL2IN=EW1N/ES2N-1.   !supersat ratio wrt liquid
             SUP2_OLD=DEL2IN
 !---------------------------------------------------
             !Latent heating budget prep
@@ -133,6 +135,17 @@ do i=1,nx
                  concdrop = sum(ff1in*xl)*3.*col/rhocgs
                  IF (concccn>concdrop) THEN
                     ff1in(1)=ff1in(1)+(concccn-concdrop)*rhocgs/(3.0*col*xl(1))
+
+                    if (mp_proc_dg) then
+                       proc_tmass = (ff1in(1)-ff1r(1))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                       if (nx==1) then
+                          call save_dg(k,proc_tmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+                       else
+                          call save_dg(k,i,proc_tmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+                       endif
+
+
+                    endif
                  ENDIF
               ENDIF
 
@@ -169,6 +182,9 @@ do i=1,nx
                !If liquid
                IF (ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
                   (sum(ISYM2).EQ.0.AND.ISYM3.EQ.0.AND.ISYM4.EQ.0.AND.ISYM5.EQ.0)))THEN
+
+                  if (mp_proc_dg) ff1r_prev=ff1r
+
                   CALL ONECOND1(TT,QQ,PP,rhocgs &
                           ,VR1,pcgs &
                           ,DEL1IN,DEL2IN,DIV1,DIV2 &
@@ -178,6 +194,33 @@ do i=1,nx
                           ,COL,DTCOND,ICEMAX,NKR,ISYM1 &
                           ,ISYM2,ISYM3,ISYM4,ISYM5,1,1,1,0.,1.,1)
 
+                  ! diag condensation rate
+                  if (mp_proc_dg) then
+                     proc_cmass=0.
+                     proc_rmass=0.
+                     proc_tmass=0.
+
+                     do kr=1,split_bins
+                        proc_cmass = proc_cmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                        proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                     enddo
+
+                     do kr=split_bins,nkr
+                        proc_rmass = proc_rmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                        proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                     enddo
+
+                     if (nx==1) then
+                        call save_dg(k,proc_cmass/dt,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
+                        call save_dg(k,proc_rmass/dt,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z')
+                        call save_dg(k,proc_tmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+                     else
+                        call save_dg(k,i,proc_cmass/dt,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_rmass/dt,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_tmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z,x')
+                     endif
+
+                  endif
                   !If ice
                   !ELSE IF(ISYM1.EQ.0.AND.(TT-273.15).LE.-0.187.AND. &
                   !   (any(ISYM2.EQ.1).OR.ISYM3.EQ.1.OR.ISYM4.EQ.1.OR.ISYM5.EQ.1))THEN
@@ -222,6 +265,9 @@ do i=1,nx
                !Graupel and hail do not self-collect, so don't need to call collection if they
                !are the only species present
                cld2raint=0.
+
+               if (mp_proc_dg) ff1r_prev=ff1r
+               
                CALL COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
                     FF4R,FF5R,TT,QQ,PP,rhocgs,dthalf,TCRIT,TTCOAL, &
                     cld2raint,rimecldt, &
@@ -230,6 +276,35 @@ do i=1,nx
                     rimecldhailt,rain2icet, &
                     rain2snt,rain2agt, &
                     rain2grt,rain2hat)
+
+               if (mp_proc_dg) then
+
+                  proc_cmass=0.
+                  proc_rmass=0.
+                  proc_tmass=0.
+
+                  do kr=1,split_bins
+                     proc_cmass = proc_cmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                  enddo
+
+                  do kr=split_bins,nkr
+                     proc_rmass = proc_rmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                  enddo
+
+                  if (nx==1) then
+                     call save_dg(k,proc_cmass/dt,'dm_cloud_coll',i_dgtime,units='kg/kg/s',dim='z')
+                     call save_dg(k,proc_rmass/dt,'dm_rain_coll',i_dgtime,units='kg/kg/s',dim='z')
+                     !call save_dg(k,proc_tmass/dt,'dm_coll',i_dgtime,units='kg/kg/s',dim='z')
+                  else
+                     call save_dg(k,i,proc_cmass/dt,'dm_cloud_coll',i_dgtime,units='kg/kg/s',dim='z,x')
+                     call save_dg(k,i,proc_rmass/dt,'dm_rain_coll',i_dgtime,units='kg/kg/s',dim='z,x')
+                     !call save_dg(k,i,proc_tmass/dt,'dm_coll',i_dgtime,units='kg/kg/s',dim='z,x')
+                  endif
+
+               endif
+
             END IF
        END IF
   !-----------------------------------------------------------------------------------------
@@ -254,7 +329,31 @@ do i=1,nx
    ! Hydrometeor Sedimentation
    ! +-----------------------------+
    ! ... Drops ...
-   if(dosedimentation) call falfluxhucm_z(ff1z,vr1z,rhocgs_z,pcgs_z,zcgs_z,dt,1,nz,nkr)
+   if(dosedimentation) then
+      if (mp_proc_dg) ff1z_prev=ff1z
+
+      call falfluxhucm_z(ff1z,vr1z,rhocgs_z,pcgs_z,zcgs_z,dt,1,nz,nkr)
+
+      if (mp_proc_dg) then
+         proc_tmass=0.
+
+         ! probably not the most efficient way to implement -ahu
+         do k=1,nz
+            do kr=1,nkr
+               proc_tmass = proc_tmass + (ff1z(k,kr)-ff1z_prev(k,kr))/(1./xl(kr)/xl(kr)/3.0)*col
+            enddo
+
+            if (nx==1) then
+               call save_dg(k,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z')
+            else
+               call save_dg(k,i,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z,x')
+            endif
+         enddo
+
+      endif
+
+
+   endif
    ! if(iceprocs == 1)then
    !    call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
    !    call FALFLUXHUCM_Z(ffx_z,VRX,RHOCGS_z,PCGS_z,ZCGS_z,DT,kts,kte,nkr)
@@ -313,7 +412,6 @@ OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/masses.asc", &
      FORM="FORMATTED")
 READ(hujisbm_unit1,900) XL(otn),XI(otn,oti),XS(otn),XG(otn),XH(otn)
 CLOSE(hujisbm_unit1)
-!print*, XL
 ! BULKRADIUS
 
 OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkradii.asc_s_0_03_0_9", &
@@ -748,7 +846,7 @@ END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
 subroutine micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
-use parameters, only: nz, nx, dt, max_nbins, split_bins
+use parameters, only: nz, nx, dt, max_nbins
 use common_physics, only: qsaturation
 Use diagnostics, only: save_dg, i_dgtime, save_binData
 Use switches, only: l_sediment, mphys_var, l_fix_aerosols
@@ -902,8 +1000,9 @@ REAL,DIMENSION(JMINP:JMAXP,KKP) :: tau_dum
 REAL ::  delm
 
 REAL,DIMENSION(JMINP:JMAXP,KKP) :: NCC,MCC
-real, dimension(kkp) :: mass_allbins, num_allbins, auto_con_mass, d_rmass
+real, dimension(kkp) :: auto_con_mass, d_rmass, d_rnum, d_cmass, d_cnum
 real :: rmass_tot_orig, rmass_tot_new
+real :: proc_cmass, proc_rmass, proc_tmass, proc_cnum, proc_rnum, proc_tnum
 real :: dtcalc
 INTEGER :: LT, IT, inhom_evap
 INTEGER :: ccn_pos, cloud_pos, count, loop_count
@@ -1085,15 +1184,15 @@ endif                    ! sedimentation calculation
 if (mp_proc_dg) then
    do k=2,kkp
       do j=jminp,jmaxp
-         mass_allbins(k)=0.0
-         num_allbins(k)=0.0
+         proc_tmass=0.0
+         proc_tnum=0.0
          do l=1,lk
-             mass_allbins(k)=mass_allbins(k)+ql_sed(j,k,l)
-             num_allbins(k)=num_allbins(k)+qln_sed(j,k,l)
+             proc_tmass=proc_tmass+ql_sed(j,k,l)
+             proc_tnum=proc_tnum+qln_sed(j,k,l)
          enddo
 
-         call save_dgproc(mass_allbins(k)/dt,num_allbins(k)/dt, &
-                'sed_mass', 'sed_num', k, j)
+         call save_dgproc(proc_tmass/dt,proc_tnum/dt, &
+                'dm_sed', 'dn_sed', k, j)
       enddo 
    enddo
 endif
@@ -1288,36 +1387,33 @@ DO K=2,KKP
 
           if (mp_proc_dg) then
 
-             mass_allbins(k) = 0.0
-             num_allbins(k) = 0.0
+             proc_cmass = 0.0
+             proc_cnum = 0.0
+             proc_rmass = 0.0
+             proc_rnum = 0.0
 
-             DO L = 1, split_bins
-                mass_allbins(k) = mass_allbins(k) + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                num_allbins(k) = num_allbins(k) + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
+             DO L = 1, lk_cloud
+                proc_cmass = proc_cmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
+                proc_cnum = proc_cnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
+             enddo
+             DO L = lk_cloud+1, LK
+                proc_rmass = proc_rmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
+                proc_rnum = proc_rnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
              enddo
    
-             if (mass_allbins(k) < 0.0 .or. num_allbins(k) < 0.0 ) then
-                mass_allbins(k) = 0.0
-                num_allbins(k) = 0.0
+             if (proc_cmass < 0.0 .or. proc_cnum < 0.0 ) then
+                proc_cmass = 0.0
+                proc_cnum = 0.0
+             endif
+
+             if (proc_rmass < 0.0 .or. proc_rnum < 0.0 ) then
+                proc_rmass = 0.0
+                proc_rnum = 0.0
              endif
    
-             call save_dgproc(mass_allbins(k)/dt,num_allbins(k)/dt, &
+             call save_dgproc(proc_cmass/dt,proc_cnum/dt, &
                 'ce_c_mass', 'ce_c_num', k, j)
-
-             mass_allbins(k) = 0.0
-             num_allbins(k) = 0.0
-
-             DO L = split_bins+1, LK
-                mass_allbins(k) = mass_allbins(k) + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                num_allbins(k) = num_allbins(k) + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
-             enddo
-   
-             if (mass_allbins(k) < 0.0 .or. num_allbins(k) < 0.0 ) then
-                mass_allbins(k) = 0.0
-                num_allbins(k) = 0.0
-             endif
-   
-             call save_dgproc(mass_allbins(k)/dt,num_allbins(k)/dt, &
+             call save_dgproc(proc_rmass/dt,proc_rnum/dt, &
                 'ce_r_mass', 'ce_r_num', k, j)
              
           endif
@@ -1352,41 +1448,40 @@ DO K=2,KKP
              ENDDO
           ENDIF
 
-
           if (mp_proc_dg) then
-             mass_allbins(k) = 0.0
-             num_allbins(k) = 0.0
 
-             DO L = 1, split_bins
-                mass_allbins(k) = mass_allbins(k) + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                num_allbins(k) = num_allbins(k) + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
+             proc_cmass = 0.0
+             proc_cnum = 0.0
+             proc_rmass = 0.0
+             proc_rnum = 0.0
+
+             DO L = 1, lk_cloud
+                proc_cmass = proc_cmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
+                proc_cnum = proc_cnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
              enddo
-
-             if (mass_allbins(k) > 0.0 .or. num_allbins(k) > 0.0 ) then
-                mass_allbins(k) = 0.0
-                num_allbins(k) = 0.0
+             DO L = lk_cloud+1, LK
+                proc_rmass = proc_rmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
+                proc_rnum = proc_rnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
+             enddo
+   
+             if (proc_cmass > 0.0 .or. proc_cnum > 0.0 ) then
+                proc_cmass = 0.0
+                proc_cnum = 0.0
              endif
 
-             ! save to the same diagnostic variable as the condensation one
-             call save_dgproc(mass_allbins(k)/dt,num_allbins(k)/dt, &
+             if (proc_rmass > 0.0 .or. proc_rnum > 0.0 ) then
+                proc_rmass = 0.0
+                proc_rnum = 0.0
+             endif
+   
+             call save_dgproc(proc_cmass/dt,proc_cnum/dt, &
                 'ce_c_mass', 'ce_c_num', k, j)
-
-             mass_allbins(k) = 0.0
-             num_allbins(k) = 0.0
-
-             DO L = split_bins+1, LK
-                mass_allbins(k) = mass_allbins(k) + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                num_allbins(k) = num_allbins(k) + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
-             enddo
-
-             if (mass_allbins(k) > 0.0 .or. num_allbins(k) > 0.0 ) then
-                mass_allbins(k) = 0.0
-                num_allbins(k) = 0.0
-             endif
-
-             call save_dgproc(mass_allbins(k)/dt,num_allbins(k)/dt, &
+             call save_dgproc(proc_rmass/dt,proc_rnum/dt, &
                 'ce_r_mass', 'ce_r_num', k, j)
+             
           endif
+
+
         ELSE
 
            DO L=1,LK
@@ -1467,41 +1562,43 @@ endif
       ELSE
          CDNCEVAP(J,K) = (AN1OLD(J,K) - (AN1(J,K)))
       ENDIF
-
-      if (jjp > 1) then
-         !    diagnostics for total cond/evap rate liquid water (change in mass)
-         call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
-         !    cond/evap rate of cloud
-         do l = 1,lk_cloud
-            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
-         !     cond/evap rate of rain
-         do l = lk_cloud+1, lk
-            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,j,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
-              units='kg/kg/s',dim='z,x')
-      else
-         !    diagnostics for total cond/evap rate liquid water (change in mass)
-         call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
-              units='kg/kg/s',dim='z')
-         !    cond/evap rate of cloud
-         do l = 1,lk_cloud
-            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
-              units='kg/kg/s',dim='z')
-         !     cond/evap rate of rain
-         do l = lk_cloud+1, lk
-            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
-         enddo
-         call save_dg(k,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
-              units='kg/kg/s',dim='z')
+      
+      ! this part is probably redundant, will delete later if so. -ahu
+      if (mp_proc_dg) then
+         if (jjp > 1) then
+            !    diagnostics for total cond/evap rate liquid water (change in mass)
+            call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z,x')
+            !    cond/evap rate of cloud
+            do l = 1,lk_cloud
+               dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+            enddo
+            call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z,x')
+            !     cond/evap rate of rain
+            do l = lk_cloud+1, lk
+               dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+            enddo
+            call save_dg(k,j,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z,x')
+         else
+            !    diagnostics for total cond/evap rate liquid water (change in mass)
+            call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z')
+            !    cond/evap rate of cloud
+            do l = 1,lk_cloud
+               dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+            enddo
+            call save_dg(k,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z')
+            !     cond/evap rate of rain
+            do l = lk_cloud+1, lk
+               dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+            enddo
+            call save_dg(k,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z')
+         endif
       endif
-
 ! 3.2 do activation after cond/evap, using updated supersat for timestep
 if (donucleation) then
     EA(J,K) = DS(J,K)
@@ -1574,10 +1671,13 @@ if (donucleation) then
       QVNEW = QVNEW - MCC(J,K)
       QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
     ENDIF                          ! end of do activation
-    if (nx==1) then
-       call save_dg(k,MCC(j,k),'nuked_mass',i_dgtime,units='kg/kg/s',dim='z')
-    else
-       call save_dg(k,j,MCC(j,k),'nuked_mass',i_dgtime,units='kg/kg/s',dim='z')
+
+    if (mp_proc_dg) then
+       if (nx==1) then
+          call save_dg(k,MCC(j,k),'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+       else
+          call save_dg(k,j,MCC(j,k),'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+       endif
     endif
 endif
 
@@ -1639,49 +1739,76 @@ endif
             ENDDO
 
 
-            IF(AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
+            IF (AM1(J,K) >  lk*eps .AND. AN1(J,K) > lk*eps ) THEN
 
-              if (docollisions) then
+               if (docollisions) then
 
 
-                 CALL SXY(J,K,DT)
-                 CALL SCONC(J,K,DT)
+                  CALL SXY(J,K,DT)
+                  CALL SCONC(J,K,DT)
 
-                 if (l_break .or. dobreakup) then
-                    CALL BREAK(J,K,DT)
-                 endif
+                  if (l_break .or. dobreakup) then
+                     CALL BREAK(J,K,DT)
+                  endif
 
-              endif
+               endif
 
 !*************************************************************
 !        UPDATING CHANGE IN MASS CAUSED BY MICROPHYSICS
 !             AFTER  COLLECTION & BREAKUP
 !*************************************************************
-              DO L=1,LK
-                 DIEMD(L)=AMK(J,K,L)-AMKORIG(J,K,L)
-                 DIEND(L)=ANK(J,K,L)-ANKORIG(J,K,L)
-              ENDDO
+               DO L=1,LK
+                  DIEMD(L)=AMK(J,K,L)-AMKORIG(J,K,L)
+                  DIEND(L)=ANK(J,K,L)-ANKORIG(J,K,L)
+               ENDDO
 
-              d_rmass(k) = 0.0
+               if (mp_proc_dg) then
 
-              do l = 16, lk
-                 d_rmass(k) = d_rmass(k) + DIEMD(L)
-              enddo
+                  d_cmass(k) = 0.0
+                  d_cnum(k) = 0.0
+                  d_rnum(k) = 0.0
+                  d_rmass(k) = 0.0
 
-              if (jjp == 1) then
-                 call save_dg(k,d_rmass(k)/dt,'drain_tot', i_dgtime, &
-                      units='kg/kg/s',dim='z')
-              else
-                 call save_dg(k,j,d_rmass(k)/dt,'drain_tot', i_dgtime, &
-                      units='kg/kg/s',dim='z,x')
-              endif
+                  do l = lk_cloud+1, lk
+                     d_rmass(k) = d_rmass(k) + DIEMD(L)
+                     d_rnum(k) = d_rnum(k) + DIEND(L)
+                  enddo
+
+                  do l = 1,lk_cloud
+                     d_cmass(k) = d_cmass(k) + DIEMD(L)
+                     d_cnum(k) = d_cnum(k) + DIEND(L)
+                  enddo
+
+                  if (jjp == 1) then
+                     call save_dg(k,d_cmass(k)/dt,'dm_cloud_coll', i_dgtime, &
+                          units='kg/kg/s',dim='z')
+                     call save_dg(k,d_cnum(k)/dt,'dn_cloud_coll', i_dgtime, &
+                          units='#/kg/s',dim='z')
+                     call save_dg(k,d_rmass(k)/dt,'dm_rain_coll', i_dgtime, &
+                          units='kg/kg/s',dim='z')
+                     call save_dg(k,d_rnum(k)/dt,'dn_rain_coll', i_dgtime, &
+                          units='#/kg/s',dim='z')
+                  else
+
+                     call save_dg(k,d_cmass(k)/dt,'dm_cloud_coll', i_dgtime, &
+                          units='kg/kg/s',dim='z,x')
+                     call save_dg(k,d_cnum(k)/dt,'dn_cloud_coll', i_dgtime, &
+                          units='#/kg/s',dim='z,x')
+                     call save_dg(k,d_rmass(k)/dt,'dm_rain_coll', i_dgtime, &
+                          units='kg/kg/s',dim='z,x')
+                     call save_dg(k,d_rnum(k)/dt,'dn_rain_coll', i_dgtime, &
+                          units='#/kg/s',dim='z,x')
+                  endif
+
+               endif
+
             ELSE
-              DO L=1,LK
-               DIEMD(L) = 0.0
-               DIEND(L)= 0.0
-             ENDDO
+               DO L=1,LK
+                  DIEMD(L) = 0.0
+                  DIEND(L)= 0.0
+               ENDDO
            ENDIF
-        ENDIF    !if IRAINBIN == 1.AND.IMICROBIN == 1
+        ENDIF
 
 !***********************************************************
 !     UPDATING MASS & CONCENTRATION AFTER MICROPHYSICS
@@ -1704,34 +1831,34 @@ endif
 !     Calculate the change in "rain bin" mass and number
 !     (i.e. bin greater than  100 microns diameter)
 !      if (j == 0) then
-       rmass_tot_orig = 0.0
-       rmass_tot_new = 0.0
-       !  d_rmass(k) = 0.0
-       auto_con_mass(k) = 0.0
-
-       do l=16,lk
-           rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
-           rmass_tot_new = rmass_tot_new + AMK(J,K,L)
-       enddo
-
-       ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
-
-       auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
-
-       if (jjp == 1) then
-          call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-               units='kg/kg/s',dim='z')
-
-          call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-               units='kg/kg/s',dim='z')
-       else
-          call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
-               units='kg/kg/s',dim='z,x')
-
-          call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
-               units='kg/kg/s',dim='z,x')
-
-       endif
+!       rmass_tot_orig = 0.0
+!       rmass_tot_new = 0.0
+!       !  d_rmass(k) = 0.0
+!       auto_con_mass(k) = 0.0
+!
+!       do l=lk_cloud+1,lk
+!           rmass_tot_orig = rmass_tot_orig + AMKORIG(J,K,L)
+!           rmass_tot_new = rmass_tot_new + AMK(J,K,L)
+!       enddo
+!
+!       ! d_rmass(k) = rmass_tot_new - rmass_tot_orig
+!
+!       auto_con_mass(k) =  d_rmass(k) - rmass_cw(k)
+!
+!       if (jjp == 1) then
+!          call save_dg(k,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+!               units='kg/kg/s',dim='z')
+!
+!          call save_dg(k,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+!               units='kg/kg/s',dim='z')
+!       else
+!          call save_dg(k,j,auto_con_mass(k)/dt,'drain_auto', i_dgtime, &
+!               units='kg/kg/s',dim='z,x')
+!
+!          call save_dg(k,j,rmass_cw(k)/dt,'drain_rain', i_dgtime, &
+!               units='kg/kg/s',dim='z,x')
+!
+!       endif
 
 !      endif
 
@@ -2180,7 +2307,6 @@ real(8):: n0c,exptermc,n0r,exptermr
 real(8), dimension(max_nbins) :: ffcd_mass, ffcd_num
 
 
-!print*, 'inside init dist',rx,gnu,dn
 !Setting up a mass distribution, not a number distribution
 !So increase gnu by 3
 
@@ -2208,7 +2334,6 @@ do kr=1,nkr
 !    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
 enddo
-!print*, 'right after init', ffcd_mass
 return
 !Diagnose shape parameter
 !  if (mom<0) then
@@ -2319,10 +2444,10 @@ subroutine save_dgproc(varmass, varnum, namemass, namenum, k, j)
 
    if (nx==1) then
       call save_dg(k,varmass,namemass,i_dgtime,units='kg/kg/s',dim='z')
-      call save_dg(k,varnum,namenum,i_dgtime,units='#/kg/s',dim='z')
+      if (present(varnum)) call save_dg(k,varnum,namenum,i_dgtime,units='#/kg/s',dim='z')
    else
       call save_dg(k,j,varmass,namemass,i_dgtime,units='kg/kg/s',dim='z,x')
-      call save_dg(k,j,varnum,namenum,i_dgtime,units='#/kg/s',dim='z,x')
+      if (present(varnum)) call save_dg(k,j,varnum,namenum,i_dgtime,units='#/kg/s',dim='z,x')
    endif
 
 end subroutine 
