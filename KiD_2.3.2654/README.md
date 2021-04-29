@@ -1,6 +1,6 @@
 Please see the documentation in doc/KiD.pdf for further details.
 
-Update by Arthur Hu
+Updated by Arthur Hu
 ===================================
 
 Just in case: please avoid running the shell script on the login node. 
@@ -10,7 +10,7 @@ Learn more: https://wiki.cse.ucdavis.edu/support/hpc/software/slurm?s[]=slurm
 Run a series of cases with different initial condition via `./indv_proc.sh`,
 or cases with individual processes switched on or off via `./indv_proc.sh`. 
 
-If you're on FARM, just change the email address in job_* and run `sbatch job_*`.
+If you're on FARM, just change the email address in `job_*` and run `sbatch job_*`.
 
 
 
