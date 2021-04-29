@@ -1566,7 +1566,7 @@ endif
       ENDIF
       
       ! this part is probably redundant, will delete later if so. -ahu
-      if (mp_proc_dg) then
+      if (mp_proc_dg .and. docondensation) then
          if (jjp > 1) then
             !    diagnostics for total cond/evap rate liquid water (change in mass)
             call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
@@ -1764,7 +1764,7 @@ endif
                   DIEND(L)=ANK(J,K,L)-ANKORIG(J,K,L)
                ENDDO
 
-               if (mp_proc_dg) then
+               if (mp_proc_dg .and. docollisions) then
 
                   d_cmass(k) = 0.0
                   d_cnum(k) = 0.0
