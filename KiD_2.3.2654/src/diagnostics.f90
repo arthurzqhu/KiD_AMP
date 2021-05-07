@@ -214,14 +214,14 @@ contains
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))
           units=trim(mom_units(imom))
           do k=1,nz
-             if (ampORbin .eq. 'amp') then
-                 field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
-             elseif (ampORbin .eq. 'bin') then
-                 if (ih==1) then
-                     field(k) = sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                 elseif (ih==2) then
-                     field(k) = sum(hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                 endif
+             if (ampORbin .eq. 'bin') then
+                if (ih==1) then ! cloud
+                    field(k)=sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                elseif (ih==2) then ! rain
+                    field(k)=sum(hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                endif
+             else
+                field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
              endif
           end do
 
@@ -282,17 +282,17 @@ contains
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_adv'
           units=trim(mom_units(imom))//'/s'
           do k=1,nz
-              if (ampORbin .eq. 'amp')then
-                  field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
-              elseif (ampORbin .eq. 'bin')then
-                  if (ih==1) then
-                      field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                  elseif (ih==2) then
-                      field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                  else
-                      ! need in case there's ice -ahu
-                  endif
-              endif
+             if (ampORbin .eq. 'bin')then
+                if (ih==1) then
+                    field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                elseif (ih==2) then
+                    field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                else
+                    ! need in case there's ice -ahu
+                endif
+             else
+                 field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
+             endif
           end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
@@ -330,17 +330,17 @@ contains
 
 
              do k=1,nz
-                 if (ampORbin .eq. 'amp')then
-                     field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
-                 elseif (ampORbin .eq. 'bin')then
-                     if (ih==1) then
-                         field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                     elseif (ih==2) then
-                         field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                     else
-                          ! need in case there's ice -ahu
-                     endif
-                 endif
+                if (ampORbin .eq. 'bin')then
+                   if (ih==1) then
+                       field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                   elseif (ih==2) then
+                       field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                   else
+                        ! need in case there's ice -ahu
+                   endif
+                else
+                   field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
+                endif
              end do
              call save_dg(field, name, i_dgtime,  units,dim=dims)
           end do
@@ -377,16 +377,16 @@ contains
           units=trim(mom_units(imom)//'/s')
 
           do k=1,nz
-              if (ampORbin .eq. 'amp')then
-                  field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
-              elseif (ampORbin .eq. 'bin')then
-                  if (ih==1) then
-                      field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                  elseif (ih==2) then
-                      field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                  else
-                      ! need in case there's ice -ahu
-                  endif
+              if (ampORbin .eq. 'bin')then
+                 if (ih==1) then
+                     field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                 elseif (ih==2) then
+                     field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                 else
+                     ! need in case there's ice -ahu
+                 endif
+              else
+                 field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
               endif
           end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
@@ -410,16 +410,16 @@ contains
           units=trim(mom_units(imom))//'/s'
 
           do k=1,nz
-              if (ampORbin .eq. 'amp')then
-                  field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
-              elseif (ampORbin .eq. 'bin')then
-                  if (ih==1) then
-                      field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                  elseif (ih==2) then
-                      field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                  else
-                      ! need in case there's ice -ahu
-                  endif
+              if (ampORbin .eq. 'bin')then
+                 if (ih==1) then
+                     field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                 elseif (ih==2) then
+                     field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                 else
+                     ! need in case there's ice -ahu
+                 endif
+              else
+                 field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
               endif
           end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
@@ -475,16 +475,16 @@ contains
           units=trim(mom_units(imom))//' m^k/m2'
 
           do k=1,nz
-              if (ampORbin .eq. 'amp')then
+              if (ampORbin .eq. 'bin')then
+                 if (ih==1) then
+                     field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                 elseif (ih==2) then
+                     field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                 else
+                     ! need in case there's ice -ahu
+                 endif
+              else
                   field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
-              elseif (ampORbin .eq. 'bin')then
-                  if (ih==1) then
-                      field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                  elseif (ih==2) then
-                      field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                  else
-                      ! need in case there's ice -ahu
-                  endif
               endif
           end do
 
@@ -497,13 +497,13 @@ contains
           field(:)=0.0
           ! field_bin_r(:)=0.0
           do k=1,nz
-              if (ih==1) then
-                  field(k)= sum(rho(k)*dz(k)* &
-                      hydrometeors(k,nx,1)%moments(1:split_bins,1))
-              elseif (ih==2) then
-                  field(k)= sum(rho(k)*dz(k)* &
-                      hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1))
-              endif
+             if (ih==1) then
+                 field(k)= sum(rho(k)*dz(k)* &
+                     hydrometeors(k,nx,1)%moments(1:split_bins,1))
+             elseif (ih==2) then
+                 field(k)= sum(rho(k)*dz(k)* &
+                     hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1))
+             endif
           enddo
 
           if (ih==1) then
