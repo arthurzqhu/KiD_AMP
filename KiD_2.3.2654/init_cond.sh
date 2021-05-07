@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # config of the run
-mconfig='adv_coll' # case/folder name. determined automatically if set empty
+mconfig='noinit' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
@@ -21,9 +21,9 @@ imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 
 # switches
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=0
+l_sed_s=1
 l_adv_s=1
 
 
@@ -36,7 +36,7 @@ else
    icinm=0.      
 fi
 
-# one line: []==if, &&==then, ||=else
+# []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
 [ $l_coll_s -eq 1 ] && l_coll_f='.true.' || l_coll_f='.false.'
 [ $l_sed_s -eq 1 ] && l_sed_f='.true.' || l_sed_f='.false.'
@@ -54,11 +54,11 @@ fi
 
 #ia=50
 
-for icimm in 0.0003 0.001 0.003 0.01
-do
-	for icinm in 30 100 300 
-	do
-      mconfig=m"icimm"n"icinm"
+#for icimm in 0.0003 0.001 0.003 0.01
+#do
+#	for icinm in 30 100 300 
+#	do
+#      mconfig=m"icimm"n"icinm"
 
 #for isp_c in 2 15
 #do
@@ -78,10 +78,10 @@ do
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
 
-for iw in 2 #0.5 1 2
+for iw in 2 4 6 #0.5 1 2
 do
 echo w=$iw
-  for ia in 100 #50 100 200 400 800
+  for ia in 50 150 450
   do
   echo Na=$ia
     for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
@@ -115,7 +115,7 @@ echo w=$iw
     	    then
     	      zc=0
             else
-    	      zc="3000.,600.,1200."
+    	      zc="6000.,600.,1200."
             fi
     	    if [ ! -d $outdir ]; then
     	      mkdir -p $outdir
@@ -186,8 +186,8 @@ dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=$iw      !Updraft speed
-tctrl(1)=2400.    !Total length of simulation (s)
-tctrl(2)=600.     !May not be used, depends on the case. Typically the period of w oscillation
+tctrl(1)=4800.    !Total length of simulation (s)
+tctrl(2)=1200.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=$zc !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
@@ -210,11 +210,12 @@ l_periodic_bound=.False.
 KiD_outdir='$outdir'
 ampORbin='${ampORbin[$iab],,}'
 bintype='${bintype[$ibt],,}'
+mp_proc_dg=.true.
 /
 END
-	  ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
-            done
-          done
+     #./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
+#            done
+#          done
         done
       done
     done
