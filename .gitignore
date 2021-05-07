@@ -43,6 +43,7 @@ AMP_SBM.nml
 AMP_TAU.nml
 BIN_SBM.nml
 BIN_TAU.nml
+THOM.nml
 
 # misc
 .remote-sync.json
