@@ -213,7 +213,7 @@ bintype='${bintype[$ibt],,}'
 mp_proc_dg=.true.
 /
 END
-     #./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
+     ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
 #            done
 #          done
         done
