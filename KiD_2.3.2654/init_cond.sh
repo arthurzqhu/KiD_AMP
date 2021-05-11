@@ -5,7 +5,7 @@ mconfig='noinit' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -78,10 +78,10 @@ fi
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
 
-for iw in 2 4 6 #0.5 1 2
+for iw in 0.5 1 2 4 6
 do
 echo w=$iw
-  for ia in 50 150 450
+  for ia in 50 100 200
   do
   echo Na=$ia
     for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
@@ -186,8 +186,8 @@ dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=$iw      !Updraft speed
-tctrl(1)=4800.    !Total length of simulation (s)
-tctrl(2)=1200.     !May not be used, depends on the case. Typically the period of w oscillation
+tctrl(1)=4000.    !Total length of simulation (s)
+tctrl(2)=1000.     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=$zc !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
