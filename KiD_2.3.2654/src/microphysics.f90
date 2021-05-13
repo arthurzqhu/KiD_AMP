@@ -1386,40 +1386,6 @@ DO K=2,KKP
              print *, 'AN1', AN1(j,k),k,j
           ENDIF
 
-
-          if (mp_proc_dg) then
-
-             proc_cmass = 0.0
-             proc_cnum = 0.0
-             proc_rmass = 0.0
-             proc_rnum = 0.0
-
-             DO L = 1, lk_cloud
-                proc_cmass = proc_cmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                proc_cnum = proc_cnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
-             enddo
-             DO L = lk_cloud+1, LK
-                proc_rmass = proc_rmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                proc_rnum = proc_rnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
-             enddo
-   
-             if (proc_cmass < 0.0 .or. proc_cnum < 0.0 ) then
-                proc_cmass = 0.0
-                proc_cnum = 0.0
-             endif
-
-             if (proc_rmass < 0.0 .or. proc_rnum < 0.0 ) then
-                proc_rmass = 0.0
-                proc_rnum = 0.0
-             endif
-   
-             call save_dgproc(proc_cmass/dt,proc_cnum/dt, &
-                'ce_c_mass', 'ce_c_num', k, j)
-             call save_dgproc(proc_rmass/dt,proc_rnum/dt, &
-                'ce_r_mass', 'ce_r_num', k, j)
-             
-          endif
-
        ELSEIF(DS_force < -eps .and. docondensation) then !DS_force < 0.0
 !****************************************************************
     !                     EVAPORATION
@@ -1449,40 +1415,6 @@ DO K=2,KKP
                 ANK(J,K,L)=AN0(L)
              ENDDO
           ENDIF
-
-          if (mp_proc_dg) then
-
-             proc_cmass = 0.0
-             proc_cnum = 0.0
-             proc_rmass = 0.0
-             proc_rnum = 0.0
-
-             DO L = 1, lk_cloud
-                proc_cmass = proc_cmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                proc_cnum = proc_cnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
-             enddo
-             DO L = lk_cloud+1, LK
-                proc_rmass = proc_rmass + (AMK(J,K,L) - AM0(L))*1.e3/rhon(k)
-                proc_rnum = proc_rnum + (ANK(J,K,L) - AN0(L))*1.e6/rhon(k)
-             enddo
-   
-             if (proc_cmass > 0.0 .or. proc_cnum > 0.0 ) then
-                proc_cmass = 0.0
-                proc_cnum = 0.0
-             endif
-
-             if (proc_rmass > 0.0 .or. proc_rnum > 0.0 ) then
-                proc_rmass = 0.0
-                proc_rnum = 0.0
-             endif
-   
-             call save_dgproc(proc_cmass/dt,proc_cnum/dt, &
-                'ce_c_mass', 'ce_c_num', k, j)
-             call save_dgproc(proc_rmass/dt,proc_rnum/dt, &
-                'ce_r_mass', 'ce_r_num', k, j)
-             
-          endif
-
 
         ELSE
 
