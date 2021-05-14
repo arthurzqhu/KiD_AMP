@@ -471,7 +471,7 @@ contains
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
-          name=trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
+          name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_path'
           units=trim(mom_units(imom))//' m^k/m2'
 
           do k=1,nz
@@ -480,8 +480,6 @@ contains
                      field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
                  elseif (ih==2) then
                      field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                 else
-                     ! need in case there's ice -ahu
                  endif
               else
                   field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
@@ -492,29 +490,29 @@ contains
        end do
     end do
 
-    do ih=1,nspecies
-       if (ampORbin .eq. 'bin')then
-          field(:)=0.0
-          ! field_bin_r(:)=0.0
-          do k=1,nz
-             if (ih==1) then
-                 field(k)= sum(rho(k)*dz(k)* &
-                     hydrometeors(k,nx,1)%moments(1:split_bins,1))
-             elseif (ih==2) then
-                 field(k)= sum(rho(k)*dz(k)* &
-                     hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1))
-             endif
-          enddo
+    !do ih=1,nspecies
+    !   if (ampORbin .eq. 'bin')then
+    !      field(:)=0.0
+    !      ! field_bin_r(:)=0.0
+    !      do k=1,nz
+    !         if (ih==1) then
+    !             field(k)= sum(rho(k)*dz(k)* &
+    !                 hydrometeors(k,nx,1)%moments(1:split_bins,1))
+    !         elseif (ih==2) then
+    !             field(k)= sum(rho(k)*dz(k)* &
+    !                 hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1))
+    !         endif
+    !      enddo
 
-          if (ih==1) then
-              call save_dg(sum(field), 'cloud_water_path',&
-                   i_dgtime, units='kg/m2',dim='time')
-          elseif (ih==2) then
-              call save_dg(sum(field), 'rain_water_path',&
-                   i_dgtime, units='kg/m2',dim='time')
-          endif
-       endif
-    enddo
+    !      if (ih==1) then
+    !          call save_dg(sum(field), 'cloud_water_path',&
+    !               i_dgtime, units='kg/m2',dim='time')
+    !      elseif (ih==2) then
+    !          call save_dg(sum(field), 'rain_water_path',&
+    !               i_dgtime, units='kg/m2',dim='time')
+    !      endif
+    !   endif
+    !enddo
 
     deallocate(field_bin)
     deallocate(field)
@@ -610,26 +608,21 @@ contains
           units=trim(mom_units(imom))
           do k=1,nz
              do j=1,nx
-                field_2D(k,j)=sum(hydrometeors(k,j,ih)%moments(:,imom))
                 if (ampORbin .eq. 'bin') then
-                   field_bin_c_2D(k,j) =                                            &
-                        sum(hydrometeors(k,j,ih)%moments(1:split_bins,imom))/(pi/6*1000)
-                   field_bin_r_2D(k,j) =                                            &
-                        sum(hydrometeors(k,j,ih)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                   if (ih==1) then
+                      field_2D(k,j)=sum(hydrometeors(k,j,ih)%&
+                         moments(1:split_bins,imom))/(pi/6*1000)
+                   elseif (ih==2) then
+                      field_2D(k,j)=sum(hydrometeors(k,j,ih)%&
+                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                   endif
+                else
+                   field_2D(k,j)=sum(hydrometeors(k,j,ih)%moments(:,imom))
                 endif
              end do
           end do
           call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim=dims)
 
-          name=trim(h_names(ih))//'_'//trim(mom_names(imom))
-          call save_dg(field_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims)
-
-          if (ampORbin .eq. 'bin') then
-             name=trim('cloud_only_'//trim(mom_names(imom)))
-             call save_dg(field_bin_c_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims)
-             name=trim('rain_only_'//trim(mom_names(imom)))
-             call save_dg(field_bin_r_2D(1:nz,1:nx), name, i_dgtime, units, dim=dims)
-          endif
        enddo
     enddo
 
@@ -666,7 +659,17 @@ contains
           units=trim(mom_units(imom))//'/s'
           do k=1,nz
              do j=1,nx
-                field_2D(k,j)=sum(dhydrometeors_adv(k,j,ih)%moments(:,imom))
+                if (ampORbin .eq. 'bin') then
+                   if (ih==1) then
+                      field_2D(k,j)=sum(dhydrometeors_adv(k,j,1)%&
+                         moments(1:split_bins,imom))/(pi/6*1000)
+                   elseif (ih==2) then
+                      field_2D(k,j)=sum(dhydrometeors_adv(k,j,1)%&
+                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                   endif
+                else
+                   field_2D(k,j)=sum(dhydrometeors_adv(k,j,ih)%moments(:,imom))
+                endif
              end do
           end do
           call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
@@ -705,7 +708,17 @@ contains
              units=trim(mom_units(imom)//'/s')
              do k=1,nz
                 do j=1,nx
-                   field_2D(k,j)=sum(dhydrometeors_div(k,j,ih)%moments(:,imom))
+                   if (ampORbin .eq. 'bin') then
+                      if (ih==1) then
+                         field_2D(k,j)=sum(dhydrometeors_div(k,j,1)%&
+                            moments(1:split_bins,imom))/(pi/6*1000)
+                      elseif (ih==2) then
+                         field_2D(k,j)=sum(dhydrometeors_div(k,j,1)%&
+                            moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                      endif
+                   else
+                      field_2D(k,j)=sum(dhydrometeors_div(k,j,ih)%moments(:,imom))
+                   endif
                 enddo
              end do
                 call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
@@ -744,7 +757,17 @@ contains
           units=trim(mom_units(imom)//'/s')
           do k=1,nz
              do j=1,nx
-                field_2D(k,j)=sum(dhydrometeors_mphys(k,j,ih)%moments(:,imom))
+                if (ampORbin .eq. 'bin') then
+                   if (ih==1) then
+                      field_2D(k,j)=sum(dhydrometeors_mphys(k,j,1)%&
+                         moments(1:split_bins,imom))/(pi/6*1000)
+                   elseif (ih==2) then
+                      field_2D(k,j)=sum(dhydrometeors_mphys(k,j,1)%&
+                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                   endif
+                else
+                   field_2D(k,j)=sum(dhydrometeors_mphys(k,j,ih)%moments(:,imom))
+                endif
              end do
            end do
            call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
@@ -768,7 +791,17 @@ contains
           units=trim(mom_units(imom))//'/s'
           do k=1,nz
              do j=1,nx
-                field_2D(k,j)=sum(dhydrometeors_force(k,j,ih)%moments(:,imom))
+                if (ampORbin .eq. 'bin') then
+                   if (ih==1) then
+                      field_2D(k,j)=sum(dhydrometeors_force(k,j,1)%&
+                         moments(1:split_bins,imom))/(pi/6*1000)
+                   elseif (ih==2) then
+                      field_2D(k,j)=sum(dhydrometeors_force(k,j,1)%&
+                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                   endif
+                else
+                   field_2D(k,j)=sum(dhydrometeors_force(k,j,ih)%moments(:,imom))
+                endif
              end do
            end do
            call save_dg(field_2d, name, i_dgtime,  units,dim=dims)
@@ -822,43 +855,53 @@ contains
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
-          name='mean '//trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
+          name='mean_'//trim(h_names(ih))//'_'//trim(mom_names(imom))//'_path'
           units=trim(mom_units(imom))//' kg/m2'
           do j=1,nx
             do k=1,nz
-                field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,ih)%moments(:,imom))
-             end do
-             field_nx(j) = sum(field_2D(:,j))
+              if (ampORbin .eq. 'bin')then
+                 if (ih==1) then
+                    field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,1)%&
+                       moments(1:split_bins,imom))/(pi/6*1000)
+                 elseif (ih==2) then
+                    field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,1)%&
+                       moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                 endif
+              else
+                 field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,ih)%moments(:,imom))
+              endif
+            end do
+            field_nx(j) = sum(field_2D(:,j))
           end do
           ! horizontally averaged column integrated value
           call save_dg(sum(field_nx(1:nx))/nx, name, i_dgtime,  units,dim='time')
           ! column integrated values for each column
-          name=trim(h_names(ih))//'_'//trim(mom_names(imom))//' path'
+          name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_path'
           call save_dg(field_nx(1:nx), name, i_dgtime,  units,dim='x')
        end do
     end do
 
-    do ih=1,nspecies
-       if (ampORbin .eq. 'bin')then
-          field_bin_c(:)=0.0
-          field_bin_r(:)=0.0
-          do k=1,nz
-             do j=1,nx
-                field_bin_c_2d(k,j)= sum(rho(k)*dz(k)* &
-                     hydrometeors(k,j,ih)%moments(1:split_bins,1))
-                field_bin_r_2d(k,j)= sum(rho(k)*dz(k)* &
-                     hydrometeors(k,j,ih)%moments(split_bins+1:max_nbins,1))
-             enddo
-             field_bin_c(k) = sum(field_bin_c_2d(k,1:nx))/nx
-             field_bin_r(k) = sum(field_bin_r_2d(k,1:nx))/nx
-          enddo
+    !do ih=1,nspecies
+    !   if (ampORbin .eq. 'bin')then
+    !      field_bin_c(:)=0.0
+    !      field_bin_r(:)=0.0
+    !      do k=1,nz
+    !         do j=1,nx
+    !            field_bin_c_2d(k,j)= sum(rho(k)*dz(k)* &
+    !                 hydrometeors(k,j,ih)%moments(1:split_bins,1))
+    !            field_bin_r_2d(k,j)= sum(rho(k)*dz(k)* &
+    !                 hydrometeors(k,j,ih)%moments(split_bins+1:max_nbins,1))
+    !         enddo
+    !         field_bin_c(k) = sum(field_bin_c_2d(k,1:nx))/nx
+    !         field_bin_r(k) = sum(field_bin_r_2d(k,1:nx))/nx
+    !      enddo
 
-          call save_dg(sum(field_bin_c), 'cloud_water_path',&
-               i_dgtime, units='kg/m2',dim='time')
-          call save_dg(sum(field_bin_r), 'rain_water_path',&
-               i_dgtime, units='kg/m2',dim='time')
-       endif
-    enddo
+    !      call save_dg(sum(field_bin_c), 'cloud_water_path',&
+    !           i_dgtime, units='kg/m2',dim='time')
+    !      call save_dg(sum(field_bin_r), 'rain_water_path',&
+    !           i_dgtime, units='kg/m2',dim='time')
+    !   endif
+    !enddo
 
 
     deallocate(field_nx)

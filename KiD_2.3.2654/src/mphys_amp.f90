@@ -42,7 +42,9 @@ contains
     real(8),dimension(nz,flag_count) :: fieldflag
     real(8),dimension(nz,nx) :: dm
     real(8), dimension(nz) :: fielddp
-    real(8), dimension(nz,max_nbins) :: fielddp2d
+    real(8), dimension(nz,nx) :: fielddp2d
+    real(8), dimension(nz,max_nbins) :: fieldbin
+    real(8), dimension(nz,nx,max_nbins) :: fieldbin2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
     real(8),dimension(num_h_moments(2)) :: mr_s
     character(1) :: Mnum
@@ -254,6 +256,7 @@ enddo
 ! Save some diagnostics
 !fitting flag
 if (ampORbin .eq. 'amp') then
+   if (nx==1) then
    field(:)=flag(:,nx,1,1)
    call save_dg(field,'oflagc', i_dgtime,units='unitless', dim='z')
    field(:)=flag(:,nx,2,1)
@@ -263,16 +266,19 @@ if (ampORbin .eq. 'amp') then
    call save_dg(field,'flagoobc', i_dgtime,units='unitless', dim='z')
    field(:)=flag(:,nx,2,2)
    call save_dg(field,'flagoobr', i_dgtime,units='unitless', dim='z')
-!
+
 !   field(:)=flag(:,nx,1,3)
 !   call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')
 !   field(:)=flag(:,nx,2,3)
 !   call save_dg(field,'fitting_flag_rain_x_intol', i_dgtime,units='unitless', dim='z')
-!
+
 !   field(:)=flag(:,nx,1,4)
 !   call save_dg(field,'fitting_flag_cloud_y_intol', i_dgtime,units='unitless', dim='z')
 !   field(:)=flag(:,nx,2,4)
 !   call save_dg(field,'fitting_flag_rain_y_intol', i_dgtime,units='unitless', dim='z')
+   else
+   endif
+
 endif
 
    ! if (imomc1.ne.3) then
@@ -283,67 +289,84 @@ endif
    ! endif
 
 !diagnosed moments
+do j=1,nx
    do i=1,10
      write(Mnum,'(I1)') i-1
+
      name='diagM'//Mnum//'_cloud'
      units='m^'//Mnum
-     fielddp(:)=mc(:,nx,i)
-     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+     if (nx==1) then
+        fielddp(:)=mc(:,j,i)
+        call save_dg(fielddp,name,i_dgtime,units,dim='z')
+     else
+        fielddp2d(:,:)=mc(:,:,i)
+        call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+     endif
 
      name='diagM'//Mnum//'_rain'
-     fielddp(:)=mr(:,nx,i)
-     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+     if (nx==1) then
+        fielddp(:)=mr(:,j,i)
+        call save_dg(mr(:,j,i),name,i_dgtime,units,dim='z')
+     else
+        fielddp2d(:,:)=mr(:,:,i)
+        call save_dg(mr(:,j,i),name,i_dgtime,units,dim='z,x')
+     endif
    enddo
-
-!diagnose mass mean diameter
-do k=1,nz
-    fielddp(k)=((mr(k,nx,4))/(mr(k,nx,1)))**(1./3.)
 enddo
 
-name='Dm'
-units='micron'
-call save_dg(fielddp,name,i_dgtime,units,dim='z')
+!diagnose mass mean diameter - doesnt support 2D yet - ahu
+!do k=1,nz
+!    fielddp(k)=((mr(k,nx,4))/(mr(k,nx,1)))**(1./3.)
+!enddo
+!
+!name='Dm'
+!units='micron'
+!call save_dg(fielddp,name,i_dgtime,units,dim='z')
 
 
 !bin distributions
 if (ampORbin .eq. 'bin') then
-    fielddp2d(:,:)=dropsm2d(:,nx,:)
+    fieldbin(:,:)=dropsm2d(:,nx,:)
     name='mass_dist'
     units='kg/kg/ln(r)'
-    call save_dg('bin',fielddp2d,name,i_dgtime,units)
+    call save_dg('bin',fieldbin,name,i_dgtime,units)
 
     if (bintype .eq. 'tau') then
-        fielddp2d(:,:)=dropsn2d(:,nx,:)
+        fieldbin(:,:)=dropsn2d(:,nx,:)
         name='num_dist'
         units='1/kg/ln(r)'
-        call save_dg('bin',fielddp2d,name,i_dgtime,units)
+        call save_dg('bin',fieldbin,name,i_dgtime,units)
     endif
 
 elseif (ampORbin .eq. 'amp') then
-    fielddp2d(:,:)=dropsinitm2d(:,nx,:)
+    fieldbin(:,:)=dropsinitm2d(:,nx,:)
     name='mass_dist_init'
     units='kg/kg/ln(r)'
-    call save_dg('bin',fielddp2d,name,i_dgtime,units)
+    call save_dg('bin',fieldbin,name,i_dgtime,units)
 
     if (bintype .eq. 'tau') then
-        fielddp2d(:,:)=dropsinitn2d(:,nx,:)
+        fieldbin(:,:)=dropsinitn2d(:,nx,:)
         name='num_dist_init'
         units='1/kg/ln(r)'
-        call save_dg('bin',fielddp2d,name,i_dgtime,units)
+        call save_dg('bin',fieldbin,name,i_dgtime,units)
     end if
 
 endif
 
 !parameters
-  field(:)=guessc2d(:,nx,1)
-  call save_dg(field,'shape_parameter_cloud', i_dgtime,units='unitless', dim='z')
-  field(:)=guessr2d(:,nx,1)
-  call save_dg(field,'shape_parameter_rain', i_dgtime,units='unitless', dim='z')
-  field(:)=guessc2d(:,nx,2)
-  call save_dg(field,'characteristic_diameter_cloud', i_dgtime,units='m', dim='z')
-  field(:)=guessr2d(:,nx,2)
-  call save_dg(field,'characteristic_diameter_rain', i_dgtime,units='m', dim='z')
-
+do j=1,nx
+   if (nx==1) then
+      call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
+      call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
+      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
+      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
+   else
+      call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
+      call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
+      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
+      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
+   endif
+enddo
 
 end Subroutine mphys_amp_interface
 
