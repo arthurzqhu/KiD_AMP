@@ -1911,16 +1911,16 @@ if (.not. l_fix_aerosols) then
 endif
 
 if (jjp == 1) then
-    field(:) = dqn_act(jjp,:)
-    call save_dg(field,'ccn_act', i_dgtime, units='#/kg/s',dim='z')
-    else
-    do  K = 2,KKP
-        do J = JMINP, JMAXP
-            field_2d(k, j) = dqn_act(j,k)
-        enddo
-    enddo
-    call save_dg(field_2d(1:kkp,1:jjp), 'ccn_act', i_dgtime, units='#/kg/s',&
-        dim='z,x')
+   field(:) = dqn_act(jjp,:)
+   call save_dg(field,'ccn_act', i_dgtime, units='#/kg/s',dim='z')
+else
+   do K = 2,KKP
+      do J = JMINP, JMAXP
+         field_2d(k, j) = dqn_act(j,k)
+      enddo
+   enddo
+   call save_dg(field_2d(1:kkp,1:jjp), 'ccn_act', i_dgtime, units='#/kg/s',&
+      dim='z,x')
 endif
 
 DO K = 2,KKP
