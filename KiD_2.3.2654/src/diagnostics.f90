@@ -472,7 +472,7 @@ contains
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_path'
-          units=trim(mom_units(imom))//' m^k/m2'
+          units='m^k/m2'
 
           do k=1,nz
               if (ampORbin .eq. 'bin')then
