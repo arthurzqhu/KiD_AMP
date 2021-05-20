@@ -11,6 +11,8 @@ tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 # initial condition for all cases
 icimm=0. # initial cloud mass kg/kg
 icinm=0. # initial cloud number 1/kg
+irimm=0.
+irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
@@ -29,8 +31,10 @@ l_adv_s=1
 
 # set initial water if nucleation/condensation and/or adv is turned off 
 if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-   icimm=0.001     
-   icinm=100.e6  
+   icimm=0. #0.001     
+   icinm=0. #100.e6  
+   irimm=0.5e-3
+   irinm=3.e3
 else 
    icimm=0.
    icinm=0.      
@@ -81,7 +85,7 @@ fi
 for iw in 0.5 1 2 4 6
 do
 echo w=$iw
-  for ia in 50 100 200
+  for ia in 50 100 200 400
   do
   echo Na=$ia
     for ((iab=0; iab<${#ampORbin[@]}; iab=iab+1))
@@ -137,7 +141,7 @@ h_shape=$isp_c,$isp_r
 cloud_init=$icimm,$icinm  !.001,100.e6
 
 !Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
-rain_init=0.0,0.0
+rain_init=$irimm,$irinm
 
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
 rain_source=$rs_dm,$rs_N
