@@ -47,6 +47,10 @@ contains
     real(8), dimension(nz,nx,max_nbins) :: fieldbin2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
     real(8),dimension(num_h_moments(2)) :: mr_s
+    real(8) :: inf=huge(fielddp(1))
+    real(8), dimension(nz,nx) :: reff
+    real(8), dimension(nx) :: opdep
+    real(8), dimension(nx) :: albd
     character(1) :: Mnum
     real :: dnr_s,rm_s !source dnr and rain mass
 
@@ -289,40 +293,58 @@ endif
    ! endif
 
 !diagnosed moments
+do i=1,10
+  write(Mnum,'(I1)') i-1
+
+  name='diagM'//Mnum//'_cloud'
+  units='m^'//Mnum
+  if (nx==1) then
+     fielddp(:)=mc(:,1,i)
+     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+  else
+     fielddp2d(:,:)=mc(:,:,i)
+     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+  endif
+
+  name='diagM'//Mnum//'_rain'
+  if (nx==1) then
+     fielddp(:)=mr(:,1,i)
+     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+  else
+     fielddp2d(:,:)=mr(:,:,i)
+     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+  endif
+enddo
+
+!diagnose mass mean diameter and effective radius
 do j=1,nx
-   do i=1,10
-     write(Mnum,'(I1)') i-1
-
-     name='diagM'//Mnum//'_cloud'
-     units='m^'//Mnum
-     if (nx==1) then
-        fielddp(:)=mc(:,j,i)
-        call save_dg(fielddp,name,i_dgtime,units,dim='z')
-     else
-        fielddp2d(:,:)=mc(:,:,i)
-        call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-     endif
-
-     name='diagM'//Mnum//'_rain'
-     if (nx==1) then
-        fielddp(:)=mr(:,j,i)
-        call save_dg(mr(:,j,i),name,i_dgtime,units,dim='z')
-     else
-        fielddp2d(:,:)=mr(:,:,i)
-        call save_dg(mr(:,j,i),name,i_dgtime,units,dim='z,x')
-     endif
+   do k=1,nz
+      if (nx==1) then
+         fielddp(k)=((mr(k,1,4))/(mr(k,1,1)))**(1./3.)
+         reff(k,j)=mr(k,1,4)/mr(k,1,3)*0.5
+         if ( (fielddp(k) .ne. fielddp(k)) .or. (fielddp(k)>inf) ) fielddp(k)=0.
+      else
+         fielddp2d(k,j)=((mr(k,j,4))/(mr(k,j,1)))**(1./3.)
+         reff(k,j)=mr(k,j,4)/mr(k,j,3)*0.5
+         if ( (fielddp2d(k,j) .ne. fielddp2d(k,j)) .or. (fielddp2d(k,j)>inf) ) fielddp2d(k,j)=0.
+      endif
+      if ( (reff(k,j) .ne. reff(k,j)) .or. (reff(k,j)>inf) ) reff(k,j)=0.
    enddo
 enddo
 
-!diagnose mass mean diameter - doesnt support 2D yet - ahu
-!do k=1,nz
-!    fielddp(k)=((mr(k,nx,4))/(mr(k,nx,1)))**(1./3.)
-!enddo
-!
-!name='Dm'
-!units='micron'
-!call save_dg(fielddp,name,i_dgtime,units,dim='z')
+if (nx==1) then
+   call save_dg(fielddp,'Dm',i_dgtime,'micron',dim='z')
+   call save_dg(reff(:,1)*1.e6,'reff',i_dgtime,'micron',dim='z')
+else
+   call save_dg(fielddp2d,'Dm',i_dgtime,'micron',dim='z,x')
+   call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
+endif
 
+!diagnose optical depth
+
+!diagnose albedo
+
+!diagnose surface precipitation rate
 
 !bin distributions
 if (ampORbin .eq. 'bin') then
