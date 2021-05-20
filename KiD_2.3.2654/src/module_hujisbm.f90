@@ -5960,18 +5960,18 @@ cont_fin_ice=col*cont_fin_ice*1.e-3
 deldrop=cont_init_drop-cont_fin_drop
 ! deldrop in g/cm**3
 ! resulted value of temperature (rob in g/cm**3) :
-if(t_new.le.273.15) then
+if(t_new.le.273.15 .and. iceprocs .eq. 1) then
   if(deldrop.ge.0.) then
     t_new=t_new+320.*deldrop/rho
   else
 ! if deldrop < 0
-    !if(abs(deldrop).gt.cont_init_drop*0.05) then
-    !  print *, '*** deldrop < 0 in coal_bott ***'
-    !  print *,'*** coal_bott ***'
-    !  print*,'cont_fin_drop = ',cont_fin_drop,cont_fin_ice
-    !  print*,'cont_init_drop = ',cont_init_drop,cont_init_ice
-    !  stop
-    !endif
+    if(abs(deldrop).gt.cont_init_drop*0.05) then
+      print *, '*** deldrop < 0 in coal_bott ***'
+      print *,'*** coal_bott ***'
+      print*,'cont_fin_drop = ',cont_fin_drop,cont_fin_ice
+      print*,'cont_init_drop = ',cont_init_drop,cont_init_ice
+      stop
+    endif
   endif
 endif
 
