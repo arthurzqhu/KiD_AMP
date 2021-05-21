@@ -1676,7 +1676,7 @@ enddo
 
       name='surface_ppt_warm_bin_x'
       if (jjp > 1) then
-         call save_dg(bin_pcpt, name, i_dgtime, units,dim='time')
+         call save_dg(bin_pcpt, name, i_dgtime, units,dim='x')
       endif
 
       END subroutine BIN_SEDIMENT
