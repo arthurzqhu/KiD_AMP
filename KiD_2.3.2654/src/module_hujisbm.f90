@@ -2,6 +2,8 @@ module module_hujisbm
 
 use micro_prm
 use parameters, only: max_nbins
+use physconst, only: rhow
+
 ! YWLL_1000MB(nkr,nkr) - input array of kernels for pressure 1000mb
 ! YWLL_750MB(nkr,nkr) - input array of kernels for pressure 750mb
 ! YWLL_500MB(nkr,nkr) - input array of kernels for pressure 500mb
@@ -80,7 +82,7 @@ DOUBLE PRECISION, save :: &
 contains
  ! +-------------------------------------------------------------+
    SUBROUTINE FALFLUXHUCM_Z(chem_new,VR1,RHOCGS,PCGS,ZCGS,DT, &
-   						               kts,kte,nkr)
+   						               kts,kte,nkr,bin_pcpt)
 
      IMPLICIT NONE
 
@@ -91,6 +93,7 @@ contains
  	  ! ... Locals
  	  integer :: I,J,K,KR
     real(kind=r4size) :: TFALL,DTFALL,VFALL(KTE),DWFLUX(KTE)
+    real(kind=r4size),intent(out) :: bin_pcpt
     integer :: IFALL,N,NSUB
 
  ! FALLING FLUXES FOR EACH KIND OF CLOUD PARTICLES: C.G.S. UNIT
@@ -103,41 +106,55 @@ contains
  ! velocity is downwards.
  ! USE UPSTREAM METHOD (VFALL IS POSITIVE)
 
-       DO KR=1,NKR
-        IFALL=0
-        DO k = kts,kte
-           IF(chem_new(K,KR).GE.1.E-20)IFALL=1
-        END DO
-        IF (IFALL.EQ.1)THEN
-         TFALL=1.E10
+bin_pcpt=0.
+
+DO KR=1,NKR
+   IFALL=0
+   DO k = kts,kte
+      IF(chem_new(K,KR).GE.1.E-20) IFALL=1
+   END DO
+   IF (IFALL.EQ.1)THEN
+      TFALL=1.E10
+      DO K=kts,kte
+      ! [KS] VFALL(K) = VR1(K,KR)*SQRT(1.E6/PCGS(K))
+      VFALL(K) = VR1(K,KR) ! ... [KS] : The pressure effect is taken into account at the beggining of the calculations
+      ENDDO
+
+      ! why not put this outside the loop if it's updated without doing anying to it? -ahu
+      ! so i did
+      TFALL=MIN(TFALL,ZCGS(KTE)/(VFALL(KTE)+1.E-20)) 
+
+      IF(TFALL.GE.1.E10) STOP
+      NSUB=(INT(2.0*DT/TFALL)+1)
+      DTFALL=DT/NSUB
+
+      DO N=1,NSUB
+         DO K=KTS,KTE-1
+            DWFLUX(K) = -(RHOCGS(K)*VFALL(K)*chem_new(k,kr)- &
+                     RHOCGS(K+1)*VFALL(K+1)*chem_new(K+1,KR))/(RHOCGS(K)*(ZCGS(K+1)-ZCGS(K)))
+         ENDDO
+         ! NO Z ABOVE TOP, SO USE THE SAME DELTAZ
+         DWFLUX(KTE) = -(RHOCGS(KTE)*VFALL(KTE)* &
+                 chem_new(kte,kr))/(RHOCGS(KTE)*(ZCGS(KTE)-ZCGS(KTE-1)))
+
          DO K=kts,kte
-          ! [KS] VFALL(K) = VR1(K,KR)*SQRT(1.E6/PCGS(K))
-           VFALL(K) = VR1(K,KR) ! ... [KS] : The pressure effect is taken into account at the beggining of the calculations
-           TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))
-         END DO
-         IF(TFALL.GE.1.E10)STOP
-	 NSUB=(INT(2.0*DT/TFALL)+1)
-         DTFALL=DT/NSUB
-
-         DO N=1,NSUB
-           DO K=KTS,KTE-1
-             DWFLUX(K)=-(RHOCGS(K)*VFALL(K)*chem_new(k,kr)- &
-             RHOCGS(K+1)* &
-             VFALL(K+1)*chem_new(K+1,KR))/(RHOCGS(K)*(ZCGS(K+1)- &
-             ZCGS(K)))
-           END DO
- ! NO Z ABOVE TOP, SO USE THE SAME DELTAZ
-           DWFLUX(KTE)=-(RHOCGS(KTE)*VFALL(KTE)* &
-      &                 chem_new(kte,kr))/(RHOCGS(KTE)*(ZCGS(KTE)-ZCGS(KTE-1)))
-           DO K=kts,kte
             chem_new(k,kr)=chem_new(k,kr)+DWFLUX(K)*DTFALL
-           END DO
          END DO
-        END IF
-       END DO
 
-       RETURN
-       END SUBROUTINE FALFLUXHUCM_Z
+         ! accumulate precipitation flux across all bins -ahu
+         ! (precipitation flux = sink of water for the lowest layer)
+         bin_pcpt=bin_pcpt+RHOCGS(KTS)*VFALL(KTS)*chem_new(KTS,kr)
+
+      END DO
+   END IF
+END DO
+
+! convert to SI units for the love of god -ahu
+! units before conversion should be g/(cm2*s) so...
+bin_pcpt=bin_pcpt*0.001/rhow*(100.)**2
+
+RETURN
+END SUBROUTINE FALFLUXHUCM_Z
  ! +----------------------------------+
 !--------------------------------------------------
 FUNCTION sum_mass(speciesbin,xbin,dens,krs,kre)

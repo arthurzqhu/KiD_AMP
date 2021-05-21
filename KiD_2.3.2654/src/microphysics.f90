@@ -15,6 +15,7 @@ IMPLICIT NONE
 REAL::pcgs,rhocgs
 REAL, DIMENSION(nz,nx)::tempk,press,qv
 REAL, DIMENSION(nz,nx,max_nbins)::ffcd,fncn
+real, dimension(nx) :: sppt ! surface precipitation
 ! SBM VARIABLES
 REAL,DIMENSION (max_nbins) :: FF1IN,FF3IN,FF4IN,FF5IN,&
                         FF1R,FF3R,FF4R,FF5R,FCCN,FIN
@@ -332,7 +333,7 @@ do i=1,nx
    if(dosedimentation) then
       if (mp_proc_dg) ff1z_prev=ff1z
 
-      call falfluxhucm_z(ff1z,vr1z,rhocgs_z,pcgs_z,zcgs_z,dt,1,nz,nkr)
+      call falfluxhucm_z(ff1z,vr1z,rhocgs_z,pcgs_z,zcgs_z,dt,1,nz,nkr,sppt(i))
 
       if (mp_proc_dg) then
          proc_tmass=0.
@@ -383,6 +384,14 @@ do i=1,nx
      !END IF
    enddo
 enddo !end loop over i
+
+! finally save the surface precipitation
+call save_dg(sum(sppt(1:nx))/nx,'mean_surface_ppt',i_dgtime,'ms-1',dim='time')
+
+if (nx>1) then
+   call save_dg(sppt,'surface_ppt',i_dgtime,'ms-1',dim='x')
+endif
+
 RETURN
 END SUBROUTINE micro_proc_sbm
 
