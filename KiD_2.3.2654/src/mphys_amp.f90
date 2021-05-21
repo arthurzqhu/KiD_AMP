@@ -11,7 +11,7 @@ module mphys_amp
   Use parameters, only : num_h_moments, num_h_bins, h_shape, nspecies, nz, dt &
        , h_names, mom_units, max_char_len, nx
   Use column_variables
-  Use physconst, only : p0, r_on_cp, pi
+  Use physconst, only : p0, r_on_cp, pi, rhow
 
   Use module_hujisbm
   Use micro_prm
@@ -46,11 +46,12 @@ contains
     real(8), dimension(nz,max_nbins) :: fieldbin
     real(8), dimension(nz,nx,max_nbins) :: fieldbin2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
-    real(8),dimension(num_h_moments(2)) :: mr_s
+    real(8), dimension(num_h_moments(2)) :: mr_s
     real(8) :: inf=huge(fielddp(1))
-    real(8), dimension(nz,nx) :: reff
-    real(8), dimension(nx) :: opdep
-    real(8), dimension(nx) :: albd
+    real(8), dimension(nz,nx) :: reff, m3w
+    real(8), dimension(nx) :: opdep,albd
+    real(8), dimension(nz) :: lwc
+    real(8) :: m2w, m0w
     character(1) :: Mnum
     real :: dnr_s,rm_s !source dnr and rain mass
 
@@ -130,8 +131,8 @@ contains
        ! set the zctrl(1) to be where the rain source is, which happens to be nz-1
        ! cant be nz because tau does not sediment moisture from the topmost layer
        rain_alt=int(zctrl(1)/((zctrl(1))/nz))-1
-       rm_s=rain_source(1)**3*pi/6*1000*rain_source(2)
-       dnr_s=(rm_s*6./3.14159/1000./rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+       rm_s=rain_source(1)**3*pi/6*rhow*rain_source(2)
+       dnr_s=(rm_s*6./3.14159/rhow/rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
 
        do j=1,nx
            if (bintype .eq. 'sbm') then
@@ -151,7 +152,7 @@ contains
                do i=1,num_h_moments(2)
                    if (bintype .eq. 'sbm') then
                        mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/xl(split_bins+1:nkr)&
-                             *diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
+                             *diams(split_bins+1:nkr)**pmomsr(i))*col*rhow
                    elseif (bintype .eq. 'tau') then
                        mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/binmass(split_bins+1:nkr)&
                              *diams(split_bins+1:nkr)**pmomsc(i))*col
@@ -316,16 +317,21 @@ do i=1,10
   endif
 enddo
 
-!diagnose mass mean diameter and effective radius
+! diagnose mass mean diameter and effective radius
+! mc and mr here might not be additive because it's updated after diagnosing from
+! the DSD after mphys -ahu
+
 do j=1,nx
    do k=1,nz
+      m3w(k,j)=mc(k,j,4)+mr(k,j,4)
+      m2w=mc(k,j,3)+mr(k,j,3)
+      m0w=mc(k,j,1)+mr(k,j,1)
+      reff(k,j)=m3w(k,j)/m0w*0.5
       if (nx==1) then
-         fielddp(k)=((mr(k,1,4))/(mr(k,1,1)))**(1./3.)
-         reff(k,j)=mr(k,1,4)/mr(k,1,3)*0.5
+         fielddp(k)=(m3w(k,j)/m0w)**(1./3.)
          if ( (fielddp(k) .ne. fielddp(k)) .or. (fielddp(k)>inf) ) fielddp(k)=0.
       else
-         fielddp2d(k,j)=((mr(k,j,4))/(mr(k,j,1)))**(1./3.)
-         reff(k,j)=mr(k,j,4)/mr(k,j,3)*0.5
+         fielddp2d(k,j)=(m3w(k,j)/m0w)**(1./3.)
          if ( (fielddp2d(k,j) .ne. fielddp2d(k,j)) .or. (fielddp2d(k,j)>inf) ) fielddp2d(k,j)=0.
       endif
       if ( (reff(k,j) .ne. reff(k,j)) .or. (reff(k,j)>inf) ) reff(k,j)=0.
@@ -340,11 +346,23 @@ else
    call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
 endif
 
-!diagnose optical depth
-
-!diagnose albedo
-
-!diagnose surface precipitation rate
+!diagnose optical depth and albedo
+name='opt_dep'
+units='unitless'
+do j=1,nx
+   lwc=m3w(:,j)*pi/6*rhow*rho
+   opdep(j)=sum(3*lwc/(2*rhow*reff(:,j)*dz(j)))
+   albd(j)=opdep(j)/(opdep(j)+13.3)
+enddo
+if (nx==1) then
+   call save_dg(opdep, 'opt_dep', i_dgtime,  units,dim='time')
+   call save_dg(albd, 'albedo', i_dgtime,  units,dim='time')
+else
+   call save_dg(opdep, 'opt_dep', i_dgtime,  units,dim='x')
+   call save_dg(albd, 'albedo', i_dgtime,  units,dim='x')
+   call save_dg(sum(opdep(1:nx))/nx, 'mean_opt_dep', i_dgtime,  units,dim='time')
+   call save_dg(sum(albd(1:nx))/nx, 'mean_albedo', i_dgtime,  units,dim='time')
+endif
 
 !bin distributions
 if (ampORbin .eq. 'bin') then
