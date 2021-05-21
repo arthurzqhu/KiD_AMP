@@ -248,6 +248,7 @@ use micro_prm
 use parameters, only: nx,nz,num_h_moments,flag_count,max_nbins
 use mphys_tau_bin_declare, only: xk,lk_cloud,xkgmean
 use physconst, only: pi
+use diagnostics, only: i_dgtime
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 
@@ -280,8 +281,6 @@ do k=1,nz
    ihyd=1
    npm=npmc
    Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
-
-!if (k==34) print*, 'before fit', Mp(2)
 
    skr=1; ekr=split_bins
    momx=pmomsc(2) !momx is a global variable
@@ -345,10 +344,8 @@ endif
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
    call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10))
-!print*,mc0(k,j,1),Mpc(k,j,1:3),flag(k,j,1,1)
  enddo
 enddo
-
 
 !------CALL MICROPHYSICS--------------------
 
@@ -364,7 +361,6 @@ endif
 
 ffcdr8_mass=dble(ffcd_mass)
 
-
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
@@ -379,7 +375,7 @@ do k=1,nz
    do i=1,npmc  !Loop over the moments
       ip=pmomsc(i)+1 !pmomsc contains the predicted moments. +1 to get correct index in mc and mc0
       if (mc0(k,j,ip) > 0.) then
-         dummy=(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
+         dummy=mc(k,j,ip)!(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
          if(dummy<0.) then
            Mpc(k,j,i) = 0.
          else
@@ -408,7 +404,7 @@ do k=1,nz
    do i=1,npmr
       ip=pmomsr(i)+1
       if (mr0(k,j,ip)>0.) then
-         dummy=(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
+         dummy=mr(k,j,ip)!(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
          if(dummy<0.) then
            Mpr(k,j,i)=0.
          else
