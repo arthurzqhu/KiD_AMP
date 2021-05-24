@@ -51,6 +51,7 @@ contains
     real(8), dimension(nz,nx) :: reff, m3w
     real(8), dimension(nx) :: opdep,albd
     real(8), dimension(nz) :: lwc
+    real(8), dimension(nz) :: nmask ! mask for non-NaN values
     real(8) :: m2w, m0w
     character(1) :: Mnum
     real :: dnr_s,rm_s !source dnr and rain mass
@@ -326,7 +327,7 @@ do j=1,nx
       m3w(k,j)=mc(k,j,4)+mr(k,j,4)
       m2w=mc(k,j,3)+mr(k,j,3)
       m0w=mc(k,j,1)+mr(k,j,1)
-      reff(k,j)=m3w(k,j)/m0w*0.5
+      reff(k,j)=m3w(k,j)/m2w*0.5
       if (nx==1) then
          fielddp(k)=(m3w(k,j)/m0w)**(1./3.)
          if ( (fielddp(k) .ne. fielddp(k)) .or. (fielddp(k)>inf) ) fielddp(k)=0.
@@ -347,13 +348,18 @@ else
 endif
 
 !diagnose optical depth and albedo
-name='opt_dep'
 units='unitless'
+opdep(:)=0.0
 do j=1,nx
-   lwc=m3w(:,j)*pi/6*rhow*rho
-   opdep(j)=sum(3*lwc/(2*rhow*reff(:,j)*dz(j)))
+   do k=1,nz
+      lwc(k)=m3w(k,j)*pi/6*rhow*rho(k)
+      if (reff(k,j).ne.0. .and. reff(k,j)<inf) then
+         opdep(j)=opdep(j)+3*lwc(k)/(2*rhow*reff(k,j))*dz(k)
+      endif
+   enddo
    albd(j)=opdep(j)/(opdep(j)+13.3)
 enddo
+
 if (nx==1) then
    call save_dg(opdep, 'opt_dep', i_dgtime,  units,dim='time')
    call save_dg(albd, 'albedo', i_dgtime,  units,dim='time')
