@@ -361,11 +361,11 @@ do j=1,nx
 enddo
 
 if (nx==1) then
-   call save_dg(opdep, 'opt_dep', i_dgtime,  units,dim='time')
-   call save_dg(albd, 'albedo', i_dgtime,  units,dim='time')
+   call save_dg(opdep(1), 'opt_dep', i_dgtime,  units,dim='time')
+   call save_dg(albd(1), 'albedo', i_dgtime,  units,dim='time')
 else
-   call save_dg(opdep, 'opt_dep', i_dgtime,  units,dim='x')
-   call save_dg(albd, 'albedo', i_dgtime,  units,dim='x')
+   call save_dg(opdep(:), 'opt_dep', i_dgtime,  units,dim='x')
+   call save_dg(albd(:), 'albedo', i_dgtime,  units,dim='x')
    call save_dg(sum(opdep(1:nx))/nx, 'mean_opt_dep', i_dgtime,  units,dim='time')
    call save_dg(sum(albd(1:nx))/nx, 'mean_albedo', i_dgtime,  units,dim='time')
 endif
