@@ -84,6 +84,7 @@ contains
    SUBROUTINE FALFLUXHUCM_Z(chem_new,VR1,RHOCGS,PCGS,ZCGS,DT, &
    						               kts,kte,nkr,bin_pcpt)
 
+
      IMPLICIT NONE
 
  	   integer,intent(in) :: kts,kte,nkr
@@ -143,15 +144,15 @@ DO KR=1,NKR
 
          ! accumulate precipitation flux across all bins -ahu
          ! (precipitation flux = sink of water for the lowest layer)
-         bin_pcpt=bin_pcpt+RHOCGS(KTS)*VFALL(KTS)*chem_new(KTS,kr)
+         bin_pcpt=bin_pcpt+RHOCGS(KTS)*VFALL(KTS)*chem_new(KTS,kr)*xl(kr)*xl(kr)*3.0
 
       END DO
    END IF
 END DO
 
-! convert to SI units for the love of god -ahu
+! convert to SI units (kg m-2 s-2, same as tau output) for the love of god -ahu
 ! units before conversion should be g/(cm2*s) so...
-bin_pcpt=bin_pcpt*0.001/rhow*(100.)**2
+bin_pcpt=bin_pcpt*0.001*(100.)**2.*col
 
 RETURN
 END SUBROUTINE FALFLUXHUCM_Z
