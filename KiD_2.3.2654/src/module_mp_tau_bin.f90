@@ -1669,12 +1669,12 @@ enddo
          ENDDO
       ENDDO
 
-      name='surface_ppt_warm_bin_tot'
-      units='kg/kg ms-1'
+      name='mean_surface_ppt'
+      units='kg m-2 s-1'
       value=sum(bin_pcpt(1:JJP))/JJP
       call save_dg(value, name, i_dgtime, units,dim='time')
 
-      name='surface_ppt_warm_bin_x'
+      name='surface_ppt'
       if (jjp > 1) then
          call save_dg(bin_pcpt, name, i_dgtime, units,dim='x')
       endif
