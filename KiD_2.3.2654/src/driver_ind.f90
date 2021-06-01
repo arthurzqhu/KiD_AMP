@@ -337,7 +337,6 @@ do i=1,nx
 
          dropsm2d(k,i,:)=ffcd_mass
          dropsn2d(k,i,:)=ffcd_num
-         !print*, rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000.
       endif
    enddo
 enddo
