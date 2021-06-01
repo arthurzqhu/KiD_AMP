@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig='sed_only' # case/folder name. determined automatically if set empty
+mconfig='nocoll' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
@@ -25,16 +25,16 @@ ztop=6000. # top of the domain
 t1=3600.
 t2=900.
 # switches
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=0
 l_sed_s=1
-l_adv_s=0
+l_adv_s=1
 
 
 # set initial water if nucleation/condensation and/or adv is turned off 
 if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-   icimm=0. #0.001     
-   icinm=0. #100.e6  
+   icimm=0.001     
+   icinm=100.e6  
    irimm=0.5e-3
    irinm=3.e3
 else 
@@ -84,7 +84,7 @@ fi
 #	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
 #	do
 
-for iw in 0.5 #1 2 4 6 8 10
+for iw in 0.5 1 2 4 6 8 10
 do
   echo w=$iw
   # reset oscillation time based on updraft speed to prevent overshooting
@@ -95,7 +95,7 @@ do
   echo t1=$t1
   echo t2=$t2
 
-  for ia in 50 #100 200 400
+  for ia in 50 100 200 400
   do
   echo Na=$ia
     for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
