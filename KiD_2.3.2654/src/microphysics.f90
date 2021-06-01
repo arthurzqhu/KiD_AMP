@@ -796,7 +796,7 @@ use parameters, only: max_nbins
 implicit none
 
 integer :: kr
-real :: rxc,gnuc,dnc,rxr,gnur,dnr
+real(8) :: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
 real(8), dimension(max_nbins) :: ffcd,diams
 
@@ -2245,7 +2245,7 @@ use physconst, only: pi, rhoW
 implicit none
 
 integer :: kr
-real:: rxc,gnuc,dnc,rxr,gnur,dnr
+real(8) :: rxc,gnuc,dnc,rxr,gnur,dnr
 real(8):: n0c,exptermc,n0r,exptermr
 real(8), dimension(max_nbins) :: ffcd_mass, ffcd_num
 

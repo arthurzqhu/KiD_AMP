@@ -16,13 +16,17 @@ real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
 real(8),dimension(max_nbins) :: ffcd_mass, ffcd_num
 real(8),dimension(num_h_moments(1)) :: mc
 real(8),dimension(num_h_moments(2)) :: mr
-real :: dnc,dnr
+real(8) :: z_cbi,z_cti,d_cloudi
+real(8) :: dnc,dnr
 real, dimension(nz,nx,max_nbins) :: aer2d
-integer :: i,k
+integer :: i,k,imom,ip
 
 !Set some parameters
 ndtcoll=1
 ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
+z_cbi=zctrl(2)
+z_cti=zctrl(3)
+d_cloudi=z_cti-z_cbi
 
 pmomsc=(/3,imomc1,imomc2/)
 pmomsr=(/3,imomr1,imomr2/)
@@ -104,50 +108,109 @@ else
   dnr=0.
 endif
 
-if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
-if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
-
-if(cloud_init(1)>0. .or. rain_init(1)>0.) then
-    if (bintype .eq. 'sbm') then
-        CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),&
-                           h_shape(2),dnr,diams,ffcd_mass)
-    elseif (bintype .eq. 'tau') then
-        CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),&
-                           h_shape(2),dnr,ffcd_mass,ffcd_num)
-    endif
-else
-   ffcd_mass(:)=0.
-   if (bintype .eq. 'tau') ffcd_num(:)=0.
+if (initprof .eq. 'c') then
+   if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
+   if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   
+   if(cloud_init(1)>0. .or. rain_init(1)>0.) then
+       if (bintype .eq. 'sbm') then
+           CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),&
+                              h_shape(2),dnr,diams,ffcd_mass)
+       elseif (bintype .eq. 'tau') then
+           CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),&
+                              h_shape(2),dnr,ffcd_mass,ffcd_num)
+       endif
+   else
+      ffcd_mass(:)=0.
+      if (bintype .eq. 'tau') ffcd_num(:)=0.
+   endif
+   
+   guessc2d(:,:,2)=dnc
+   guessr2d(:,:,2)=dnr
+   
+   do i=1,num_h_moments(1)
+     if (bintype .eq. 'sbm') then
+       mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
+     elseif (bintype .eq. 'tau') then
+       mc(i)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
+     endif
+   enddo
+   
+   do i=1,num_h_moments(2)
+     if (bintype .eq. 'sbm') then
+       mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
+     elseif (bintype .eq. 'tau') then
+       mr(i)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
+     end if
+   enddo
 endif
-
-guessc2d(:,:,2)=dnc
-guessr2d(:,:,2)=dnr
-
-
-
-do i=1,num_h_moments(1)
-  if (bintype .eq. 'sbm') then
-    mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
-  elseif (bintype .eq. 'tau') then
-    mc(i)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
-  endif
-enddo
-
-do i=1,num_h_moments(2)
-  if (bintype .eq. 'sbm') then
-    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
-  elseif (bintype .eq. 'tau') then
-    mr(i)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
-  end if
-enddo
-
-! this subroutine does not support different numbers of moments for cloud and rain, will fix later -ahu!!!
-! call calcmoms(ffcd_mass,num_h_moments(1),mc,mr)
-! the calcmoms subroutine is not yet supported for this calculation, might implement later -ahu
 
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+         if (initprof .eq. 'i') then
+            if(cloud_init(1)>0.)dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
+               cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
+            if(rain_init(1)>0.)dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
+               rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+
+            if(cloud_init(1)>0. .or. rain_init(1)>0.) then
+                if (bintype .eq. 'sbm') then
+                    CALL init_dist_sbm(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
+                       h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
+                       h_shape(2),dnr,diams,ffcd_mass)
+                elseif (bintype .eq. 'tau') then
+                    CALL init_dist_tau(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
+                       h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
+                       h_shape(2),dnr,ffcd_mass,ffcd_num)
+                endif
+            else
+               ffcd_mass(:)=0.
+               if (bintype .eq. 'tau') ffcd_num(:)=0.
+            endif
+
+            guessc2d(:,:,2)=dnc
+            guessr2d(:,:,2)=dnr
+
+            do imom=1,num_h_moments(1)
+              if (bintype .eq. 'sbm') then
+                mc(imom)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*&
+                   diams(1:split_bins)**pmomsc(imom))*col*1000.
+              elseif (bintype .eq. 'tau') then
+                mc(imom)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*&
+                   diams(1:split_bins)**pmomsc(imom))*col
+              endif
+            enddo
+
+            do imom=1,num_h_moments(2)
+              if (bintype .eq. 'sbm') then
+                mr(imom)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*&
+                   diams(split_bins+1:nkr)**pmomsr(imom))*col*1000.
+              elseif (bintype .eq. 'tau') then
+                mr(imom)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*&
+                   diams(split_bins+1:nkr)**pmomsc(imom))*col
+              end if
+            enddo
+
+! little tricky here so this implementation is not definitive - different moments increase at 
+! different rates. what's done here is that the increase rate is proportional to the order of
+! the moment, given that 3rd moment (mass) increases linearly and 0th moment (number) is 
+! constant. -ahu
+!            Mpc2d(k,i,1)=mc(1)*(z(k)-z_cbi)/d_cloudi
+!            Mpr2d(k,i,1)=mr(1)*(z(k)-z_cbi)/d_cloudi
+!
+!            do imom=2,npmc
+!               ip=pmomsc(imom)+1
+!               Mpc2d(k,i,imom)=mc(imom)*((z(k)-z_cbi)/d_cloudi)**(pmomsc(imom)/3.)
+!            enddo
+!
+!            do imom=2,npmr
+!               ip=pmomsr(imom)+1
+!               Mpr2d(k,i,imom)=mr(imom)*((z(k)-z_cbi)/d_cloudi)**(pmomsr(imom)/3.)
+!            enddo
+!
+!            print*, k,Mpc2d(k,i,1)
+         endif
          Mpc2d(k,i,1:num_h_moments(1))=mc(1:num_h_moments(1))
          Mpr2d(k,i,1:num_h_moments(2))=mr(1:num_h_moments(2))
       endif
@@ -165,13 +228,18 @@ use micro_prm
 
 implicit none
 real(8),dimension(max_nbins) :: ffcd
-real :: dnc,dnr
+real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
+real(8) :: z_cbi,z_cti,d_cloudi
 integer :: i,k
+
 
 !Set some parameters
 ndtcoll=1
 ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
+z_cbi=zctrl(2)
+z_cti=zctrl(3)
+d_cloudi=z_cti-z_cbi
 
 !call microphysics initialization routines
 CALL micro_init_sbm()
@@ -180,24 +248,38 @@ CALL kernalsdt()
 
 !Set up initial distribution and set moment values and parameter guesses
 dnc=0.;dnr=0.
-if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
-                          /cloud_init(2)*gamma(h_shape(1)) &
-                          /gamma(h_shape(1)+3))**(1./3.)
-if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
-                         /rain_init(2)*gamma(h_shape(2)) &
-                         /gamma(h_shape(2)+3))**(1./3.)
-
-
-CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+if (initprof .eq. 'c') then
+   if(cloud_init(1)>0.) dnc = (cloud_init(1)*6./3.14159/1000. &
+                              /cloud_init(2)*gamma(h_shape(1)) &
+                              /gamma(h_shape(1)+3))**(1./3.)
+   if(rain_init(1)>0.) dnr = (rain_init(1)*6./3.14159/1000. &
+                             /rain_init(2)*gamma(h_shape(2)) &
+                             /gamma(h_shape(2)+3))**(1./3.)
+   CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+endif
 
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
-         dropsm2d(k,i,:)=ffcd
+         if (initprof .eq. 'c') then
+            dropsm2d(k,i,:)=ffcd
+         elseif (initprof .eq. 'i') then
+            !calculate dnc/r for each layer with water
+            if(cloud_init(1)>0.) dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
+                                       /cloud_init(2)*gamma(h_shape(1)) &
+                                       /gamma(h_shape(1)+3))**(1./3.)
+            if(rain_init(1)>0.) dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
+                                      /rain_init(2)*gamma(h_shape(2)) &
+                                      /gamma(h_shape(2)+3))**(1./3.)
+            CALL init_dist_sbm(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,h_shape(1),&
+               dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,h_shape(2),dnr,diams,ffcd)
+
+            dropsm2d(k,i,:)=ffcd
+            !dropsm2d(k,i,:)=ffcd*(z(k)-z_cbi)/d_cloudi
+         endif
       endif
    enddo
 enddo
-
 end subroutine sbm_init
 
 !------------------------------------------------------------
@@ -212,28 +294,50 @@ use mphys_tau_bin_declare, only: xk, x_bin, xkgmean
 implicit none
 !real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
 !NQP=AERO_BIN+Ln2+LK+LK+1=71
-real :: dnc,dnr
+real(8) :: dnc,dnr
 real(8),dimension(max_nbins) :: ffcd_mass,ffcd_num
 integer :: i,k
 real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d
+real(8) :: z_cbi,z_cti,d_cloudi
+
+z_cbi=zctrl(2)
+z_cti=zctrl(3)
+d_cloudi=z_cti-z_cbi
 
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
 dnc=0.;dnr=0.
-if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
-                          /cloud_init(2)*gamma(h_shape(1)) &
-                          /gamma(h_shape(1)+3))**(1./3.)
-if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
-                         /rain_init(2)*gamma(h_shape(2)) &
-                         /gamma(h_shape(2)+3))**(1./3.)
+if (initprof .eq. 'c')  then
+   if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
+                             /cloud_init(2)*gamma(h_shape(1)) &
+                             /gamma(h_shape(1)+3))**(1./3.)
+   if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
+                            /rain_init(2)*gamma(h_shape(2)) &
+                            /gamma(h_shape(2)+3))**(1./3.)
+   CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
+                      dnr,ffcd_mass,ffcd_num)
+endif
 
-CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
-                   dnr,ffcd_mass,ffcd_num)
 do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+         if (initprof .eq. 'i') then
+            if(cloud_init(1)>0.)dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
+                                      /cloud_init(2)*gamma(h_shape(1)) &
+                                      /gamma(h_shape(1)+3))**(1./3.)
+            if(rain_init(1)>0.)dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
+                                     /rain_init(2)*gamma(h_shape(2)) &
+                                     /gamma(h_shape(2)+3))**(1./3.)
+            
+            CALL init_dist_tau(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
+               h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
+               h_shape(2),dnr,ffcd_mass,ffcd_num)
+            !dropsm2d(k,i,:)=ffcd_mass*(z(k)-z_cbi)/d_cloudi
+         endif
+
          dropsm2d(k,i,:)=ffcd_mass
          dropsn2d(k,i,:)=ffcd_num
+         !print*, rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000.
       endif
    enddo
 enddo
@@ -434,7 +538,6 @@ do k=1,nz
 
   enddo
  enddo
-
 end subroutine mp_amp
 !---------------------------------------------------------------------
 subroutine mp_sbm(ffcdr8,press,tempk,qv,fncn,mc,mr)

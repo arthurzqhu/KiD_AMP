@@ -31,7 +31,7 @@ module namelists
   implicit none
   integer:: imomc1,imomc2,imomr1,imomr2
   real(8) :: ss_init
-  real, dimension(2):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
+  real(8), dimension(2):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
              dobreakup
 
@@ -61,10 +61,12 @@ module namelists
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   character(200) :: bintype='' ! underlying 'sbm' or 'tau'
   character(200) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
+  character(200) :: initprof='' ! 'c' as a constant column of water, 'i' linearly increasing ...
+  ! towards the cloud top, where cloud and rain mass = cloud_init(1) and rain_init(1) 
   logical :: mp_proc_dg
 
   namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, &
-          mp_proc_dg, bintype, ampORbin, l_coll_coal &
+          mp_proc_dg, bintype, ampORbin, l_coll_coal, initprof &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &
