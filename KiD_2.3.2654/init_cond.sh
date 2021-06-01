@@ -227,7 +227,7 @@ mp_proc_dg=.true.
 initprof='i'
 /
 END
-#     ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
+     ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
 #            done
 #          done
         done
