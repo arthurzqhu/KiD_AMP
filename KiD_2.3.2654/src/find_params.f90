@@ -284,12 +284,12 @@ implicit none
 real(8) :: guess(2)
 real(8) :: md(max_nbins)
 integer :: ihyd
-real(8),optional,dimension(flag_count) :: flag
+real(8),dimension(flag_count) :: flag
 
 if (npm==3) then !if rain is 2M, then cloud is also 2M
    CALL searchparams3M(guess,ihyd,md,flag)
 else
-   CALL searchparams2M(guess,md,flag)
+   CALL searchparams2M(guess,md,flag(1))
 endif
 
 End subroutine searchparamsG
@@ -524,9 +524,10 @@ implicit none
 real(8) :: guess(2),oguess(2),vals(1),tol,guessin(1)
 real(8) :: MxM3,minmxm3,maxmxm3
 real(8) :: md(max_nbins)
-integer :: info,n,flag
+integer :: info,n!,flag
 integer, parameter :: lwa=max_nbins
 real(8),dimension(lwa) :: wa
+real(8) :: flag
 external :: fcn_1p
 
 flag = 0
