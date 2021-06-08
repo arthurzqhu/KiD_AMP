@@ -18,7 +18,7 @@ real(8),dimension(num_h_moments(1)) :: mc
 real(8),dimension(num_h_moments(2)) :: mr
 real(8) :: z_cbi,z_cti,d_cloudi
 real(8) :: dnc,dnr
-real, dimension(nz,nx,max_nbins) :: aer2d
+real(8), dimension(nz,nx,max_nbins) :: aer2d
 integer :: i,k,imom,ip
 
 !Set some parameters
@@ -188,7 +188,7 @@ do i=1,nx
                    diams(split_bins+1:nkr)**pmomsr(imom))*col*1000.
               elseif (bintype .eq. 'tau') then
                 mr(imom)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*&
-                   diams(split_bins+1:nkr)**pmomsc(imom))*col
+                   diams(split_bins+1:nkr)**pmomsr(imom))*col
               end if
             enddo
 
@@ -332,7 +332,6 @@ do i=1,nx
             CALL init_dist_tau(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
                h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
                h_shape(2),dnr,ffcd_mass,ffcd_num)
-            !dropsm2d(k,i,:)=ffcd_mass*(z(k)-z_cbi)/d_cloudi
          endif
 
          dropsm2d(k,i,:)=ffcd_mass
@@ -340,6 +339,7 @@ do i=1,nx
       endif
    enddo
 enddo
+
 
 end subroutine tau_init
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -539,7 +539,7 @@ do k=1,nz
  enddo
 end subroutine mp_amp
 !---------------------------------------------------------------------
-subroutine mp_sbm(ffcdr8,press,tempk,qv,fncn,mc,mr)
+subroutine mp_sbm(ffcdr8,press,tempk,qv,fncnr8,mc,mr)
 
 use module_hujisbm
 use micro_prm
@@ -547,22 +547,24 @@ use parameters, only: nx,nz,num_h_moments,max_nbins
 
 implicit none
 integer:: i,j,k,ip
-
 real, dimension(nz,nx)::tempk,press,qv
 real, dimension(nz,nx,max_nbins)::ffcd,fncn
-real(8), dimension(nz,nx,max_nbins)::ffcdr8
+real(8), dimension(nz,nx,max_nbins)::ffcdr8,fncnr8
 real(8), dimension(max_nbins)::dummy
 real(8),dimension(nz,nx,10) :: mc,mr
 
 !------CALL MICROPHYSICS--------------------
 ffcd=real(ffcdr8)
+fncn=real(fncnr8)
 call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
 ffcdr8=dble(ffcd)
+fncnr8=dble(fncn)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-  call calcmoms(ffcdr8(k,j,:),,10,mc(k,j,:),mr(k,j,:)) !skips the number conc argument
+  call calcmoms(ffcdr8(k,j,:),dummy,10,mc(k,j,:),mr(k,j,:))
+  !call calcmoms(ffcdr8_mass=ffcdr8(k,j,:),momnum=10,mc=mc(k,j,:),mr=mr(k,j,:))
  enddo
 enddo
 end subroutine mp_sbm
