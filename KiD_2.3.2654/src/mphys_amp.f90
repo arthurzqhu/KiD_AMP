@@ -19,7 +19,6 @@ module mphys_amp
   Use switches, only: l_advect,l_diverge, l_noadv_theta, l_noadv_qv
   Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors
   use switches, only: zctrl
-
   Implicit None
 
   !Logical switches
@@ -54,7 +53,7 @@ contains
     real(8), dimension(nz) :: nmask ! mask for non-NaN values
     real(8) :: m2w, m0w
     character(1) :: Mnum
-    real :: dnr_s,rm_s !source dnr and rain mass
+    real(8) :: dnr_s,rm_s !source dnr and rain mass
 
     do i=1,nx
        do k=1,nz
@@ -137,10 +136,10 @@ contains
 
        do j=1,nx
            if (bintype .eq. 'sbm') then
-               CALL init_dist_sbm(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
+               CALL init_dist_sbm(dble(0.),h_shape(1),dble(0.),rm_s,h_shape(2),dnr_s,&
                     diams,dropsm2d(rain_alt,j,:))
            elseif (bintype .eq. 'tau') then
-               CALL init_dist_tau(0.,0.,0.,rm_s,h_shape(2),dnr_s,&
+               CALL init_dist_tau(dble(0.),h_shape(1),dble(0.),rm_s,h_shape(2),dnr_s,&
                     dropsm2d(rain_alt,j,:),dropsn2d(rain_alt,j,:))
            endif
        enddo
