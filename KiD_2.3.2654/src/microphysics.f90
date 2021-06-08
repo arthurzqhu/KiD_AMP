@@ -791,7 +791,7 @@ return
 END SUBROUTINE lhf_budget
 !-------------------------------------------------------------------
 Subroutine init_dist_sbm(rxc,gnuc,dnc,rxr,gnur,dnr,diams,ffcd)
-use micro_prm, only: nkr
+use micro_prm, only: nkr, col
 use parameters, only: max_nbins
 implicit none
 
@@ -1030,28 +1030,6 @@ integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
 rdt = 1./dt
 i=1
 
-! prepare for the tau mphys
-rprefrcp(1+offset:kkp)=exner(1:kkp-offset,nx) ! I think this is upside-down in LEM
-! AH - 04/03/10, line below leads to divide by 0
-!      corrected by setting array to 2:kkp. Problem highlighted
-!      by Theotonio Pauliquevis
-! prefrcp(:)=1./rprefrcp(:)
-prefrcp(1+offset:kkp)=1./rprefrcp(1+offset:kkp)
-
-prefn(1+offset:kkp)=p0*exner(1:kkp-offset,nx)**(1./this_r_on_cp)
-
-dzn(1+offset:kkp)=dz_half(1:kkp-offset)
-
-rhon(1+offset:kkp)=rho(1:kkp-offset)
-rdz_on_rhon(1+offset:kkp)=1./(dz(1:kkp-offset)*rhon(1+offset:kkp))
-! Reference temperature (this is fixed in lem, but
-! shouldn't make a difference for microphysics if we
-! just set it to be the current profile (i.e. th'=0)
-tref(1+offset:kkp)=theta(1:kkp-offset,nx)*exner(1:kkp-offset,nx)
-
-
-
-
 do j = jminp,jmaxp
     q_lem(j,1+offset:kkp,iqv) = qv(1:kkp-offset,j)
     q_lem(j,1+offset:kkp,iqss) = ss(1:kkp-offset,j)
@@ -1200,8 +1178,13 @@ if (dosedimentation) then
                 proc_tnum=proc_tnum+qln_sed(j,k,l)
             enddo
    
-            call save_dgproc(proc_tmass/dt,proc_tnum/dt, &
-                   'dm_sed', 'dn_sed', k, j)
+            if (nx==1) then
+               call save_dg(k,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z')
+               call save_dg(k,proc_tnum/dt,'dn_sed',i_dgtime,units='#/kg/s',dim='z')
+            else
+               call save_dg(k,j,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z,x')
+               call save_dg(k,j,proc_tnum/dt,'dn_sed',i_dgtime,units='#/kg/s',dim='z,x')
+            endif
          enddo 
       enddo
    endif
@@ -2099,6 +2082,7 @@ do k=1,nz
             if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
                 print*, 'some NaNs here'
                 print*,'sq', k,iq
+                print*, sq_lem
                 stop
             end if
         enddo
@@ -2121,6 +2105,25 @@ use mphys_tau_bin_declare
 implicit none
 
 integer :: j,k
+
+! Set up input arrays...
+rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
+! AH - 04/03/10, line below leads to divide by 0
+!      corrected by setting array to 2:kkp. Problem highlighted
+!      by Theotonio Pauliquevis
+! prefrcp(:)=1./rprefrcp(:)
+prefrcp(2:kkp)=1./rprefrcp(2:kkp)
+
+prefn(2:kkp)=p0*exner(1:kkp-1,nx)**(1./this_r_on_cp)
+
+dzn(2:kkp)=dz_half(1:kkp-1)
+
+rhon(2:kkp)=rho(1:kkp-1)
+rdz_on_rhon(2:kkp)=1./(dz(1:kkp-1)*rhon(2:kkp))
+! Reference temperature (this is fixed in lem, but
+! shouldn't make a difference for microphysics if we
+! just set it to be the current profile (i.e. th'=0)
+tref(2:kkp)=theta(1:kkp-1,nx)*exner(1:kkp-1,nx)
 
 ! Set up microphysics species
 call set_micro
@@ -2238,7 +2241,7 @@ end subroutine qcount
 !-------------------------------------------------------------------
 Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,ffcd_mass,ffcd_num)
 
-use micro_prm, only:nkr, diams, krdrop,binmass
+use micro_prm, only:nkr, diams, krdrop,binmass, col
 use parameters, only: max_nbins
 use mphys_tau_bin_declare, only: DIAM, NQP, xkgmean, dgmean,xk
 use physconst, only: pi, rhoW
@@ -2270,11 +2273,8 @@ do kr=1,nkr
   if (rxr>0.) then
      exptermr=exp(-1.*diams(kr)/dnr)
      ffcd_mass(kr) = ffcd_mass(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)
-     ffcd_num(kr) = ffcd_num(kr) + ffcd_mass(kr)/binmass(kr)!(diams(kr)**3*pi/6.*rhoW)
-!  else
-!     ffcd_mass(krdrop:nkr)=0.
+     ffcd_num(kr) = ffcd_num(kr) + n0r*exptermr*(diams(kr)/dnr)**(gnur+3)/binmass(kr)
   endif
-
 !If ffcd(kr) is NaN, set to zero
 !    if (ffcd(kr).ne.ffcd(kr) .or. ffcd(kr)*0.0.ne.0.0 &
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
@@ -2373,26 +2373,3 @@ IF (ABS(Sourcemass) <  1.e-20.OR. ABS(Sourcenum) <  1.e-20) THEN
 ENDIF
 
 END subroutine ADVECTcheck
-
-
-subroutine save_dgproc(varmass, varnum, namemass, namenum, k, j)
-   use parameters, only : nx
-   use namelists, only: bintype
-   use diagnostics, only: save_dg, i_dgtime
-
-   implicit none
-   real, intent(in) :: varmass
-   real, intent(in), optional :: varnum
-   character(*), intent(in) :: namemass
-   character(*), intent(in), optional :: namenum
-   integer, intent(in) :: k, j
-
-   if (nx==1) then
-      call save_dg(k,varmass,namemass,i_dgtime,units='kg/kg/s',dim='z')
-      if (present(varnum)) call save_dg(k,varnum,namenum,i_dgtime,units='#/kg/s',dim='z')
-   else
-      call save_dg(k,j,varmass,namemass,i_dgtime,units='kg/kg/s',dim='z,x')
-      if (present(varnum)) call save_dg(k,j,varnum,namenum,i_dgtime,units='#/kg/s',dim='z,x')
-   endif
-
-end subroutine 
