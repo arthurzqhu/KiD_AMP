@@ -43,7 +43,7 @@ module namelists
 
   namelist/control/dt, dg_dt, mphys_scheme, mphys_var &
        , wctrl, zctrl, tctrl, pctrl_z, pctrl_v, pctrl_T, ipctrl &
-       , xctrl, lhf_ctrl, shf_ctrl, diaglevel, dgstart
+       , xctrl, lhf_ctrl, shf_ctrl, diaglevel, dgstart, rhctrl
 
   namelist/case/input_file, l_input_file, ifiletype, icase
 
@@ -59,6 +59,7 @@ module namelists
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
   real(8) :: ovc_factor=0.0 ! overcorrection factor
+  real(8) :: rhctrl ! actually saturation ratio not relative humidity
   character(200) :: bintype='' ! underlying 'sbm' or 'tau'
   character(200) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
   character(200) :: initprof='' ! 'c' as a constant column of water, 'i' linearly increasing ...

@@ -22,7 +22,7 @@ module test_cases
   Use interpolation, only : interpolate, smooth1D
   Use switches
   Use class_species, only: species_allocate
-
+  Use namelists, only: rhctrl
   Use aerosols, only: moment_logn, awp=>wp, set_aerosol
 
   Implicit none
@@ -414,7 +414,6 @@ contains
              end where
              qforce_in(:,j,itime)=qforce_in(:,j,itime)*(pctrl_v(1)/3600.0) &
                   /sum(qforce_in(:,j,itime)*rho(:)*dz_half(:)) 
-
           end do
           do j = 0, nx+1 
             call interpolate(z,w_t(:,j,itime),z_half,w_t_half(:,j,itime),scheme_id=1) 
@@ -795,9 +794,11 @@ contains
     allocate(theta_1d(nz))
     allocate(qv_1d(nz))
     
+    if (rhctrl==0.)rhctrl=0.75
     pheight=(/ 0., 740., 3260./)
     ptheta=(/ 297.9, 297.9, 312.66 /)
-    pqv=(/ .015, .0138, .0024 /)
+    pqv=(/ rhctrl*.020, rhctrl*.020*.92, dble(.0024) /)
+    !pqv=(/ .015, .0138, .0024 /)
     do k=1,nz
        z(k)=maxZ*k/float(nz)
     end do
@@ -832,6 +833,7 @@ contains
     real(wp), intent(in) :: maxZ
     real(wp) :: zinv=800.  ! inversion height
     
+    if (rhctrl==0.)rhctrl=0.9
     do k=1,nz
        z(k)=maxZ*k/float(nz)
     end do
@@ -839,7 +841,8 @@ contains
     do k=1,nz
        if (z(k)<=zinv)then
           theta(k,:)=288.3
-          qv(k,:)=.00945
+          qv(k,:)=rhctrl*0.0105
+          !qv(k,:)=.00945
        else
           theta(k,:)=295+(z(k)-zinv)**(1./3.)
           qv(k,:)=0.005 - 0.003*(1.-exp( (zinv-z(k)) /500.))
