@@ -10,4 +10,4 @@
 #SBATCH --mail-user=azqhu@ucdavis.edu
 #SBATCH --mem=16384
 
-./init_cond2D.sh
+./init_cond2D.zsh
