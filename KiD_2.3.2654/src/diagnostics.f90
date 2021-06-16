@@ -599,8 +599,6 @@ contains
     end do
 
     !hydrometeors
-    ! might still having trouble saving rain_only stuff,
-    ! cant test now so will leave for later -ahu
 
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -610,10 +608,10 @@ contains
              do j=1,nx
                 if (ampORbin .eq. 'bin') then
                    if (ih==1) then
-                      field_2D(k,j)=sum(hydrometeors(k,j,ih)%&
+                      field_2D(k,j)=sum(hydrometeors(k,j,1)%&
                          moments(1:split_bins,imom))/(pi/6*1000)
                    elseif (ih==2) then
-                      field_2D(k,j)=sum(hydrometeors(k,j,ih)%&
+                      field_2D(k,j)=sum(hydrometeors(k,j,1)%&
                          moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
                    endif
                 else
