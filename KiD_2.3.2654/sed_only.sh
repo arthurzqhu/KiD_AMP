@@ -5,7 +5,7 @@ mconfigtemp='sedonly_i_cr' # case/folder name. determined automatically if set e
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("TAU" "SBM")
+bintype=("SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
