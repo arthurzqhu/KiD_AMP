@@ -31,6 +31,7 @@ contains
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
     integer :: i, j, k, imom, rain_alt
+    integer, dimension(3) :: momsave=(/1,4,7/)
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
@@ -294,28 +295,29 @@ endif
    ! endif
 
 !diagnosed moments
-do i=1,10
-  write(Mnum,'(I1)') i-1
-
-  name='diagM'//Mnum//'_cloud'
-  units='m^'//Mnum
-  if (nx==1) then
-     fielddp(:)=mc(:,1,i)
-     call save_dg(fielddp,name,i_dgtime,units,dim='z')
-  else
-     fielddp2d(:,:)=mc(:,:,i)
-     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-  endif
-
-  name='diagM'//Mnum//'_rain'
-  if (nx==1) then
-     fielddp(:)=mr(:,1,i)
-     call save_dg(fielddp,name,i_dgtime,units,dim='z')
-  else
-     fielddp2d(:,:)=mr(:,:,i)
-     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-  endif
-enddo
+!do imom=1,size(momsave)
+!  i=momsave(imom)
+!  write(Mnum,'(I1)') i-1
+!
+!  name='diagM'//Mnum//'_cloud'
+!  units='m^'//Mnum
+!  if (nx==1) then
+!     fielddp(:)=mc(:,1,i)
+!     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+!  else
+!     fielddp2d(:,:)=mc(:,:,i)
+!     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+!  endif
+!
+!  name='diagM'//Mnum//'_rain'
+!  if (nx==1) then
+!     fielddp(:)=mr(:,1,i)
+!     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+!  else
+!     fielddp2d(:,:)=mr(:,:,i)
+!     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+!  endif
+!enddo
 
 ! diagnose mass mean diameter and effective radius
 ! mc and mr here might not be additive because it's updated after diagnosing from
@@ -342,8 +344,8 @@ if (nx==1) then
    call save_dg(fielddp,'Dm',i_dgtime,'micron',dim='z')
    call save_dg(reff(:,1)*1.e6,'reff',i_dgtime,'micron',dim='z')
 else
-   call save_dg(fielddp2d,'Dm',i_dgtime,'micron',dim='z,x')
-   call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
+!   call save_dg(fielddp2d,'Dm',i_dgtime,'micron',dim='z,x')
+!   call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
 endif
 
 !diagnose optical depth and albedo
@@ -398,20 +400,20 @@ elseif (ampORbin .eq. 'amp') then
 
 endif
 
-!parameters
-do j=1,nx
-   if (nx==1) then
-      call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
-      call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
-      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
-      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
-   else
-      call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
-      call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
-      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
-      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
-   endif
-enddo
+!!parameters
+!do j=1,nx
+!   if (nx==1) then
+!      call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
+!      call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
+!      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
+!      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
+!   else
+!      call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
+!      call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
+!      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
+!      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
+!   endif
+!enddo
 
 end Subroutine mphys_amp_interface
 

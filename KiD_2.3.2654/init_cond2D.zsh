@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-mconfig='fullmp' # case/folder name. determined automatically if set empty
+mconfig_tmp='fullmp' # case/folder name. determined automatically if set empty
 caselist=(601) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN")
-bintype=("SBM")
+ampORbin=("BIN" "AMP")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -60,15 +60,10 @@ fi
 iw=2
 ia=100
 
-for iw in 2 #0.5 1 2 4 6 8 10
-do
-  echo w=$iw
-  # reset oscillation time based on updraft speed to prevent overshooting
-  for ia in 100 #50 100 200 400
-#  for rh in 0.8 0.9 1.0 
+  for rh in 0.7 0.8 0.9 1.0 
   do
-#     mconfig=Sc_pcpt${pcpt}_rh${rh}
-  echo Na=$ia
+  mconfig=${mconfig_tmp}RH${rh}
+  echo $mconfig
     for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
     do
       for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -163,8 +158,8 @@ mphys_scheme='amp'
 dt=2.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=10.0        !Timestep for diagnostic output
-wctrl(1)=${iw}    !Updraft speed
-tctrl(1)=4000.    !Total length of simulation (s)
+tctrl(1)=3600.    !Total length of simulation (s)
+rhctrl=${rh}
 /
 
 &switch
@@ -172,7 +167,7 @@ l_advect=${l_adv}
 l_noadv_qv=${l_noadv_qv}
 l_noadv_hydrometeors=${l_noadv_hyd}
 l_noadv_theta=.true.
-l_diverge=.false.
+l_diverge=.true.
 l_nodiv_hydrometeors=.true.
 l_fix_theta=.true.
 l_diverge_advection=.false.
@@ -191,7 +186,7 @@ END
      ./bin/KiD_CU_2D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
 #            done
 #          done
-        done
+#        done
       done
     done
   done

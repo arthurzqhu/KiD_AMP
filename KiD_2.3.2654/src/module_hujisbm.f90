@@ -82,17 +82,17 @@ DOUBLE PRECISION, save :: &
 contains
  ! +-------------------------------------------------------------+
    SUBROUTINE FALFLUXHUCM_Z(chem_new,VR1,RHOCGS,PCGS,ZCGS,DT, &
-   						               kts,kte,nkr,bin_pcpt)
+                            kts,kte,nkr,bin_pcpt)
 
 
      IMPLICIT NONE
 
- 	   integer,intent(in) :: kts,kte,nkr
- 	   real(kind=r4size),intent(inout) :: chem_new(:,:)
- 	   real(kind=r4size),intent(in) :: rhocgs(:),pcgs(:),zcgs(:),VR1(:,:),DT
+     integer,intent(in) :: kts,kte,nkr
+     real(kind=r4size),intent(inout) :: chem_new(:,:)
+     real(kind=r4size),intent(in) :: rhocgs(:),pcgs(:),zcgs(:),VR1(:,:),DT
 
- 	  ! ... Locals
- 	  integer :: I,J,K,KR
+    ! ... Locals
+    integer :: I,J,K,KR
     real(kind=r4size) :: TFALL,DTFALL,VFALL(KTE),DWFLUX(KTE)
     real(kind=r4size),intent(out) :: bin_pcpt
     integer :: IFALL,N,NSUB
@@ -150,9 +150,9 @@ DO KR=1,NKR
    END IF
 END DO
 
-! convert to SI units (kg m-2 s-2, same as tau output) for the love of god -ahu
+! convert to SI units (kg m-2 s-1, same as tau output) for the love of god -ahu
 ! units before conversion should be g/(cm2*s) so...
-bin_pcpt=bin_pcpt*0.001*(100.)**2.*col
+bin_pcpt=bin_pcpt*0.001*10000.*col
 
 RETURN
 END SUBROUTINE FALFLUXHUCM_Z
