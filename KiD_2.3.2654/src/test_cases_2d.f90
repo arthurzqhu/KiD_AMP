@@ -24,6 +24,7 @@ module test_cases_2d
   Use interpolation, only : interpolate, smooth1D, make_wgrid, &
      make_vgrid, interpolate_x 
   Use switches
+  Use namelists, only: rhctrl
   Use class_species, only: species_allocate
   Use test_cases, only: allocate_forcing, z2exner, set_standard_profile 
 
@@ -93,6 +94,7 @@ contains
        if (all(tctrl==0.))tctrl(1)=3600.
        if (all(xctrl==0.))xctrl(1)=9000.
        if (ipctrl==0)ipctrl=1
+       if (rhctrl==0.)rhctrl=1.
 
        maxZ=zctrl(1)
        maxX=xctrl(1)
@@ -366,7 +368,7 @@ contains
     pqv=(/14.5,  14.5,  14.5,  14.0,  13.7,  13.9,  13.9,   &
          10.3,  10.3,  10.0,   9.9,   8.9,   7.9,   4.0,   2.3, &
          1.2,   1.2,   0.9,   0.6,   2.0,   1.6,   0.4,   1.5, &
-         0.9,   0.5,   0.4/)
+         0.9,   0.5,   0.4/)*rhctrl
 
     press_cu=(/1014., 1010., 1000.,  990.,  975.,  960.,  950., &
           925.,  900.,  875.,  850.,  825.,  800.,  790.,  775., & 
