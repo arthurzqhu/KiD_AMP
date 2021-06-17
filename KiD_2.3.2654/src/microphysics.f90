@@ -386,10 +386,10 @@ do i=1,nx
 enddo !end loop over i
 
 ! finally save the surface precipitation
-call save_dg(sum(sppt(1:nx))/nx,'mean_surface_ppt',i_dgtime,'ms-1',dim='time')
+call save_dg(sum(sppt(1:nx))/nx,'mean_surface_ppt',i_dgtime,'kg m-2 s-1',dim='time')
 
 if (nx>1) then
-   call save_dg(sppt,'surface_ppt',i_dgtime,'ms-1',dim='x')
+   call save_dg(sppt,'surface_ppt',i_dgtime,'kg m-2 s-1',dim='x')
 endif
 
 RETURN
