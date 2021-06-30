@@ -439,7 +439,7 @@ if (guess(2).eq.0 .or. sqval>tol) then
   !Find best-guess parameters in the look up tables
   guess(1) = (1.-wgtm)*((1.-wgty1)*nutab(iy1a,im1,ihyd)+wgty1*nutab(iy2a,im1,ihyd)) + &
              wgtm*((1.-wgty2)*nutab(ix1b,im2,ihyd)+wgty2*nutab(ix2b,im2,ihyd))
-  guess(2) = (1.-wgtm)*((1.-wgty1)*dntab(iy1a,im1,ihyd)+wgty1*dntab(ix2b,im1,ihyd)) + &
+  guess(2) = (1.-wgtm)*((1.-wgty1)*dntab(iy1a,im1,ihyd)+wgty1*dntab(iy2a,im1,ihyd)) + &
              wgtm*((1.-wgty2)*dntab(ix1b,im2,ihyd)+wgty2*dntab(ix2b,im2,ihyd))
 
   !Use the best-guess. See what happens
