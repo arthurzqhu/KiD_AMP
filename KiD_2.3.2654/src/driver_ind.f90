@@ -10,18 +10,17 @@ use namelists, only: bintype
 implicit none
 character(4)::momstr
 character(len=100)::lutfolder
-real(8), dimension(nz,nx,3) :: Mpc2d
-real(8), dimension(nz,nx,3) :: Mpr2d
+real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
+real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
 real(8),dimension(max_nbins) :: ffcd_mass, ffcd_num
-real(8),dimension(3) :: mc
-real(8),dimension(3) :: mr
+real(8),dimension(num_h_moments(1)) :: mc
+real(8),dimension(num_h_moments(2)) :: mr
 real(8) :: z_cbi,z_cti,d_cloudi
 real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d
 integer :: i,k,imom,ip
 
-num_h_moments=(/3,3/)
 !Set some parameters
 ndtcoll=1
 ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
