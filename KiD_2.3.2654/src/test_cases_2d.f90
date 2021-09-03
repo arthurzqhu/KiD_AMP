@@ -738,13 +738,20 @@ contains
     real(wp) :: ampl0, ampl20, xscale0, ampa, ampb &
          , amp2a, amp2b, tscale1, tscale2, ampl, ampl2 &
          , xscale, t1, ztop, x0, zz1, zz2 &
-         , xl, xx, zl, xcen, zsh
+         , xl, xx, zl, xcen, zsh, mx, my, xdisp &
+         , x1r, ydisp, yscale
     real(wp) :: scal_fac & ! factor to scale w and v to 0 above 
                            ! zscale2
          , dw0 & ! change in w from zscale2 to 0
          , dv0   ! change in v from zscale2 to 0
-    
+    integer :: ft
     integer :: nxmid
+
+    ! parameters for the new functions
+    real(wp), parameter :: zer0=1.07687398631180 ! x bound btw no wind and downdraft
+    real(wp), parameter :: zer1=5.38572965402801 ! x peak updraft
+    real(wp), parameter :: xt=3.64359716742540   ! x bound btw downdraft and updraft
+
 
     ! DETERMINE THE DEPTH OF THE INFLOW (ZSCALE1) 
     ! AND OUTFLOW (ZSCALE2)(in METERS)
@@ -782,6 +789,13 @@ contains
     AMP2B=0.5*1.e3
     tscale1=600.
     tscale2=900.
+
+    ! more parameters for the new vel field with downdraft
+    ! these are specific to the new base function
+    mx=0.5*xscale0/(zer1-xt)
+    xdisp=xp(nx/2+1)-zer1*mx
+    x1r=zer1*mx
+    my=x1r**2*cos(x1r/mx)
 
     do itime=1,n_times
        t=(itime-1)*100.
@@ -832,32 +846,49 @@ contains
           DO K=1,NZ+1
              ZZ1=zp(k)/ZSCALE1
              ZZ2=zp(k)/ZSCALE2
-             XL=2.*SQRT((xp(i)-XCEN)**2)
-             XX=XL/XSCALE
+             !XL=abs(xp(i)-XCEN)
+             !XX=XL/(XSCALE*0.5)
              ZL=2.*ZSCALE1
              PHI(i,k)=0.
-             IF (XX.LE.1.) THEN
+             !IF (XX.LE.1.) THEN
+             if (xp(i)>=zer0*mx+xdisp) then
+                if (ft==0) then
+                   ydisp=(xp(i)-xdisp)**2*cos((xp(i)-xdisp)/mx)/my
+                   if (k==nz+1) ft=1
+                endif 
                 IF(ZZ1.LT.1.) THEN
-                   PHI(i,k)=-cos(pi*(xp(i)-X0)/XSCALE)*sin(pi*zp(k)/ZL)
-                   PHI(i,k)=PHI(i,k)*AMPL
+                   PHI(i,k)=((xp(i)-xdisp)**2*cos((xp(i)-xdisp)/mx)/my-1-ydisp)&
+                      * sin(pi*zp(k)/ZL)
+                   !PHI(i,k)=-cos(pi*(xp(i)-X0)/XSCALE)*sin(pi*zp(k)/ZL)
+                   !PHI(i,k)=PHI(i,k)*AMPL
                 ELSEIF (ZZ1.GE.1..AND.ZZ2.LE.1.) THEN
                    ZL=2.*(ZSCALE2-ZSCALE1)
-                   PHI(i,k)=-cos(pi*(xp(i)-X0)/XSCALE) &
-                        *sin(pi*(.5+(zp(k)-ZSCALE1)/ZL))
-                   PHI(i,k)=PHI(i,k)*AMPL
+                   phi(i,k)=((xp(i)-xdisp)**2 &
+                     * cos((xp(i)-xdisp)/mx)/my-1-ydisp) &
+                     * sin(pi*(.5+(zp(k)-zscale1)/ZL))
+                   !PHI(i,k)=-cos(pi*(xp(i)-X0)/XSCALE) &
+                   !     *sin(pi*(.5+(zp(k)-ZSCALE1)/ZL))
+                   !PHI(i,k)=PHI(i,k)*AMPL
                 ENDIF
              ELSE
                 IF(ZZ1.LT.1.) THEN
                    PHI(i,k)=-sin(pi*zp(k)/ZL)
-                   PHI(i,k)=PHI(i,k)*AMPL
+                   !PHI(i,k)=PHI(i,k)*AMPL
                 ELSEIF (ZZ1.GE.1..AND.ZZ2.LE.1.) THEN
                    ZL=2.*(ZSCALE2-ZSCALE1)
                    PHI(i,k)=-sin(pi*(.5+(zp(k)-ZSCALE1)/ZL))
-                   PHI(i,k)=PHI(i,k)*AMPL 
+                   !PHI(i,k)=PHI(i,k)*AMPL 
                 ENDIF
              ENDIF
           end do
        end do
+
+       do k=1,nz+1
+         yscale=1/(1+phi(nxmid,k))
+         phi(1:nxmid,k)=(phi(1:nxmid,k)+1)*yscale-1
+       enddo
+
+       PHI=PHI*AMPL
        !
        ! APPLY THE SYMMETRY CONDITION
        DO I=NXMID,NX+1
@@ -890,8 +921,9 @@ contains
        ! velocity fields
        do i=1,nx
           do k=1,nz
-            v_t(k,i,itime)=0.5*(ux(i,k)+ux(i+1,k))/dt*dxp(i) /rho(k)
-            w_t(k,i,itime)=0.5*(uz(i,k)+uz(i,k+1))/dt*dzp(k) /rho(k)
+            ! coeff used to be 0.5 but changed bc of the new eq. -ahu
+            v_t(k,i,itime)=0.25*(ux(i,k)+ux(i+1,k))/dt*dxp(i) /rho(k)
+            w_t(k,i,itime)=0.25*(uz(i,k)+uz(i,k+1))/dt*dzp(k) /rho(k)
           end do
        end do
 
