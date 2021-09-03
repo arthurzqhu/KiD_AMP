@@ -4,7 +4,7 @@
 mconfig_tmp='fullmp' # case/folder name. determined automatically if set empty
 caselist=(601) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN" "AMP")
+ampORbin=("AMP" "BIN")
 bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -60,9 +60,9 @@ fi
 iw=2
 ia=100
 
-  for rh in 0.7 0.8 0.9 1.0 
+  for rh in 1.0 #0.7 0.8 0.9 1.0 
   do
-  mconfig=${mconfig_tmp}RH${rh}
+  mconfig=${mconfig_tmp} #RH${rh}
   echo $mconfig
     for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
     do
@@ -157,7 +157,7 @@ icase=${caselist[ic]}
 mphys_scheme='amp'
 dt=2.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=10.0        !Timestep for diagnostic output
+dg_dt=20.0        !Timestep for diagnostic output
 tctrl(1)=3600.    !Total length of simulation (s)
 rhctrl=${rh}
 /
