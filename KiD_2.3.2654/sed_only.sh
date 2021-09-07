@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-mconfigtemp='sedonly_i_cr' # case/folder name. determined automatically if set empty
+mconfigtemp='sedonly_i_r' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("SBM")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -34,8 +34,8 @@ l_adv_s=0
 
 # set initial water if nucleation/condensation and/or adv is turned off 
 if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-   icimm=1.e-3
-   icinm=100.d6  
+   #icimm=1.e-3
+   #icinm=100.d6  
    irimm=0.5d-3
    irinm=3.d3
 else 
@@ -89,9 +89,9 @@ iw=0.5
 ia=50
 
 #for iw in 0.5 #1 2 4 6 8 10
-for icimm in 0.0001 0.0003 0.001 0.003
+for irimm in 0.0001 0.0003 0.001 0.003
 do
-   mconfig=${mconfigtemp}m${icimm}
+   mconfig=${mconfigtemp}m${irimm}
    echo $mconfig
   for ia in 50 #100 200 400
   do
