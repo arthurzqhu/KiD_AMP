@@ -304,29 +304,29 @@ endif
    ! endif
 
 !diagnosed moments
-!do imom=1,size(momsave)
-!  i=momsave(imom)
-!  write(Mnum,'(I1)') i-1
-!
-!  name='diagM'//Mnum//'_cloud'
-!  units='m^'//Mnum
-!  if (nx==1) then
-!     fielddp(:)=mc(:,1,i)
-!     call save_dg(fielddp,name,i_dgtime,units,dim='z')
-!  else
-!     fielddp2d(:,:)=mc(:,:,i)
-!     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-!  endif
-!
-!  name='diagM'//Mnum//'_rain'
-!  if (nx==1) then
-!     fielddp(:)=mr(:,1,i)
-!     call save_dg(fielddp,name,i_dgtime,units,dim='z')
-!  else
-!     fielddp2d(:,:)=mr(:,:,i)
-!     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-!  endif
-!enddo
+do imom=1,size(momsave)
+  i=momsave(imom)
+  write(Mnum,'(I1)') i-1
+
+  name='diagM'//Mnum//'_cloud'
+  units='m^'//Mnum
+  if (nx==1) then
+     fielddp(:)=mc(:,1,i)
+     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+  else
+     fielddp2d(:,:)=mc(:,:,i)
+     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+  endif
+
+  name='diagM'//Mnum//'_rain'
+  if (nx==1) then
+     fielddp(:)=mr(:,1,i)
+     call save_dg(fielddp,name,i_dgtime,units,dim='z')
+  else
+     fielddp2d(:,:)=mr(:,:,i)
+     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+  endif
+enddo
 
 ! diagnose mass mean diameter and effective radius
 ! mc and mr here might not be additive because it's updated after diagnosing from
