@@ -4,8 +4,8 @@
 mconfigtemp='sedonly_i_r' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+ampORbin=("AMP")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -18,13 +18,14 @@ rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
+imc2=0 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=6 # III moment for rain
-ztop=8000. # top of the domain
-zcb=5500.
-zct=7000.
-t1=1200.
+imr2=0 # III moment for rain
+ztop=4000. # top of the domain
+zcb=1500.
+zct=3000.
+t1=4800.
+
 # switches
 l_nuc_cond_s=0
 l_coll_s=0
