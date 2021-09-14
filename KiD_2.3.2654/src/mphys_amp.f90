@@ -32,8 +32,8 @@ contains
     use parameters, only: flag_count,max_nbins
     integer :: i, j, k, imom, rain_alt
     real, dimension(nz,nx) :: t2d, p2d, qv2d
-    real(8), dimension(nz,nx,3) :: Mpc2d
-    real(8), dimension(nz,nx,3) :: Mpr2d
+    real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
+    real(8), dimension(nz,nx,num_h_moments(1)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
     real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
@@ -169,17 +169,15 @@ contains
       dropsn2d=0.
       dropsinitm2d=0.
       dropsinitn2d=0.
+
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d)
 
       dropsm2d=dropsinitm2d
-      !print*, dropsm2d(83:105,1,1)
-      !stop
+      dropsn2d=dropsinitn2d
    elseif (ampORbin .eq. 'bin' .and. i_dgtime>1) then
       if (bintype .eq. 'sbm') then
-         !print*, dropsm2d(83:105,1,1)
-         !stop
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
       elseif (bintype .eq. 'tau') then
          call mp_tau(dropsm2d,dropsn2d,t2d,qv2d,mc,mr)
@@ -187,7 +185,8 @@ contains
    endif
 
    if (ampORbin .eq. 'bin') then
-      num_h_moments=(/1,1/)
+      if (bintype .eq. 'sbm') num_h_moments=(/1,1/)
+      if (bintype .eq. 'tau') num_h_moments=(/2,1/)
    endif
 
   ! back out tendencies

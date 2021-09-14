@@ -10,18 +10,18 @@ use namelists, only: bintype
 implicit none
 character(4)::momstr
 character(len=100)::lutfolder
-real(8), dimension(nz,nx,3) :: Mpc2d
-real(8), dimension(nz,nx,3) :: Mpr2d
+real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
+real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
 real(8),dimension(max_nbins) :: ffcd_mass, ffcd_num
-real(8),dimension(3) :: mc
-real(8),dimension(3) :: mr
+real(8),dimension(num_h_moments(1)) :: mc
+real(8),dimension(num_h_moments(2)) :: mr
 real(8) :: z_cbi,z_cti,d_cloudi
 real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d
 integer :: i,k,imom,ip
 
-num_h_moments=(/3,3/)
+!num_h_moments=(/3,3/)
 !Set some parameters
 ndtcoll=1
 ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
@@ -211,13 +211,12 @@ do i=1,nx
 !
 !            print*, k,Mpc2d(k,i,1)
          endif
-         !print*, mc(1:num_h_moments(1))
-         !print*, mr(1:num_h_moments(2))
          Mpc2d(k,i,1:num_h_moments(1))=mc(1:num_h_moments(1))
          Mpr2d(k,i,1:num_h_moments(2))=mr(1:num_h_moments(2))
       endif
    enddo
 enddo
+
 end subroutine amp_init
 !------------------------------------------------------------
 subroutine sbm_init(aer2d,dropsm2d)
@@ -374,6 +373,7 @@ real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
+
 
 
 do k=1,nz
@@ -539,6 +539,7 @@ do k=1,nz
 
   enddo
  enddo
+
 end subroutine mp_amp
 !---------------------------------------------------------------------
 subroutine mp_sbm(ffcdr8,press,tempk,qv,fncnr8,mc,mr)
@@ -586,6 +587,7 @@ real, dimension(nz,nx):: tempk,qv
 real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass2d,ffcdr8_num2d
 real, dimension(nz,nx,max_nbins)::ffcd_mass2d,ffcd_num2d
 real(8),dimension(nz,nx,10) :: mc,mr ! moments
+
 !------CALL MICROPHYSICS--------------------
 ffcd_mass2d=real(ffcdr8_mass2d)
 ffcd_num2d=real(ffcdr8_num2d)
@@ -598,8 +600,7 @@ do k=1,nz
   call calcmoms(ffcdr8_mass2d(k,j,:),ffcdr8_num2d(k,j,:),10,mc(k,j,:),mr(k,j,:))
  enddo
 enddo
-! there might be a better way to calculate moments, but will leave it like that for now. -ahu!!!
-
+! there might be a better way to calculate moments, but will leave it like that for now. -ahu
 end subroutine mp_tau
 
 subroutine calcmoms(ffcdr8_mass,ffcdr8_num,momnum,mc,mr)
