@@ -558,7 +558,7 @@ endif
 
 oguess=guess
 nug=guess(1)!not actually a guess. A parameter.
-guess(2) = (MxM3*gamma(nug+3.)/gamma(nug+momx))**(1./(momx-3.))*1.e6
+guess(2) = (MxM3*gamma(nug+3.)/gamma(nug+momx))**(1./(momx-3.))
 vals = 2.
 guessin=guess(2)
 CALL hybrd1(fcn_1p,n,guessin,vals,tol,info,wa,lwa)

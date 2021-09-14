@@ -31,10 +31,9 @@ contains
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
     integer :: i, j, k, imom, rain_alt
-    integer, dimension(3) :: momsave=(/1,4,7/)
     real, dimension(nz,nx) :: t2d, p2d, qv2d
-    real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
-    real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
+    real(8), dimension(nz,nx,3) :: Mpc2d
+    real(8), dimension(nz,nx,3) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
     real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
@@ -304,8 +303,7 @@ endif
    ! endif
 
 !diagnosed moments
-do imom=1,size(momsave)
-  i=momsave(imom)
+do i=1,10
   write(Mnum,'(I1)') i-1
 
   name='diagM'//Mnum//'_cloud'
@@ -353,8 +351,8 @@ if (nx==1) then
    call save_dg(fielddp,'Dm',i_dgtime,'micron',dim='z')
    call save_dg(reff(:,1)*1.e6,'reff',i_dgtime,'micron',dim='z')
 else
-!   call save_dg(fielddp2d,'Dm',i_dgtime,'micron',dim='z,x')
-!   call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
+   call save_dg(fielddp2d,'Dm',i_dgtime,'micron',dim='z,x')
+   call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
 endif
 
 !diagnose optical depth and albedo
@@ -409,20 +407,20 @@ elseif (ampORbin .eq. 'amp') then
 
 endif
 
-!!parameters
-!do j=1,nx
-!   if (nx==1) then
-!      call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
-!      call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
-!      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
-!      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
-!   else
-!      call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
-!      call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
-!      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
-!      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
-!   endif
-!enddo
+!parameters
+do j=1,nx
+   if (nx==1) then
+      call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
+      call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
+      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
+      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
+   else
+      call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
+      call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
+      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
+      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
+   endif
+enddo
 
 end Subroutine mphys_amp_interface
 
