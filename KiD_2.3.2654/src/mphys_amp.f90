@@ -108,18 +108,18 @@ contains
 
    ! Initialise microphysics
    if (micro_unset)then
-      if (ampORbin .eq. 'amp' .or. i_dgtime==1) then
+      if (ampORbin .eq. 'amp') then
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
          guessc2d(:,:,2) = 0.001         !characteristic diameter dn
          guessr2d(:,:,2) = 0.001
          call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
-      !elseif (ampORbin .eq. 'bin'.and. i_dgtime>1) then
-      !   if (bintype .eq. 'sbm') then
-      !      call sbm_init(aer2d,dropsm2d)
-      !   elseif (bintype .eq. 'tau') then
-      !      call tau_init(aer2d,dropsm2d,dropsn2d)
-      !   endif
+      elseif (ampORbin .eq. 'bin') then
+         if (bintype .eq. 'sbm') then
+            call sbm_init(aer2d,dropsm2d)
+         elseif (bintype .eq. 'tau') then
+            call tau_init(aer2d,dropsm2d,dropsn2d)
+         endif
       endif
       micro_unset=.False.
    endif
@@ -164,7 +164,7 @@ contains
        endif
    endif
 
-   if (ampORbin .eq. 'amp' .or. i_dgtime==1) then
+   if (ampORbin .eq. 'amp') then
       dropsm2d=0.
       dropsn2d=0.
       dropsinitm2d=0.
@@ -174,20 +174,23 @@ contains
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d)
 
-      dropsm2d=dropsinitm2d
-      dropsn2d=dropsinitn2d
-   elseif (ampORbin .eq. 'bin' .and. i_dgtime>1) then
+      !dropsm2d=dropsinitm2d
+      !dropsn2d=dropsinitn2d
+      !print*, Mpc2d(46,1,:)
+      !print*, Mpr2d(46,1,:)
+   elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
+         !print*, dropsm2d(46,:,:)
       elseif (bintype .eq. 'tau') then
          call mp_tau(dropsm2d,dropsn2d,t2d,qv2d,mc,mr)
       endif
    endif
 
-   if (ampORbin .eq. 'bin') then
-      if (bintype .eq. 'sbm') num_h_moments=(/1,1/)
-      if (bintype .eq. 'tau') num_h_moments=(/2,1/)
-   endif
+   !if (ampORbin .eq. 'bin') then
+   !   if (bintype .eq. 'sbm') num_h_moments=(/1,1/)
+   !   if (bintype .eq. 'tau') num_h_moments=(/2,1/)
+   !endif
 
   ! back out tendencies
 dqv_mphys = 0.
