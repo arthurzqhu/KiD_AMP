@@ -33,7 +33,7 @@ contains
     integer :: i, j, k, imom, rain_alt
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
-    real(8), dimension(nz,nx,num_h_moments(1)) :: Mpr2d
+    real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
     real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
