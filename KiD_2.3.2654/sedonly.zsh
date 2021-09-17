@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # config of the run
-mconfigtemp='sedonly_i_r' # case/folder name. determined automatically if set empty
+mconfigtemp='2M_sedonly_i_r' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP")
+ampORbin=("BIN" "AMP")
 bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -24,7 +24,7 @@ imr2=0 # III moment for rain
 ztop=4000. # top of the domain
 zcb=1500.
 zct=3000.
-t1=4800.
+t1=6000.
 
 # switches
 l_nuc_cond_s=0

@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # config of the run
-mconfigtemp='sedevap_i_r' # case/folder name. determined automatically if set empty
+mconfigtemp='sedcoll_i_r' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
+ampORbin=("BIN" "AMP")
 bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -24,12 +24,12 @@ imr2=6 # III moment for rain
 ztop=4000. # top of the domain
 zcb=1500.
 zct=3000.
-t1=3600.
-rh=0.5
+t1=6000.
+#rh=0.5
 
 # switches
-l_nuc_cond_s=1
-l_coll_s=0
+l_nuc_cond_s=0
+l_coll_s=1
 l_sed_s=1
 l_adv_s=0
 
@@ -91,7 +91,7 @@ iw=0.5
 ia=50
 
 #for iw in 0.5 #1 2 4 6 8 10
-for irimm in 0.0001 0.0003 0.001 0.003
+for irimm in 0.0001 #0.0003 0.001 0.003
 do
    mconfig=${mconfigtemp}m${irimm}
    echo $mconfig
