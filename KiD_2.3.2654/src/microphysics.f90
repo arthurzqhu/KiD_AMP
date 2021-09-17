@@ -2105,7 +2105,6 @@ use mphys_tau_bin_declare
 implicit none
 
 integer :: j,k
-
 ! Set up input arrays...
 rprefrcp(2:kkp)=exner(1:kkp-1,nx) ! I think this is upside-down in LEM
 ! AH - 04/03/10, line below leads to divide by 0
@@ -2163,7 +2162,11 @@ DO IQ = 1, Ln2
 ENDDO
 
 !diams = DIAM(1:max_nbins)*.01 !convert to metric and ditch the last dummy element (?) -ahu
-
+VT_TAU=(/0.0004, 0.0006, 0.0009, 0.0015, 0.0023, 0.0038, 0.0060 &
+   , 0.0093, 0.0150, 0.0230, 0.0370, 0.0580, 0.0880, 0.1300, 0.2100 &
+   , 0.3000, 0.4300, 0.6000, 0.8100, 1.0000, 1.4000, 1.8000, 2.3000 &
+   , 2.9000, 3.6000, 4.4000, 5.2000, 6.1000, 7.0000, 7.8000, 8.5000 &
+   , 8.9000, 9.0000, 9.0000/)
 
 end subroutine micro_init_tau
 

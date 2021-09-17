@@ -5,7 +5,7 @@ use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
                     num_h_bins, ampORbin,num_aero_moments,ss_init, &
                     rain_source, mp_proc_dg, initprof
-use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean
+use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK
 use switches, only: zctrl
 
 !use parameters, only:nx,nz,num_h_moments
@@ -17,6 +17,7 @@ real :: th_lem(JMINP:JMAXP, KKP)
 real :: sq_lem(JMINP:JMAXP, KKP, NQP)
 real :: sth_lem(JMINP:JMAXP, KKP)
 real :: w_lem(JMINP:JMAXP, KKP)
+real :: VT_TAU(LK)
 
 type qindex
     integer :: ispecies ! Species index

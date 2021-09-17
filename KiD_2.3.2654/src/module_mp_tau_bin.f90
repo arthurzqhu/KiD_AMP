@@ -1554,6 +1554,7 @@ enddo
       SUBROUTINE BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
+      use micro_prm, only: VT_TAU
       IMPLICIT NONE
 
 ! This routine calculates the tendency for each bin due to sedimentation
@@ -1601,8 +1602,9 @@ enddo
             QLNORIG(J,K,L) = ANKORIG(J,K,L)
             IF(QLORIG(J,K,L) > eps.AND.             &
      &         QLNORIG(J,K,L) > eps)THEN
-                  AMS(J,K)=QLORIG(J,K,L)/QLNORIG(J,K,L)
-                  VT(J,K)=-ALP(L)*(AMS(J,K)*1000.)**BET(L)
+                  !AMS(J,K)=QLORIG(J,K,L)/QLNORIG(J,K,L)
+                  !VT(J,K)=-ALP(L)*(AMS(J,K)*1000.)**BET(L)
+                  VT(J,K)=-VT_TAU(L)*100.
             ELSE
               AMS(J,K)=0.
               VT(J,K)=0.
