@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-mconfigtemp='2M_sedonly_i_r' # case/folder name. determined automatically if set empty
-caselist=(101) #(101 102 103 105 106 107)
+mconfig_temp='condonly_3M' # case/folder name. determined automatically if set empty
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN" "AMP")
-bintype=("TAU" "SBM")
+ampORbin=("AMP" "BIN")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -18,27 +18,25 @@ rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
-imc2=0 # III moment for cloud
+imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=0 # III moment for rain
-ztop=4000. # top of the domain
-zcb=1500.
-zct=3000.
-t1=6000.
-
+imr2=6 # III moment for rain
+ztop=6000. # top of the domain
+t1=3600.
+t2=900.
 # switches
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=0
-l_sed_s=1
-l_adv_s=0
+l_sed_s=0
+l_adv_s=1
 
 
 # set initial water if nucleation/condensation and/or adv is turned off 
 if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-   #icimm=1.e-3
-   #icinm=100.d6  
-   irimm=0.5d-3
-   irinm=3.d3
+   icimm=0.001     
+   icinm=100.e6  
+   irimm=0.5e-3
+   irinm=3.e3
 else 
    icimm=0.
    icinm=0.      
@@ -60,42 +58,29 @@ else
 fi
 
 
-#ia=50
+iw=2
+ia=100
 
-#for icimm in 0.0003 0.001 0.003 0.01
-#do
-#	for icinm in 30 100 300 
-#	do
-#      mconfig=m"icimm"n"icinm"
-
-#for isp_c in 2 15
-#do
-#	for isp_r in 2 15
-#	do
-
-#mc1=(0 2 2 4 4 6)
-#mc2=(2 0 4 2 6 4)
-#mnum=${#mc1[@]}
-
-#for ((imnum=0; imnum<mnum; imnum++))
-#do
-#	imc1=${mc1[imnum]}
-#	imc2=${mc2[imnum]}
-#for ((imc1=0; imc1<8; imc1=imc1+2))
-#do
-#	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
-#	do
-
-iw=0.5
-ia=50
-
-#for iw in 0.5 #1 2 4 6 8 10
-for irimm in 0.0001 0.0003 0.001 0.003
+for iw in 2 4 6 8 10
+#for pcpt in 0.01 0.05 0.1 0.5
 do
-   mconfig=${mconfigtemp}m${irimm}
-   echo $mconfig
-  for ia in 50 #100 200 400
+  echo w=$iw
+  # reset oscillation time based on updraft speed to prevent overshooting
+  if [[ $((ztop/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+    t2=$((ztop/$iw))
+    t1=$(($t2*4))
+  fi
+  echo t1=$t1
+  echo t2=$t2
+
+  for ia in 100 #50 100 200 400
   do
+  for icimm in 0.01 0.03
+  do
+     icinm=100.e6
+     mconfig=${mconfig_temp}
+     echo cwc=$icimm
+  echo Na=$ia
     for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
     do
       for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -120,14 +105,14 @@ do
               nhb='34,1'
             fi
           fi
-          outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/a${ia}/w${iw}/
+          outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/c${icimm}/w${iw}/
     	  for ((ic=1; ic<=case_num; ic++))
     	  do
     	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
     	    then
     	      zc=0
             else
-    	      zc="$ztop,$zcb,$zct"
+    	      zc="$ztop,600.,1200."
             fi
     	    if [ ! -d $outdir ]; then
     	      mkdir -p $outdir
@@ -198,7 +183,12 @@ dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
+tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
+tctrl(3)=1080.    !For cases 105-107
+tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
+!rhctrl=${rh}
+!pctrl_v=${pcpt}
 /
 
 &switch
@@ -219,13 +209,13 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
-initprof='i'
-l_diag_nu=.true.
+initprof='i' ! 'i' for a initial water profile increase wrt height, 'c' for constant
+l_diag_nu=.false.
 /
 END
      ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
 #            done
-#          done
+          done
         done
       done
     done

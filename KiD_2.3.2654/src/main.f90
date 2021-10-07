@@ -14,7 +14,7 @@
 Module main
 
   Use typeKind
-  Use parameters, only : dt, dg_dt, nx, nz
+  Use parameters, only : dt, dg_dt, nx, nz, nspecies
   Use namelists, only : read_namelist,ss_init
   Use runtime, only : time, time_step, n_times
   Use switches
@@ -29,6 +29,7 @@ Module main
   Use divergence, only : diverge_column
   Use micro_prm, only: check_bintype,nkr
   Use column_variables
+  use misc_fun, only: diag_nu
   Implicit none
 
 contains
@@ -36,6 +37,7 @@ contains
   subroutine main_loop
     real(8), allocatable :: temp_field(:,:)
     integer :: itime      ! loop counter for time
+    integer :: ih         ! loop counter for hydrometeor species 
     !
     ! Start by reading in namelists
     !
@@ -44,6 +46,7 @@ contains
     ss=ss_init 
 
     call check_bintype
+
     ! Set up the initial fields and forcing
 
     if (l_input_file)then

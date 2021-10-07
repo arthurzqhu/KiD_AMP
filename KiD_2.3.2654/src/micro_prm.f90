@@ -1,15 +1,19 @@
 module micro_prm
-use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins
+use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins, nspecies
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
-                    cloud_init,rain_init,bintype,num_h_moments, &
-                    num_h_bins, ampORbin,num_aero_moments,ss_init, &
+                    cloud_init,rain_init,bintype, &
+                    ampORbin,num_aero_moments,ss_init, &
                     rain_source, mp_proc_dg, initprof
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK
 use switches, only: zctrl
 
 !use parameters, only:nx,nz,num_h_moments
 implicit none
+
+
+! ***** variables for diagnostic 2M AMP ***** !
+real(8) :: nu_diag(nz,nx,nspecies)
 
 ! ***** variables for TAU ***** !
 real :: q_lem(JMINP:JMAXP, KKP, NQP)
@@ -212,8 +216,8 @@ real, dimension(nz,nx,max_nbins) :: ffcdprev_mass,ffcdprev_num ! mass and number
 ! after microphysics 
 
 !double precision, dimension(nkr) :: fncn,ffcd,ffip,ffid,ffic,ffgl,ffhl,ffsn
-!    real, dimension(nz,nx,num_h_moments(1)) :: Mpc2d
-!    real, dimension(nz,nx,num_h_moments(2)) :: Mpr2d
+!real, dimension(nz,nx,num_h_moments(1)) :: Mpc2d
+!real, dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 !    real, dimension(nz,nx,2) :: guessc2d,guessr2d
 !integer:: imomc1,imomc2,imomr1,imomr2
 integer, dimension(3):: pmomsc,pmomsr
@@ -253,90 +257,90 @@ integer :: idx &
            ,oth(nhydro) = (/(idx,idx=1,nhydro,1)/)
 contains
 
-    subroutine check_bintype    
-    implicit none
+   subroutine check_bintype    
+   implicit none
 
-    if (bintype .eq. 'sbm') then
-        nkr=33
-        split_bins=14
+   if (bintype .eq. 'sbm') then
+       nkr=33
+       split_bins=14
 
-        if (ampORbin .eq. 'bin') then
-            num_h_moments=(/1,1/)
-            num_h_bins=(/33,33/)
-        end if
+       if (ampORbin .eq. 'bin') then
+           num_h_moments=(/1,1/)
+           num_h_bins=(/33,33/)
+       end if
 
-    elseif (bintype .eq. 'tau') then
-        nkr=34
-        num_aero_moments=1
-        split_bins=15
+   elseif (bintype .eq. 'tau') then
+       nkr=34
+       num_aero_moments=1
+       split_bins=15
 
-        if (ampORbin .eq. 'bin') then
-            num_h_moments=(/2,2/)
-            num_h_bins=(/34,34/)
-        endif
-    endif
+       if (ampORbin .eq. 'bin') then
+           num_h_moments=(/2,2/)
+           num_h_bins=(/34,34/)
+       endif
+   endif
 
-    end subroutine check_bintype
-    
-    real function mean(arr,n,wgt)
-        implicit none 
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
-        integer :: n
+   end subroutine check_bintype
 
-        ! calculates the mean of an array `arr` given the weights `wgt`
-        if (present(wgt)) then
-            if (any(wgt<0)) then
-                print*, "weights can't be negative"
-                return
-            else
-                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
-                mean=sum(arr*wgt)
-            endif
-        else
-            mean=sum(arr)/n
-        endif
+   real function mean(arr,n,wgt)
+       implicit none 
+       real, dimension(n) :: arr
+       real, optional, dimension(n) :: wgt
+       integer :: n
 
-    end function mean
+       ! calculates the mean of an array `arr` given the weights `wgt`
+       if (present(wgt)) then
+           if (any(wgt<0)) then
+               print*, "weights can't be negative"
+               return
+           else
+               if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
+               mean=sum(arr*wgt)
+           endif
+       else
+           mean=sum(arr)/n
+       endif
 
-    real function std(arr,n,wgt)
-        implicit none
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
-        integer :: n
-        
-        if (present(wgt)) then
-            if (any(wgt<0)) then
-                print*, "weights can't be negative"
-                return
-            else
-                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
-                std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt))
-            endif
-        else
-            std=sqrt(sum((arr-mean(arr,n))**2)/n)
-        end if
-    
-    end function std
-    
-    real function reldisp(arr,n,wgt)
-        implicit none
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
-        integer :: n
+   end function mean
 
-        reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
+   real function std(arr,n,wgt)
+       implicit none
+       real, dimension(n) :: arr
+       real, optional, dimension(n) :: wgt
+       integer :: n
+       
+       if (present(wgt)) then
+           if (any(wgt<0)) then
+               print*, "weights can't be negative"
+               return
+           else
+               if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
+               std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt))
+           endif
+       else
+           std=sqrt(sum((arr-mean(arr,n))**2)/n)
+       end if
+   
+   end function std
+   
+   real function reldisp(arr,n,wgt)
+       implicit none
+       real, dimension(n) :: arr
+       real, optional, dimension(n) :: wgt
+       integer :: n
 
-    end function reldisp
+       reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
 
-    real function shparam(arr,n,wgt)
-        implicit none
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
-        integer :: n
+   end function reldisp
 
-        shparam=1/reldisp(arr,n,wgt)**2
+   real function shparam(arr,n,wgt)
+       implicit none
+       real, dimension(n) :: arr
+       real, optional, dimension(n) :: wgt
+       integer :: n
 
-    end function shparam
+       shparam=1/reldisp(arr,n,wgt)**2
+
+   end function shparam
 
 end module micro_prm

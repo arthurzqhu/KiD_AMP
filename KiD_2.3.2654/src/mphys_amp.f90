@@ -17,8 +17,9 @@ module mphys_amp
   Use micro_prm
   Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
   Use switches, only: l_advect,l_diverge, l_noadv_theta, l_noadv_qv
-  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors
+  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors, l_diag_nu
   use switches, only: zctrl
+  use misc_fun, only: diag_nu
   Implicit None
 
   !Logical switches
@@ -30,7 +31,7 @@ contains
 
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
-    integer :: i, j, k, imom, rain_alt
+    integer :: i, j, k, imom, rain_alt, momx, momy
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
@@ -39,7 +40,7 @@ contains
     real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d
     real, dimension(nz) :: field
     real(8),dimension(nz,flag_count) :: fieldflag
-    real(8),dimension(nz,nx) :: dm
+    real(8),dimension(nz,nx) :: dm, momvalx, momvaly
     real(8), dimension(nz) :: fielddp
     real(8), dimension(nz,nx) :: fielddp2d
     real(8), dimension(nz,max_nbins) :: fieldbin
@@ -165,19 +166,46 @@ contains
    endif
 
    if (ampORbin .eq. 'amp') then
+
+      ! diagnose nu
+      do ih=1,nspecies
+         if (num_h_moments(ih)<3) then
+            if (ih==1) then 
+               momvalx=Mpc2d(:,:,1)
+               momvaly=Mpc2d(:,:,2)
+               momx=pmomsc(1)
+               momy=pmomsc(2)
+            elseif (ih==2) then
+               momvalx=Mpr2d(:,:,1)
+               momvaly=Mpr2d(:,:,2)
+               momx=pmomsr(1)
+               momy=pmomsr(2)
+            endif
+            do k=1,nz
+               do j=1,nx
+                  call diag_nu(nu_diag(k,j,ih),momvalx(k,j),momvaly(k,j),momx,momy)
+
+                  ! replace NaNs with the default shape parameter
+                  if (nu_diag(k,j,ih) .ne. nu_diag(k,j,ih)) nu_diag(k,j,ih)=h_shape(ih)
+               enddo
+            enddo
+         endif
+      enddo
+
       dropsm2d=0.
       dropsn2d=0.
       dropsinitm2d=0.
       dropsinitn2d=0.
 
+      if (l_diag_nu) then
+         if (num_h_moments(1)<3) guessc2d(:,:,1)=nu_diag(:,:,1)
+         if (num_h_moments(2)<3) guessr2d(:,:,1)=nu_diag(:,:,2)
+      endif
+
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d)
 
-      !dropsm2d=dropsinitm2d
-      !dropsn2d=dropsinitn2d
-      !print*, Mpc2d(46,1,:)
-      !print*, Mpr2d(46,1,:)
    elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
@@ -268,6 +296,7 @@ do i=1,nx
 
    enddo
 enddo
+
 
 ! Save some diagnostics
 !fitting flag

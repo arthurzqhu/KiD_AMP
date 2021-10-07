@@ -64,10 +64,10 @@ module namelists
   character(200) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
   character(200) :: initprof='' ! 'c' as a constant column of water, 'i' linearly increasing ...
   ! towards the cloud top, where cloud and rain mass = cloud_init(1) and rain_init(1) 
-  logical :: mp_proc_dg
+  logical :: mp_proc_dg, l_diag_nu
 
   namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, &
-          mp_proc_dg, bintype, ampORbin, l_coll_coal, initprof &
+          mp_proc_dg, bintype, ampORbin, l_coll_coal, initprof, l_diag_nu &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &

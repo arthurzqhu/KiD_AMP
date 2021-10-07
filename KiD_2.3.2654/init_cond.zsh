@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-mconfig='sed_only_c' # case/folder name. determined automatically if set empty
+mconfig='fullmic_2Mfixednu' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("SBM")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -18,17 +18,17 @@ rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
+imc2=0 # III moment for cloud
 imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+imr2=0 # III moment for rain
 ztop=6000. # top of the domain
 t1=3600.
 t2=900.
 # switches
-l_nuc_cond_s=0
-l_coll_s=0
+l_nuc_cond_s=1
+l_coll_s=1
 l_sed_s=1
-l_adv_s=0
+l_adv_s=1
 
 
 # set initial water if nucleation/condensation and/or adv is turned off 
@@ -58,35 +58,10 @@ else
 fi
 
 
-#ia=50
-
-#for icimm in 0.0003 0.001 0.003 0.01
-#do
-#	for icinm in 30 100 300 
-#	do
-#      mconfig=m"icimm"n"icinm"
-
-#for isp_c in 2 15
-#do
-#	for isp_r in 2 15
-#	do
-
-#mc1=(0 2 2 4 4 6)
-#mc2=(2 0 4 2 6 4)
-#mnum=${#mc1[@]}
-
-#for ((imnum=0; imnum<mnum; imnum++))
-#do
-#	imc1=${mc1[imnum]}
-#	imc2=${mc2[imnum]}
-#for ((imc1=0; imc1<8; imc1=imc1+2))
-#do
-#	for ((imc2=imc1+2; imc2<=8; imc2=imc2+2))
-#	do
 iw=2
 ia=100
 
-for iw in 2 #0.5 1 2 4 6 8 10
+for iw in 0.5 1 2 4 6 8 10
 #for pcpt in 0.01 0.05 0.1 0.5
 do
   echo w=$iw
@@ -98,7 +73,7 @@ do
   echo t1=$t1
   echo t2=$t2
 
-  for ia in 100 #50 100 200 400
+  for ia in 50 100 200 400
 #  for rh in 0.8 0.9 1.0 
   do
 #     mconfig=Sc_pcpt${pcpt}_rh${rh}
@@ -209,8 +184,8 @@ tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period o
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-rhctrl=${rh}
-pctrl_v=${pcpt}
+!rhctrl=${rh}
+!pctrl_v=${pcpt}
 /
 
 &switch
@@ -232,6 +207,7 @@ ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
 initprof='c' ! 'i' for a initial water profile increase wrt height, 'c' for constant
+l_diag_nu=.false.
 /
 END
      ./bin/KiD_1D.exe namelists/${ampORbin[$iab]}_${bintype[$ibt]}.nml
