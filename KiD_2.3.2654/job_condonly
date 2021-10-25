@@ -9,4 +9,10 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
-./init_cond.zsh 2 100
+for iw in 8 16
+do
+   for ia in 800 1600
+   do
+      ./cond_only.zsh $iw $ia >& out&
+   done
+done

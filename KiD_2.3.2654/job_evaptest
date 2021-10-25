@@ -1,0 +1,29 @@
+#!/bin/zsh
+#SBATCH -J KiD
+#SBATCH --array=1-36
+#SBATCH -o KiD-%A-%a.out
+#SBATCH -e KiD-%A-%a.out
+#SBATCH -t 24:00:00
+#SBATCH -p high2
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --mail-type=END
+#SBATCH --mail-user=azqhu@ucdavis.edu
+
+echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
+
+dm_list=(200 300 400 500 800 1000)
+rh_list=(0.3 0.6 0.75 0.9 0.95 0.99)
+
+len1=${#dm_list[@]}
+len2=${#rh_list[@]}
+iid=$SLURM_ARRAY_TASK_ID
+
+jdm=$(($iid%$len1))
+[[ $jdm == 0 ]] && jdm=$len1
+jrh=$((($iid+$len1-1)/$len1))
+
+echo $dm_list[$jdm]
+echo $rh_list[$jrh]
+
+./evaptest.zsh $dm_list[$jdm] $rh_list[$jrh]
