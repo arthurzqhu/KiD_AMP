@@ -44,6 +44,8 @@ AMP_TAU.nml
 BIN_SBM.nml
 BIN_TAU.nml
 THOM.nml
+KiD_2.3.2654/namelists/jobnml/*
 
 # misc
 .remote-sync.json
+.nfs*
