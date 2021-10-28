@@ -1,12 +1,29 @@
-#!/bin/bash -l
+#!/bin/zsh
 #SBATCH -J KiD
-#SBATCH -o KiD-%j.out
-#SBATCH -e KiD-%j.err
-#SBATCH -t 6:00:00
+#SBATCH --array=1-42
+#SBATCH -o KiD-%A-%a.out
+#SBATCH -e KiD-%A-%a.out
+#SBATCH -t 24:00:00
 #SBATCH -p high2
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --mail-type=END
 #SBATCH --mail-user=azqhu@ucdavis.edu
 
-./sed_only.sh
+echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
+
+dm_list=(80 120 180 270 400 600 900)
+sp_list=(2 4 6 8 10 12)
+
+len1=${#dm_list[@]}
+len2=${#sp_list[@]}
+iid=$SLURM_ARRAY_TASK_ID
+
+jdm=$(($iid%$len1))
+[[ $jdm == 0 ]] && jdm=$len1
+jsp=$((($iid+$len1-1)/$len1))
+
+echo $dm_list[$jdm]
+echo $sp_list[$jsp]
+
+./sedonly.zsh $dm_list[$jdm] $sp_list[$jsp]
