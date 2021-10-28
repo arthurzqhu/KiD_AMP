@@ -41,7 +41,8 @@ contains
     real(8),dimension(nz,flag_count) :: fieldflag
     real(8),dimension(nz,nx) :: dm
     real(8), dimension(nz) :: fielddp
-    real(8), dimension(nz,nx) :: fielddp2d
+    real(8), dimension(nz) :: dm_c, dm_r, dm_w
+    real(8), dimension(nz,nx) :: fielddp2d, dm_c2d, dm_r2d, dm_w2d
     real(8), dimension(nz,max_nbins) :: fieldbin
     real(8), dimension(nz,nx,max_nbins) :: fieldbin2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
@@ -339,21 +340,33 @@ do j=1,nx
       m0w=mc(k,j,1)+mr(k,j,1)
       reff(k,j)=m3w(k,j)/m2w*0.5
       if (nx==1) then
-         fielddp(k)=(m3w(k,j)/m0w)**(1./3.)
-         if ( (fielddp(k) .ne. fielddp(k)) .or. (fielddp(k)>inf) ) fielddp(k)=0.
+         dm_w(k)=(m3w(k,j)/m0w)**(1./3.)
+         dm_c(k)=(mc(k,j,4)/mc(k,j,1))**(1./3.)
+         dm_r(k)=(mr(k,j,4)/mr(k,j,1))**(1./3.)
+         if ( (dm_w(k) .ne. dm_w(k)) .or. (dm_w(k)>inf) ) dm_w(k)=0.
+         if ( (dm_c(k) .ne. dm_c(k)) .or. (dm_c(k)>inf) ) dm_c(k)=0.
+         if ( (dm_r(k) .ne. dm_r(k)) .or. (dm_r(k)>inf) ) dm_r(k)=0.
       else
-         fielddp2d(k,j)=(m3w(k,j)/m0w)**(1./3.)
-         if ( (fielddp2d(k,j) .ne. fielddp2d(k,j)) .or. (fielddp2d(k,j)>inf) ) fielddp2d(k,j)=0.
+         dm_w2d(k,j)=(m3w(k,j)/m0w)**(1./3.)
+         dm_c2d(k,j)=(mc(k,j,4)/mc(k,j,1))**(1./3.)
+         dm_r2d(k,j)=(mr(k,j,4)/mr(k,j,1))**(1./3.)
+         if ( (dm_w2d(k,j) .ne. dm_w2d(k,j)) .or. (dm_w2d(k,j)>inf) ) dm_w2d(k,j)=0.
+         if ( (dm_c2d(k,j) .ne. dm_c2d(k,j)) .or. (dm_c2d(k,j)>inf) ) dm_c2d(k,j)=0.
+         if ( (dm_r2d(k,j) .ne. dm_r2d(k,j)) .or. (dm_r2d(k,j)>inf) ) dm_r2d(k,j)=0.
       endif
       if ( (reff(k,j) .ne. reff(k,j)) .or. (reff(k,j)>inf) ) reff(k,j)=0.
    enddo
 enddo
 
 if (nx==1) then
-   call save_dg(fielddp,'Dm',i_dgtime,'micron',dim='z')
+   call save_dg(dm_w,'Dm',i_dgtime,'micron',dim='z')
+   call save_dg(dm_c,'Dm',i_dgtime,'micron',dim='z')
+   call save_dg(dm_r,'Dm',i_dgtime,'micron',dim='z')
    call save_dg(reff(:,1)*1.e6,'reff',i_dgtime,'micron',dim='z')
 else
-   call save_dg(fielddp2d,'Dm',i_dgtime,'micron',dim='z,x')
+   call save_dg(dm_w2d,'Dm',i_dgtime,'micron',dim='z,x')
+   call save_dg(dm_c2d,'Dm',i_dgtime,'micron',dim='z,x')
+   call save_dg(dm_r2d,'Dm',i_dgtime,'micron',dim='z,x')
    call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
 endif
 
