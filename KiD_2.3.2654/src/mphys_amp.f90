@@ -359,14 +359,14 @@ do j=1,nx
 enddo
 
 if (nx==1) then
-   call save_dg(dm_w,'Dm',i_dgtime,'micron',dim='z')
-   call save_dg(dm_c,'Dm',i_dgtime,'micron',dim='z')
-   call save_dg(dm_r,'Dm',i_dgtime,'micron',dim='z')
+   call save_dg(dm_w,'Dm_w',i_dgtime,'micron',dim='z')
+   call save_dg(dm_c,'Dm_c',i_dgtime,'micron',dim='z')
+   call save_dg(dm_r,'Dm_r',i_dgtime,'micron',dim='z')
    call save_dg(reff(:,1)*1.e6,'reff',i_dgtime,'micron',dim='z')
 else
-   call save_dg(dm_w2d,'Dm',i_dgtime,'micron',dim='z,x')
-   call save_dg(dm_c2d,'Dm',i_dgtime,'micron',dim='z,x')
-   call save_dg(dm_r2d,'Dm',i_dgtime,'micron',dim='z,x')
+   call save_dg(dm_w2d,'Dm_w',i_dgtime,'micron',dim='z,x')
+   call save_dg(dm_c2d,'Dm_c',i_dgtime,'micron',dim='z,x')
+   call save_dg(dm_r2d,'Dm_w',i_dgtime,'micron',dim='z,x')
    call save_dg(reff*1.e6,'reff',i_dgtime,'micron',dim='z,x')
 endif
 
