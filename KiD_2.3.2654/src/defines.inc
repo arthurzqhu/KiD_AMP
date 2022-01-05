@@ -6,9 +6,9 @@
 # Uncomment the appropriate choice below or specify in the call to make
 # i.e. make CASE=CU_2D all
 #
-CASE=1D
+#CASE=1D
 #CASE=SC_2D
-#CASE=CU_2D
+CASE=CU_2D
 #CASE=ISDAC_2D
 #CASE=SQUALL_2D
 #CASE=OROG_2D
