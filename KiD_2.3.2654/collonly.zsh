@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='sedonly' # case/folder name. determined automatically if set empty
+mconfig_temp='collonly' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -21,26 +21,14 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=6000. # top of the domain
+ztop=3000. # top of the domain
 t1=1800.
 t2=900.
 # switches
 l_nuc_cond_s=0
-l_coll_s=0
-l_sed_s=1
+l_coll_s=1
+l_sed_s=0
 l_adv_s=0
-
-
-# set initial water if nucleation/condensation and/or adv is turned off 
-if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-#   icimm=0.001     
-#   icinm=100.e6  
-#   irimm=0.5e-3
-#   irinm=3.e3
-else 
-   icimm=0.
-   icinm=0.      
-fi
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -60,23 +48,27 @@ fi
 
 iw=2
 ia=100
-idm=$1
-
-irinm=1.e4
-irimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$irinm))
-
-var1str=dm$1
-var2str=sp$2
-
-echo dm=$idm
-
-#for ia in 50 100 200 400 800 1600
-#do
+imc=$1
 isp_c=$2
-#for icimm in 0.01 0.03
-#do
-   mconfig=${mconfig_temp}
-#   echo cwc=$icimm
+isp_r=$2
+var1str=mc${imc}
+var2str=sp${isp_c}
+
+icinm=100.e6
+icimm=$imc
+#icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+#irinm=${inr}
+#irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
+
+# reset oscillation time based on updraft speed to prevent overshooting
+if [[ $((ztop/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+  t2=$((ztop/$iw))
+  t1=$(($t2*4))
+fi
+echo t1=$t1
+echo t2=$t2
+
+mconfig=${mconfig_temp}
 echo Na=$ia
   for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
   do
@@ -211,10 +203,6 @@ initprof='i' ! 'i' for a initial water profile increase wrt height, 'c' for cons
 /
 END
      ./bin/KiD_1D.exe namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
-#            done
-#          done
-#        done
-#      done
     done
   done
 done
