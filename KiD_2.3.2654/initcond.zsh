@@ -1,5 +1,8 @@
 #!/bin/zsh
 
+# make sure what's compiled is the right case
+./dimension_config.zsh 1D
+
 # config of the run
 mconfig_temp='fullmic' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
