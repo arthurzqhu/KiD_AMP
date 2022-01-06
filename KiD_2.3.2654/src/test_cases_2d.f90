@@ -53,6 +53,7 @@ module test_cases_2d
         maxT  & ! max time
        ,maxZ  & ! max height
        ,maxW  & ! max updraught velocity
+       ,minW  & ! min updraught velocity
        ,maxX    ! max horizontal extent
 
   
@@ -90,12 +91,14 @@ contains
        ! 2d cumulus case based on morrison & grabowski (2006)
        !=====================================================
        ! Set default control values
+       if (all(wctrl==0.))wctrl(1)=1.
        if (all(zctrl==0.))zctrl(1)=3000.
        if (all(tctrl==0.))tctrl(1)=3600.
        if (all(xctrl==0.))xctrl(1)=9000.
        if (ipctrl==0)ipctrl=1
        if (rhctrl==0.)rhctrl=1.
 
+       minW=wctrl(1)
        maxZ=zctrl(1)
        maxX=xctrl(1)
        maxT=tctrl(1)
@@ -107,7 +110,7 @@ contains
 
        call allocate_forcing(nz,nx,n_force_times)
 
-       call set_2D_Cu_wind_field(maxZ, maxX, n_force_times)
+       call set_2D_Cu_wind_field(minW, maxZ, maxX, n_force_times)
 
        do ih=1,naerosol
          indices(ih)=ih
@@ -699,7 +702,7 @@ contains
 
     select case(ip)
     case (1) 
-      call set_2D_Cu_wind_field(maxZ, maxX, n_times)
+      call set_2D_Cu_wind_field(minW, maxZ, maxX, n_times)
     case (2)
       call set_2D_Sc_wind_field(1._wp, maxZ, maxX, n_times)
     case (3)
@@ -707,12 +710,12 @@ contains
     case (4)
       call set_2D_Sc_wind_field(1._wp, maxZ, maxX, n_times)
     case default
-       call set_2D_Cu_wind_field(maxZ, maxX, n_times)
+       call set_2D_Cu_wind_field(minW, maxZ, maxX, n_times)
     end select
 
   end subroutine set_2D_wind_field
 
-  subroutine set_2D_Cu_wind_field(maxZ, maxX, n_times)
+  subroutine set_2D_Cu_wind_field(minW, maxZ, maxX, n_times)
     !
     ! Set up the 2D wind field for cumulus based on 
     ! Morrison and Grabowski (2007) 
@@ -720,7 +723,7 @@ contains
     ! Using formulation described in Appendix of
     ! MG07
 
-    real(wp), intent(in) :: maxZ, maxX
+    real(wp), intent(in) :: maxZ, maxX, minW
     integer, intent(in) :: n_times
 
     !local variables
@@ -773,7 +776,7 @@ contains
     ! AMP2A AND AMP2B CONTROL THE TEMPORAL FLUCTUATIONS OF SHEAR (TILT)
     ! TSCALE1 AND TSCALE2 ARE PERIODS OF COSINE FLUCTUATIONS OF THE ABOVE
 
-    AMPL0=1.0
+    AMPL0=minW
     AMPL20=0.
     XSCALE0=1.8*1.e3
     AMPA=3.5
