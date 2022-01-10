@@ -1,6 +1,6 @@
 #!/bin/zsh
 #SBATCH -J KiD
-#SBATCH --array=1-25
+#SBATCH --array=1-20
 #SBATCH -o KiD-%A-%a.out
 #SBATCH -e KiD-%A-%a.out
 #SBATCH -t 24:00:00
@@ -13,7 +13,7 @@
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
 a_list=(100 200 400 800 1600)
-w_list=(1 2 4 8 16)
+w_list=(1 2 4 8)
 
 len1=${#a_list[@]}
 len2=${#w_list[@]}

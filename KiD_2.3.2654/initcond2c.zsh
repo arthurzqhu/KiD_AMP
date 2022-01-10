@@ -25,7 +25,7 @@ imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 ztop=6000. # top of the domain
-t1=1800.
+t1=3600.
 rh=1.
 
 # switches
@@ -152,7 +152,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=2.0            !Timestep length (s)
+dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=20.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
