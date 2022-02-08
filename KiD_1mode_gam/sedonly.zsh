@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='sedonly' # case/folder name. determined automatically if set empty
+mconfig_temp='sedonly_i' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -21,8 +21,8 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=6000. # top of the domain
-t1=1800.
+ztop=8000. # top of the domain
+t1=6000.
 t2=900.
 # switches
 l_nuc_cond_s=0
@@ -62,8 +62,11 @@ iw=2
 ia=100
 idm=$1
 
-irinm=1.e4
-irimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$irinm))
+#irinm=1.e4
+#irimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$irinm))
+
+irimm=0.0005
+irinm=$(($irimm/(($idm*1.e-6)**3*3.14159/6*1000.)))
 
 var1str=dm$1
 var2str=sp$2
@@ -72,7 +75,7 @@ echo dm=$idm
 
 #for ia in 50 100 200 400 800 1600
 #do
-isp_c=$2
+isp_r=$2
 #for icimm in 0.01 0.03
 #do
    mconfig=${mconfig_temp}
@@ -109,7 +112,7 @@ echo Na=$ia
   	    then
   	      zc=0
           else
-  	      zc="$ztop,600.,1200."
+  	      zc="$ztop,5500.,7000."
           fi
   	    if [ ! -d $outdir ]; then
   	      mkdir -p $outdir
