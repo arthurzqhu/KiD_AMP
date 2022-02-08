@@ -30,7 +30,10 @@ contains
 
   Subroutine mphys_amp_interface
     use parameters, only: flag_count,max_nbins
-    integer :: i, j, k, imom, rain_alt
+    use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
+    use, intrinsic :: iso_fortran_env, only: real32
+
+    integer :: i, j, k, imom, rain_alt, ib
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpr2d
@@ -42,7 +45,11 @@ contains
     real(8),dimension(nz,nx) :: dm
     real(8), dimension(nz) :: fielddp
     real(8), dimension(nz) :: dm_c, dm_r, dm_w
-    real(8), dimension(nz,nx) :: fielddp2d, dm_c2d, dm_r2d, dm_w2d
+    real(8), dimension(nz,nx) :: fielddp2d, dm_c2d, dm_r2d, dm_w2d, gs_deltac, gs_sknsc &
+       , gs_deltar, gs_sknsr
+    real(8), dimension(nkr) :: diag_m, diag_D
+    real(8) :: Deffc, Dbarc, eps_realc, Deffr, Dbarr, eps_realr, delta_realc, delta_gamc &
+       , skns_gamc, skns_realc, delta_realr, delta_gamr, skns_gamr, skns_realr
     real(8), dimension(nz,max_nbins) :: fieldbin
     real(8), dimension(nz,nx,max_nbins) :: fieldbin2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
@@ -55,6 +62,9 @@ contains
     real(8) :: m2w, m0w
     character(1) :: Mnum
     real(8) :: dnr_s,rm_s !source dnr and rain mass
+    real(real32) :: nan
+
+    nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
     do i=1,nx
        do k=1,nz
@@ -391,6 +401,69 @@ else
    call save_dg(albd(:), 'albedo', i_dgtime,  units,dim='x')
    call save_dg(sum(opdep(1:nx))/nx, 'mean_opt_dep', i_dgtime,  units,dim='time')
    call save_dg(sum(albd(1:nx))/nx, 'mean_albedo', i_dgtime,  units,dim='time')
+endif
+
+! Gamma score
+! AHU: gamma score is a measure of how gamma-like a distribution is
+! Value closer to 1 => more gamma-like
+! > 1 => more large droplets than gamma
+! (0,1) => more small droplets than gamma
+! gamma score is calculated two ways, through the ratio of Deff/Dbar
+! and through skewness from gamma vs actual
+if (ampORbin .eq. 'bin') then
+
+   diag_D=diams
+
+   do k=1,nz
+      do j=1,nx
+
+         if (bintype .eq. 'tau') then
+            diag_m=dropsm2d(k,j,:)/dropsn2d(k,j,:)
+            diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+            do ib=1,nkr
+                if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
+            end do
+         endif
+
+         Deffc=mc(k,j,4)/mc(k,j,3) ! effect diameter
+         Dbarc=mc(k,j,2)/mc(k,j,1) ! mean diameter
+         delta_realc = Deffc/Dbarc ! by my definition
+         eps_realc = reldisp(diag_D(1:split_bins),split_bins,dropsm2d(k,j,1:split_bins))
+         delta_gamc = 2.*eps_realc**2.+1. ! by definition of gamma dist
+         gs_deltac(k,j)=delta_realc/delta_gamc 
+
+         !skns_gamc = 2*eps_realc ! by definition of gamma dist
+         !skns_realc = skewness(diag_D(1:split_bins),split_bins,dropsm2d(k,j,1:split_bins))
+         !gs_sknsc(k,j) = skns_realc/skns_gamc
+
+         if (gs_deltac(k,j)>inf) gs_deltac(k,j)=nan
+         !if (gs_sknsc(k,j)>inf) gs_sknsc(k,j)=nan
+         !print*, gs_deltac(k,j)
+
+
+         Deffr=mr(k,j,4)/mr(k,j,3)
+         Dbarr=mr(k,j,2)/mr(k,j,1)
+         delta_realr = Deffr/Dbarr
+         eps_realr = reldisp(diag_D(split_bins+1:nkr),nkr-split_bins,dropsm2d(k,j,split_bins+1:nkr))
+         delta_gamr = 2.*eps_realr**2.+1. ! by definition of gamma dist
+         gs_deltar(k,j)=delta_realr/delta_gamr
+
+         !skns_gamr = 2*eps_realr ! by definition of gamma dist
+         !skns_realr = skewness(diag_D(split_bins+1:nkr),nkr-split_bins,dropsm2d(k,j,split_bins+1:nkr))
+         !gs_sknsr(k,j) = skns_realr/skns_gamr
+
+         if (gs_deltar(k,j)>inf) gs_deltar(k,j)=nan
+         !if (gs_sknsr(k,j)>inf) gs_sknsr(k,j)=nan
+         !print*, gs_deltar(k,j)
+
+      enddo
+   enddo
+   if (nx==1) then
+      call save_dg(gs_deltac(:,1),'gs_deltac',i_dgtime,'unitless',dim='z')
+      !call save_dg(gs_sknsc(:,1),'gs_sknsc',i_dgtime,'unitless',dim='z')
+      call save_dg(gs_deltar(:,1),'gs_deltar',i_dgtime,'unitless',dim='z')
+      !call save_dg(gs_sknsr(:,1),'gs_sknsr',i_dgtime,'unitless',dim='z')
+   endif
 endif
 
 !bin distributions
