@@ -280,8 +280,8 @@ contains
     
     real function mean(arr,n,wgt)
         implicit none 
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
+        real(8), dimension(n) :: arr
+        real(8), optional, dimension(n) :: wgt
         integer :: n
 
         ! calculates the mean of an array `arr` given the weights `wgt`
@@ -301,8 +301,8 @@ contains
 
     real function std(arr,n,wgt)
         implicit none
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
+        real(8), dimension(n) :: arr
+        real(8), optional, dimension(n) :: wgt
         integer :: n
         
         if (present(wgt)) then
@@ -318,11 +318,42 @@ contains
         end if
     
     end function std
+
+    real function skewness(arr,n,wgt)
+       implicit none
+       real(8), dimension(n) :: arr
+       real(8), optional, dimension(n) :: wgt
+       integer :: n
+
+       if (present(wgt)) then
+            if (any(wgt<0)) then
+                print*, "weights can't be negative"
+                return
+            else
+                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
+                skewness=sum((arr-mean(arr,n,wgt))**3*wgt)/(std(arr,n,wgt)**3)
+            endif
+        else
+            !skewness=
+        end if
+
+    end function skewness
+
+    real function logskewness(arr,n,wgt)
+       implicit none
+       real(8), dimension(n) :: arr, logarr
+       real(8), optional, dimension(n) :: wgt
+       integer :: n
+
+       logarr=log10(arr)
+       logskewness=skewness(logarr,n,wgt)
+
+    end function logskewness
     
     real function reldisp(arr,n,wgt)
         implicit none
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
+        real(8), dimension(n) :: arr
+        real(8), optional, dimension(n) :: wgt
         integer :: n
 
         reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
@@ -331,8 +362,8 @@ contains
 
     real function shparam(arr,n,wgt)
         implicit none
-        real, dimension(n) :: arr
-        real, optional, dimension(n) :: wgt
+        real(8), dimension(n) :: arr
+        real(8), optional, dimension(n) :: wgt
         integer :: n
 
         shparam=1/reldisp(arr,n,wgt)**2
