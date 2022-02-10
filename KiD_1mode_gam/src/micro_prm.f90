@@ -257,65 +257,67 @@ contains
     implicit none
 
     if (bintype .eq. 'sbm') then
-        nkr=33
-        split_bins=14
+       nkr=33
+       split_bins=14
 
-        if (ampORbin .eq. 'bin') then
-            num_h_moments=(/1,1/)
-            num_h_bins=(/33,33/)
-        end if
+       if (ampORbin .eq. 'bin') then
+          num_h_moments=(/1,1/)
+          num_h_bins=(/33,33/)
+       end if
 
     elseif (bintype .eq. 'tau') then
-        nkr=34
-        num_aero_moments=1
-        split_bins=15
+       nkr=34
+       num_aero_moments=1
+       split_bins=15
 
-        if (ampORbin .eq. 'bin') then
-            num_h_moments=(/2,2/)
-            num_h_bins=(/34,34/)
-        endif
+       if (ampORbin .eq. 'bin') then
+          num_h_moments=(/2,2/)
+          num_h_bins=(/34,34/)
+       endif
     endif
 
     end subroutine check_bintype
     
     real function mean(arr,n,wgt)
-        implicit none 
-        real(8), dimension(n) :: arr
-        real(8), optional, dimension(n) :: wgt
-        integer :: n
+       implicit none 
+       real(8), dimension(n) :: arr
+       real(8), optional, dimension(n) :: wgt
+       real(8), dimension(n) :: wgt_norm
+       integer :: n
 
-        ! calculates the mean of an array `arr` given the weights `wgt`
-        if (present(wgt)) then
-            if (any(wgt<0)) then
-                print*, "weights can't be negative"
-                return
-            else
-                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
-                mean=sum(arr*wgt)
-            endif
-        else
-            mean=sum(arr)/n
-        endif
+       ! calculates the mean of an array `arr` given the weights `wgt`
+       if (present(wgt)) then
+           if (any(wgt<0)) then
+               print*, "weights can't be negative"
+               return
+           else
+               if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+               mean=sum(arr*wgt_norm)
+           endif
+       else
+           mean=sum(arr)/n
+       endif
 
     end function mean
 
     real function std(arr,n,wgt)
-        implicit none
-        real(8), dimension(n) :: arr
-        real(8), optional, dimension(n) :: wgt
-        integer :: n
-        
-        if (present(wgt)) then
-            if (any(wgt<0)) then
-                print*, "weights can't be negative"
-                return
-            else
-                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
-                std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt))
-            endif
-        else
-            std=sqrt(sum((arr-mean(arr,n))**2)/n)
-        end if
+       implicit none
+       real(8), dimension(n) :: arr
+       real(8), optional, dimension(n) :: wgt
+       real(8), dimension(n) :: wgt_norm
+       integer :: n
+       
+       if (present(wgt)) then
+           if (any(wgt<0)) then
+               print*, "weights can't be negative"
+               return
+           else
+               if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+               std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt_norm))
+           endif
+       else
+           std=sqrt(sum((arr-mean(arr,n))**2)/n)
+       end if
     
     end function std
 
@@ -323,6 +325,7 @@ contains
        implicit none
        real(8), dimension(n) :: arr
        real(8), optional, dimension(n) :: wgt
+       real(8), dimension(n) :: wgt_norm
        integer :: n
 
        if (present(wgt)) then
@@ -330,8 +333,8 @@ contains
                 print*, "weights can't be negative"
                 return
             else
-                if (sum(wgt) .ne. 1.) wgt=wgt/sum(wgt) !make sure the weights add up to 1
-                skewness=sum((arr-mean(arr,n,wgt))**3*wgt)/(std(arr,n,wgt)**3)
+                if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+                skewness=sum((arr-mean(arr,n,wgt))**3*wgt_norm)/(std(arr,n,wgt)**3)
             endif
         else
             !skewness=
