@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='evapsed' # case/folder name. determined automatically if set empty
+mconfig_temp='evapsed_varcloudrain' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -63,34 +63,22 @@ ia=100
 
 #inc=0
 #inr=0
-idmr=$1
+idmc=$1
+#idmr=$1
+idmr=500
 irh=$2
 
-irinm=1.e4
-irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
+icimm=0.001
+icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+
+irimm=0.0005
+irinm=$(($irimm/(($idmr*1.e-6)**3*3.14159/6*1000.)))
 
 #rs_dm=$idmr.e-6
 #rs_N=1.e4
 
 var1str=dm$1
 var2str=rh$2
-
-#for iw in .5 1 2 4 8 16
-##for pcpt in 0.01 0.05 0.1 0.5
-#do
-#idmr=400
-#irinm=${inr}
-#irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
-
-#echo rainmass=$irimm
-#echo rainnumber=$irinm
-#
-#idmc=20
-#icinm=${inc}.e6
-#icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
-#
-#echo cloudmass=$icimm
-#echo cloudnumber=$icinm
 
 mconfig=${mconfig_temp}
 

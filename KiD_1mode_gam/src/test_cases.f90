@@ -795,10 +795,12 @@ contains
     allocate(qv_1d(nz))
     
     if (rhctrl==0.)rhctrl=0.75
-    pheight=(/ 0., 740., 3260./)
-    ptheta=(/ 297.9, 297.9, 312.66 /)
+    pheight=(/ 0., 740., 3260., 6000./)
+    ptheta=(/ 297.9, 297.9, 312.66,  315./)
     pqv=(/ rhctrl*.020, rhctrl*.020*.92, dble(.0024) /)
-    !pqv=(/ .015, .0138, .0024 /)
+    ! pqv=(/ .015, .0138, .0024 /)
+    ! pqv=(/0.019, .0137, .0086, 0.0001/)
+
     do k=1,nz
        z(k)=maxZ*k/float(nz)
     end do

@@ -21,8 +21,8 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=6000. # top of the domain
-t1=1800.
+ztop=3000. # top of the domain
+t1=10800.
 t2=900.
 # switches
 l_nuc_cond_s=0
@@ -48,17 +48,15 @@ fi
 
 iw=2
 ia=100
-imc=$1
+idmc=$1
 isp_c=$2
 isp_r=$2
-var1str=mc${imc}
-var2str=sp${isp_c}
+
+var1str=dm$1
+var2str=sp$2
 
 icinm=100.e6
-icimm=$imc
-#icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
-#irinm=${inr}
-#irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
+icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((ztop/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then

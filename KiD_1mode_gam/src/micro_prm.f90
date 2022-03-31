@@ -288,7 +288,8 @@ contains
        ! calculates the mean of an array `arr` given the weights `wgt`
        if (present(wgt)) then
            if (any(wgt<0)) then
-               print*, "weights can't be negative"
+               !print*, "weights can't be negative"
+               wgt(wgt<0)=0
                return
            else
                if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
@@ -309,8 +310,9 @@ contains
        
        if (present(wgt)) then
            if (any(wgt<0)) then
-               print*, "weights can't be negative"
-               return
+               wgt(wgt<0)=0
+               !print*, "weights can't be negative"
+               !return
            else
                if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
                std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt_norm))
@@ -330,8 +332,9 @@ contains
 
        if (present(wgt)) then
             if (any(wgt<0)) then
-                print*, "weights can't be negative"
-                return
+               wgt(wgt<0)=0
+               ! print*, "weights can't be negative"
+               ! return
             else
                 if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
                 skewness=sum((arr-mean(arr,n,wgt))**3*wgt_norm)/(std(arr,n,wgt)**3)

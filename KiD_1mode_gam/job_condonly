@@ -12,7 +12,6 @@
 
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
-#mc_list=(0.0002 0.0004 0.0006 0.0008 0.001) # diam between ~ 15 to 26 microns
 a_list=(100 200 400 800 1600)
 w_list=(1 2 4 8 16)
 

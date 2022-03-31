@@ -26,4 +26,4 @@ jsp=$((($iid+$len1-1)/$len1))
 echo $dm_list[$jdm]
 echo $sp_list[$jsp]
 
-./collsed.zsh $dm_list[$jdm] $sp_list[$jsp]
+./condcoll_vardmsp.zsh $dm_list[$jdm] $sp_list[$jsp]

@@ -369,12 +369,11 @@ real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
+real(8) :: tnum_gam, total_num, correct_ratio
 real(8) :: dummy,realpmom,newdiam
 real(real32) :: nan
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
-
-
 
 do k=1,nz
  do j=1,nx
@@ -396,6 +395,17 @@ do k=1,nz
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,ihyd,:))
       if (bintype .eq. 'tau') then
           ffcloud_num=ffcloud_mass/binmass
+          tnum_gam=sum(ffcloud_num)*col
+
+          ! make sure that 0th moment is also conserved
+          if (momx == 0) then
+             total_num = Mp(2)
+             if (tnum_gam /= total_num) then
+                correct_ratio = total_num/tnum_gam
+                ffcloud_num = ffcloud_num*correct_ratio
+             endif
+          endif
+
       endif
    else
       ffcloud_mass=0.
@@ -417,6 +427,16 @@ do k=1,nz
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,ihyd,:))
       if (bintype .eq. 'tau') then
           ffrain_num=ffrain_mass/binmass
+          tnum_gam=sum(ffrain_num)*col
+
+          ! make sure that 0th moment is also conserved
+          if (momx == 0) then
+             total_num = Mp(2)
+             if (tnum_gam /= total_num) then
+                correct_ratio = total_num/tnum_gam
+                ffrain_num = ffrain_num*correct_ratio
+             endif
+          endif
       endif
 
    else
@@ -620,22 +640,22 @@ real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
 real(8), dimension(10) :: mc,mr ! moments
 real(8) :: inf=huge(mc(1))
 if (bintype .eq. 'tau') then
-    diag_m=ffcdr8_mass/ffcdr8_num
-    diag_D=(diag_m/(1000.*pi/6))**(1./3.)
-    do ib=1,nkr
-        if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
-    end do
+   diag_m=ffcdr8_mass/ffcdr8_num
+   diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+   do ib=1,nkr
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
+   end do
 endif
 
 do i=1,momnum
-    if (bintype .eq. 'sbm') then
-        mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1))*col*1000.
-        mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1))*col*1000.
+   if (bintype .eq. 'sbm') then
+      mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1))*col*1000.
+      mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1))*col*1000.
 
-    elseif (bintype .eq. 'tau') then
-        mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
-        mr(i)=sum(ffcdr8_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
-    endif
+   elseif (bintype .eq. 'tau') then
+      mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
+      mr(i)=sum(ffcdr8_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
+   endif
 enddo
 
 end subroutine calcmoms

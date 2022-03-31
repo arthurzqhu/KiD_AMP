@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='evaponly_fixmass' # case/folder name. determined automatically if set empty
+mconfig_temp='evaponly_cloud' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -22,8 +22,8 @@ imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 ztop=3000. # top of the domain
-t1=1800.
-t2=900.
+t1=100.
+t2=5.
 # switches
 l_nuc_cond_s=1
 l_coll_s=0
@@ -68,6 +68,7 @@ irh=$2
 #icimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$icinm))
 icimm=0.001
 icinm=$(($icimm/(($idm*1.e-6)**3*3.14159/6*1000.)))
+
 #irinm=1.e4
 #irimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$irinm))
 
@@ -187,9 +188,9 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=0.25           !Timestep length (s)
+dt=0.05           !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=1.0         !Timestep for diagnostic output
+dg_dt=0.1         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation

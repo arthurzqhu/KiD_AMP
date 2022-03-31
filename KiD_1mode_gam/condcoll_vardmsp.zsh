@@ -1,8 +1,8 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='collonly' # case/folder name. determined automatically if set empty
-caselist=(102) #(101 102 103 105 106 107)
+mconfig_temp='condcoll_vardmsp' # case/folder name. determined automatically if set empty
+caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
 bintype=("TAU" "SBM")
@@ -21,14 +21,16 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=3000. # top of the domain
+ztop=6000. # top of the domain
+zcb=600. # cloud base height
+zct=1200. # cloud top height
 t1=1800.
 t2=900.
 # switches
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=1
 l_sed_s=0
-l_adv_s=0
+l_adv_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -54,12 +56,10 @@ isp_r=$2
 var1str=dm${idmc}
 var2str=sp${isp_c}
 
-#icinm=100.e6
-#icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
-icimm=0.001
-icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
-echo $icinm
-
+icinm=100.e6
+icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
+echo $icimm
+#icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
 #irinm=${inr}
 #irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
 
@@ -104,7 +104,7 @@ echo Na=$ia
   	    then
   	      zc=0
           else
-  	      zc="$ztop,600.,1200."
+  	      zc="$ztop,$zcb,$zct"
           fi
   	    if [ ! -d $outdir ]; then
   	      mkdir -p $outdir

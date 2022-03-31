@@ -410,61 +410,60 @@ endif
 ! (0,1) => more small droplets than gamma
 ! gamma score is calculated two ways, through the ratio of Deff/Dbar
 ! and through skewness from gamma vs actual
-if (ampORbin .eq. 'bin') then
 
-   diag_D=diams
+!if (ampORbin .eq. 'bin') then
 
-   do k=1,nz
-      do j=1,nx
+!   diag_D=diams
 
-         if (bintype .eq. 'tau') then
-            diag_m=dropsm2d(k,j,:)/dropsn2d(k,j,:)
-            diag_D=(diag_m/(1000.*pi/6))**(1./3.)
-            do ib=1,nkr
-                if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
-            end do
-         endif
+!   do k=1,nz
+!      do j=1,nx
 
-         Deffc=mc(k,j,4)/mc(k,j,3) ! effect diameter
-         Dbarc=mc(k,j,2)/mc(k,j,1) ! mean diameter
-         delta_realc = Deffc/Dbarc ! by my definition
-         eps_realc = reldisp(diag_D(1:split_bins),split_bins,dropsm2d(k,j,1:split_bins))
-         delta_gamc = 2.*eps_realc**2.+1. ! by definition of gamma dist
-         gs_deltac(k,j)=delta_realc/delta_gamc 
+!         if (bintype .eq. 'tau') then
+!            diag_m=dropsm2d(k,j,:)/dropsn2d(k,j,:)
+!            diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+!            do ib=1,nkr
+!                if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
+!            end do
+!         endif
 
-         !skns_gamc = 2*eps_realc ! by definition of gamma dist
-         !skns_realc = skewness(diag_D(1:split_bins),split_bins,dropsm2d(k,j,1:split_bins))
-         !gs_sknsc(k,j) = skns_realc/skns_gamc
+!         Deffc=mc(k,j,4)/mc(k,j,3) ! effect diameter
+!         Dbarc=mc(k,j,2)/mc(k,j,1) ! mean diameter
+!         delta_realc = Deffc/Dbarc ! by my definition
+!         eps_realc = reldisp(diag_D(1:split_bins),split_bins,dropsm2d(k,j,1:split_bins))
+!         delta_gamc = 2.*eps_realc**2.+1. ! by definition of gamma dist
+!         gs_deltac(k,j)=delta_realc/delta_gamc 
 
-         if (gs_deltac(k,j)>inf) gs_deltac(k,j)=nan
-         !if (gs_sknsc(k,j)>inf) gs_sknsc(k,j)=nan
-         !print*, gs_deltac(k,j)
+!         !skns_gamc = 2*eps_realc ! by definition of gamma dist
+!         !skns_realc = skewness(diag_D(1:split_bins),split_bins,dropsm2d(k,j,1:split_bins))
+!         !gs_sknsc(k,j) = skns_realc/skns_gamc
+
+!         if (gs_deltac(k,j)>inf) gs_deltac(k,j)=nan
+!         !if (gs_sknsc(k,j)>inf) gs_sknsc(k,j)=nan
+!         !print*, gs_deltac(k,j)
 
 
-         Deffr=mr(k,j,4)/mr(k,j,3)
-         Dbarr=mr(k,j,2)/mr(k,j,1)
-         delta_realr = Deffr/Dbarr
-         eps_realr = reldisp(diag_D(split_bins+1:nkr),nkr-split_bins,dropsm2d(k,j,split_bins+1:nkr))
-         delta_gamr = 2.*eps_realr**2.+1. ! by definition of gamma dist
-         gs_deltar(k,j)=delta_realr/delta_gamr
+!         Deffr=mr(k,j,4)/mr(k,j,3)
+!         Dbarr=mr(k,j,2)/mr(k,j,1)
+!         delta_realr = Deffr/Dbarr
+!         eps_realr = reldisp(diag_D(split_bins+1:nkr),nkr-split_bins,dropsm2d(k,j,split_bins+1:nkr))
+!         delta_gamr = 2.*eps_realr**2.+1. ! by definition of gamma dist
+!         gs_deltar(k,j)=delta_realr/delta_gamr
 
-         !skns_gamr = 2*eps_realr ! by definition of gamma dist
-         !skns_realr = skewness(diag_D(split_bins+1:nkr),nkr-split_bins,dropsm2d(k,j,split_bins+1:nkr))
-         !gs_sknsr(k,j) = skns_realr/skns_gamr
-
-         if (gs_deltar(k,j)>inf) gs_deltar(k,j)=nan
-         !if (gs_sknsr(k,j)>inf) gs_sknsr(k,j)=nan
-         !print*, gs_deltar(k,j)
-
-      enddo
-   enddo
-   if (nx==1) then
-      call save_dg(gs_deltac(:,1),'gs_deltac',i_dgtime,'unitless',dim='z')
-      !call save_dg(gs_sknsc(:,1),'gs_sknsc',i_dgtime,'unitless',dim='z')
-      call save_dg(gs_deltar(:,1),'gs_deltar',i_dgtime,'unitless',dim='z')
-      !call save_dg(gs_sknsr(:,1),'gs_sknsr',i_dgtime,'unitless',dim='z')
-   endif
-endif
+!         !skns_gamr = 2*eps_realr ! by definition of gamma dist
+!         !skns_realr = skewness(diag_D(split_bins+1:nkr),nkr-split_bins,dropsm2d(k,j,split_bins+1:nkr))
+!         !gs_sknsr(k,j) = skns_realr/skns_gamr
+!         if (gs_deltar(k,j)>inf) gs_deltar(k,j)=nan
+!         !if (gs_sknsr(k,j)>inf) gs_sknsr(k,j)=nan
+!         !print*, gs_deltar(k,j)
+!      enddo
+!   enddo
+!   if (nx==1) then
+!      call save_dg(gs_deltac(:,1),'gs_deltac',i_dgtime,'unitless',dim='z')
+!      !call save_dg(gs_sknsc(:,1),'gs_sknsc',i_dgtime,'unitless',dim='z')
+!      call save_dg(gs_deltar(:,1),'gs_deltar',i_dgtime,'unitless',dim='z')
+!      !call save_dg(gs_sknsr(:,1),'gs_sknsr',i_dgtime,'unitless',dim='z')
+!   endif
+! endif
 
 !bin distributions
 if (ampORbin .eq. 'bin') then
