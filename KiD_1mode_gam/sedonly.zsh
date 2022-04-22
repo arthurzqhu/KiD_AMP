@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='sedonly_i' # case/folder name. determined automatically if set empty
+mconfig_temp='sedonly' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")

@@ -7,8 +7,8 @@
 mconfig_temp='fullmic' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP")
-bintype=("TAU")
+ampORbin=("AMP" "BIN")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases

@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='evaponly_cloud' # case/folder name. determined automatically if set empty
+mconfig_temp='evaponly' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -21,7 +21,7 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=3000. # top of the domain
+ztop=6000. # top of the domain
 t1=100.
 t2=5.
 # switches

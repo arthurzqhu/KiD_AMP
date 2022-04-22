@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='collsed' # case/folder name. determined automatically if set empty
+mconfig_temp='condcoll_mod' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -21,14 +21,14 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=6000. # top of the domain
+ztop=3000. # top of the domain
 t1=1800.
 t2=900.
 # switches
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=1
-l_adv_s=0
+l_sed_s=0
+l_adv_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -51,17 +51,22 @@ ia=100
 idmc=$1
 isp_c=$2
 isp_r=$2
+var1str=dm${idmc}
+var2str=sp${isp_c}
 
-var1str=dm$1
-var2str=sp$2
+#icinm=100.e6
+#icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
+icimm=0.001
+icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+echo $icinm
 
-icinm=100.e6
-icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
+#irinm=${inr}
+#irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((ztop/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
   t2=$((ztop/$iw))
-  t1=$(($t2*2))
+  t1=$(($t2*4))
 fi
 echo t1=$t1
 echo t2=$t2

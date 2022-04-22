@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='condcoll_3600' # case/folder name. determined automatically if set empty
+mconfig_temp='condcoll' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -24,7 +24,7 @@ imr2=6 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud top height
-t1=3600.
+t1=1800.
 t2=900.
 # switches
 l_nuc_cond_s=1

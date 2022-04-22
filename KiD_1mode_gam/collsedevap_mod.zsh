@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='collsed' # case/folder name. determined automatically if set empty
+mconfig_temp='collsedevap_mod' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -21,14 +21,15 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=6000. # top of the domain
+ztop=3000. # top of the domain
 t1=1800.
 t2=900.
+
 # switches
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=1
 l_sed_s=1
-l_adv_s=0
+l_adv_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -46,7 +47,7 @@ else
 fi
 
 
-iw=2
+iw=-2
 ia=100
 idmc=$1
 isp_c=$2
@@ -57,14 +58,6 @@ var2str=sp$2
 
 icinm=100.e6
 icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
-
-# reset oscillation time based on updraft speed to prevent overshooting
-if [[ $((ztop/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-  t2=$((ztop/$iw))
-  t1=$(($t2*2))
-fi
-echo t1=$t1
-echo t2=$t2
 
 mconfig=${mconfig_temp}
 echo Na=$ia
@@ -174,7 +167,7 @@ tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period o
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-!rhctrl=${rh}
+rhctrl=.99
 !pctrl_v=${pcpt}
 /
 

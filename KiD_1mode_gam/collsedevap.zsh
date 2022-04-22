@@ -24,6 +24,7 @@ imr2=6 # III moment for rain
 ztop=6000. # top of the domain
 t1=1800.
 t2=900.
+
 # switches
 l_nuc_cond_s=1
 l_coll_s=1

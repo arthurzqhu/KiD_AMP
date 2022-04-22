@@ -21,7 +21,7 @@ imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
-ztop=3000. # top of the domain
+ztop=6000. # top of the domain
 t1=1800.
 t2=900.
 # switches

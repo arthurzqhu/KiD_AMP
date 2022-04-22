@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='evapsed_varcloudrain' # case/folder name. determined automatically if set empty
+mconfig_temp='evapsed' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -24,6 +24,7 @@ imr2=6 # III moment for rain
 ztop=6000. # top of the domain
 t1=1800.
 t2=900.
+
 # switches
 l_nuc_cond_s=1
 l_coll_s=0
@@ -63,13 +64,13 @@ ia=100
 
 #inc=0
 #inr=0
-idmc=$1
+# idmc=$1
 #idmr=$1
-idmr=500
+idmr=$1
 irh=$2
 
-icimm=0.001
-icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+# icimm=0.001
+# icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
 
 irimm=0.0005
 irinm=$(($irimm/(($idmr*1.e-6)**3*3.14159/6*1000.)))
