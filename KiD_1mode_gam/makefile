@@ -8,7 +8,7 @@ PRG_ENV=default
 TESTING=#Default is off
 
 CASES=1D SC_2D CU_2D ISDAC_2D SQUALL_2D WMO_CASE1# OROG_2D
-COMPILERS=nagfor ifort pgf90 gfortran
+COMPILERS=ifort
 
 include src/compiler_options.inc
 
