@@ -41,9 +41,9 @@ if (imomc1>=7 .and. imomc1 .ne. imomc2) then
 else !Run AMP
   !Open and read lookup tables
   if (bintype .eq. 'tau') then
-      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_13/'
+      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_15/'
   elseif (bintype .eq. 'sbm') then
-      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_12/'
+      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_14/'
   endif
 
   if (npmc==3) then
