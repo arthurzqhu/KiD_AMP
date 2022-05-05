@@ -2,7 +2,7 @@
 
 # config of the run
 mconfig_temp='condonly_mod' # case/folder name. determined automatically if set empty
-caselist=(102) #(101 102 103 105 106 107)
+caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
 bintype=("TAU" "SBM")
@@ -179,7 +179,7 @@ tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period o
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-!rhctrl=${rh}
+rhctrl=1.
 !pctrl_v=${pcpt}
 /
 
