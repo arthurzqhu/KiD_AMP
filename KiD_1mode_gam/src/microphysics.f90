@@ -107,7 +107,7 @@ do i=1,nx
          !   END DO
          !ENDIF
 !-----------------------------------------------
-       IF (docondensation) THEN
+       ! IF (docondensation) THEN
 !Condensation and Nucleation Preparation
             !old values, 1 liquid, 2 ice
             ES1N=AA1_MY*DEXP(-BB1_MY/TT)
@@ -181,7 +181,7 @@ do i=1,nx
                !CALL VAP_BUDGET(FF1R,FF2R,FF3R,FF4R,FF5R,RHOCGS,'beg')
 
                !If liquid
-               IF (ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
+               IF (docondensation .and. ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
                   (sum(ISYM2).EQ.0.AND.ISYM3.EQ.0.AND.ISYM4.EQ.0.AND.ISYM5.EQ.0)))THEN
 
                   if (mp_proc_dg) ff1r_prev=ff1r
@@ -256,7 +256,7 @@ do i=1,nx
                   !END IF
 
                   !CALL VAP_BUDGET(FF1R,FF2R,FF3R,FF4R,FF5R,RHOCGS,'end')
-           ENDIF
+           ! ENDIF
        endif !if condensation
   !-----------------------------------------------------------------------------------------
   !------------------COLLISION-COALESCENCE--------------------------------------------------
@@ -859,7 +859,7 @@ subroutine micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
 use parameters, only: nz, nx, dt, max_nbins
 use common_physics, only: qsaturation
 Use diagnostics, only: save_dg, i_dgtime, save_binData
-Use switches, only: l_sediment, mphys_var, l_fix_aerosols
+Use switches, only: l_sediment, mphys_var, l_fix_aerosols, l_noevaporation, l_nocondensation
 Use switches_bin
 Use namelists, only: dosedimentation, docollisions, docondensation, &
                      donucleation, dobreakup, l_coll_coal, l_break, mp_proc_dg
@@ -1344,7 +1344,7 @@ DO K=2,KKP
 
 ! 3.1 cond/evap
 
-       IF (DS_force > eps .and. docondensation) THEN
+       IF (DS_force > eps .and. docondensation .and. (.not. l_nocondensation)) THEN
 !*****************************************************************
 !        CONDENSATION
 !     COND RECEIVES MKOLD,NKOLD RETURNS MK,NK
@@ -1379,7 +1379,7 @@ DO K=2,KKP
              print *, 'AN1', AN1(j,k),k,j
           ENDIF
 
-       ELSEIF(DS_force < -eps .and. docondensation) then !DS_force < 0.0
+       ELSEIF(DS_force < -eps .and. docondensation .and. (.not. l_noevaporation)) then !DS_force < 0.0
 !****************************************************************
     !                     EVAPORATION
     !     EVAP RECEIVES MKD,NKD RETURNS MK,NK

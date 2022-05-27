@@ -49,3 +49,4 @@ THOM.nml
 # misc
 .remote-sync.json
 .nfs*
+Session.vim

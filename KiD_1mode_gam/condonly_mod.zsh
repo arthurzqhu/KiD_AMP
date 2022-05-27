@@ -179,7 +179,7 @@ tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period o
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-rhctrl=1.
+!rhctrl=1.
 !pctrl_v=${pcpt}
 /
 
