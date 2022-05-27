@@ -3,6 +3,7 @@ module module_hujisbm
 use micro_prm
 use parameters, only: max_nbins
 use physconst, only: rhow
+use switches, only: l_noevaporation, l_nocondensation
 
 ! YWLL_1000MB(nkr,nkr) - input array of kernels for pressure 1000mb
 ! YWLL_750MB(nkr,nkr) - input array of kernels for pressure 750mb
@@ -1404,11 +1405,13 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
  KCOND=10
  IF(DEL1N >= 0.0D0) KCOND=11
 
+   TIMENEW = TIMENEW + DT
    IF(KCOND == 11) THEN
+      if (.not. l_nocondensation) then
       DTNEWL = DT
       DTNEWL = DT
       DTNEWL = AMIN1(DTNEWL,TIMEREV)
-      TIMENEW = TIMENEW + DTNEWL
+      ! TIMENEW = TIMENEW + DT
       DTT = DTNEWL
 
       IF (DTT < 0.0) then
@@ -1447,15 +1450,16 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
         stop
       ENDIF
 
+      endif
     ! IN CASE : KCOND.EQ.11
     ELSE
-
+      if (.not. l_noevaporation) then
       ! EVAPORATION - ONLY WATER
       ! IN CASE : KCOND.NE.11
      DTIMEO = DT
       DTNEWL = DT
       DTNEWL = AMIN1(DTNEWL,TIMEREV)
-      TIMENEW = TIMENEW + DTNEWL
+      ! TIMENEW = TIMENEW + DT
       DTT = DTNEWL
 
       IF (DTT < 0.0) then
@@ -1495,6 +1499,7 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
          stop
       ENDIF
 
+      endif ! l_noevaporation
     ENDIF
 
 
@@ -1604,23 +1609,23 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
  DAL1 = AL1
  TPN = TOLD + DAL1*DELMASSL1
 
- IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
-  print*,"ONECOND1-out (start)"
-  print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
-  print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
-  print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
-  print*,"I=",Iin,"J=",Jin,"Kin",Kin
-  print*,"TPS=",TPS,"QPS=",QPS,"delmassl1",delmassl1
-  print*,"DAL1=",DAL1
-  print*,RMASSLBB,RMASSLAA
-  print*,"FI1",FI1
-  print*,"PSI1",PSI1
-  print*,"ONECOND1-out (end)"
-  IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
-   print*,"fatal error in ONECOND1-out (ABS(DAL1*DELMASSL1) > 5.0), model stop"
-   stop
-  ENDIF
- ENDIF
+ ! IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
+ !  print*,"ONECOND1-out (start)"
+ !  print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
+ !  print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
+ !  print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
+ !  print*,"I=",Iin,"J=",Jin,"Kin",Kin
+ !  print*,"TPS=",TPS,"QPS=",QPS,"delmassl1",delmassl1
+ !  print*,"DAL1=",DAL1
+ !  print*,RMASSLBB,RMASSLAA
+ !  print*,"FI1",FI1
+ !  print*,"PSI1",PSI1
+ !  print*,"ONECOND1-out (end)"
+ !  IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
+ !   print*,"fatal error in ONECOND1-out (ABS(DAL1*DELMASSL1) > 5.0), model stop"
+ !   stop
+ !  ENDIF
+ ! ENDIF
 
  ! ... SUPERSATURATION
  ARGEXP=-BB1_MY/TPN
@@ -3576,7 +3581,7 @@ use parameters, only: max_nbins
         CDROP(NRX),DELTA_CDROP(NRX),RRS(NRX+1),PSINEW(NRX+1), &
         PSI_IM,PSI_I,PSI_IP, AOLDCON, ANEWCON, AOLDMASS, ANEWMASS
 
-  INTEGER, PARAMETER :: KRDROP_REMAPING_MIN = 6, KRDROP_REMAPING_MAX = 5
+  INTEGER, PARAMETER :: KRDROP_REMAPING_MIN = 6, KRDROP_REMAPING_MAX = 12
 ! ... Locals
 
  IF(TPN .LT. 273.15-5.0D0) IDROP=0
@@ -3804,36 +3809,33 @@ use parameters, only: max_nbins
    PSI(K)=FI(K)
    ENDDO
 
-   IF(IDROP == 1) THEN
-    DO K=KRDROP_REMAPING_MIN,KRDROP_REMAPING_MAX
-     CDROP(K)=3.0D0*COL*PSI(K)*RR(K)
-    ENDDO
-        ! KMAX - right boundary spectrum of drop sdf
-         !(KRDROP_REMAP_MIN =< KMAX =< KRDROP_REMAP_MAX)
-    DO K=KRDROP_REMAPING_MAX,KRDROP_REMAPING_MIN,-1
-       KMAX=K
-       IF(PSI(K).GT.0.0D0) GOTO 2011
-    ENDDO
-
-  2011  CONTINUE
- ! Andrei's new change 28.04.10                                (start)
-    DO K=KMAX-1,KRDROP_REMAPING_MIN,-1
- ! Andrei's new change 28.04.10                                  (end)
-     IF(CDROP(K).GT.0.0D0) THEN
-      DELTA_CDROP(K)=CDROP(K+1)/CDROP(K)
-       IF(DELTA_CDROP(K).LT.COEFF_REMAPING) THEN
-        CDROP(K)=CDROP(K)+CDROP(K+1)
-        CDROP(K+1)=0.0D0
-       ENDIF
-     ENDIF
-    ENDDO
-
-    DO K=KRDROP_REMAPING_MIN,KMAX
-     PSI(K)=CDROP(K)/(3.0D0*COL*RR(K))
-    ENDDO
-
- ! in case IDROP.NE.0
-    ENDIF
+   !IF(IDROP == 1) THEN
+   !   DO K=KRDROP_REMAPING_MIN,KRDROP_REMAPING_MAX
+   !      CDROP(K)=3.0D0*COL*PSI(K)*RR(K)
+   !   ENDDO
+   !   ! KMAX - right boundary spectrum of drop sdf
+   !   !(KRDROP_REMAP_MIN =< KMAX =< KRDROP_REMAP_MAX)
+   !   DO K=KRDROP_REMAPING_MAX,KRDROP_REMAPING_MIN,-1
+   !      KMAX=K
+   !      IF(PSI(K).GT.0.0D0) GOTO 2011
+   !   ENDDO
+   !   2011  CONTINUE
+   !   ! Andrei's new change 28.04.10                                (start)
+   !   DO K=KMAX-1,KRDROP_REMAPING_MIN,-1
+   !      ! Andrei's new change 28.04.10                                  (end)
+   !      IF(CDROP(K).GT.0.0D0) THEN
+   !         DELTA_CDROP(K)=CDROP(K+1)/CDROP(K)
+   !         IF(DELTA_CDROP(K).LT.COEFF_REMAPING) THEN
+   !            CDROP(K)=CDROP(K)+CDROP(K+1)
+   !            CDROP(K+1)=0.0D0
+   !         ENDIF
+   !      ENDIF
+   !   ENDDO
+   !   DO K=KRDROP_REMAPING_MIN,KMAX
+   !      PSI(K)=CDROP(K)/(3.0D0*COL*RR(K))
+   !   ENDDO
+   !   ! in case IDROP.NE.0
+   !ENDIF
 
 ! new change 26.10.09                                           (end)
 
