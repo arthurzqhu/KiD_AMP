@@ -211,6 +211,8 @@ Module switches
   real(wp):: set_sp3=-999. ! set sp2
   logical :: set_l_abelshipway=.false. ! use abelshipway fallspeed
   logical :: set_l_cons=.false. ! conserve number
+  logical :: l_noevaporation=.false. ! skip evaporation
+  logical :: l_nocondensation=.false. ! skip condensation
 
 
 end Module switches
