@@ -1609,23 +1609,23 @@ DATA A1_MYN, BB1_MYN, A2_MYN, BB2_MYN &
  DAL1 = AL1
  TPN = TOLD + DAL1*DELMASSL1
 
- ! IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
- !  print*,"ONECOND1-out (start)"
- !  print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
- !  print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
- !  print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
- !  print*,"I=",Iin,"J=",Jin,"Kin",Kin
- !  print*,"TPS=",TPS,"QPS=",QPS,"delmassl1",delmassl1
- !  print*,"DAL1=",DAL1
- !  print*,RMASSLBB,RMASSLAA
- !  print*,"FI1",FI1
- !  print*,"PSI1",PSI1
- !  print*,"ONECOND1-out (end)"
- !  IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
- !   print*,"fatal error in ONECOND1-out (ABS(DAL1*DELMASSL1) > 5.0), model stop"
- !   stop
- !  ENDIF
- ! ENDIF
+ IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
+  print*,"ONECOND1-out (start)"
+  print*,"I=",Iin,"J=",Jin,"Kin",Kin,"W",w_in,"DX",dx_in
+  print*,"DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DT"
+  print*,DEL1N,DEL2N,D1N,D2N,RW,PW,RI,PI,DTT
+  print*,"I=",Iin,"J=",Jin,"Kin",Kin
+  print*,"TPS=",TPS,"QPS=",QPS,"delmassl1",delmassl1
+  print*,"DAL1=",DAL1
+  print*,RMASSLBB,RMASSLAA
+  print*,"FI1",FI1
+  print*,"PSI1",PSI1
+  print*,"ONECOND1-out (end)"
+  IF(ABS(DAL1*DELMASSL1) > 5.0 )THEN
+   print*,"fatal error in ONECOND1-out (ABS(DAL1*DELMASSL1) > 5.0), model stop"
+   stop
+  ENDIF
+ ENDIF
 
  ! ... SUPERSATURATION
  ARGEXP=-BB1_MY/TPN
