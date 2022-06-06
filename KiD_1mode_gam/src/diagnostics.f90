@@ -195,17 +195,17 @@ contains
     field(:)=TdegK(:,nx)
     call save_dg(field, 'temperature', i_dgtime, units='K',dim=dims)
 
-    ! aerosol
-    do ih=1,naerosol
-       do imom=1,num_aero_moments(ih)
-          do k=1,nz
-             field(k)=sum(aerosol(k,nx,ih)%moments(:,imom))
-          end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))
-          units=trim(aero_mom_units(imom))
-          call save_dg(field, name, i_dgtime, units,dim=dims)
-       end do
-    end do
+    ! ! aerosol
+    ! do ih=1,naerosol
+    !    do imom=1,num_aero_moments(ih)
+    !       do k=1,nz
+    !          field(k)=sum(aerosol(k,nx,ih)%moments(:,imom))
+    !       end do
+    !       name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))
+    !       units=trim(aero_mom_units(imom))
+    !       call save_dg(field, name, i_dgtime, units,dim=dims)
+    !    end do
+    ! end do
 
     !hydrometeors
 
@@ -265,17 +265,19 @@ contains
     ! qv
     field(:)=dqv_adv(:,nx)
     call save_dg(field, 'dqv_adv', i_dgtime,  units='kg/kg/s',dim=dims)
-    ! aerosols
-    do ih=1,naerosol
-       do imom=1,num_aero_moments(ih)
-          do k=1,nz
-             field(k)=sum(daerosol_adv(k,nx,ih)%moments(:,imom))
-          end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv'
-          units=trim(aero_mom_units(imom)//'/s')
-          call save_dg(field , name, i_dgtime, units,dim=dims)
-       end do
-    end do
+
+    ! ! aerosols
+    ! do ih=1,naerosol
+    !    do imom=1,num_aero_moments(ih)
+    !       do k=1,nz
+    !          field(k)=sum(daerosol_adv(k,nx,ih)%moments(:,imom))
+    !       end do
+    !       name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv'
+    !       units=trim(aero_mom_units(imom)//'/s')
+    !       call save_dg(field , name, i_dgtime, units,dim=dims)
+    !    end do
+    ! end do
+
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -311,17 +313,19 @@ contains
        ! qv tendency
        field(:)=dqv_div(:,nx)
        call save_dg(field, 'dqv_div', i_dgtime,  units='kg/kg/s',dim=dims)
-       !aerosol
-       do ih=1,naerosol
-          do imom=1,num_aero_moments(ih)
-             do k=1,nz
-                field(k)=sum(daerosol_div(k,nx,ih)%moments(:,imom))
-             end do
-             name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div'
-             units=trim(aero_mom_units(imom)//'/s')
-             call save_dg(field, name, i_dgtime, units,dim=dims)
-          end do
-       end do
+
+       !!aerosol
+       !do ih=1,naerosol
+       !   do imom=1,num_aero_moments(ih)
+       !      do k=1,nz
+       !         field(k)=sum(daerosol_div(k,nx,ih)%moments(:,imom))
+       !      end do
+       !      name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div'
+       !      units=trim(aero_mom_units(imom)//'/s')
+       !      call save_dg(field, name, i_dgtime, units,dim=dims)
+       !   end do
+       !end do
+
        !hydrometeors
        do ih=1,nspecies
           do imom=1,num_h_moments(ih)
@@ -359,17 +363,19 @@ contains
     ! qv tendency
     field(:)=dqv_mphys(:,nx)
     call save_dg(field, 'dqv_mphys', i_dgtime,  units='kg/kg/s',dim=dims)
-    !aerosol
-    do ih=1,naerosol
-       do imom=1,num_aero_moments(ih)
-          do k=1,nz
-             field(k)=sum(daerosol_mphys(k,nx,ih)%moments(:,imom))
-          end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys'
-          units=trim(aero_mom_units(imom)//'/s')
-          call save_dg(field, name, i_dgtime, units,dim=dims)
-       end do
-    end do
+
+    !!aerosol
+    !do ih=1,naerosol
+    !   do imom=1,num_aero_moments(ih)
+    !      do k=1,nz
+    !         field(k)=sum(daerosol_mphys(k,nx,ih)%moments(:,imom))
+    !      end do
+    !      name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys'
+    !      units=trim(aero_mom_units(imom)//'/s')
+    !      call save_dg(field, name, i_dgtime, units,dim=dims)
+    !   end do
+    !end do
+
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -440,7 +446,7 @@ contains
            field(k)=unset_real
         end if
      end do
-     call save_dg(field(:)*field_mask(:,nx), 'RH', i_dgtime, units, dims)
+     call save_dg(field(:)*field_mask(:,nx), 'RH', i_dgtime, '%', dims)
 
     !RH ice
      do k=1,nz
@@ -451,7 +457,7 @@ contains
            field(k)=unset_real
         end if
      end do
-     call save_dg(field(:)*field_mask(:,nx), 'RH_ice', i_dgtime, units, dims)
+     call save_dg(field(:)*field_mask(:,nx), 'RH_ice', i_dgtime, '%', dims)
 
 
 
@@ -584,19 +590,20 @@ contains
     !horizontal velocity
     field_2d(:,1:nx) = v(:,1:nx)
     call save_dg(field_2d, 'v_2d', i_dgtime, units='m/s', dim=dims)
-    !aerosol
-    do ih=1,naerosol
-       do imom=1,num_aero_moments(ih)
-          do k=1,nz
-             do j=1,nx
-                field_2D(k,j)=sum(aerosol(k,j,ih)%moments(:,imom))
-             end do
-          end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))
-          units=trim(aero_mom_units(imom))
-          call save_dg(field_2D, name, i_dgtime, units,dim='z,x')
-       end do
-    end do
+
+    !!aerosol
+    !do ih=1,naerosol
+    !   do imom=1,num_aero_moments(ih)
+    !      do k=1,nz
+    !         do j=1,nx
+    !            field_2D(k,j)=sum(aerosol(k,j,ih)%moments(:,imom))
+    !         end do
+    !      end do
+    !      name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))
+    !      units=trim(aero_mom_units(imom))
+    !      call save_dg(field_2D, name, i_dgtime, units,dim='z,x')
+    !   end do
+    !end do
 
     !hydrometeors
 
@@ -620,7 +627,6 @@ contains
              end do
           end do
           call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim=dims)
-
        enddo
     enddo
 
@@ -637,19 +643,21 @@ contains
     ! qv
     field_2d(:,1:nx)=dqv_adv(:,1:nx)
     call save_dg(field_2d, 'dqv_adv', i_dgtime,  units='kg/kg/s',dim=dims)
-    ! aerosols
-    do ih=1,naerosol
-       do imom=1,num_aero_moments(ih)
-          do k=1,nz
-             do j=1,nx
-                field_2d(k,j)=sum(daerosol_adv(k,j,ih)%moments(:,imom))
-             end do
-          end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv'
-          units=trim(aero_mom_units(imom))//'/s'
-          call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
-       end do
-    end do
+
+    ! ! aerosols
+    ! do ih=1,naerosol
+    !    do imom=1,num_aero_moments(ih)
+    !       do k=1,nz
+    !          do j=1,nx
+    !             field_2d(k,j)=sum(daerosol_adv(k,j,ih)%moments(:,imom))
+    !          end do
+    !       end do
+    !       name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_adv'
+    !       units=trim(aero_mom_units(imom))//'/s'
+    !       call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
+    !    end do
+    ! end do
+
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -686,19 +694,21 @@ contains
        ! qv tendency
        field_2d(:,1:nx)=dqv_div(:,1:nx)
        call save_dg(field_2d, 'dqv_div', i_dgtime,  units='kg/kg/s',dim=dims)
-       !aerosol
-       do ih=1,naerosol
-          do imom=1,num_aero_moments(ih)
-             do k=1,nz
-                do j=1,nx
-                   field_2D(k,j)=sum(daerosol_div(k,j,ih)%moments(:,imom))
-                end do
-             end do
-             name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div'
-             units=trim(aero_mom_units(imom))//'/s'
-             call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
-          end do
-       end do
+
+       !!aerosol
+       !do ih=1,naerosol
+       !   do imom=1,num_aero_moments(ih)
+       !      do k=1,nz
+       !         do j=1,nx
+       !            field_2D(k,j)=sum(daerosol_div(k,j,ih)%moments(:,imom))
+       !         end do
+       !      end do
+       !      name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_div'
+       !      units=trim(aero_mom_units(imom))//'/s'
+       !      call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
+       !   end do
+       !end do
+
        !hydrometeors
        do ih=1,nspecies
           do imom=1,num_h_moments(ih)
@@ -735,19 +745,21 @@ contains
     ! qv tendency
     field_2d(:,1:nx)=dqv_mphys(:,1:nx)
     call save_dg(field_2d, 'dqv_mphys', i_dgtime,  units='kg/kg/s',dim='z')
-    !aerosol
-    do ih=1,naerosol
-       do imom=1,num_aero_moments(ih)
-          do k=1,nz
-             do j=1,nx
-                field_2D(k,j)=sum(daerosol_mphys(k,j,ih)%moments(:,imom))
-             end do
-          end do
-          name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys'
-          units=trim(aero_mom_units(imom)//'/s')
-          call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
-       end do
-    end do
+
+    !!aerosol
+    !do ih=1,naerosol
+    !   do imom=1,num_aero_moments(ih)
+    !      do k=1,nz
+    !         do j=1,nx
+    !            field_2D(k,j)=sum(daerosol_mphys(k,j,ih)%moments(:,imom))
+    !         end do
+    !      end do
+    !      name=trim(aero_names(ih))//'_'//trim(aero_mom_names(imom))//'_mphys'
+    !      units=trim(aero_mom_units(imom)//'/s')
+    !      call save_dg(field_2D(1:nz,1:nx), name, i_dgtime,  units,dim='z,x')
+    !   end do
+    !end do
+
     !hydrometeors
     do ih=1,nspecies
        do imom=1,num_h_moments(ih)
@@ -2350,9 +2362,12 @@ contains
        dim2d=tzdim
 
        do ivar=1,n_dgs
+       ! print *, 'ivar', ivar
 
           status=nf90_def_var(ncid, instant_column(ivar)%name &
                , nf90_float, dim2d, varid(ivar))
+            ! print*, ncid, instant_column(ivar)%name
+            ! print*, nf90_float, dim2d, varid(ivar)
           call check_ncstatus(status)
           status=nf90_put_att(ncid, varid(ivar),        &
                'units', instant_column(ivar)%units)
