@@ -11,6 +11,7 @@ module mphys_amp
   Use parameters, only : num_h_moments, num_h_bins, h_shape, nspecies, nz, dt &
        , h_names, mom_units, max_char_len, nx
   Use column_variables
+  Use common_physics, only : qsaturation
   Use physconst, only : p0, r_on_cp, pi, rhow
 
   Use module_hujisbm
@@ -63,6 +64,8 @@ contains
     character(1) :: Mnum
     real(8) :: dnr_s,rm_s !source dnr and rain mass
     real(real32) :: nan
+    logical, parameter :: l_dynBeforeMphys = .false.
+    integer :: ip
 
     nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
@@ -73,44 +76,72 @@ contains
           t2d(k,i) = theta(k,i)*exner(k,i)
           qv2d(k,i) = qv(k,i)
 
-          !if (.not. l_noadv_qv) qv2d(k,i) = qv(k,i) + dqv_adv(k,i)*dt             
-          !if (.not. l_noadv_theta) t2d(k,i) = (theta(k,i) + dtheta_adv(k,i)*dt )*exner(k,i)
-          !if (l_diverge) then
-          !   qv2d(k,i) = qv(k,i) + dqv_div(k,i)*dt             
-          !   t2d(k,i) = (theta(k,i) + dtheta_div(k,i)*dt )*exner(k,i)
-          !endif
+          if (l_dynBeforeMphys) then
+             if (.not. l_noadv_qv) qv2d(k,i) = qv(k,i) + dqv_adv(k,i)*dt             
+             if (.not. l_noadv_theta) t2d(k,i) = (theta(k,i) + dtheta_adv(k,i)*dt )*exner(k,i)
+             if (l_diverge) then
+                qv2d(k,i) = qv(k,i) + dqv_div(k,i)*dt             
+                t2d(k,i) = (theta(k,i) + dtheta_div(k,i)*dt )*exner(k,i)
+             endif
+          endif
 
           if (ampORbin .eq. 'amp') then
-             do imom=1,num_h_moments(1)
-               Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
-               !if (.not. l_noadv_hydrometeors) Mpc2d(k,i,imom)=Mpc2d(k,i,imom) &
-               !     + dhydrometeors_adv(k,i,1)%moments(1,imom)*dt
-               !if (l_diverge) Mpc2d(k,i,imom)=Mpc2d(k,i,imom) &
-               !     + dhydrometeors_div(k,i,1)%moments(1,imom)*dt
-             enddo
-             if (any(Mpc2d(k,i,:)==0.)) Mpc2d(k,i,:)=0.
-             do imom=1,num_h_moments(2)
-               Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom)
-               !if (.not. l_noadv_hydrometeors) Mpr2d(k,i,imom)=Mpr2d(k,i,imom) &
-               !     + dhydrometeors_adv(k,i,2)%moments(1,imom)*dt
-               !if (l_diverge) Mpr2d(k,i,imom)=Mpr2d(k,i,imom) &
-               !     + dhydrometeors_div(k,i,2)%moments(1,imom)*dt 
-             enddo
-             if (any(Mpr2d(k,i,:)==0.)) Mpr2d(k,i,:)=0.
+             if (num_h_moments(1) < 4) then ! two category AMP
+                do imom=1,num_h_moments(1)
+                  Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom)
+                  if (l_dynBeforeMphys) then
+                     if (.not. l_noadv_hydrometeors) Mpc2d(k,i,imom)=Mpc2d(k,i,imom) &
+                          + dhydrometeors_adv(k,i,1)%moments(1,imom)*dt
+                     if (l_diverge) Mpc2d(k,i,imom)=Mpc2d(k,i,imom) &
+                          + dhydrometeors_div(k,i,1)%moments(1,imom)*dt
+                  endif
+                enddo
+                if (any(Mpc2d(k,i,:)==0.)) Mpc2d(k,i,:)=0.
+                ! if (Mpc2d(k,i,1) < total_m3_th .or. any(Mpc2d(k,i,:)==0.)) Mpc2d(k,i,:)=0.
+                do imom=1,num_h_moments(2)
+                  Mpr2d(k,i,imom) = hydrometeors(k,i,2)%moments(1,imom)
+                  if (l_dynBeforeMphys) then
+                     if (.not. l_noadv_hydrometeors) Mpr2d(k,i,imom)=Mpr2d(k,i,imom) &
+                          + dhydrometeors_adv(k,i,2)%moments(1,imom)*dt
+                     if (l_diverge) Mpr2d(k,i,imom)=Mpr2d(k,i,imom) &
+                          + dhydrometeors_div(k,i,2)%moments(1,imom)*dt 
+                  endif
+                enddo
+                if (any(Mpr2d(k,i,:)==0.)) Mpr2d(k,i,:)=0.
+                ! if (Mpr2d(k,i,1) < total_m3_th .or. any(Mpr2d(k,i,:)==0.)) Mpr2d(k,i,:)=0.
+             else ! single category AMP
+                do imom=1,num_h_moments(1)
+                   Mpc2d(k,i,imom) = hydrometeors(k,i,1)%moments(1,imom) + &
+                                     hydrometeors(k,i,2)%moments(1,imom)
+                   if (l_dynBeforeMphys) then
+                      if (.not. l_noadv_hydrometeors) Mpc2d(k,i,imom) = Mpc2d(k,i,imom) &
+                         + dhydrometeors_adv(k,i,1)%moments(1,imom)*dt &
+                         + dhydrometeors_adv(k,i,2)%moments(1,imom)*dt
+                      if (l_diverge) Mpc2d(k,i,imom) = Mpc2d(k,i,imom) &
+                         + dhydrometeors_div(k,i,1)%moments(1,imom)*dt &
+                         + dhydrometeors_div(k,i,2)%moments(1,imom)*dt
+                   endif
+                enddo
+                if (any(Mpc2d(k,i,:)==0.)) Mpc2d(k,i,:)=0.
+             endif
           else !bin
              Mpc2d=0.;Mpr2d=0.
              do j=1,nkr
                 dropsm2d(k,i,j)=hydrometeors(k,i,1)%moments(j,1)/col
-                !if (.not. l_noadv_hydrometeors) dropsm2d(k,i,j)=dropsm2d(k,i,j) &
-                !   + dhydrometeors_adv(k,i,1)%moments(j,1)*dt/col
-                !if (l_diverge) dropsm2d(k,i,j)=dropsm2d(k,i,j) &
-                !   + dhydrometeors_div(k,i,1)%moments(j,1)*dt/col
+                if (l_dynBeforeMphys) then
+                   if (.not. l_noadv_hydrometeors) dropsm2d(k,i,j)=dropsm2d(k,i,j) &
+                      + dhydrometeors_adv(k,i,1)%moments(j,1)*dt/col
+                   if (l_diverge) dropsm2d(k,i,j)=dropsm2d(k,i,j) &
+                      + dhydrometeors_div(k,i,1)%moments(j,1)*dt/col
+                endif
                 if (bintype .eq. 'tau')  then
                    dropsn2d(k,i,j)=hydrometeors(k,i,1)%moments(j,2)/col
-                   !if (.not. l_noadv_hydrometeors) dropsn2d(k,i,j)=dropsn2d(k,i,j) &
-                   !   + dhydrometeors_adv(k,i,1)%moments(j,2)*dt/col
-                   !if (l_diverge) dropsn2d(k,i,j)=dropsn2d(k,i,j) &
-                   !   + dhydrometeors_div(k,i,1)%moments(j,2)*dt/col
+                   if (l_dynBeforeMphys) then
+                      if (.not. l_noadv_hydrometeors) dropsn2d(k,i,j)=dropsn2d(k,i,j) &
+                         + dhydrometeors_adv(k,i,1)%moments(j,2)*dt/col
+                      if (l_diverge) dropsn2d(k,i,j)=dropsn2d(k,i,j) &
+                         + dhydrometeors_div(k,i,1)%moments(j,2)*dt/col
+                   endif
                 end if
              enddo
           endif
@@ -185,23 +216,13 @@ contains
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d)
 
-      !dropsm2d=dropsinitm2d
-      !dropsn2d=dropsinitn2d
-      !print*, Mpc2d(46,1,:)
-      !print*, Mpr2d(46,1,:)
    elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
-         !print*, dropsm2d(46,:,:)
       elseif (bintype .eq. 'tau') then
          call mp_tau(dropsm2d,dropsn2d,t2d,qv2d,mc,mr)
       endif
    endif
-
-   !if (ampORbin .eq. 'bin') then
-   !   if (bintype .eq. 'sbm') num_h_moments=(/1,1/)
-   !   if (bintype .eq. 'tau') num_h_moments=(/2,1/)
-   !endif
 
   ! back out tendencies
 dqv_mphys = 0.
@@ -224,59 +245,71 @@ do i=1,nx
       dtheta_mphys(k,i)=(t2d(k,i)/exner(k,i)-theta(k,i))/dt
       dqv_mphys(k,i)=(qv2d(k,i)-qv(k,i))/dt
 
-      !if (.not. l_noadv_qv) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_adv(k,i)      
-      !if (.not. l_noadv_theta) dtheta_mphys(k,i)=dtheta_mphys(k,i)-dtheta_adv(k,i)
-      !if (l_diverge) then
-      !   dtheta_mphys(k,i)=dtheta_mphys(k,i)-dtheta_div(k,i)
-      !   dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_div(k,i)
-      !endif
+      if (l_dynBeforeMphys) then
+         if (.not. l_noadv_qv) dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_adv(k,i)      
+         if (.not. l_noadv_theta) dtheta_mphys(k,i)=dtheta_mphys(k,i)-dtheta_adv(k,i)
+         if (l_diverge) then
+            dtheta_mphys(k,i)=dtheta_mphys(k,i)-dtheta_div(k,i)
+            dqv_mphys(k,i)=dqv_mphys(k,i)-dqv_div(k,i)
+         endif
+      endif
 
       if (ampORbin .eq. 'amp') then ! when bulk
          do imom=1,num_h_moments(1)
+            ip = pmomsc(imom)+1
             dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
-                 (Mpc2d(k,i,imom)-hydrometeors(k,i,1)%moments(1,imom))/dt
-           !if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
-           !              dhydrometeors_mphys(k,i,1)%moments(1,imom) &
-           !              -dhydrometeors_adv(k,i,1)%moments(1,imom)
-           !if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
-           !               dhydrometeors_mphys(k,i,1)%moments(1,imom) &
-           !               -dhydrometeors_div(k,i,1)%moments(1,imom)
+               (mc(k,i,ip)-hydrometeors(k,i,1)%moments(1,imom))/dt
+            if (l_dynBeforeMphys) then
+               if (.not. l_noadv_hydrometeors) then
+                  dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
+                     dhydrometeors_mphys(k,i,1)%moments(1,imom) &
+                     -dhydrometeors_adv(k,i,1)%moments(1,imom)
+               endif
+               if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(1,imom)= &
+                  dhydrometeors_mphys(k,i,1)%moments(1,imom) &
+                  -dhydrometeors_div(k,i,1)%moments(1,imom)
+            endif
          enddo
          do imom=1,num_h_moments(2)
+            ip = pmomsc(imom)+1
             dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
-                 (Mpr2d(k,i,imom)-hydrometeors(k,i,2)%moments(1,imom))/dt
-           !if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
-           !              dhydrometeors_mphys(k,i,2)%moments(1,imom) &
-           !              -dhydrometeors_adv(k,i,2)%moments(1,imom)
-           !if (l_diverge) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
-           !               dhydrometeors_mphys(k,i,2)%moments(1,imom) &
-           !               -dhydrometeors_div(k,i,2)%moments(1,imom)
+               (mr(k,i,ip)-hydrometeors(k,i,2)%moments(1,imom))/dt
+            if (l_dynBeforeMphys) then
+               if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
+                  dhydrometeors_mphys(k,i,2)%moments(1,imom) &
+                  -dhydrometeors_adv(k,i,2)%moments(1,imom)
+               if (l_diverge) dhydrometeors_mphys(k,i,2)%moments(1,imom)= &
+                  dhydrometeors_mphys(k,i,2)%moments(1,imom) &
+                  -dhydrometeors_div(k,i,2)%moments(1,imom)
+            endif
          enddo
 
       else ! when bin
          do j=1,nkr
             dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-                   (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
-            !if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-            !              dhydrometeors_mphys(k,i,1)%moments(j,1) &
-            !              -dhydrometeors_adv(k,i,1)%moments(j,1)
-            !if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
-            !               dhydrometeors_mphys(k,i,1)%moments(j,1) &
-            !               -dhydrometeors_div(k,i,1)%moments(j,1)
+               (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
+            if (l_dynBeforeMphys) then
+               if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
+                  dhydrometeors_mphys(k,i,1)%moments(j,1) &
+                  -dhydrometeors_adv(k,i,1)%moments(j,1)
+               if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(j,1)= &
+                  dhydrometeors_mphys(k,i,1)%moments(j,1) &
+                  -dhydrometeors_div(k,i,1)%moments(j,1)
+            endif
             if (bintype .eq. 'tau') then
                dhydrometeors_mphys(k,i,1)%moments(j,2)= &
-                     (dropsn2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,2))/dt
-               !if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,1)%moments(j,2)= &
-               !              dhydrometeors_mphys(k,i,1)%moments(j,2) &
-               !              -dhydrometeors_adv(k,i,1)%moments(j,2)
-               !if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(j,2)= &
-               !               dhydrometeors_mphys(k,i,1)%moments(j,2) &
-               !               -dhydrometeors_div(k,i,1)%moments(j,2)
+                  (dropsn2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,2))/dt
+               if (l_dynBeforeMphys) then
+                  if (.not. l_noadv_hydrometeors) dhydrometeors_mphys(k,i,1)%moments(j,2)= &
+                     dhydrometeors_mphys(k,i,1)%moments(j,2) &
+                     -dhydrometeors_adv(k,i,1)%moments(j,2)
+                  if (l_diverge) dhydrometeors_mphys(k,i,1)%moments(j,2)= &
+                     dhydrometeors_mphys(k,i,1)%moments(j,2) &
+                     -dhydrometeors_div(k,i,1)%moments(j,2)
+               endif
             endif
          enddo
-
       endif
-
    enddo
 enddo
 
