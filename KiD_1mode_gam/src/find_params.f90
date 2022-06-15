@@ -478,12 +478,11 @@ if (sqval>tol) then
     !If fitting was successful, or Mx/M3 error low enough
     !or we need to give up, or if increase in error such
     !that it's not even worth our time to keep trying
-    if (info.eq.1 .or. i>4) then
-      flag(1)=vals(1)
-      !if (info .ne.1)flag(1)=1
-      !if (vals(1)==100.)flag(1)=2
-      exit
-    endif
+    if (info.eq.1 .or. abs(vals(1)).le.tol .or. i>4 &
+         .or. abs(vals(1))>100.*abs(ovals(1))) then
+       !print*,'fail'
+       exit
+     endif
 
     relax = relax*0.1
     i=i+1
@@ -494,14 +493,15 @@ if (sqval>tol) then
 endif
 
 !Set flag to 1 if fitting didn't work as well as we wished
+if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag(1) = 1
 if (abs(vals(1))>tol) flag(3)=1
 if (abs(vals(2))>tol) flag(4)=1
 !if (abs(vals(1))>tol .or. abs(vals(2))>tol) flag(1)=1
 
 !Set flag to -1 or nan if cloud or rain mass didn't reach the threshold
 if ((ihyd==1 .and. M3p<cloud_mr_th) .or. (ihyd==2 .and. M3p<rain_mr_th)) then
-  flag(1) = -1
-  flag(2:flag_count) = nan
+   flag(1) = -1
+   flag(2:flag_count) = nan
 end if
 
 if (guess(1) .ne. guess(1) .or. guess(2) .ne. guess(2)) then
