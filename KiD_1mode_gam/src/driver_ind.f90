@@ -9,7 +9,7 @@ use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean,dgmean
 use namelists, only: bintype
 implicit none
 character(4)::momstr
-character(len=100)::lutfolder
+character(len=100) :: lutfolder
 real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
@@ -109,8 +109,14 @@ else
 endif
 
 if (initprof .eq. 'c') then
-   if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
-   if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   if(cloud_init(1)>0.) then
+      dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)* & 
+             gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
+   endif
+   if(rain_init(1)>0.) then
+      dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)* &
+             gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   endif
    
    if(cloud_init(1)>0. .or. rain_init(1)>0.) then
        if (bintype .eq. 'sbm') then
@@ -149,12 +155,16 @@ do i=1,nx
    do k=1,nz
       if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
          if (initprof .eq. 'i') then
-            if(cloud_init(1)>0.)dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
+            if (cloud_init(1)>0.) then
+               dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
                cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
-            if(rain_init(1)>0.)dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
+            endif
+            if (rain_init(1)>0.) then 
+               dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
                rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+            endif
 
-            if(cloud_init(1)>0. .or. rain_init(1)>0.) then
+            if (cloud_init(1)>0. .or. rain_init(1)>0.) then
                 if (bintype .eq. 'sbm') then
                     CALL init_dist_sbm(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
                        h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
@@ -218,6 +228,8 @@ do i=1,nx
 enddo
 
 end subroutine amp_init
+
+! sbm_init: {{{
 !------------------------------------------------------------
 subroutine sbm_init(aer2d,dropsm2d)
 
@@ -282,7 +294,9 @@ do i=1,nx
    enddo
 enddo
 end subroutine sbm_init
+! }}}
 
+! tau_init: {{{
 !------------------------------------------------------------
 subroutine tau_init(aer2d,dropsm2d,dropsn2d)
 
@@ -341,8 +355,9 @@ do i=1,nx
    enddo
 enddo
 
-
 end subroutine tau_init
+! }}}
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcdr8_mass,&
     ffcdr8_num,mc,mr,flag,ffcdr8_massinit,ffcdr8_numinit)
@@ -369,8 +384,8 @@ real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
-real(8) :: tnum_gam, total_num, correct_ratio
-real(8) :: dummy,realpmom,newdiam
+real(8) :: tnum_gam, true_num, correct_ratio, true_mass, tmass_gam
+real(8) :: dummy,realpmom,newdiam,Dmin
 real(real32) :: nan
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
@@ -380,6 +395,7 @@ do k=1,nz
 
    flag(k,j,:,:) = 0
    !Find gamma PDF parameters
+   ! 2 category AMP: {{{
    !searchparamsG returns the distribution bins
    !-----------CLOUD---------------------------------
    ihyd=1
@@ -393,18 +409,23 @@ do k=1,nz
    if (Mp(1)>0.) then
 
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,ihyd,:))
-      if (bintype .eq. 'tau') then
-          ffcloud_num=ffcloud_mass/binmass
-          tnum_gam=sum(ffcloud_num)*col
+      tmass_gam = sum(ffcloud_mass)*col
+      true_mass = Mpc(k,j,1)*1000*pi/6
+      correct_ratio = true_mass/tmass_gam
+      ffcloud_mass = ffcloud_mass * correct_ratio
 
-          ! make sure that 0th moment is also conserved
-          if (momx == 0) then
-             total_num = Mp(2)
-             if (tnum_gam /= total_num) then
-                correct_ratio = total_num/tnum_gam
-                ffcloud_num = ffcloud_num*correct_ratio
-             endif
-          endif
+      if (bintype .eq. 'tau') then
+         ffcloud_num=ffcloud_mass/binmass
+         tnum_gam=sum(ffcloud_num)*col
+
+         ! make sure that 0th moment is also conserved
+         if (momx == 0) then
+            true_num = Mpc(k,j,2)
+            if (tnum_gam /= true_num) then
+               correct_ratio = true_num/tnum_gam
+               ffcloud_num = ffcloud_num*correct_ratio
+            endif
+         endif
 
       endif
    else
@@ -425,18 +446,23 @@ do k=1,nz
    if (Mp(1)>0.) then
 
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,ihyd,:))
-      if (bintype .eq. 'tau') then
-          ffrain_num=ffrain_mass/binmass
-          tnum_gam=sum(ffrain_num)*col
+      tmass_gam = sum(ffrain_mass)*col
+      true_mass = Mpr(k,j,1)
+      correct_ratio = true_mass/tmass_gam
+      ffrain_mass = ffrain_mass * correct_ratio
 
-          ! make sure that 0th moment is also conserved
-          if (momx == 0) then
-             total_num = Mp(2)
-             if (tnum_gam /= total_num) then
-                correct_ratio = total_num/tnum_gam
-                ffrain_num = ffrain_num*correct_ratio
-             endif
-          endif
+      ! make sure that 0th moment is also conserved
+      if (bintype .eq. 'tau') then
+         ffrain_num=ffrain_mass/binmass
+         tnum_gam=sum(ffrain_num)*col
+         if (momx == 0) then
+            true_num = Mpr(k,j,2)
+            if (tnum_gam /= true_num) then
+               correct_ratio = true_num/tnum_gam
+               ffrain_num = ffrain_num*correct_ratio
+            endif
+         endif
+
       endif
 
    else
@@ -452,23 +478,25 @@ do k=1,nz
    ffcdr8_massinit(k,j,:)=ffcdr8_mass(k,j,:)
    ffcdr8_numinit(k,j,:)=ffcdr8_num(k,j,:)
 
-if(ffcdr8_mass(k,j,1).ne.ffcdr8_mass(k,j,1))then
-    print*,'NaNs in ffcdr8_mass'
-    print*,'NaN:',k,j,ffcloud_mass(1),ffrain_mass(1)
-    print*,Mpc(k,j,:),Mpr(k,j,:)
-    stop
-endif
+   if(ffcdr8_mass(k,j,1).ne.ffcdr8_mass(k,j,1))then
+      print*,'NaNs in ffcdr8_mass'
+      print*,'NaN:',k,j,ffcloud_mass(1),ffrain_mass(1)
+      print*,Mpc(k,j,:),Mpr(k,j,:)
+      stop
+   endif
 
-if(ffcdr8_num(k,j,1).ne.ffcdr8_num(k,j,1))then
-    print*,'NaNs in ffcd_num'
-    print*,'NaN:',k,j,ffcloud_num(1),ffrain_num(1)
-    stop
-endif
+   if(ffcdr8_num(k,j,1).ne.ffcdr8_num(k,j,1))then
+      print*,'NaNs in ffcd_num'
+      print*,'NaN:',k,j,ffcloud_num(1),ffrain_num(1)
+      stop
+   endif
 
    !Calculate moments - most of the time they're the same as what we used to find parameters
    !But in the case that parameters couldn't be found, we want to know what the actual moment
    !values are of our distributions
    call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10))
+
+   ! }}}
  enddo
 enddo
 
@@ -477,11 +505,11 @@ enddo
 ffcd_mass=real(ffcdr8_mass)
 
 if (bintype .eq. 'sbm') then
-    call micro_proc_sbm(press,tempk,qv,fncn,ffcd_mass)
+   call micro_proc_sbm(press,tempk,qv,fncn,ffcd_mass)
 elseif (bintype .eq. 'tau') then
-    ffcd_num=real(ffcdr8_num)
-    call micro_proc_tau(tempk,qv,ffcd_mass,ffcd_num)
-    ffcdr8_num=dble(ffcd_num)
+   ffcd_num=real(ffcdr8_num)
+   call micro_proc_tau(tempk,qv,ffcd_mass,ffcd_num)
+   ffcdr8_num=dble(ffcd_num)
 endif
 
 ffcdr8_mass=dble(ffcd_mass)
@@ -587,9 +615,9 @@ fncnr8=dble(fncn)
 do k=1,nz
  do j=1,nx
   call calcmoms(ffcdr8(k,j,:),dummy,10,mc(k,j,:),mr(k,j,:))
-  !call calcmoms(ffcdr8_mass=ffcdr8(k,j,:),momnum=10,mc=mc(k,j,:),mr=mr(k,j,:))
  enddo
 enddo
+
 end subroutine mp_sbm
 
 !---------------------------------------------------------------------
@@ -616,10 +644,11 @@ ffcdr8_mass2d=dble(ffcd_mass2d)
 ffcdr8_num2d=dble(ffcd_num2d)
 !---------CALC MOMENTS-----------------------
 do k=1,nz
- do j=1,nx
-  call calcmoms(ffcdr8_mass2d(k,j,:),ffcdr8_num2d(k,j,:),10,mc(k,j,:),mr(k,j,:))
- enddo
+   do j=1,nx
+      call calcmoms(ffcdr8_mass2d(k,j,:),ffcdr8_num2d(k,j,:),10,mc(k,j,:),mr(k,j,:))
+   enddo
 enddo
+
 ! there might be a better way to calculate moments, but will leave it like that for now. -ahu
 end subroutine mp_tau
 
@@ -627,7 +656,6 @@ subroutine calcmoms(ffcdr8_mass,ffcdr8_num,momnum,mc,mr)
 
 use module_hujisbm
 use micro_prm
-use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean
 Use namelists, only: bintype
 Use physconst, only: pi
 use parameters, only: split_bins
@@ -637,8 +665,9 @@ integer :: i,ib,ip,momnum
 real(8), dimension(max_nbins)::ffcdr8_mass
 real(8), optional, dimension(max_nbins) :: ffcdr8_num
 real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
-real(8), dimension(10) :: mc,mr ! moments
+real(8), dimension(momnum) :: mc,mr ! moments
 real(8) :: inf=huge(mc(1))
+
 if (bintype .eq. 'tau') then
    diag_m=ffcdr8_mass/ffcdr8_num
    diag_D=(diag_m/(1000.*pi/6))**(1./3.)
@@ -648,9 +677,19 @@ if (bintype .eq. 'tau') then
 endif
 
 do i=1,momnum
-   if (bintype .eq. 'sbm') then
-      mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1))*col*1000.
-      mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1))*col*1000.
+   if (i==4) then
+      mc(i) = sum(ffcdr8_mass(1:split_bins))*col/(1000*pi/6)
+      mr(i) = sum(ffcdr8_mass(split_bins+1:nkr))*col/(1000*pi/6)
+   else
+      if (bintype .eq. 'sbm') then
+         mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1.))*col*1000.
+         mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1.))*col*1000.
+      elseif (bintype .eq. 'tau') then
+         mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
+         mr(i)=sum(ffcdr8_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
+      endif
+   endif
+enddo
 
    elseif (bintype .eq. 'tau') then
       mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col

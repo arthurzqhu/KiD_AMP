@@ -423,15 +423,16 @@ READ(hujisbm_unit1,900) XL(otn),XI(otn,oti),XS(otn),XG(otn),XH(otn)
 CLOSE(hujisbm_unit1)
 ! BULKRADIUS
 
-OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkradii.asc_s_0_03_0_9", &
-     FORM="FORMATTED")
-READ(hujisbm_unit1,*) RADXXO(otn,oth)
-CLOSE(hujisbm_unit1)
+! OPEN(UNIT=hujisbm_unit1,FILE="./src/input_data/sbm_input/bulkradii.asc_s_0_03_0_9", &
+!      FORM="FORMATTED")
+! READ(hujisbm_unit1,*) RADXXO(otn,oth)
+! CLOSE(hujisbm_unit1)
 
 
-DO KR=1,NKR
-   DIAMS(KR)=RADXXO(KR,1)*2.*0.01
-ENDDO
+DIAMS = (dble(xl)/(pi/6.))**(1/3.)/100.
+! DO KR=1,NKR
+!    DIAMS(KR)=RADXXO(KR,1)*2.*0.01
+! ENDDO
 
 !Choose aerosol type
 !!!!!!AEROMEDRAD currently uninitialized
