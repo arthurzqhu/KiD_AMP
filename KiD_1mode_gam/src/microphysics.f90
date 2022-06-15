@@ -29,6 +29,7 @@ REAL :: SUP2_OLD,dthalf
 real, dimension(max_nbins) :: ff1r_prev
 REAL, DIMENSION(nz,max_nbins) :: ff1z_prev
 real :: proc_tmass, proc_cmass, proc_rmass
+real :: proc_tnum, proc_cnum, proc_rnum
 
 DOUBLE PRECISION :: ss_max=0.003d0
 double precision del1in_limit
@@ -138,7 +139,7 @@ do i=1,nx
                     ff1in(1)=ff1in(1)+(concccn-concdrop)*rhocgs/(3.0*col*xl(1))
 
                     if (mp_proc_dg) then
-                       proc_tmass = (ff1in(1)-ff1r(1))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                       proc_tmass = (ff1in(1)-ff1r(1))/(rhocgs/xl(1)/xl(1)/3.0)*col
                        if (nx==1) then
                           call save_dg(k,proc_tmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
                        else
@@ -200,25 +201,38 @@ do i=1,nx
                      proc_cmass=0.
                      proc_rmass=0.
                      proc_tmass=0.
+                     proc_cnum=0.
+                     proc_rnum=0.
+                     proc_tnum=0.
 
                      do kr=1,split_bins
                         proc_cmass = proc_cmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                         proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                        proc_cnum = proc_cnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
+                        proc_tnum = proc_tnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
                      enddo
 
-                     do kr=split_bins,nkr
+                     do kr=split_bins+1,nkr
                         proc_rmass = proc_rmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                         proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                        proc_rnum = proc_rnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
+                        proc_tnum = proc_tnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
                      enddo
 
                      if (nx==1) then
                         call save_dg(k,proc_cmass/dt,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
                         call save_dg(k,proc_rmass/dt,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z')
                         call save_dg(k,proc_tmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+                        call save_dg(k,proc_cnum/dt,'dn_cloud_ce',i_dgtime,units='1/kg/s',dim='z')
+                        call save_dg(k,proc_rnum/dt,'dn_rain_ce',i_dgtime,units='1/kg/s',dim='z')
+                        call save_dg(k,proc_tnum/dt,'dn_ce',i_dgtime,units='1/kg/s',dim='z')
                      else
                         call save_dg(k,i,proc_cmass/dt,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z,x')
                         call save_dg(k,i,proc_rmass/dt,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z,x')
                         call save_dg(k,i,proc_tmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_cnum/dt,'dn_cloud_ce',i_dgtime,units='1/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_rnum/dt,'dn_rain_ce',i_dgtime,units='1/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_tnum/dt,'dn_ce',i_dgtime,units='1/kg/s',dim='z,x')
                      endif
 
                   endif
@@ -990,8 +1004,11 @@ REAL,PARAMETER :: CPBIN=0.24 !specific heat of water vapour
 REAL, DIMENSION(JMINP:JMAXP,KKP) :: CCNTOT
 REAL :: CN1
 REAL DM !the condensated mass calced in EVAP and COND routines
+REAL DN !the condensated number calced in EVAP and COND routines
 real dm_cloud_evap ! the evaporated mass
 real dm_rain_evap ! the evaporated mass
+real dn_cloud_evap ! the evaporated number
+real dn_rain_evap ! the evaporated number
 REAL DDDD!supersat percentage
 REAL DAMKDT!tendency in bin resolved mass cloud due to microphysics
 REAL DANKDT!tendency in bin resolved number cloud due to microhysics
@@ -1023,6 +1040,7 @@ real :: rdt
 real, dimension(nz,nx) :: tempk, qv
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
+real(8) :: inf=huge(sq(1,1,1))
 
 
 
@@ -1312,8 +1330,11 @@ DO K=2,KKP
        ENDIF
 
        DM=0.0
+       dn=0.0
        dm_cloud_evap = 0.0
        dm_rain_evap = 0.0
+       dn_cloud_evap = 0.0
+       dn_rain_evap = 0.0
        NCC(J,K)=0.0
        MCC(J,K)=0.0
        DUS1(J,K)=0.0
@@ -1378,6 +1399,7 @@ DO K=2,KKP
              print *, 'cond conservation prob after rebin'
              print *, 'AN1OLD', AN1OLD(j,k),k,j
              print *, 'AN1', AN1(j,k),k,j
+             stop
           ENDIF
 
        ELSEIF(DS_force < -eps .and. docondensation .and. (.not. l_noevaporation)) then !DS_force < 0.0
@@ -1455,8 +1477,10 @@ DO K=2,KKP
     ! AH 0410 - work out total mass and number change due to cond
     !           and evap
          dm = 0.0
+         dn = 0.0
          do l = 1,lk
             dm = dm + (amk(j,k,l) - amkorig(j,k,l))
+            dn = dn + (ank(j,k,l) - ankorig(j,k,l))
          enddo
 
     ! save mphys tendency due to condensation for each bin - takes up a lot of space -ahu
@@ -1493,37 +1517,45 @@ endif
       
       ! this part is probably redundant, will delete later if so. -ahu
       if (mp_proc_dg .and. docondensation) then
+         do l = 1,lk_cloud
+            dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
+            dn_cloud_evap = dn_cloud_evap + (ank(j,k,l) - ankorig(j,k,l))
+         enddo
+         do l = lk_cloud+1, lk
+            dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
+            dn_rain_evap = dn_rain_evap + (ank(j,k,l) - ankorig(j,k,l))
+         enddo
          if (jjp > 1) then
             !    diagnostics for total cond/evap rate liquid water (change in mass)
             call save_dg(k,j,dm/dt,'dm_ce', i_dgtime, &
                  units='kg/kg/s',dim='z,x')
+            call save_dg(k,j,dn/dt,'dn_ce', i_dgtime, &
+                 units='1/kg/s',dim='z,x')
             !    cond/evap rate of cloud
-            do l = 1,lk_cloud
-               dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
-            enddo
             call save_dg(k,j,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
                  units='kg/kg/s',dim='z,x')
+            call save_dg(k,j,dn_cloud_evap/dt,'dn_cloud_ce', i_dgtime, &
+                 units='1/kg/s',dim='z,x')
             !     cond/evap rate of rain
-            do l = lk_cloud+1, lk
-               dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
-            enddo
             call save_dg(k,j,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
                  units='kg/kg/s',dim='z,x')
+            call save_dg(k,j,dn_rain_evap/dt,'dn_rain_ce', i_dgtime, &
+                 units='1/kg/s',dim='z,x')
          else
             !    diagnostics for total cond/evap rate liquid water (change in mass)
             call save_dg(k,dm/dt,'dm_ce', i_dgtime, &
                  units='kg/kg/s',dim='z')
+            call save_dg(k,dn/dt,'dn_ce', i_dgtime, &
+                 units='1/kg/s',dim='z')
             !    cond/evap rate of cloud
-            do l = 1,lk_cloud
-               dm_cloud_evap = dm_cloud_evap + (amk(j,k,l) - amkorig(j,k,l))
-            enddo
             call save_dg(k,dm_cloud_evap/dt,'dm_cloud_ce', i_dgtime, &
                  units='kg/kg/s',dim='z')
+            call save_dg(k,dn_cloud_evap/dt,'dn_cloud_ce', i_dgtime, &
+                 units='1/kg/s',dim='z')
             !     cond/evap rate of rain
-            do l = lk_cloud+1, lk
-               dm_rain_evap = dm_rain_evap + (amk(j,k,l) - amkorig(j,k,l))
-            enddo
             call save_dg(k,dm_rain_evap/dt,'dm_rain_ce', i_dgtime, &
+                 units='kg/kg/s',dim='z')
+            call save_dg(k,dn_rain_evap/dt,'dn_rain_ce', i_dgtime, &
                  units='kg/kg/s',dim='z')
          endif
       endif
@@ -1812,6 +1844,22 @@ endif
             IF(IRAINBIN == 1.AND.IMICROBIN == 1) THEN
             ! sum the effects of cond/evap+coll/coal+sedi
             ! on mass and number
+
+            if (DIEMC(L) .ne. DIEMC(L)) then
+               print*, 'cond/evap nans'
+               stop
+            endif
+
+            if (DIEMD(L) .ne. DIEMD(L)) then
+               print*, 'coll/coal nans'
+               stop
+            endif
+
+            if (QL_SED(J,K,L) .ne. QL_SED(J,K,L)) then
+               print*, 'sed nans'
+               stop
+            endif
+
              DAMKDT=(DIEMC(L)+DIEMD(L)+QL_SED(J,K,L)) * RDT
              DANKDT=(DIENC(L)+DIEND(L)+QLN_SED(J,K,L)) * RDT
             ELSE
@@ -2073,21 +2121,27 @@ end do
 
 ! check NaN
 do k=1,nz
-    do j=jminp,jmaxp
-        do iq=1,nqp
-            if (q_lem(j,k,iq) .ne. q_lem(j,k,iq)) then
-                print*, 'some NaNs here'
-                print*,'q', k,iq
-                stop
-            end if
-            if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
-                print*, 'some NaNs here'
-                print*,'sq', k,iq
-                print*, sq_lem
-                stop
-            end if
-        enddo
-    enddo
+   do j=jminp,jmaxp
+      do iq=1,nqp
+         if (sq_lem(j,k,iq) > inf) then
+            print*, j,k,iq, 'inf'
+            stop
+         endif
+         if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
+            ! if (iq == 1) then
+            !    sq_lem(j,k,iq) = sq_lem(j,k,iq+1)
+            ! elseif (iq == nqp) then
+            !    sq_lem(j,k,iq) = sq_lem(j,k,iq-1)
+            ! else
+            !    sq_lem(j,k,iq) = (sq_lem(j,k,iq-1) + sq_lem(j,k,iq+1))/2
+            ! endif
+            print*, 'some NaNs here'
+            print*,'sq', k,iq
+            ! print*, sq_lem
+            stop
+         end if
+      enddo
+   enddo
 enddo
 
 do k=1,nz
