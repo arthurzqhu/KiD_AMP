@@ -4,8 +4,8 @@
 mconfig_temp='condnuc' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN" "AMP")
-bintype=("TAU" "SBM")
+ampORbin=("AMP" "BIN")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -35,8 +35,8 @@ l_adv_s=1
 
 # set initial water if nucleation/condensation and/or adv is turned off 
 #if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-#   icimm=0.001     
-#   icinm=100.e6  
+# icimm=0.001     
+# icinm=100.e6  
 #   irimm=0.5e-3
 #   irinm=3.e3
 #else 
@@ -136,9 +136,6 @@ rain_init=${irimm},${irinm}
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
 rain_source=${rs_dm},${rs_N}
 
-!Initial supersaturation ratio
-!ss_init=0.1
-
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
@@ -176,7 +173,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=0.25            !Timestep length (s)
+dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
@@ -199,7 +196,9 @@ l_nodiv_hydrometeors=.true.
 l_fix_theta=.true.
 l_diverge_advection=.false.
 l_fix_aerosols=.true.
-l_periodic_bound=.False.
+l_periodic_bound=.false.
+l_noevaporation=.true.
+l_nocondensation=.false.
 /
 
 &addcontrol
