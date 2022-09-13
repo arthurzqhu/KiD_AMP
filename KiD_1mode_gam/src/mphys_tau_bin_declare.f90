@@ -52,7 +52,7 @@ INTEGER, PARAMETER :: LK=34
                                 ! number concentration
 integer, parameter :: lk_cloud = 15
                      ! the maximum cloud bin seperation
-INTEGER, PARAMETER :: LK_big = LK-15
+INTEGER, PARAMETER :: LK_big = LK-lk_cloud
                    ! Number of large bins used in SCONC and BREAK
 INTEGER, PARAMETER :: NQP_cond = 3 !the number of NQP fields
                                          !conditional diags are calced on
