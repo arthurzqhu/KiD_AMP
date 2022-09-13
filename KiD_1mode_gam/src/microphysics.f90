@@ -10,6 +10,7 @@ use parameters, only: nx,nz,dt,aero_N_init,max_nbins,split_bins
 Use diagnostics, only: save_dg, i_dgtime, save_binData
 use column_variables, only: z_half
 use namelists, only: mp_proc_dg
+use common_physics, only: qsaturation, qisaturation
 IMPLICIT NONE
 
 REAL::pcgs,rhocgs
@@ -114,11 +115,17 @@ do i=1,nx
             ES1N=AA1_MY*DEXP(-BB1_MY/TT)
             ES2N=AA2_MY*DEXP(-BB2_MY/TT)
             EW1N=QQ*PP/(0.622+0.378*QQ)
-            DIV1=EW1N/ES1N        !Saturation ratio wrt liquid
-            DEL1IN=EW1N/ES1N-1.   !supersat ratio wrt liquid
-            DIV2=EW1N/ES2N        !Saturation ratio wrt ice
-            DEL2IN=EW1N/ES2N-1.   !supersat ratio wrt liquid
+            ! DIV1=EW1N/ES1N        !Saturation ratio wrt liquid
+            ! DEL1IN=EW1N/ES1N-1.   !supersat ratio wrt liquid
+            ! DIV2=EW1N/ES2N        !Saturation ratio wrt ice
+            ! DEL2IN=EW1N/ES2N-1.   !supersat ratio wrt ice
+            DIV1=QQ*0.1/qsaturation(TT, PP/100.)
+            DEL1IN=QQ*0.1/qsaturation(TT, PP/100.)-1
+            DIV2=QQ*0.1/qisaturation(TT, PP/100.)
+            DEL2IN=QQ*0.1/qisaturation(TT, PP/100.)-1
+
             SUP2_OLD=DEL2IN
+            ! DIV1=
 !---------------------------------------------------
             !Latent heating budget prep
            ! CALL LHV_BUDGET(FF1R,FF2R,FF3R,FF4R,FF5R, &
@@ -884,22 +891,7 @@ use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dtheta_mphys,dqv_mphys, daerosol_mphys, &
                             dhydrometeors_mphys, dss_mphys, ss, aerosol, &
                             w_half, dz_half, rho, dz, theta, hydrometeors
-use mphys_tau_bin_declare, only: JMINP, JMAXP, LK, ICDKG_BIN, ICDNC_BIN, KKP,&
-                                 NQP, IAERO_BIN, ICDKG_BIN, ICDNC_BIN, iqv, &
-                                 iqss, ln2, nqp, rprefrcp, prefrcp, prefn, dzn, &
-                                 rhon, rdz_on_rhon, tref, IMICROBIN, IMICROBIN, &
-                                 CCNNEWTOT, CCNNEWAVG, CCNORIGTOT, eps, &
-                                 AMKORIG, ANKORIG, QSATPW, JJP, CCNOLD, CCN, &
-                                 AMKOLD, ANKOLD, DS, DUS, CDNCEVAP, am1_diag, &
-                                 an1_diag, AM0, AN0, AMN, IINHOM_mix, DUS1, &
-                                 tevap_bb, tevap_squires, t_mix, t_mix_approx, &
-                                 da_no, da_no_rat, r_int, r_bar, ssat, evap_a, &
-                                 DIEMC, DIENC, DIEMD, DIEND, ANK, AMK, AN1OLD, &
-                                 AM1OLD, AN0, AM0, AN1, AM1, AMKCC, ANKCC,AN2, &
-                                 DG1, SG1, dcrit, dqn_act, XK, IRAINBIN, &
-                                 IMICROBIN, rmass_cw, QL_SED, QLN_SED, dD, &
-                                 xkk1, xkmean, IRAINP, lk_cloud, CCNORIGAVG, &
-                                 dqn_reg, l_dodgs, dth_dt, dq_dt
+use mphys_tau_bin_declare
 use namelists, only: aero_N_init,l_advect,l_diverge,ampORbin
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem, &
                      ffcdprev_mass, ffcdprev_num
@@ -907,6 +899,7 @@ use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
                              XACT
+use global_fun
 
 implicit none
 
@@ -1035,8 +1028,7 @@ real :: dtcalc
 INTEGER :: LT, IT, inhom_evap
 INTEGER :: ccn_pos, cloud_pos, count, loop_count
 
-integer :: j, k, l, iq, ih, imom
-real :: rdt
+integer :: j, k, l
 real, dimension(nz,nx) :: tempk, qv
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
@@ -1082,7 +1074,6 @@ enddo
   do j=jminp,jmaxp
      sth_lem(j,1+offset:kkp)=dtheta_adv(1:kkp-offset,j)+dtheta_div(1:kkp-offset,j)
      sq_lem(j,1+offset:kkp,iqv)=dqv_adv(1:kkp-offset,j)+dqv_div(1:kkp-offset,j)
-
      sq_lem(j,1+offset:kkp,iqss)=dss_adv(1:kkp-offset,j)+dss_div(1:kkp-offset,j)
 
      do iq=1,ln2
@@ -1093,6 +1084,7 @@ enddo
                 + daerosol_div(k,j,ih)%moments(iq,imom))
         end do
      enddo
+
      do iq=1,lk
         ih=qindices(icdkg_bin(iq))%ispecies
         imom=qindices(icdkg_bin(iq))%imoment
@@ -1102,7 +1094,6 @@ enddo
                     + dhydrometeors_div(k,j,ih)%moments(iq,imom))!*(pi/6*1000.)
             elseif (ampORbin .eq. 'amp') then
                 sq_lem(j,k+offset,icdkg_bin(iq))=0.
-                ! (ffcd_mass2d(k,j,iq) - ffcdprev_mass(k,j,iq))*col/dt
             endif
         end do
         ih=qindices(icdnc_bin(iq))%ispecies
@@ -1113,7 +1104,6 @@ enddo
                     + dhydrometeors_div(k,j,ih)%moments(iq,imom))
             elseif (ampORbin .eq. 'amp') then
                 sq_lem(j,k+offset,icdnc_bin(iq))=0.
-                ! (ffcd_num2d(k,j,iq) - ffcdprev_num(k,j,iq))*col/dt
             endif
         end do
      end do
@@ -1495,12 +1485,18 @@ DO K=2,KKP
 
          TBASE(J,K)=TBASE(J,K)+AL*DM/CPBIN
          QVNEW = QVNEW - DM
+         if(qvnew<0.) then
+            qvnew = 0.
+            ! stop 'negative vapor'
+         endif
 
-if (tbase(j,k)<0) then
-    print*, 'negative temperature', j,k,tbase(j,k)
-    print*, 'dm',dm
-    stop
-endif
+
+         if (tbase(j,k)<0) then
+             print*, 'negative temperature', k,tbase(j,k)
+             print*, 'dm',dm
+             print*, 'dT', AL*DM/CPBIN
+             stop
+         endif
 
          QSATPW(J,K)=QSATURATION(TBASE(J,K),PMB)
          DS(J,K)=QVNEW-QSATPW(J,K)
@@ -1845,20 +1841,25 @@ endif
             ! sum the effects of cond/evap+coll/coal+sedi
             ! on mass and number
 
-            if (DIEMC(L) .ne. DIEMC(L)) then
-               print*, 'cond/evap nans'
-               stop
-            endif
+            ! if (DIEMC(L) .ne. DIEMC(L)) then
+            !    print*, 'cond/evap nans'
+            !    print*, 'j,k', j, k
+            !    print*, 'diemc', diemc
+            !    print*, 'AN2', AN2(k,j)
+            !    print*, 'cond/evap dm', dm
+            !    print*, 'delta T', AL*DM/CPBIN
+            !    stop
+            ! endif
 
-            if (DIEMD(L) .ne. DIEMD(L)) then
-               print*, 'coll/coal nans'
-               stop
-            endif
+            ! if (DIEMD(L) .ne. DIEMD(L)) then
+            !    print*, 'coll/coal nans'
+            !    stop
+            ! endif
 
-            if (QL_SED(J,K,L) .ne. QL_SED(J,K,L)) then
-               print*, 'sed nans'
-               stop
-            endif
+            ! if (QL_SED(J,K,L) .ne. QL_SED(J,K,L)) then
+            !    print*, 'sed nans'
+            !    stop
+            ! endif
 
              DAMKDT=(DIEMC(L)+DIEMD(L)+QL_SED(J,K,L)) * RDT
              DANKDT=(DIENC(L)+DIEND(L)+QLN_SED(J,K,L)) * RDT
@@ -2138,7 +2139,7 @@ do k=1,nz
             print*, 'some NaNs here'
             print*,'sq', k,iq
             ! print*, sq_lem
-            stop
+            ! stop
          end if
       enddo
    enddo
@@ -2299,7 +2300,7 @@ end subroutine qcount
 !-------------------------------------------------------------------
 Subroutine init_dist_tau(rxc,gnuc,dnc,rxr,gnur,dnr,ffcd_mass,ffcd_num)
 
-use micro_prm, only:nkr, diams, krdrop,binmass, col
+use micro_prm, only:nkr, diams, binmass, col
 use parameters, only: max_nbins
 use mphys_tau_bin_declare, only: DIAM, NQP, xkgmean, dgmean,xk
 use physconst, only: pi, rhoW
