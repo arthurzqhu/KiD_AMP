@@ -125,7 +125,11 @@ REAL, PARAMETER :: BFREEZMAX=0.66E0
 
 !c other parameters and thresholds
 real, parameter :: AFREEZMY=0.3333E-04,BFREEZMY=0.6600E00
-real, parameter :: cloud_mr_th=1d-9, rain_mr_th=1d-9 !cloud/rain mixing ratio threshold, in units of kg/g
+real(8), parameter :: cloud_mr_th=2d-10, rain_mr_th=2d-10 ! cloud/rain mixing ratio threshold, in units of kg/kg
+real(8), parameter :: cloud_nmr_th=1d5, rain_nmr_th=1d2 ! cloud/rain number mixing ratio threshold, in units of 1/kg
+real(8), parameter :: total_m3_th=1d-15
+real(8), parameter :: mass_dist_th = 1d-10
+real(8), parameter :: num_dist_th = 1d-1
 
 !c Parameters are used in algorithm of diffusional growth
 !c NCOND determine timestep (DT/NCOND) with diffusional growth
@@ -216,14 +220,16 @@ real, dimension(nz,nx,max_nbins) :: ffcdprev_mass,ffcdprev_num ! mass and number
 !    real, dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 !    real, dimension(nz,nx,2) :: guessc2d,guessr2d
 !integer:: imomc1,imomc2,imomr1,imomr2
-integer, dimension(3):: pmomsc,pmomsr
+integer, dimension(6):: pmomsc,pmomsr
 !real, dimension(2):: cloud_init,rain_init
-double precision :: aeromedrad, naero=0., relax, nug
+double precision :: aeromedrad, naero=0., relax, relaxx, relaxy, relaxw, relaxz
+double precision :: nug, nug1, nug2
 integer :: aerotype=1,npm,npmc,npmr
 real :: dtlt
-double precision :: Mp(3),M3p,Mxp,Myp,rxfinal
+double precision :: Mp(6),M3p,Mxp,Myp,Mwp,Mzp,M0p,rxfinal, fracfinal
+double precision :: M3temp, M0temp
 logical :: parcel!, docollisions, docondensation, donucleation, dosedimentation
-integer :: skr,ekr,momx,momy,ihyd
+integer :: skr,ekr,momw,momx,momy,momz,ihyd
 integer, parameter :: ntab=100
 double precision, dimension(ntab,ntab,2) :: nutab,dntab
 double precision, dimension(2,10,2) :: minmaxmx
@@ -245,135 +251,163 @@ DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
 
 REAL (KIND=R4SIZE) :: FR_LIM(max_nbins), FRH_LIM(max_nbins)
 
+! single category (sc) AMP related vars
+double precision :: DnRangeMin = 1e-9, DnRangeMax = 0.1
+character(len=100) :: folder_sclut, sc4m_lu_abspath
+character(len=20) :: sc4m_lufile, sigfig_fmt, momstr4
+double precision, dimension(:,:), allocatable :: sc4m_tab, &
+   sc4m_tab_moms, sc4m_tab_dns
+! this can be used for determining the solution space in the future, so that we 
+! would know whether to use the look up table before looking it up or doing 
+! the random parameter finding. can be easily done with machine learning. - ahu
+double precision, dimension(:), allocatable :: sc4m_tab_giveup
+integer:: tab4m_nrow, tab4m_ncol
+integer :: fsize ! file size of single category look up table
+integer, dimension(4) :: column_priority_4m = (/1, 4, 2, 3/) ! priority mom3 > momz > mom0 > momw
+integer, allocatable:: prio_c(:)
+integer, parameter :: p_sigfig = 3 ! the number of sigfigs for comparison and writing lookup table values
+logical::l_sctab_mod, l_toomanytries
+! effectively a logical but had to be put into sc4m_tab
+double precision :: dp_l_skip = 1. 
+! tolerance of between estimated and predicted moment z. a ratio difference 
+! between this will be considered bimodal
+double precision, parameter :: tol_unimod_frac = .1
+double precision, parameter :: threshold_3m = 1.d-15
+! marker for whether or not the autoconversion process has completed
+logical :: l_doneAC
+! dummy variable for debugging
+real(8), allocatable :: tempvar_debug(:), tempvar_debug2(:)
+logical :: l_massnoguess = .false., l_printflag = .false., l_failed1
+
 !******* for operating SBM when max_nbins is set to 34 *******
 integer :: idx &
-           ,otn(33) = (/(idx,idx=1,33,1)/) & !an array of consecutive integer from one to nkr
-           ! had to hard code the array size to 33 since nkr is not a parameter -ahu
-           ,oti(icemax) = (/(idx,idx=1,icemax,1)/) &
-           ,oth(nhydro) = (/(idx,idx=1,nhydro,1)/)
+   ,otn(33) = (/(idx,idx=1,33,1)/) & !an array of consecutive integer from one to nkr
+   ! had to hard code the array size to 33 since nkr is not a parameter -ahu
+   ,oti(icemax) = (/(idx,idx=1,icemax,1)/) &
+   ,oth(nhydro) = (/(idx,idx=1,nhydro,1)/)
 contains
 
-    subroutine check_bintype    
-    implicit none
+   subroutine check_bintype    
+      implicit none
 
-    if (bintype .eq. 'sbm') then
-       nkr=33
-       split_bins=14
+      if (bintype .eq. 'sbm') then
+         nkr=33
+         split_bins=14
 
-       if (ampORbin .eq. 'bin') then
-          num_h_moments=(/1,1/)
-          num_h_bins=(/33,33/)
-       end if
+         if (ampORbin .eq. 'bin') then
+            num_h_moments=(/1,1/)
+            num_h_bins=(/33,33/)
+         end if
 
-    elseif (bintype .eq. 'tau') then
-       nkr=34
-       num_aero_moments=1
-       split_bins=15
+      elseif (bintype .eq. 'tau') then
+         nkr=34
+         num_aero_moments=1
+         split_bins=15
 
-       if (ampORbin .eq. 'bin') then
-          num_h_moments=(/2,2/)
-          num_h_bins=(/34,34/)
-       endif
-    endif
+         if (ampORbin .eq. 'bin') then
+            num_h_moments=(/2,2/)
+            num_h_bins=(/34,34/)
+         endif
+      endif
 
-    end subroutine check_bintype
-    
-    real function mean(arr,n,wgt)
-       implicit none 
-       real(8), dimension(n) :: arr
-       real(8), optional, dimension(n) :: wgt
-       real(8), dimension(n) :: wgt_norm
-       integer :: n
+   end subroutine check_bintype
 
-       ! calculates the mean of an array `arr` given the weights `wgt`
-       if (present(wgt)) then
-           if (any(wgt<0)) then
-               !print*, "weights can't be negative"
-               wgt(wgt<0)=0
-               return
-           else
-               if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
-               mean=sum(arr*wgt_norm)
-           endif
-       else
-           mean=sum(arr)/n
-       endif
+   real function mean(arr,n,wgt)
+      implicit none 
+      real(8), dimension(n) :: arr
+      real(8), optional, dimension(n) :: wgt
+      real(8), dimension(n) :: wgt_norm
+      integer :: n
 
-    end function mean
+      ! calculates the mean of an array `arr` given the weights `wgt`
+      if (present(wgt)) then
+         if (any(wgt<0)) then
+            !print*, "weights can't be negative"
+            wgt(wgt<0)=0
+            return
+         else
+            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+            mean=sum(arr*wgt_norm)
+         endif
+      else
+         mean=sum(arr)/n
+      endif
 
-    real function std(arr,n,wgt)
-       implicit none
-       real(8), dimension(n) :: arr
-       real(8), optional, dimension(n) :: wgt
-       real(8), dimension(n) :: wgt_norm
-       integer :: n
-       
-       if (present(wgt)) then
-           if (any(wgt<0)) then
-               wgt(wgt<0)=0
-               !print*, "weights can't be negative"
-               !return
-           else
-               if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
-               std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt_norm))
-           endif
-       else
-           std=sqrt(sum((arr-mean(arr,n))**2)/n)
-       end if
-    
-    end function std
+   end function mean
 
-    real function skewness(arr,n,wgt)
-       implicit none
-       real(8), dimension(n) :: arr
-       real(8), optional, dimension(n) :: wgt
-       real(8), dimension(n) :: wgt_norm
-       integer :: n
+   real function std(arr,n,wgt)
+      implicit none
+      real(8), dimension(n) :: arr
+      real(8), optional, dimension(n) :: wgt
+      real(8), dimension(n) :: wgt_norm
+      integer :: n
 
-       if (present(wgt)) then
-            if (any(wgt<0)) then
-               wgt(wgt<0)=0
-               ! print*, "weights can't be negative"
-               ! return
-            else
-                if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
-                skewness=sum((arr-mean(arr,n,wgt))**3*wgt_norm)/(std(arr,n,wgt)**3)
-            endif
-        else
-            !skewness=
-        end if
+      if (present(wgt)) then
+         if (any(wgt<0)) then
+            wgt(wgt<0)=0
+            !print*, "weights can't be negative"
+            !return
+         else
+            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+            std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt_norm))
+         endif
+      else
+         std=sqrt(sum((arr-mean(arr,n))**2)/n)
+      end if
 
-    end function skewness
+   end function std
 
-    real function logskewness(arr,n,wgt)
-       implicit none
-       real(8), dimension(n) :: arr, logarr
-       real(8), optional, dimension(n) :: wgt
-       integer :: n
+   real function skewness(arr,n,wgt)
+      implicit none
+      real(8), dimension(n) :: arr
+      real(8), optional, dimension(n) :: wgt
+      real(8), dimension(n) :: wgt_norm
+      integer :: n
 
-       logarr=log10(arr)
-       logskewness=skewness(logarr,n,wgt)
+      if (present(wgt)) then
+         if (any(wgt<0)) then
+            wgt(wgt<0)=0
+            ! print*, "weights can't be negative"
+            ! return
+         else
+            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+            skewness=sum((arr-mean(arr,n,wgt))**3*wgt_norm)/(std(arr,n,wgt)**3)
+         endif
+      else
+         !skewness=
+      end if
 
-    end function logskewness
-    
-    real function reldisp(arr,n,wgt)
-        implicit none
-        real(8), dimension(n) :: arr
-        real(8), optional, dimension(n) :: wgt
-        integer :: n
+   end function skewness
 
-        reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
+   real function logskewness(arr,n,wgt)
+      implicit none
+      real(8), dimension(n) :: arr, logarr
+      real(8), optional, dimension(n) :: wgt
+      integer :: n
 
-    end function reldisp
+      logarr=log10(arr)
+      logskewness=skewness(logarr,n,wgt)
 
-    real function shparam(arr,n,wgt)
-        implicit none
-        real(8), dimension(n) :: arr
-        real(8), optional, dimension(n) :: wgt
-        integer :: n
+   end function logskewness
 
-        shparam=1/reldisp(arr,n,wgt)**2
+   real function reldisp(arr,n,wgt)
+      implicit none
+      real(8), dimension(n) :: arr
+      real(8), optional, dimension(n) :: wgt
+      integer :: n
 
-    end function shparam
+      reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
+
+   end function reldisp
+
+   real function shparam(arr,n,wgt)
+      implicit none
+      real(8), dimension(n) :: arr
+      real(8), optional, dimension(n) :: wgt
+      integer :: n
+
+      shparam=1/reldisp(arr,n,wgt)**2
+
+   end function shparam
 
 end module micro_prm

@@ -30,7 +30,7 @@ module parameters
   integer, parameter :: nx=DEF_NX    ! Number of horizontal gridpoints
 
   ! microphysics specific parameters
-  integer, parameter :: max_nmoments=3
+  integer, parameter :: max_nmoments=6
   integer, parameter :: max_nbins=34
   integer, parameter :: flag_count=4
   integer, parameter :: nspecies=2
@@ -61,12 +61,7 @@ module parameters
   ! Microphysics parameters
   integer :: num_aero_moments(naerosol) = 1
   integer :: num_aero_bins(naerosol)= 1
-  real(wp) :: aero_mom_init(max_nmoments)=(/  &   ! Obsolete
-         100. &  ! Initialise number              ! Obsolete
-      ,  0. &  ! Initialise mass                  ! Obsolete
-      ,  0. &  ! Initialise 3rd moment?           ! Obsolete
-        /)
-
+  real(wp) :: aero_mom_init(max_nmoments)
   real(wp) :: aero_N_init(naerosol)=0.0
   real(wp) :: aero_rd_init(naerosol)=0.0
   real(wp) :: aero_sig_init(naerosol)=0.0
@@ -84,12 +79,7 @@ module parameters
   ! If using bulk microphysics, simply set these to 1.
   integer :: num_h_bins(nspecies)= 1
 
-  real(wp) :: mom_init(max_nmoments)= (/  &
-        0. &  ! Initialise mass
-       ,1. &  ! Initialise number
-       ,0. &  ! Initialise volume
-       /)
-
+  real(wp) :: mom_init(max_nmoments)
   character(10) :: h_names(nspecies)= &
        (/ 'cloud     '   &
        ,  'rain      '   &
@@ -98,15 +88,14 @@ module parameters
        !,  'snow      '   &
        !,  'graupel   '  /)
 
-  character(10) :: mom_names(max_nmoments)= &
-       (/ 'mass      '   &
-       ,  'number    '   &
-       ,  'volume    '  /)
-
+  character(10) :: mom_names(max_nmoments)
   character(10) :: mom_units(max_nmoments)= &
        (/ 'kg/kg     '   &
-       ,  '/kg       '   &
-       ,  'm3/kg     '  /)
+       ,  'm^k/kg    '   &
+       ,  'm^k/kg    '   &
+       ,  'm^k/kg    '   &
+       ,  'm^k/kg    '   &
+       ,  'm^k/kg    '  /)
 
   character(10) :: aero_names(naerosol)='aero'! &
      !(/ 'aitken    '   &
@@ -122,16 +111,8 @@ module parameters
 !#endif
 !     /)
 
-  character(10) :: aero_mom_names(max_nmoments)= &
-     (/ 'number    '   &
-     ,  'mass      '   &
-     ,  'unknown   '  /)
-
-  character(10) :: aero_mom_units(max_nmoments)= &
-     (/ 'kg/kg     '   &
-     ,  '/kg       '   &
-     ,  'unknown   '  /)
-
+  character(10) :: aero_mom_names(max_nmoments)
+  character(10) :: aero_mom_units(max_nmoments)
    ! if using bin microphysics set variable below to
    ! determine the last bin of cloud
    ! if not using bin, this value is ignored

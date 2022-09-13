@@ -7,8 +7,10 @@ use module_hujisbm
 use micro_prm
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean,dgmean
 use namelists, only: bintype
+use global_fun, only: get_meandiam
 implicit none
 character(4)::momstr
+character(2)::rdrop_binstr
 character(len=100) :: lutfolder
 real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
@@ -21,7 +23,6 @@ real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d
 integer :: i,k,imom,ip
 
-!num_h_moments=(/3,3/)
 !Set some parameters
 ndtcoll=1
 ipris=0; ihail=0; igraup=0;iceprocs=0;imbudget=1
@@ -29,62 +30,82 @@ z_cbi=zctrl(2)
 z_cti=zctrl(3)
 d_cloudi=z_cti-z_cbi
 
-pmomsc=(/3,imomc1,imomc2/)
-pmomsr=(/3,imomr1,imomr2/)
 npmc=num_h_moments(1)
 npmr=num_h_moments(2)
+dnc = guessc2d(1,1,2)
+dnr = guessr2d(1,1,2)
 
+if (npmc < 4) then
+   pmomsc(1:3)=(/3,imomc1,imomc2/)
+   pmomsr(1:3)=(/3,imomr1,imomr2/)
+else
+   pmomsc(1:6)=(/3, 0, imomc1, imomc2, imomr1, imomr2/)
+   pmomsr(1:6)=(/3, 0, imomc1, imomc2, imomr1, imomr2/)
+endif
+
+! 3m initialization: {{{
 !Open output files, or decide that we don't need to run this combination of moments
-if (imomc1>=7 .and. imomc1 .ne. imomc2) then
+if (npmc < 4 .and. imomc1>=7 .and. imomc1 .ne. imomc2) then
  print*,"not a valid moment combination",imomc1,imomc2
  stop
 else !Run AMP
+  write(rdrop_binstr,'(I0)') split_bins
   !Open and read lookup tables
+  lutfolder='./src/input_data/'//trim(bintype)//'_lutables_'//rdrop_binstr//'/'
+endif
+
+if (npmc >= 4) then
   if (bintype .eq. 'tau') then
-      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_15/'
+     lutfolder='./src/input_data/'//trim(bintype)//'_lutables_34/'
   elseif (bintype .eq. 'sbm') then
-      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_14/'
-  endif
-
-  if (npmc==3) then
-    write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
-    open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
-    read(17,*) nutab(:,:,1); close(17)
-    open(17,file=trim(lutfolder)//'cloud_dn_'//momstr//'.txt')
-    read(17,*) dntab(:,:,1); close(17)
-    open(17,file=trim(lutfolder)//'cloud_minmaxmx.txt')
-    read(17,*) minmaxmx(:,:,1); close(17)
-    open(17,file=trim(lutfolder)//'cloud_minmy_'//momstr//'.txt')
-    read(17,*) mintab(:,1); close(17)
-    open(17,file=trim(lutfolder)//'cloud_maxmy_'//momstr//'.txt')
-    read(17,*) maxtab(:,1); close(17)
-  endif
-
-  if (npmr==3) then
-    write(momstr,'(A,I1,A,I1)') 'M',imomr1,'M',imomr2
-    open(17,file=trim(lutfolder)//'rain_nu_'//momstr//'.txt')
-    read(17,*) nutab(:,:,2); close(17)
-    open(17,file=trim(lutfolder)//'rain_dn_'//momstr//'.txt')
-    read(17,*) dntab(:,:,2); close(17)
-    open(17,file=trim(lutfolder)//'rain_minmaxmx.txt')
-    read(17,*) minmaxmx(:,:,2); close(17)
-    open(17,file=trim(lutfolder)//'rain_minmy_'//momstr//'.txt')
-    read(17,*) mintab(:,2); close(17)
-    open(17,file=trim(lutfolder)//'rain_maxmy_'//momstr//'.txt')
-    read(17,*) maxtab(:,2); close(17)
-
-  endif
-  if (npmr==3 .or. npmc==3) then
-    dntab = dntab * 1.e-6
-    !Find min and max of parameters from the tables
-    dnbounds(1,1)=minval(dntab(:,:,1)); dnbounds(2,1)=maxval(dntab(:,:,1))
-    nubounds(1,1)=minval(nutab(:,:,1)); nubounds(2,1)=maxval(nutab(:,:,1))
-    minmaxmy(1,1)=minval(mintab(:,1)); minmaxmy(2,1)=maxval(maxtab(:,1))
-    dnbounds(1,2)=minval(dntab(:,:,2)); dnbounds(2,2)=maxval(dntab(:,:,2))
-    nubounds(1,2)=minval(nutab(:,:,2)); nubounds(2,2)=maxval(nutab(:,:,2))
-    minmaxmy(1,2)=minval(mintab(:,2)); minmaxmy(2,2)=maxval(maxtab(:,2))
+     lutfolder='./src/input_data/'//trim(bintype)//'_lutables_33/'
   endif
 endif
+
+if (npmc==3) then
+   write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
+elseif (npmc >= 4) then
+   write(momstr,'(A,I1,A,I1)') 'M',0,'M',imomc2
+endif
+open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
+read(17,*) nutab(:,:,1); close(17)
+open(17,file=trim(lutfolder)//'cloud_dn_'//momstr//'.txt')
+read(17,*) dntab(:,:,1); close(17)
+open(17,file=trim(lutfolder)//'cloud_minmaxmx.txt')
+read(17,*) minmaxmx(:,:,1); close(17)
+open(17,file=trim(lutfolder)//'cloud_minmy_'//momstr//'.txt')
+read(17,*) mintab(:,1); close(17)
+open(17,file=trim(lutfolder)//'cloud_maxmy_'//momstr//'.txt')
+read(17,*) maxtab(:,1); close(17)
+dnc=dntab(50,50,1)
+
+if (npmr==3) then
+   write(momstr,'(A,I1,A,I1)') 'M',imomr1,'M',imomr2
+   open(17,file=trim(lutfolder)//'rain_nu_'//momstr//'.txt')
+   read(17,*) nutab(:,:,2); close(17)
+   open(17,file=trim(lutfolder)//'rain_dn_'//momstr//'.txt')
+   read(17,*) dntab(:,:,2); close(17)
+   open(17,file=trim(lutfolder)//'rain_minmaxmx.txt')
+   read(17,*) minmaxmx(:,:,2); close(17)
+   open(17,file=trim(lutfolder)//'rain_minmy_'//momstr//'.txt')
+   read(17,*) mintab(:,2); close(17)
+   open(17,file=trim(lutfolder)//'rain_maxmy_'//momstr//'.txt')
+   read(17,*) maxtab(:,2); close(17)
+   dnr=dntab(50,50,2)
+endif
+
+if (npmr>=3 .or. npmc>=3) then
+   dntab = dntab * 1.e-6
+   !Find min and max of parameters from the tables
+   dnbounds(1,1)=minval(dntab(:,:,1)); dnbounds(2,1)=maxval(dntab(:,:,1))
+   nubounds(1,1)=minval(nutab(:,:,1)); nubounds(2,1)=maxval(nutab(:,:,1))
+   minmaxmy(1,1)=minval(mintab(:,1)); minmaxmy(2,1)=maxval(maxtab(:,1))
+   dnbounds(1,2)=minval(dntab(:,:,2)); dnbounds(2,2)=maxval(dntab(:,:,2))
+   nubounds(1,2)=minval(nutab(:,:,2)); nubounds(2,2)=maxval(nutab(:,:,2))
+   minmaxmy(1,2)=minval(mintab(:,2)); minmaxmy(2,2)=maxval(maxtab(:,2))
+endif
+
+! }}}
 
 !call microphysics initialization routines
 if (bintype .eq. 'sbm') then
@@ -93,19 +114,6 @@ if (bintype .eq. 'sbm') then
     CALL kernalsdt()
 elseif (bintype .eq. 'tau') then
     CALL micro_init_tau()
-endif
-
-!Set up initial distribution and set moment values and parameter guesses
-if (npmc==3) then
-  dnc=dntab(50,50,1)
-else
-  dnc=0.
-endif
-
-if (npmr==3) then
-  dnr=dntab(50,50,2)
-else
-  dnr=0.
 endif
 
 if (initprof .eq. 'c') then
@@ -179,8 +187,8 @@ do i=1,nx
                if (bintype .eq. 'tau') ffcd_num(:)=0.
             endif
 
-            guessc2d(:,:,2)=dnc
-            guessr2d(:,:,2)=dnr
+            guessc2d(k,i,2)=dnc
+            guessr2d(k,i,2)=dnr
 
             do imom=1,num_h_moments(1)
               if (bintype .eq. 'sbm') then
@@ -221,12 +229,18 @@ do i=1,nx
 !
 !            print*, k,Mpc2d(k,i,1)
          endif
-         Mpc2d(k,i,1:num_h_moments(1))=mc(1:num_h_moments(1))
-         Mpr2d(k,i,1:num_h_moments(2))=mr(1:num_h_moments(2))
+
+         ! update Mpc2d
+         if (npmc < 4) then
+            Mpc2d(k,i,1:num_h_moments(1)) = mc(1:num_h_moments(1))
+            Mpr2d(k,i,1:num_h_moments(2)) = mr(1:num_h_moments(2))
+         else
+            Mpc2d(k,i,1:num_h_moments(1)) = mc(1:num_h_moments(1)) + mr(1:num_h_moments(2))
+            ! print*, 'ffcd_mass', ffcd_mass
+         endif
       endif
    enddo
 enddo
-
 end subroutine amp_init
 
 ! sbm_init: {{{
@@ -360,16 +374,18 @@ end subroutine tau_init
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine mp_amp(Mpc,Mpr,guessc,guessr,press,tempk,qv,fncn,ffcdr8_mass,&
-    ffcdr8_num,mc,mr,flag,ffcdr8_massinit,ffcdr8_numinit)
+    ffcdr8_num,mc,mr,flag,ffcdr8_massinit,ffcdr8_numinit,ffcdr8_massf,ffcdr8_numf)
 
 use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,flag_count,max_nbins
-use mphys_tau_bin_declare, only: xk,lk_cloud,xkgmean
+use mphys_tau_bin_declare, only: xk,lk_cloud,xkgmean,xkk1
 use physconst, only: pi
 use diagnostics, only: i_dgtime
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
+use global_fun
+use column_variables, only: hydrometeors
 
 implicit none
 integer:: i,j,k,ip
@@ -377,25 +393,41 @@ real(8),dimension(nz,nx,2,flag_count)::flag,flag_dummy
 
 real, dimension(nz,nx)::tempk,press,qv,mc_temp,mr_temp
 real(8), dimension(nz,nx,max_nbins)::ffcdr8_mass,ffcdr8_num,fncn,ffcdr8_massinit,&
-                                  ffcdr8_numinit
+                                  ffcdr8_numinit, ffcdr8_massf, ffcdr8_numf
 real, dimension(nz,nx,max_nbins)::ffcd_mass,ffcd_num
 real(8),dimension(nz,nx,num_h_moments(1)) :: Mpc
 real(8),dimension(nz,nx,num_h_moments(2)) :: Mpr
 real(8),dimension(nz,nx,2) :: guessc,guessr
 real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
-real(8) :: tnum_gam, true_num, correct_ratio, true_mass, tmass_gam
-real(8) :: dummy,realpmom,newdiam,Dmin
+real(8) :: tnum_gam, true_num, correct_ratio, true_mass, tmass_gam, tm1_gam, true_m1
+real(8) :: dummy,realpmom,newdiam,Dmin,Dmax,Dskip
+real(8) :: test_arr(1)
 real(real32) :: nan
 
+! test_arr = 0.9999
+! call mapRange2R(1, test_arr, 1d-5, 1d0, 'f')
+! print*, 'no change', test_arr
+! call mapRange2R(1, test_arr, 1d-5, 1d0, 'b')
+! print*, 'no change', test_arr
+! stop
+
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
+
+!!debugging a problematic moment combination
+!Mpc(31,1,1:4) = (/1.297928000581651E-005, 366201294.177014, &
+!   1.568659066797011E-008, 2.170872332377945E-011/) 
+!guessc(31,1,:) = (/4., 5.462991549063160E-007/)
+!guessr(31,1,:) = (/4., 1.728192278921345E-004/)
 
 do k=1,nz
  do j=1,nx
 
    flag(k,j,:,:) = 0
    !Find gamma PDF parameters
-   ! 2 category AMP: {{{
+
+   if (npmc < 4) then
+   ! 2-cat AMP: {{{
    !searchparamsG returns the distribution bins
    !-----------CLOUD---------------------------------
    ihyd=1
@@ -407,27 +439,12 @@ do k=1,nz
    momy=pmomsc(3) !pmomsc(1)=3 always
 
    if (Mp(1)>0.) then
-
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,ihyd,:))
       tmass_gam = sum(ffcloud_mass)*col
       true_mass = Mpc(k,j,1)*1000*pi/6
       correct_ratio = true_mass/tmass_gam
       ffcloud_mass = ffcloud_mass * correct_ratio
-
-      if (bintype .eq. 'tau') then
-         ffcloud_num=ffcloud_mass/binmass
-         tnum_gam=sum(ffcloud_num)*col
-
-         ! make sure that 0th moment is also conserved
-         if (momx == 0) then
-            true_num = Mpc(k,j,2)
-            if (tnum_gam /= true_num) then
-               correct_ratio = true_num/tnum_gam
-               ffcloud_num = ffcloud_num*correct_ratio
-            endif
-         endif
-
-      endif
+      if (bintype .eq. 'tau') ffcloud_num=ffcloud_mass/binmass
    else
       ffcloud_mass=0.
       ffcloud_num=0.
@@ -447,23 +464,10 @@ do k=1,nz
 
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,ihyd,:))
       tmass_gam = sum(ffrain_mass)*col
-      true_mass = Mpr(k,j,1)
+      true_mass = Mpr(k,j,1)*1000*pi/6
       correct_ratio = true_mass/tmass_gam
       ffrain_mass = ffrain_mass * correct_ratio
-
-      ! make sure that 0th moment is also conserved
-      if (bintype .eq. 'tau') then
-         ffrain_num=ffrain_mass/binmass
-         tnum_gam=sum(ffrain_num)*col
-         if (momx == 0) then
-            true_num = Mpr(k,j,2)
-            if (tnum_gam /= true_num) then
-               correct_ratio = true_num/tnum_gam
-               ffrain_num = ffrain_num*correct_ratio
-            endif
-         endif
-
-      endif
+      if (bintype .eq. 'tau') ffrain_num=ffrain_mass/binmass
 
    else
       ffrain_mass=0.
@@ -497,6 +501,148 @@ do k=1,nz
    call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10))
 
    ! }}}
+   else
+   ! 1-cat AMP: {{{
+   ihyd = 1
+   npm = npmc
+   Mp(1:num_h_moments(1))=Mpc(k,j,1:num_h_moments(1)) !Mp is the global variable
+
+   if (npm .eq. 4) then
+      momw = imomc1
+      momz = imomc2  ! momx is a global variable
+      momx = imomr1  ! These last two don't matter
+      momy = imomr2
+   else
+      momw = imomc1
+      momx = imomc2  ! momx is a global variable
+      momy = imomr1
+      momz = imomr2
+   endif
+
+   if (bintype .eq. 'sbm') then
+      Dmin = diams(1) 
+      Dskip = diams(1)*1.0001
+      Dmax = diams(nkr)
+   endif
+   if (bintype .eq. 'tau') then 
+      Dmin = xkk1(1)*2
+      Dskip = dgmean(1)
+      Dmax = dgmean(nkr)
+   endif
+   ! Dmin = diams(1)
+
+   ! if (Mp(1)>total_m3_th) then
+   if (get_meandiam(Mp(1), Mp(2)) >= Dmin*1d6 .and. Mp(1) > total_m3_th) then
+
+      ! if (k==33 .and. i_dgtime >= 1670) then
+      !    l_printflag = .true.
+      ! else
+      !    l_printflag = .false.
+      ! endif
+
+      ! if (get_meandiam(Mp(1), Mp(2)) < Dskip*1d6) then ! skip parameter finding if too small
+      !    ffcdr8_mass(k,j,1) = Mp(1)*pi/6*1000/col
+      !    flag(k,j,ihyd,1) = 0
+      !    ! can set a default guessc and guessr here as well
+      ! elseif (get_meandiam(Mp(1), Mp(2)) > Dmax*1d6) then
+      !    ffcdr8_mass(k,j,nkr) = Mp(1)*pi/6*1000/col
+      !    if (get_meandiam(Mp(1), Mp(2)) >= Dmax*1d6*1.26) then
+      !       flag(k,j,ihyd,1) = 1
+      !    else
+      !       flag(k,j,ihyd,1) = 0
+      !    endif
+      ! else
+      CALL searchparamsG2(guessc(k,j,:), guessr(k,j,:), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
+
+      ! call searchParamsByFrac(frac_M3(k,j), frac_M0(k,j), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
+      ! stop
+      ! endif
+
+      if (bintype .eq. 'tau') then
+         ffcdr8_num(k,j,:) = ffcdr8_mass(k,j,:)/binmass
+      endif
+      
+      ! if (k==20) print*, 'cloud, rain Dn', guessc(k,j,2), guessr(k,j,2)
+
+      ! print*, 'Dn_r', guessr(:,:,2)
+
+      ! if (i_dgtime>=803 .and. k>=33 .and. k<=35) then
+      !    l_printflag = .true.
+      !    print*, 'k=', k
+      ! else
+      !    l_printflag = .false.
+      ! endif
+
+      ! if (k==33 .and. i_dgtime >= 1670) then
+      !    l_printflag = .true.
+      !    print*, 'k=', k
+      !    ! print*, 'dn1, dn2', tempvar_debug(1:2)
+      !    print*, 'final Dn_c', guessc(k,:,2)
+      !    print*, 'final Dn_r', guessr(k,:,2)
+      !    print*, 'dn1 fraction', tempvar_debug(8)
+      !    ! print*, 'm31, mz1, m32, mz2', tempvar_debug(3:7)
+      !    print*, 'moms predicted', Mpc(k,:,1:4)
+      !    print*, 'moms after pf ', tempvar_debug(9:12)
+      !    ! print*, 'meand predicted', get_meandiam(Mp(1), Mp(2))
+      !    ! print*, 'meand after pf ', get_meandiam(tempvar_debug(9), tempvar_debug(10))
+      !    ! print*, 'info=', tempvar_debug(9)
+      !    ! print*, 'total attempts', tempvar_debug(10)
+      !    ! if (allocated(tempvar_debug2)) then
+      !    !    print*, 'shape(tempvar_debug2)', shape(tempvar_debug2)
+      !    !    print*, 'all guesses', tempvar_debug2 
+      !    !    stop
+      !    ! endif
+      ! else
+      !    l_printflag = .false.
+      ! endif
+
+   else
+      ffcdr8_mass(k,j,:) = 0.
+      ffcdr8_num(k,j,:) = 0.
+      flag(k,j,1,1) = -1
+      flag(k,j,1,2:flag_count) = nan
+   endif  
+
+   ffcdr8_massinit(k,j,:) = ffcdr8_mass(k,j,:)
+   ffcdr8_numinit(k,j,:) = ffcdr8_num(k,j,:)
+
+   ! if (l_toomanytries) then
+   !    print*, 'too many tries ffcdr8', ffcdr8_mass(k,j,:)
+   !    print*, 'hyd 1 fraction', tempvar_debug
+   !    print*, 'mean diam = ', get_meandiam(Mpc(k,j,1), Mpc(k,j,2)) , 'micron'
+   !    print*, 'smallest bin', Dmin
+   !    stop
+   ! endif
+
+   if (ffcdr8_mass(k,j,1) .ne. ffcdr8_mass(k,j,1)) then
+      print*, 'k=', k
+      print*, 'NaNs in ffcdr8_mass'
+      print*, 'ffcd', ffcdr8_mass(k,j,:)
+      print*, 'Mpc', Mpc(k,j,1:4)
+      print*, 'M3M0', Mpc(k,j,1)/Mpc(k,j,2)
+      print*, 'M3Mw', Mpc(k,j,1)/Mpc(k,j,3)
+      print*, 'M3Mx', Mpc(k,j,1)/Mpc(k,j,4)
+      ! print*, 'hyd 1 fraction', tempvar_debug
+      ! print*, 'guesses before filtering', tempvar_debug
+      print*, 'mean diam = ', get_meandiam(Mpc(k,j,1), Mpc(k,j,2)) , 'μm'
+      print*, 'guesses tempv', tempvar_debug(1:2)
+      print*, 'guesses out', guessc(k,j,2), guessr(k,j,2)
+      print*, 'dn1 frac', tempvar_debug(8)
+      ! print*, 'guesses before fixes', tempvar_debug
+      print*, 'smallest bin', Dmin
+      stop
+   endif
+
+   if (ffcdr8_num(k,j,1) .ne. ffcdr8_num(k,j,1)) then
+      print*,'NaNs in ffcd_num'
+      ! stop
+   endif
+
+   call calcmoms_sc(ffcdr8_mass(k,j,:), ffcdr8_num(k,j,:), 10, mc0(k,j,1:10))
+
+   ! }}}
+   endif
+
  enddo
 enddo
 
@@ -504,6 +650,7 @@ enddo
 
 ffcd_mass=real(ffcdr8_mass)
 
+! print*, 'ffcd before mphys', ffcd_mass(40,1,:)
 if (bintype .eq. 'sbm') then
    call micro_proc_sbm(press,tempk,qv,fncn,ffcd_mass)
 elseif (bintype .eq. 'tau') then
@@ -514,33 +661,95 @@ endif
 
 ffcdr8_mass=dble(ffcd_mass)
 
+ffcdr8_massf = ffcdr8_mass
+ffcdr8_numf = ffcdr8_num
+
+! print*, 'ffcd after mphys', ffcd_mass(40,1,:)
+
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
-     call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc(k,j,:),mr(k,j,:))
-  !---------UPDATE MOMENTS---------------------------------
+   if (npm < 4) then
+   ! 2-cat AMP: {{{
+   call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc(k,j,:),mr(k,j,:))
+   !---------UPDATE MOMENTS---------------------------------
    !Mp=predicted value before microphysics. m0=value after finding parameters
    !If m0 .ne. Mp, then finding parameters failed
    !If Mp<m0, it's possible to predict too large a change to M
    !To avoid, this, scale the change by Mp/m0.
    !mc=diagnosed value after microphysics. If there are no issues
    !then m becomes the new Mp
+
    do i=1,npmc  !Loop over the moments
+   ip=pmomsc(i)+1 !pmomsc contains the predicted moments. +1 to get correct index in mc and mc0
+   if (mc(k,j,ip) > 0.) then
+      dummy=mc(k,j,ip)!(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
+      if(dummy<0.) then
+         Mpc(k,j,i) = 0.
+      else
+         Mpc(k,j,i)=dummy
+      endif
+   else
+      Mpc(k,j,i)=mc(k,j,ip)
+   endif
+   mc(k,j,ip)=Mpc(k,j,i)
+   enddo
+ 
+   do i=1,npmr
+   ip=pmomsr(i)+1
+   if (mr(k,j,ip)>0.) then
+      dummy=mr(k,j,ip)!(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
+      if(dummy<0.) then
+         Mpr(k,j,i)=0.
+      else
+         Mpr(k,j,i)=dummy
+      endif
+      if (i>=2) then !check new mean size
+         realpmom = real(pmomsr(i))
+         newdiam = (Mpr(k,j,1)/Mpr(k,j,i))**(1./(3.-realpmom))
+         if (newdiam < diams(split_bins+1)) then
+            Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(split_bins+1))**(3.-realpmom)
+         elseif (newdiam > diams(nkr)) then
+            Mpr(k,j,i) = Mpr(k,j,1)/(0.99*diams(nkr))**(3.-realpmom)
+         endif
+      endif
+   else
+      Mpr(k,j,i)=mr(k,j,ip)
+   endif
+   mr(k,j,ip)=Mpr(k,j,i)
+   enddo
+
+   if (any(mc(k,j,:)==0.)) then
+      mc(k,j,:)=0;Mpc(k,j,:)=0
+   endif
+   if (any(mr(k,j,:)==0.)) then
+      mr(k,j,:)=0;Mpr(k,j,:)=0
+   endif
+   ! }}}
+   else
+   ! 1-cat AMP: {{{
+   call calcmoms_sc(ffcdr8_mass(k,j,:), ffcdr8_num(k,j,:), 10, mc(k,j,:))
+   ! if (k==40) print*, 'meand after mphys', get_meandiam(mc(k,j,4), mc(k,j,1))
+   ! if (k==40) print*, 'mom3045 before mphys', mc0(40,1,(/4,1,5,6/))
+   ! if (k==40) print*, 'mom3045 after mphys ', mc(40,1,(/4,1,5,6/))
+   ! if (mc(k,j,4)>0) print*, 'mom3 mom0 meand after mphys', k, mc(k,j,(/4,1/)), get_meandiam(mc(k,j,4),mc(k,j,1))
+   do i=1,npm  !Loop over the moments
       ip=pmomsc(i)+1 !pmomsc contains the predicted moments. +1 to get correct index in mc and mc0
-      if (mc0(k,j,ip) > 0.) then
+      if (mc(k,j,ip) > 0.) then
          dummy=mc(k,j,ip)!(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
          if(dummy<0.) then
            Mpc(k,j,i) = 0.
          else
            Mpc(k,j,i)=dummy
          endif
+
          if (i>=2) then !check new mean size
            realpmom = real(pmomsc(i))
            newdiam = (Mpc(k,j,1)/Mpc(k,j,i))**(1./(3.-realpmom))
            if (newdiam < diams(1)) then
               Mpc(k,j,i) = Mpc(k,j,1)/(1.01*diams(1))**(3.-realpmom)
-           elseif (newdiam > diams(split_bins)) then
-              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(split_bins))**(3.-realpmom)
+           elseif (newdiam > diams(nkr)) then
+              Mpc(k,j,i) = Mpc(k,j,1)/(0.99*diams(nkr))**(3.-realpmom)
            endif
          endif
          !Could also think about checking diameter in terms of my/mx for 3M ...
@@ -548,45 +757,26 @@ do k=1,nz
          !for the actual solution space. Feels like there ought to be a way to
          !easily check for the actual solution space without resorting to look
          !up tables. Could also just use the look up table solution space here.
+
       else
          Mpc(k,j,i)=mc(k,j,ip)
       endif
       mc(k,j,ip)=Mpc(k,j,i)
    enddo
-   
-   do i=1,npmr
-      ip=pmomsr(i)+1
-      if (mr0(k,j,ip)>0.) then
-         dummy=mr(k,j,ip)!(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
-         if(dummy<0.) then
-           Mpr(k,j,i)=0.
-         else
-           Mpr(k,j,i)=dummy
-         endif
-         if (i>=2) then !check new mean size
-           realpmom = real(pmomsr(i))
-           newdiam = (Mpr(k,j,1)/Mpr(k,j,i))**(1./(3.-realpmom))
-           if (newdiam < diams(split_bins+1)) then
-              Mpr(k,j,i) = Mpr(k,j,1)/(1.01*diams(split_bins+1))**(3.-realpmom)
-           elseif (newdiam > diams(nkr)) then
-              Mpr(k,j,i) = Mpr(k,j,1)/(0.99*diams(nkr))**(3.-realpmom)
-           endif
-         endif
-      else
-         Mpr(k,j,i)=mr(k,j,ip)
-      endif
-      mr(k,j,ip)=Mpr(k,j,i)
-    enddo
 
-    if (any(mc(k,j,:)==0.)) then
-      mc(k,j,:)=0;Mpc(k,j,:)=0
-    endif
-    if (any(mr(k,j,:)==0.)) then
-      mr(k,j,:)=0;Mpr(k,j,:)=0
-    endif
+   ! if (any(mc(k,j,:)==0.)) then
+   if (any(mc(k,j,:)==0.)) then
+      mc(k,j,:)=0; Mpc(k,j,:)=0
+   else ! update mc and mr as diagnosed cloud/rain moments
+      call calcmoms(ffcdr8_mass(k,j,:), ffcdr8_num(k,j,:), 10, mc(k,j,:), mr(k,j,:))
+   endif
 
-  enddo
+
+   ! }}}
+   endif
+
  enddo
+enddo
 
 end subroutine mp_amp
 !---------------------------------------------------------------------
@@ -595,6 +785,7 @@ subroutine mp_sbm(ffcdr8,press,tempk,qv,fncnr8,mc,mr)
 use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
+use global_fun
 
 implicit none
 integer:: i,j,k,ip
@@ -607,7 +798,9 @@ real(8),dimension(nz,nx,10) :: mc,mr
 !------CALL MICROPHYSICS--------------------
 ffcd=real(ffcdr8)
 fncn=real(fncnr8)
+! print*, 'ffcd before mphys', ffcd(40,1,:)
 call micro_proc_sbm(press,tempk,qv,fncn,ffcd)
+! print*, 'ffcd after mphys', ffcd(40,1,:)
 ffcdr8=dble(ffcd)
 fncnr8=dble(fncn)
 
@@ -617,6 +810,9 @@ do k=1,nz
   call calcmoms(ffcdr8(k,j,:),dummy,10,mc(k,j,:),mr(k,j,:))
  enddo
 enddo
+
+! print*, 'meand after mphys', get_meandiam(mc(40,1,4)+mr(40,1,4), mc(40,1,1)+mr(40,1,1))
+! print*, 'mom45 after mphys', mc(40,1,5)+mr(40,1,5), mc(40,1,6)+mr(40,1,6)
 
 end subroutine mp_sbm
 
@@ -628,6 +824,7 @@ use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
 use namelists, only: l_advect
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean
+use global_fun
 implicit none
 integer:: i,j,k,ip
 
@@ -639,7 +836,9 @@ real(8),dimension(nz,nx,10) :: mc,mr ! moments
 !------CALL MICROPHYSICS--------------------
 ffcd_mass2d=real(ffcdr8_mass2d)
 ffcd_num2d=real(ffcdr8_num2d)
+! print*, 'ffcd before mphys', ffcd_mass2d(40,1,:)
 call micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
+! print*, 'ffcd after mphys', ffcd_mass2d(40,1,:)
 ffcdr8_mass2d=dble(ffcd_mass2d)
 ffcdr8_num2d=dble(ffcd_num2d)
 !---------CALC MOMENTS-----------------------
@@ -648,6 +847,9 @@ do k=1,nz
       call calcmoms(ffcdr8_mass2d(k,j,:),ffcdr8_num2d(k,j,:),10,mc(k,j,:),mr(k,j,:))
    enddo
 enddo
+
+! print*, 'meand after mphys', get_meandiam(mc(40,1,4)+mr(40,1,4), mc(40,1,1)+mr(40,1,1))
+! print*, 'mom45 after mphys', mc(40,1,5)+mr(40,1,5), mc(40,1,6)+mr(40,1,6)
 
 ! there might be a better way to calculate moments, but will leave it like that for now. -ahu
 end subroutine mp_tau
@@ -677,20 +879,9 @@ if (bintype .eq. 'tau') then
 endif
 
 do i=1,momnum
-   if (i==4) then
-      mc(i) = sum(ffcdr8_mass(1:split_bins))*col/(1000*pi/6)
-      mr(i) = sum(ffcdr8_mass(split_bins+1:nkr))*col/(1000*pi/6)
-   else
-      if (bintype .eq. 'sbm') then
-         mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1.))*col*1000.
-         mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1.))*col*1000.
-      elseif (bintype .eq. 'tau') then
-         mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
-         mr(i)=sum(ffcdr8_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
-      endif
-   endif
-enddo
-
+   if (bintype .eq. 'sbm') then
+      mc(i)=sum(ffcdr8_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**(i-1.))*col*1000.
+      mr(i)=sum(ffcdr8_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**(i-1.))*col*1000.
    elseif (bintype .eq. 'tau') then
       mc(i)=sum(ffcdr8_num(1:split_bins)*diag_D(1:split_bins)**(i-1))*col
       mr(i)=sum(ffcdr8_num(split_bins+1:nkr)*diag_D(split_bins+1:nkr)**(i-1))*col
@@ -698,3 +889,39 @@ enddo
 enddo
 
 end subroutine calcmoms
+
+
+subroutine calcmoms_sc(ffcdr8_mass,ffcdr8_num,momnum,mc)
+
+use module_hujisbm
+use micro_prm
+Use namelists, only: bintype
+Use physconst, only: pi
+
+implicit none
+integer :: i,ib,ip,momnum
+real(8), dimension(max_nbins)::ffcdr8_mass
+real(8), optional, dimension(max_nbins) :: ffcdr8_num
+real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
+real(8), dimension(momnum) :: mc,mr ! moments
+real(8) :: inf=huge(mc(1))
+
+if (bintype .eq. 'tau') then
+   diag_m=ffcdr8_mass/ffcdr8_num
+   diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+   do ib=1,nkr
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) then
+         diag_D(ib)=diams(ib)
+      endif
+   end do
+endif
+
+do i=1,momnum
+   if (bintype .eq. 'sbm') then
+      mc(i)=sum(ffcdr8_mass(1:nkr)/xl*diams**(i-1.))*col*1000.
+   elseif (bintype .eq. 'tau') then
+      mc(i)=sum(ffcdr8_num(1:nkr)*diag_D**(i-1.))*col
+   endif
+enddo
+
+end subroutine calcmoms_sc

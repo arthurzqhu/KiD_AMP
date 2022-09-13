@@ -14,8 +14,8 @@
 Module main
 
   Use typeKind
-  Use parameters, only : dt, dg_dt, nx, nz
-  Use namelists, only : read_namelist,ss_init
+  Use parameters, only : dt, dg_dt, nx, nz, num_h_moments, h_shape
+  Use namelists, only : read_namelist
   Use runtime, only : time, time_step, n_times
   Use switches
   Use set_profiles,  only : read_profiles
@@ -27,89 +27,96 @@ Module main
   Use mphys_interface, only : mphys_column
   Use stepfields, only : step_column
   Use divergence, only : diverge_column
-  Use micro_prm, only: check_bintype,nkr
+  Use micro_prm, only: check_bintype,nkr,npm,l_sctab_mod,npmc
   Use column_variables
+  Use global_fun
   Implicit none
 
 contains
 
-  subroutine main_loop
-    real(8), allocatable :: temp_field(:,:)
-    integer :: itime      ! loop counter for time
-    !
-    ! Start by reading in namelists
-    !
-    allocate(temp_field(nz,0:nx+1))
-    if (l_namelists) call read_namelist
-    ss=ss_init 
+   subroutine main_loop
+      real(8), allocatable :: temp_field(:,:)
+      integer :: itime      ! loop counter for time
+      real(8) :: t1, t2
 
-    call check_bintype
-    ! Set up the initial fields and forcing
+      ! call cpu_time(t1)
+      !
+      ! Start by reading in namelists
+      !
+      allocate(temp_field(nz,0:nx+1))
+      if (l_namelists) call read_namelist
 
-    if (l_input_file)then
-       call read_profiles(input_file)
-    else
-       call read_profiles(icase)
-    end if
+      call check_bintype
+      ! call read_sctab
 
-    call interpolate_input(ifiletype)
+      ! Set up the initial fields and forcing
+      if (l_input_file)then
+         call read_profiles(input_file)
+      else
+         call read_profiles(icase)
+      end if
 
-    if (icase .ne. 501) then
-    call interpolate_forcing
-    endif
+      call interpolate_input(ifiletype)
 
+      if (icase .ne. 501) then
+         call interpolate_forcing
+      endif
 
-    call calc_derived_fields
+      call calc_derived_fields
 
-    ! Do we want to do diagnostics on this timestep?
-    call query_dgstep
+      ! Do we want to do diagnostics on this timestep?
+      call query_dgstep
 
-    if ( nx == 1 ) then
-       call save_diagnostics_1d
-    else
-       call save_diagnostics_2d
-    endif
+      if ( nx == 1 ) then
+         call save_diagnostics_1d
+      else
+         call save_diagnostics_2d
+      endif
 
-    do itime=1,n_times
-!print*, itime
+      do itime=1,n_times
+         print*, 't=', itime*dt
 
-       time=time+dt
-       time_step=time_step+1
+         time=time+dt
+         time_step=time_step+1
 
-       ! Do we want to do diagnostics on this timestep?
-       call query_dgstep
+         ! Do we want to do diagnostics on this timestep?
+         call query_dgstep
 
-       if (icase .ne. 501) then
-       call interpolate_forcing
-       endif
+         if (icase .ne. 501) then
+            call interpolate_forcing
+         endif
 
-       call calc_derived_fields
+         call calc_derived_fields
 
-       if (l_advect)then
-          call advect_column(scheme_id=0)
-       end if
+         if (l_advect)then
+            call advect_column(scheme_id=0)
+         end if
 
-       if (l_diverge)then
-          call diverge_column
-       end if
+         if (l_diverge)then
+            call diverge_column
+         end if
 
-       if (l_mphys)then
-          call mphys_column(scheme_id=imphys)
-       end if
+         if (l_mphys)then
+            call mphys_column(scheme_id=imphys)
+         end if
 
-       call step_column
+         call step_column
 
-       if ( nx == 1 ) then
-          call save_diagnostics_1d
-       else
-          call save_diagnostics_2d
-       endif
-!print*, ss(25,1)
-!if (itime>2) stop
-    end do
+         if ( nx == 1 ) then
+            call save_diagnostics_1d
+         else
+            call save_diagnostics_2d
+         endif
+         !print*, ss(25,1)
+         ! if (itime*dt>=842) stop
+         ! if (itime >= 1680) stop
+      end do
 
-    if (l_write_dgs) call write_diagnostics
+      if (l_write_dgs) call write_diagnostics
 
-  end subroutine main_loop
+      ! ! write lutable files for single category AMP:
+      ! if (l_sctab_mod) call write_sctab
+
+   end subroutine main_loop
 
 End Module main
