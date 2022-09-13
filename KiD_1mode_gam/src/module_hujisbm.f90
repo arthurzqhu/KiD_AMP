@@ -3125,7 +3125,7 @@ EXPM1(x)=x+x*x/2.0D0+x*x*x/6.0D0+x*x*x*x/24.0D0+ &
                  x*x*x*x*x/120.0D0
 
 ISYMICE = sum(ISYM2) + ISYM3 + ISYM4 + ISYM5
-IF(AMAX1(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
+IF(MAX(RW,PW,RI,PI)<=RW_PW_RI_PI_MIN) THEN
 
     RW = 0.0
     PW = 0.0
