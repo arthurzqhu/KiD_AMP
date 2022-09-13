@@ -403,34 +403,35 @@ contains
     ! Imposed forcing
     !
     !----------------
-    ! theta
-    field(:)=Tforce(:,nx)*exner(:,nx)
-    call save_dg(field, 'dtheta_force', i_dgtime,  units='K/s',dim=dims)
-    ! qv
-    field(:)=qforce(:,nx)
-    call save_dg(field, 'dqv_force', i_dgtime,  units='kg/kg/s',dim=dims)
-    !hydrometeors
-    do ih=1,nspecies
-       do imom=1,num_h_moments(ih)
-          name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_force'
-          units=trim(mom_units(imom))//'/s'
 
-          do k=1,nz
-              if (ampORbin .eq. 'bin')then
-                 if (ih==1) then
-                     field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
-                 elseif (ih==2) then
-                     field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                 else
-                     ! need in case there's ice -ahu
-                 endif
-              else
-                 field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
-              endif
-          end do
-          call save_dg(field, name, i_dgtime,  units,dim=dims)
-       end do
-    end do
+    !! theta
+    !field(:)=Tforce(:,nx)*exner(:,nx)
+    !call save_dg(field, 'dtheta_force', i_dgtime,  units='K/s',dim=dims)
+    !! qv
+    !field(:)=qforce(:,nx)
+    !call save_dg(field, 'dqv_force', i_dgtime,  units='kg/kg/s',dim=dims)
+    !!hydrometeors
+    !do ih=1,nspecies
+    !   do imom=1,num_h_moments(ih)
+    !      name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_force'
+    !      units=trim(mom_units(imom))//'/s'
+    !      do k=1,nz
+    !          if (ampORbin .eq. 'bin')then
+    !             if (ih==1) then
+    !                 field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+    !             elseif (ih==2) then
+    !                 field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+    !             else
+    !                 ! need in case there's ice -ahu
+    !             endif
+    !          else
+    !             field(k)=sum(dhydrometeors_force(k,nx,ih)%moments(:,imom))
+    !          endif
+    !      end do
+    !      call save_dg(field, name, i_dgtime,  units,dim=dims)
+    !   end do
+    !end do
+
     !--------------
     !
     ! Miscellaneous
