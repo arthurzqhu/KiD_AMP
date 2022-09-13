@@ -5,7 +5,7 @@ mconfig_temp='evaponly' # case/folder name. determined automatically if set empt
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
-bintype=("SBM" "TAU")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -212,8 +212,6 @@ l_fix_theta=.true.
 l_diverge_advection=.false.
 l_fix_aerosols=.true.
 l_periodic_bound=.False.
-l_noevaporation=.false.
-l_nocondensation=.true.
 /
 
 &addcontrol

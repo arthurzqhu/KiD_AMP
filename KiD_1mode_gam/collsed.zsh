@@ -4,8 +4,8 @@
 mconfig_temp='collsed' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN" "AMP")
-bintype=("TAU" "SBM")
+ampORbin=("AMP")
+bintype=("TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -165,7 +165,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=1.0            !Timestep length (s)
+dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed

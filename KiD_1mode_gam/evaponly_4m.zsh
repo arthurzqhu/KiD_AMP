@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='evapsed' # case/folder name. determined automatically if set empty
+mconfig_temp='evaponly_4m_3045' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP")
-bintype=("TAU")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -15,21 +15,20 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0.  # number mixing ratio (#/kg)
-isp_c=2  # shape parameter for cloud
-isp_r=2  # shape parameter for rain
-imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
-imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+isp_c=4  # shape parameter for cloud
+isp_r=4  # shape parameter for rain
+imc1=4 # II moment for cloud
+imc2=5 # III moment for cloud
+imr1=4 # II moment for rain
+imr2=5 # III moment for rain
 ztop=6000. # top of the domain
-t1=1800.
-t2=900.
-
+t1=100.
+t2=5.
 # switches
 l_nuc_cond_s=1
 l_coll_s=0
-l_sed_s=1
-l_adv_s=1
+l_sed_s=0
+l_adv_s=0
 
 
 # set initial water if nucleation/condensation and/or adv is turned off 
@@ -59,27 +58,36 @@ else
 fi
 
 
-iw=-2
+iw=2
 ia=100
 
-#inc=0
-#inr=0
-# idmc=$1
-#idmr=$1
-idmr=$1
+idm=$1
 irh=$2
 
-# icimm=0.001
-# icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+#icinm=100.e6
+#icimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$icinm))
+icimm=0.001
+icinm=$(($icimm/(($idm*1.e-6)**3*3.14159/6*1000.)))
 
-irimm=0.0005
-irinm=$(($irimm/(($idmr*1.e-6)**3*3.14159/6*1000.)))
-
-#rs_dm=$idmr.e-6
-#rs_N=1.e4
+#irinm=1.e4
+#irimm=$((($idm*1.e-6)**3*3.14159/6*1000.*$irinm))
 
 var1str=dm$1
 var2str=rh$2
+
+#idmr=400
+#irinm=${inr}
+#
+
+#echo rainmass=$irimm
+#echo rainnumber=$irinm
+#
+#idmc=20
+#icinm=${inc}.e6
+#icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
+#
+#echo cloudmass=$icimm
+#echo cloudnumber=$icinm
 
 mconfig=${mconfig_temp}
 
@@ -89,7 +97,7 @@ do
   do
 	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
     if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-      nhm='3,3'
+      nhm='4,4'
       nhb='1,1'
       # changes nhm based on the input 
       if [ $imc1 = $imc2 ]; then
@@ -126,7 +134,7 @@ do
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2','M3'
+mom_names='M1','M2','M3','M4','M5','M6'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -180,9 +188,9 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=1.0            !Timestep length (s)
+dt=0.05           !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=1.0         !Timestep for diagnostic output
+dg_dt=0.05         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation

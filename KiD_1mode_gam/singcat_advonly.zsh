@@ -4,11 +4,11 @@
 ./dimension_config.zsh 1D
 
 # config of the run
-mconfig_temp='fullmic' # case/folder name. determined automatically if set empty
+mconfig_temp='advonlyc_4m_cr_M4545_dt0.5' # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("TAU" "SBM")
+ampORbin=("AMP")
+bintype=("SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -20,19 +20,21 @@ rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 isp_c=4  # shape parameter for cloud
 isp_r=4  # shape parameter for rain
-imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
-imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+imc1=4 # II moment for cloud
+imc2=5 # III moment for cloud
+imr1=4 # II moment for rain
+imr2=5 # III moment for rain
+
+
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
 t1=1800.
 t2=900.
 # switches
-l_nuc_cond_s=1
-l_coll_s=1
-l_sed_s=1
+l_nuc_cond_s=0
+l_coll_s=0
+l_sed_s=0
 l_adv_s=1
 
 
@@ -46,6 +48,15 @@ else
    icimm=0.
    icinm=0.      
 fi
+
+idmc=27
+icimm=0.001
+icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+irimm=0.5e-3
+irinm=3.e3
+
+echo icinm=$icinm
+echo irinm=$irinm
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -85,15 +96,8 @@ do
   do
 	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
     if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-      nhm='3,3'
+      nhm='4,4'
       nhb='1,1'
-      # changes nhm based on the input 
-      if [ $imc1 = $imc2 ]; then
-        nhm=${nhm//3,/$'2,'}
-      fi
-      if [ $imr1 = $imr2 ]; then
-        nhm=${nhm//,3/$',2'}
-      fi
       else
         if [[ ${bintype[$ibt]} = 'SBM' ]]; then
           nhm='1,1'
@@ -122,7 +126,7 @@ do
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2','M3'
+mom_names='M1','M2','M3','M4','M5','M6'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -135,9 +139,6 @@ rain_init=${irimm},${irinm}
 
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
 rain_source=${rs_dm},${rs_N}
-
-!Initial supersaturation ratio
-!ss_init=0.1
 
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
@@ -176,7 +177,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=1.0             !Timestep length (s)
+dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
@@ -207,7 +208,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
-initprof='i' ! 'i' for a initial water profile increase wrt height, 'c' for constant
+initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 !l_diag_nu=.false.
 /
 END

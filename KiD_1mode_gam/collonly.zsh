@@ -22,13 +22,13 @@ imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 ztop=6000. # top of the domain
-t1=1800.
+t1=10800.
 t2=900.
 # switches
 l_nuc_cond_s=0
 l_coll_s=1
 l_sed_s=0
-l_adv_s=1
+l_adv_s=0
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -170,7 +170,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=1.0            !Timestep length (s)
+dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed

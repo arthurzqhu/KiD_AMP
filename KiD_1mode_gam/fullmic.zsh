@@ -1,11 +1,14 @@
 #!/bin/zsh
 
+# make sure what's compiled is the right case
+./dimension_config.zsh 1D
+
 # config of the run
-mconfig_temp='evapsed' # case/folder name. determined automatically if set empty
-caselist=(101) #(101 102 103 105 106 107)
+mconfig_temp='fullmic' # case/folder name. determined automatically if set empty
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP")
-bintype=("TAU")
+ampORbin=("AMP" "BIN")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -14,34 +17,35 @@ icinm=0. # initial cloud number 1/kg
 irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
-rs_N=0.  # number mixing ratio (#/kg)
-isp_c=2  # shape parameter for cloud
-isp_r=2  # shape parameter for rain
+rs_N=0. # number mixing ratio (#/kg)
+isp_c=4  # shape parameter for cloud
+isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
 imc2=6 # III moment for cloud
 imr1=0 # II moment for rain
 imr2=6 # III moment for rain
 ztop=6000. # top of the domain
+zcb=600. # cloud base height
+zct=1200. # cloud bottom height
 t1=1800.
 t2=900.
-
 # switches
 l_nuc_cond_s=1
-l_coll_s=0
+l_coll_s=1
 l_sed_s=1
 l_adv_s=1
 
 
 # set initial water if nucleation/condensation and/or adv is turned off 
-#if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-#   icimm=0.001     
-#   icinm=100.e6  
-#   irimm=0.5e-3
-#   irinm=3.e3
-#else 
-#   icimm=0.
-#   icinm=0.      
-#fi
+if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
+   icimm=0.001     
+   icinm=100.e6  
+   irimm=0.5e-3
+   irinm=3.e3
+else 
+   icimm=0.
+   icinm=0.      
+fi
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -59,30 +63,22 @@ else
 fi
 
 
-iw=-2
-ia=100
+# two varying inputs
+ia=$1
+iw=$2
+var1str=a$1
+var2str=w$2
 
-#inc=0
-#inr=0
-# idmc=$1
-#idmr=$1
-idmr=$1
-irh=$2
+# reset oscillation time based on updraft speed to prevent overshooting
+if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+  t2=$((($ztop-$zct)/$iw))
+  t1=$(($t2*2))
+fi
 
-# icimm=0.001
-# icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
-
-irimm=0.0005
-irinm=$(($irimm/(($idmr*1.e-6)**3*3.14159/6*1000.)))
-
-#rs_dm=$idmr.e-6
-#rs_N=1.e4
-
-var1str=dm$1
-var2str=rh$2
-
+echo t1=$t1
+echo t2=$t2
 mconfig=${mconfig_temp}
-
+echo Na=$ia
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
 do
   for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -107,14 +103,14 @@ do
           nhb='34,1'
         fi
       fi
-      outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/${var1str}/${var2str}/
+      outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
 	  for ((ic=1; ic<=case_num; ic++))
 	  do
 	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
 	    then
 	      zc=0
         else
-	      zc="$ztop,600.,1200."
+	      zc="$ztop,$zcb,$zct"
         fi
 	    if [ ! -d $outdir ]; then
 	      mkdir -p $outdir
@@ -156,7 +152,7 @@ imomr1 = ${imr1}  !1st predicted rain moment
 imomr2 = ${imr2}  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .false.
+donucleation = ${l_nuc_cond_f}
 docondensation = ${l_nuc_cond_f}
 docollisions = ${l_coll_f}
 dosedimentation = ${l_sed_f}
@@ -180,7 +176,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=1.0            !Timestep length (s)
+dt=0.25            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
@@ -189,7 +185,7 @@ tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period o
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-rhctrl=${irh}
+!rhctrl=${rh}
 !pctrl_v=${pcpt}
 /
 

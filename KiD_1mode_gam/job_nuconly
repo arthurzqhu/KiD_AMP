@@ -4,7 +4,7 @@
 #SBATCH -o KiD-%A-%a.out
 #SBATCH -e KiD-%A-%a.out
 #SBATCH -t 24:00:00
-#SBATCH -p med2
+#SBATCH -p high2
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --mail-type=END
@@ -28,5 +28,4 @@ jw=$((($iid+$len1-1)/$len1))
 echo $a_list[$ja]
 echo $w_list[$jw]
 
-# ./condonly_mod.zsh $dm_list[$ja] $sp_list[$jw]
-./condonly.zsh $a_list[$ja] $w_list[$jw]
+./nuconly.zsh $a_list[$ja] $w_list[$jw]

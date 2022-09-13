@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='condnuc' # case/folder name. determined automatically if set empty
+mconfig_temp='condnuc_dt0.25' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
+ampORbin=("AMP" "BIN" )
 bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -173,7 +173,7 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=1.0            !Timestep length (s)
+dt=0.25           !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
