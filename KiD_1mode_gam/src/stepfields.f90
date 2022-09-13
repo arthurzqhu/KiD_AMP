@@ -244,7 +244,7 @@ module stepfields
                             &  A, T18, I2,  /, &
                             &  A, T18, I2,  /, &
                             &  A, T18, I2 )'
-                       write(*,fmt)  'Warning: some &
+                       write(*,fmt)  'Warning some &
                             &negative numbers have been generated which do&
                             & not look like rounding error.', 'Estimat&
                             &ed rounding error: ', 10.*SPACING(MAX( &

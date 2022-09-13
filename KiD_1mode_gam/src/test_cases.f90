@@ -694,7 +694,7 @@ contains
     case default
       print*, ''
       print*, '================================='
-      print*, 'Warning: 1D case chosen'
+      print*, 'Warning 1D case chosen'
       print*, 'Test case value not recognized - ',icase
       print*, 'Was a 2D case intended?'
       print*, 'Exitting...'
