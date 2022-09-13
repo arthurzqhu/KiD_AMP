@@ -1423,25 +1423,25 @@ osqval = sqrt(sum(ovals(1:2)**2))
 
 vals=100.
 
-!!First try - previous values
-!if (guess(2).ne.0) then
-!   tguess(1) = guess(2)
-!   tguess(2) = guess(4)
-!   CALL hybrd1(fcn_4p,n,tguess,vals(1:2),tol,info,wa,lwa)
-!   ! reorder dn if they are not ordered correctly
-!   if (tguess(2) < tguess(1)) then
-!      dummy = tguess(1)
-!      tguess(1) = tguess(2)
-!      tguess(2) = dummy
-!   endif
-!   sqval = sqrt(sum(vals(1:2)**2))
-!   if (sqval .lt. osqval .and. all(tguess>0)) then
-!     ovals = vals
-!     osqval = sqval
-!     oguess = (/guess(1),tguess(1),guess(3),tguess(2)/)
-!     bguess = oguess
-!   endif
-!endif
+!First try - previous values
+if (guess(2).ne.0) then
+   tguess(1) = guess(2)
+   tguess(2) = guess(4)
+   CALL hybrd1(fcn_4p,n,tguess,vals(1:2),tol,info,wa,lwa)
+   ! reorder dn if they are not ordered correctly
+   if (tguess(2) < tguess(1)) then
+      dummy = tguess(1)
+      tguess(1) = tguess(2)
+      tguess(2) = dummy
+   endif
+   sqval = sqrt(sum(vals(1:2)**2))
+   if (sqval .lt. osqval .and. all(tguess>0)) then
+     ovals = vals
+     osqval = sqval
+     oguess = (/guess(1),tguess(1),guess(3),tguess(2)/)
+     bguess = oguess
+   endif
+endif
 
 ! if (l_printflag) print*, 'vals after 1st hybrd', vals(1:2)
 ! if (osqval .ne. osqval) osqval = 1.e10 ! an arbitrary large number
