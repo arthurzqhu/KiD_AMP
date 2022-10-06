@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='collonly_4m_3045_tol-6' # case/folder name. determined automatically if set empty
+mconfig_temp='colladvi_4m_3045' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("SBM")
+ampORbin=("BIN" "AMP")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -15,20 +15,18 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
-isp_c=4  # shape parameter for cloud
-isp_r=4  # shape parameter for rain
 imc1=4 # II moment for cloud
 imc2=5 # III moment for cloud
 imr1=4 # II moment for rain
 imr2=5 # III moment for rain
 ztop=6000. # top of the domain
 t1=10800.
-t2=900.
+t2=1800.
 # switches
 l_nuc_cond_s=0
 l_coll_s=1
 l_sed_s=0
-l_adv_s=0
+l_adv_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -62,14 +60,6 @@ echo $icinm
 
 #irinm=${inr}
 #irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
-
-# reset oscillation time based on updraft speed to prevent overshooting
-if [[ $((ztop/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-  t2=$((ztop/$iw))
-  t1=$(($t2*4))
-fi
-echo t1=$t1
-echo t2=$t2
 
 mconfig=${mconfig_temp}
 echo Na=$ia
@@ -130,9 +120,6 @@ rain_init=${irimm},${irinm}
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
 rain_source=${rs_dm},${rs_N}
 
-!Initial supersaturation ratio
-!ss_init=0.1
-
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
 !To run AMP as AMP, set num_h_moments = 2 or 3 and num_h_bins = 1
@@ -170,16 +157,15 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=0.5            !Timestep length (s)
+dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=0.5         !Timestep for diagnostic output
+dg_dt=5.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-rhctrl=1.
 !pctrl_v=${pcpt}
 /
 

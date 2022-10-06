@@ -3,7 +3,7 @@
 #SBATCH --array=1-25
 #SBATCH -o KiD-%A-%a.out
 #SBATCH -e KiD-%A-%a.out
-#SBATCH -t 24:00:00
+#SBATCH -t 1:00:00
 #SBATCH -p med2
 #SBATCH -N 1
 #SBATCH -n 1
@@ -26,4 +26,4 @@ jsp=$((($iid+$len1-1)/$len1))
 echo $dm_list[$jdm]
 echo $sp_list[$jsp]
 
-./collonly.zsh $dm_list[$jdm] $sp_list[$jsp]
+./collonly_4m.zsh $dm_list[$jdm] $sp_list[$jsp]
