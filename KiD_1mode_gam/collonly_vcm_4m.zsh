@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='collonly_vcm' # case/folder name. determined automatically if set empty
+mconfig_temp='collonly_vcm_4m' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -15,10 +15,10 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
-imc1=0 # II moment for cloud
-imc2=6 # III moment for cloud
-imr1=0 # II moment for rain
-imr2=6 # III moment for rain
+imc1=4 # II moment for cloud
+imc2=5 # III moment for cloud
+imr1=4 # II moment for rain
+imr2=5 # III moment for rain
 ztop=6000. # top of the domain
 t1=10800.
 t2=900.
@@ -80,7 +80,7 @@ echo Na=$ia
     do
   	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
       if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-        nhm='3,3'
+        nhm='4,4'
         nhb='1,1'
         # changes nhm based on the input 
         if [ $imc1 = $imc2 ]; then
@@ -117,7 +117,7 @@ echo Na=$ia
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2','M3'
+mom_names='M1','M2','M3','M4','M5','M6'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
