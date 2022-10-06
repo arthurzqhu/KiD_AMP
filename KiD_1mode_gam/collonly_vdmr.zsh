@@ -26,7 +26,7 @@ t2=900.
 l_nuc_cond_s=0
 l_coll_s=1
 l_sed_s=0
-l_adv_s=1
+l_adv_s=0
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
