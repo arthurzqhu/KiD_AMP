@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='collonly_vcm' # case/folder name. determined automatically if set empty
+mconfig_temp='collonlyc_vcm_50' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("BIN" "AMP")
@@ -202,7 +202,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
-initprof='i' ! 'i' for a initial water profile increase wrt height, 'c' for constant
+initprof='c' ! 'i' for a initial water profile increase wrt height, 'c' for constant
 !l_diag_nu=.false.
 /
 END

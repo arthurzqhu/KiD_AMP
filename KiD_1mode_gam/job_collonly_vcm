@@ -13,7 +13,7 @@
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
 cm_list=(.8 .9 0.95 0.975 0.9875 0.99375 0.996875 0.9984375 0.99921875 1.)
-dmr_list=(30)
+dmr_list=(50)
 
 len1=${#cm_list[@]}
 len2=${#dmr_list[@]}
