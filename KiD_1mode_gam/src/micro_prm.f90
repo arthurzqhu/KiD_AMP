@@ -278,6 +278,8 @@ logical :: l_doneAC
 ! dummy variable for debugging
 real(8), allocatable :: tempvar_debug(:), tempvar_debug2(:)
 logical :: l_massnoguess = .false., l_printflag = .false., l_failed1
+real(8) :: debug_time, debug_itime
+integer :: debug_k
 
 !******* for operating SBM when max_nbins is set to 34 *******
 integer :: idx &

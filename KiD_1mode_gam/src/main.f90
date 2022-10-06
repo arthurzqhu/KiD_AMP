@@ -27,7 +27,7 @@ Module main
   Use mphys_interface, only : mphys_column
   Use stepfields, only : step_column
   Use divergence, only : diverge_column
-  Use micro_prm, only: check_bintype,nkr,npm,l_sctab_mod,npmc
+  Use micro_prm, only: check_bintype,nkr,npm,l_sctab_mod,npmc,debug_itime,debug_k
   Use column_variables
   Use global_fun
   Implicit none
@@ -39,10 +39,13 @@ contains
       integer :: itime      ! loop counter for time
       real(8) :: t1, t2
 
-      ! call cpu_time(t1)
-      !
+      ! debug_itime = 1545
+      ! debug_k = 54
+
+      ! debug_itime = 1
+      ! debug_k = 12
+
       ! Start by reading in namelists
-      !
       allocate(temp_field(nz,0:nx+1))
       if (l_namelists) call read_namelist
 
@@ -74,7 +77,7 @@ contains
       endif
 
       do itime=1,n_times
-         print*, 't=', itime*dt
+         ! print*, 't=', itime*dt
 
          time=time+dt
          time_step=time_step+1
@@ -109,7 +112,7 @@ contains
          endif
          !print*, ss(25,1)
          ! if (itime*dt>=842) stop
-         ! if (itime >= 1680) stop
+         ! if (itime >= debug_itime) stop
       end do
 
       if (l_write_dgs) call write_diagnostics

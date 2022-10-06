@@ -64,20 +64,18 @@ endif
 
 if (npmc==3) then
    write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
-elseif (npmc >= 4) then
-   write(momstr,'(A,I1,A,I1)') 'M',0,'M',imomc2
+   open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
+   read(17,*) nutab(:,:,1); close(17)
+   open(17,file=trim(lutfolder)//'cloud_dn_'//momstr//'.txt')
+   read(17,*) dntab(:,:,1); close(17)
+   open(17,file=trim(lutfolder)//'cloud_minmaxmx.txt')
+   read(17,*) minmaxmx(:,:,1); close(17)
+   open(17,file=trim(lutfolder)//'cloud_minmy_'//momstr//'.txt')
+   read(17,*) mintab(:,1); close(17)
+   open(17,file=trim(lutfolder)//'cloud_maxmy_'//momstr//'.txt')
+   read(17,*) maxtab(:,1); close(17)
+   dnc=dntab(50,50,1)
 endif
-open(17,file=trim(lutfolder)//'cloud_nu_'//momstr//'.txt')
-read(17,*) nutab(:,:,1); close(17)
-open(17,file=trim(lutfolder)//'cloud_dn_'//momstr//'.txt')
-read(17,*) dntab(:,:,1); close(17)
-open(17,file=trim(lutfolder)//'cloud_minmaxmx.txt')
-read(17,*) minmaxmx(:,:,1); close(17)
-open(17,file=trim(lutfolder)//'cloud_minmy_'//momstr//'.txt')
-read(17,*) mintab(:,1); close(17)
-open(17,file=trim(lutfolder)//'cloud_maxmy_'//momstr//'.txt')
-read(17,*) maxtab(:,1); close(17)
-dnc=dntab(50,50,1)
 
 if (npmr==3) then
    write(momstr,'(A,I1,A,I1)') 'M',imomr1,'M',imomr2
@@ -420,6 +418,17 @@ nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 !guessc(31,1,:) = (/4., 5.462991549063160E-007/)
 !guessr(31,1,:) = (/4., 1.728192278921345E-004/)
 
+! ! testing starts: remember to delete later -ahu
+! ! basically a history run
+! do k=12,20
+!    Mpc(k,1,1:4) = (/1.369168707737964E-005, 187041173.364483, &
+!       4.003446348223070E-009, 2.776714016035594E-026/)
+!    guessc(k,1,:) = (/4., 0.000000000000000E+000/)
+!    guessr(k,1,:) = (/4., 2.643759570927481E-005/)
+! enddo
+! ! testing ends -ahu
+
+
 do k=1,nz
  do j=1,nx
 
@@ -534,11 +543,12 @@ do k=1,nz
    ! if (Mp(1)>total_m3_th) then
    if (get_meandiam(Mp(1), Mp(2)) >= Dmin*1d6 .and. Mp(1) > total_m3_th) then
 
-      ! if (k==33 .and. i_dgtime >= 1670) then
-      !    l_printflag = .true.
-      ! else
-      !    l_printflag = .false.
-      ! endif
+      ! print*, 'moms predicted', Mpc(k,1,1:4)
+      if (k==debug_k .and. i_dgtime >= debug_itime-10) then
+         l_printflag = .true.
+      else
+         l_printflag = .false.
+      endif
 
       ! if (get_meandiam(Mp(1), Mp(2)) < Dskip*1d6) then ! skip parameter finding if too small
       !    ffcdr8_mass(k,j,1) = Mp(1)*pi/6*1000/col
@@ -553,6 +563,7 @@ do k=1,nz
       !    endif
       ! else
       CALL searchparamsG2(guessc(k,j,:), guessr(k,j,:), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
+      if (l_printflag) print*, 'ffcd', ffcdr8_mass(k,j,:)
 
       ! call searchParamsByFrac(frac_M3(k,j), frac_M0(k,j), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
       ! stop
@@ -573,28 +584,28 @@ do k=1,nz
       !    l_printflag = .false.
       ! endif
 
-      ! if (k==33 .and. i_dgtime >= 1670) then
-      !    l_printflag = .true.
-      !    print*, 'k=', k
-      !    ! print*, 'dn1, dn2', tempvar_debug(1:2)
-      !    print*, 'final Dn_c', guessc(k,:,2)
-      !    print*, 'final Dn_r', guessr(k,:,2)
-      !    print*, 'dn1 fraction', tempvar_debug(8)
-      !    ! print*, 'm31, mz1, m32, mz2', tempvar_debug(3:7)
-      !    print*, 'moms predicted', Mpc(k,:,1:4)
-      !    print*, 'moms after pf ', tempvar_debug(9:12)
-      !    ! print*, 'meand predicted', get_meandiam(Mp(1), Mp(2))
-      !    ! print*, 'meand after pf ', get_meandiam(tempvar_debug(9), tempvar_debug(10))
-      !    ! print*, 'info=', tempvar_debug(9)
-      !    ! print*, 'total attempts', tempvar_debug(10)
-      !    ! if (allocated(tempvar_debug2)) then
-      !    !    print*, 'shape(tempvar_debug2)', shape(tempvar_debug2)
-      !    !    print*, 'all guesses', tempvar_debug2 
-      !    !    stop
-      !    ! endif
-      ! else
-      !    l_printflag = .false.
-      ! endif
+      if (k==debug_k .and. i_dgtime >= debug_itime-10 .or. l_printflag) then
+         l_printflag = .true.
+         print*, 'k=', k
+         ! print*, 'dn1, dn2', tempvar_debug(1:2)
+         print*, 'final Dn_c', guessc(k,:,2), guessr(k,:,2)
+         print*, 'dn1 fraction', tempvar_debug(9)
+         ! print*, 'm31, mz1, m32, mz2', tempvar_debug(3:7)
+         print*, 'moms predicted', Mpc(k,:,1:4)
+         print*, 'moms after pf ', tempvar_debug(10:13)
+         ! print*, 'meand predicted', get_meandiam(Mp(1), Mp(2))
+         ! print*, 'meand after pf ', get_meandiam(tempvar_debug(9), tempvar_debug(10))
+         ! print*, 'info=', tempvar_debug(9)
+         ! print*, 'total attempts', tempvar_debug(10)
+         ! if (allocated(tempvar_debug2)) then
+         !    print*, 'shape(tempvar_debug2)', shape(tempvar_debug2)
+         !    print*, 'all guesses', tempvar_debug2 
+         !    stop
+         ! endif
+         ! stop
+      else
+         l_printflag = .false.
+      endif
 
    else
       ffcdr8_mass(k,j,:) = 0.
@@ -664,7 +675,9 @@ ffcdr8_mass=dble(ffcd_mass)
 ffcdr8_massf = ffcdr8_mass
 ffcdr8_numf = ffcdr8_num
 
-! print*, 'ffcd after mphys', ffcd_mass(40,1,:)
+! ! print*, 'ffcd after mphys', ffcd_mass(40,1,:)
+! if (i_dgtime >= debug_itime-5) print*, ffcdr8_massf(debug_k, 1, :)
+! if (i_dgtime >= debug_itime-5) print*, ffcdr8_numf(debug_k, 1, :)
 
 !---------CALC MOMENTS-----------------------
 do k=1,nz

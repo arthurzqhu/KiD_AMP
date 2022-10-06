@@ -933,6 +933,10 @@ integer kr
 
   fvec(1)=log10((M0p/M3p)*(m3/m0))
   fvec(2)=log10((Mwp/M3p)*(m3/mw))*relaxw
+  ! print*, 'fcn_4p m3, M3p', m3, M3p
+  ! print*, 'fcn_4p m0, M0p', m0, M0p
+  ! print*, 'fcn_4p mw, Mwp', mw, Mwp
+  ! print*, ''
 
   if (any(md<0)) then
      fvec=fvec*1000
@@ -996,19 +1000,21 @@ End subroutine calcerr2
 
 ! }}}
 ! incgamma2: {{{
-subroutine incgamma2(rx,nu1,dn1,nu2,dn2,Mz3,md)
-use micro_prm, only:diams,nkr,col,momz,tempvar_debug, l_printflag
+subroutine incgamma2(rx,nu1,dn1,nu2,dn2,MzM3,md)
+use micro_prm, only:diams,nkr,col,momz,tempvar_debug,l_printflag,tempvar_debug2, Mp
 use parameters, only: max_nbins
 implicit none
 
 double precision :: rx,nu1,dn1,nu2,dn2,frac,n0,expterm1,expterm2
 double precision :: gterm1a(max_nbins),gterm1b,gterm2a(max_nbins),gterm2b
-double precision :: md(max_nbins), md1(max_nbins), md2(max_nbins), m31,m32,mz1,mz2,Mz3
+double precision :: md(max_nbins), md1(max_nbins), md2(max_nbins), m31,m32,mz1,mz2,MzM3
 double precision :: infinity
-integer :: kr
+integer :: kr, dn_change_counter
 
+dn_change_counter = 0
 infinity = HUGE(rx)
 
+100 continue
 n0=rx
 do kr=1,nkr
    gterm1a(kr)=-diams(kr)/dn1+(nu1+3)*log(diams(kr)/dn1)
@@ -1049,31 +1055,35 @@ elseif (dn2 <= 0. .or. m32>infinity .or. mz2>infinity) then
    mz2=0;m32=1
    md = md1/m31
 else
-   frac=(Mz3-mz2)/(mz1-mz2)
+   frac=(MzM3-mz2)/(mz1-mz2)
    ! if (l_printflag) print*, frac
 
-   if (frac<0) then
-      frac=0.
+   if (frac < 0) then
+      ! give up nudging the dn has been nudged up by a lot
+      frac = 0.
       dn1 = 0.
+      ! if (dn_change_counter > 0) then
+      ! else
+      !    dn_change_counter = dn_change_counter + 1
+      !    dn2 = dn2*1.01
+      !    go to 100
+      ! endif
    endif
-   if (frac>1) then
-      frac=1.
+   if (frac > 1) then
+      ! print*, frac, dn1, dn2
+      ! print*, Mp
+      frac = 1.
       dn2 = 0.
+      ! might need to do a similar treatment to one of the dns, 
+      ! but i'll do it when the problem occurs
+      ! dn2 = 0.
    endif
 
-   ! if (frac<0.0001) then
-   !    frac=0.
-   !    dn1 = 0.
-   ! endif
-   ! if (frac>0.9999) then
-   !    frac=1.
-   !    dn2 = 0.
-   ! endif
-
-   md = md1/m31*frac+ md2/m32*(1.-frac)
+   md = md1/m31*frac + md2/m32*(1.-frac)
 endif
 
-tempvar_debug(1:8) = (/dn1, dn2, m31, mz1, m32, mz2, (Mz3-mz2)/(mz1-mz2), frac/)
+tempvar_debug(1:9) = (/dn1, dn2, m31, m32, mz1, mz2, MzM3, (MzM3-mz2)/(mz1-mz2), frac/)
+tempvar_debug2 = md1/m31*(MzM3-mz2)/(mz1-mz2)+ md2/m32*(1.-(MzM3-mz2)/(mz1-mz2))
 
 
 ! tempvar_debug = (/dn1, dn2, m31, m32, frac/)
@@ -1345,16 +1355,16 @@ Subroutine searchparams4M(guess,md,flag)
 use micro_prm, only:relaxw,Mp,M3p,M0p,Mwp,Mxp,Myp,Mzp,momx,momw,momz,nkr, &
                nutab,dntab,minmaxmx,mintab,maxtab,ntab,fsize, &
                sc4m_tab, sc4m_tab_moms, sc4m_tab_dns, sc4m_tab_giveup, &
-               l_sctab_mod, p_sigfig, column_priority_4m, prio_c, dp_l_skip, &
+               l_sctab_mod, column_priority_4m, prio_c, dp_l_skip, &
                skr, ekr, l_toomanytries, nug, nug1, nug2, l_doneAC, tempvar_debug, &
                l_massnoguess, total_m3_th, l_printflag, M3temp, M0temp, &
-               DnRangeMin, DnRangeMax, l_failed1
+               DnRangeMin, DnRangeMax, l_failed1, tempvar_debug2
 use parameters, only: max_nbins
 use global_fun
 
 implicit none
 real(8) :: guess(4),oguess(4),bguess(4),vals(4),ovals(4),bvals(4),tol,tguess(2),&
-   lut_guess(2), pguess(4)
+   lut_guess(2), pguess(4), mguess(4), mvals(4), mval1_mat(1001,10001), mval2_mat(1001,10001)
 real(8) :: M0M3,MwM3,MxM3,MyM3,MzM3,irm,iry,wgtm,wgty1,wgty2
 real(8) :: minmy1,maxmy1,minmy2,maxmy2,sqval,osqval,bsqval,minsqval,md(max_nbins),min12,max12,md1(max_nbins),md2(max_nbins)
 real(8) :: minMx3,maxMx3,temp
@@ -1369,12 +1379,12 @@ real(8):: error_4m, lut_skip
 real(8) :: guess2m(2), M3t, M0t, dummy, Mwt, Mzt
 real(8), dimension(max_nbins) :: dist1, dist2, distfull
 logical :: l_unimodal, momw_close, momz_close
-real(8) :: m31, m32, mz1, mz2, frac, Mz3, vals2m, m3, tol2m
+real(8) :: m31, m32, mz1, mz2, frac, vals2m, m3, tol2m
 real(8) :: fguess(2), m3frac, m0frac
 real(8), allocatable :: Mw_err(:,:), Mz_err(:,:)
 character(len=100):: sigfig_fmt
 
-if (.not. allocated(tempvar_debug)) allocate(tempvar_debug(12))
+if (.not. allocated(tempvar_debug)) allocate(tempvar_debug(13))
 flag = 0
 i = 0
 l_failed1 = .false.
@@ -1401,7 +1411,6 @@ tol=1.d-4 !Tolerance of minimization routines
 n=2 !Number of equations to solve. Do not change.
 info=0 !Message sent back from minimization routines.
 
-if (l_printflag) print*, 'initial guess', guess((/2,4/))
 oguess=guess !oguess is the current best guess
 pguess=guess !pguess always store the previous guess and should be a constant
 ovals=0.
@@ -1412,10 +1421,40 @@ bguess=guess
 ibguess=0
 iimp=0.
 error_4m=0.
+ntry = 0
+
+
+! ahu: map the error space around the previous guess and the correct Dn
+! map a factor of 0.95 - 1.05 for dn1 and dn2 with precision of 0.001 and 0.0005 
+! (for easier postprocess)
+
+! mguess = guess ! m = map
+! do i = 1,1001
+!    print*, i
+!    mguess(2) = guess(2)*(0.95+(i-1)/10000.)
+!    do j = 1,10001
+!       mguess(4) = guess(4)*(0.75+(j-1)/20000.)
+!       call calcerr2(100.d0, mguess(1), mguess(2), mguess(3), mguess(4), MzM3, mvals)
+!       mval1_mat(i,j) = mvals(1)
+!       mval2_mat(i,j) = mvals(2)
+!    enddo
+! enddo
+! open(55, file = "./output/M0_gerr.txt")
+! sigfig_fmt = '(1001e'//itoa(7+8)//'.'//itoa(7)//')'
+! write(55, trim(sigfig_fmt)) mval1_mat
+! close(55)
+! open(55, file = "./output/Mw_gerr.txt")
+! sigfig_fmt = '(1001e'//itoa(7+8)//'.'//itoa(7)//')'
+! write(55, trim(sigfig_fmt)) mval2_mat
+! close(55)
+
 
 CALL calcerr2(100.d0,oguess(1),oguess(2),oguess(3), &
                      oguess(4),MzM3,ovals)
 if (l_printflag) print*, 'initial oguess', oguess((/2,4/))
+if (l_printflag) print*, 'initial dn1 frac', tempvar_debug(8)
+if (l_printflag) print*, 'initial m31, m32, mz1, mz2, MzM3', tempvar_debug(3:7)
+! if (l_printflag) print*, 'md with uncortd frac', tempvar_debug2
 if (l_printflag) print*, 'initial ovals', ovals(1:2)
 
 osqval = sqrt(sum(ovals(1:2)**2))
@@ -1424,10 +1463,11 @@ osqval = sqrt(sum(ovals(1:2)**2))
 vals=100.
 
 !First try - previous values
-if (guess(2).ne.0) then
+if (guess(2).ne.0 .or. guess(4).ne.0) then
    tguess(1) = guess(2)
    tguess(2) = guess(4)
    CALL hybrd1(fcn_4p,n,tguess,vals(1:2),tol,info,wa,lwa)
+
    ! reorder dn if they are not ordered correctly
    if (tguess(2) < tguess(1)) then
       dummy = tguess(1)
@@ -1442,10 +1482,12 @@ if (guess(2).ne.0) then
      bguess = oguess
    endif
 endif
+if (l_printflag) print*, 'vals after 1st hybrd', vals(1:2)
+if (l_printflag) print*, 'guess after 1st hybrd', tguess
 
-! if (l_printflag) print*, 'vals after 1st hybrd', vals(1:2)
-! if (osqval .ne. osqval) osqval = 1.e10 ! an arbitrary large number
-! guess = oguess
+if (osqval .ne. osqval) osqval = 1.e10 ! an arbitrary large number
+
+guess = oguess
 
 ! If first two tries were wildly off, or no 1st guess exists - try backtracking
 ! the previous moment ratios and start from there. 
@@ -1460,17 +1502,16 @@ if (info .ne. 1) then
       oguess(4) = lut_guess(2)
    else
       if (l_printflag) print*, 'oguess after 1st hybrd', oguess((/2,4/))
-      if (oguess(2).ge.DnRangeMax .or. oguess(2) .le. DnRangeMin) oguess(2)=10.e-6
+      if (oguess(2).ge.DnRangeMax .or. oguess(2) .le. DnRangeMin) oguess(2)=1.e-6
       if (oguess(4).ge.DnRangeMax .or. oguess(4) .le. DnRangeMin) oguess(4)=100.e-6
    endif
 
-   ntry = 0
    do i=1,10000
       CALL random_number(rand1)
       CALL random_number(rand2)
 
-      tguess(1)=oguess(2)*exp(sqrt(-2*0.25*log(rand1(2)))*cos(2.*3.14159*rand2(2)))
-      tguess(2)=oguess(4)*exp(sqrt(-2*0.25*log(rand1(4)))*cos(2.*3.14159*rand2(4)))
+      tguess(1)=guess(2)*exp(sqrt(-2*0.25*log(rand1(2)))*cos(2.*3.14159*rand2(2)))
+      tguess(2)=guess(4)*exp(sqrt(-2*0.25*log(rand1(4)))*cos(2.*3.14159*rand2(4)))
 
       CALL calcerr2(100.d0,guess(1),tguess(1),guess(3), &
                       tguess(2),MzM3,vals)
@@ -1486,11 +1527,14 @@ if (info .ne. 1) then
 
       if (sqval/sqval.ne.1) then
          print*, 'tguess', tguess
-         print*, 'oguess', oguess
-         stop 'sqval NaN'
+         print*, 'pguess', pguess
+         print*, 'Mp', Mp
+         print*, 'sqval NaN'
+         md = 0.
+         return
       endif
 
-      if (sqval < 1.) then
+      if (sqval < 0.1) then
          !Use the best-guess. See what happens
          ntry = ntry + 1
          CALL hybrd1(fcn_4p,n,tguess,vals(1:2),tol,info,wa,lwa)
@@ -1521,14 +1565,14 @@ if (info .ne. 1) then
         
         CALL hybrd1(fcn_4p,n,tguess,bvals(1:2),tol,info,wa,lwa)
 
-        if (abs(bvals(1))>tol) relaxw=max(tol/abs(bvals(1)),1.e-4)
+        if (abs(bvals(2))>tol) relaxw=max(tol/abs(bvals(2)),1.e-4)
 
         CALL hybrd1(fcn_4p,n,tguess,vals(1:2),tol,info,wa,lwa)
-        vals(1)=vals(1)/relaxw
+        vals(2)=vals(2)/relaxw
 
         sqval = sqrt(sum(vals(1:2)**2.))
 
-        if (sqval .le. osqval .or. (abs(ovals(2))>.01 .and. abs(vals(4))<.01)) then
+        if (sqval .le. osqval .or. (abs(ovals(2))>.01 .and. abs(vals(1))<.01)) then
            if (all(tguess>0)) then
               ovals = vals
               osqval = sqval
@@ -1580,8 +1624,8 @@ if (guess(2)>guess(4)) then
    guess(3:4) = tguess
 endif
 
-! if (guess(2) > 0.1 .or. guess(2) < 1e-9) guess(2) = 0.
-! if (guess(4) > 0.1 .or. guess(4) < 1e-9) guess(4) = 0.
+if (guess(2) > 0.1 .or. guess(2) < 1e-9) guess(2) = 0.
+if (guess(4) > 0.1 .or. guess(4) < 1e-9) guess(4) = 0.
 
 
 if (guess(2) == 0. .and. guess(4) == 0.) then
@@ -1602,39 +1646,50 @@ if (guess(2) == 0. .and. guess(4) == 0.) then
 endif
 
 
+! l_printflag = .true.
+
 !Force third moment to have no error and calculate final distribution
 CALL calcdist2(n,guess,md)
+if (l_printflag) print*, 'final error', vals(1:2)
+! print*, 'frac', tempvar_debug(9)
 call calcmom(m3t, md, 3)
 call calcmom(m0t, md, 0)
 call calcmom(mwt, md, momw)
 call calcmom(mzt, md, momz)
-tempvar_debug(9:12) = (/m3t, m0t, mwt, mzt/)
+tempvar_debug(10:13) = (/m3t, m0t, mwt, mzt/)
 if (l_printflag) print*, 'info', info
 if (l_printflag) print*, 'tries', i
+if (l_printflag) print*, 'ntries', ntry
+if (l_printflag) print*, 'dn1 fraction', tempvar_debug(9)
+if (l_printflag) print*, 'guesses', guess((/2,4/))
+if (l_printflag) print*, 'moments predicted', Mp(1:4)
+if (l_printflag) print*, 'moments after pf ', (/m3t, m0t, mwt, mzt/)
 
 ! if (l_printflag) then
 !    ! print*, 'predicted moms', Mp(1:4)
-!    ! print*, 'moms after pf ', (/m3t, m0t, mwt, mzt/)
-!    ! print*, 'meand predicted', get_meandiam(Mp(1), Mp(2))
-!    ! print*, 'meand after pf ', get_meandiam(m3t, m0t)
+!    print*, 'moms predicted', Mp(1:4)
+!    print*, 'moms after pf ', (/m3t, m0t, mwt, mzt/)
+!    print*, 'meand predicted', get_meandiam(Mp(1), Mp(2))
+!    print*, 'meand after pf ', get_meandiam(m3t, m0t)
 !   nug=guess(1)
 !   guess2m(1) = nug
-!   call guessparams2M(Mp(1), Mp(2), 3, 0, guess2m, tol2m, vals2m)
+!   call guessparams2M(Mp(1), Mp(4), 3, 9, guess2m, tol2m, vals2m)
 !   call calcdist(guess2m, md)
 !   call calcmom(m3t, md, 3)
 !   call calcmom(m0t, md, 0)
 !   call calcmom(mwt, md, momw)
 !   call calcmom(mzt, md, momz)
 !   ! print*, 'md assuming 1 mode', md
-!   ! print*, 'moms assuming 1 mode', (/m3t, m0t, mwt, mzt/)
-!   ! print*, 'meand assuming 1 mode', get_meandiam(m3t, m0t)
+!   print*, 'moms assuming 1 mode', (/m3t, m0t, mwt, mzt/)
+!   print*, 'meand assuming 1 mode', get_meandiam(m3t, m0t)
+!   ! stop
 ! endif
 
-if (info .eq. 4) then
-   momw_close = are_close(mwt, Mp(3), 'ratio', tol_rat_opt=1d0)
-   momz_close = are_close(mzt, Mp(4), 'ratio', tol_rat_opt=1d0)
-   ! print*, 'momw, momz similar', momw_close, momz_close
-endif
+! if (info .eq. 4) then
+!    momw_close = are_close(mwt, Mp(3), 'ratio', tol_rat_opt=1d0)
+!    momz_close = are_close(mzt, Mp(4), 'ratio', tol_rat_opt=1d0)
+!    ! print*, 'momw, momz similar', momw_close, momz_close
+! endif
 
 return
 

@@ -139,7 +139,7 @@ contains
       if (ampORbin .eq. 'amp') then
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
-         guessc2d(:,:,2) = 10.e-6         !characteristic diameter dn
+         guessc2d(:,:,2) = 1.e-6         !characteristic diameter dn
          guessr2d(:,:,2) = 100.e-6
          call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
       elseif (ampORbin .eq. 'bin') then
@@ -199,13 +199,19 @@ contains
       dropsinitm2d=0.
       dropsinitn2d=0.
 
+      ! print*, 'mc before mp', Mpc2d(20,1,:)
+
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d,dropsfinalm2d,dropsfinaln2d)
+      ! print*, 'mc after mp', Mpc2d(20,1,:)
+      if (l_printflag) stop
 
    elseif (ampORbin .eq. 'bin') then
       if (bintype .eq. 'sbm') then
+         ! print*, 'mc before mp', mc(20,1,(/4,1,5,6/))+mr(20,1,(/4,1,5,6/))
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
+         ! print*, 'mc after mp ', mc(20,1,(/4,1,5,6/))+mr(20,1,(/4,1,5,6/))
       elseif (bintype .eq. 'tau') then
          call mp_tau(dropsm2d,dropsn2d,t2d,qv2d,mc,mr)
       endif
@@ -504,11 +510,12 @@ elseif (ampORbin .eq. 'amp') then
     name='mass_dist_init'
     units='kg/kg/ln(r)'
     call save_dg('bin',fieldbin,name,i_dgtime,units)
+    ! print*, dropsinitm2d(15,1,:)
 
-    fieldbin(:,:)=dropsfinalm2d(:,nx,:)
-    name='mass_dist_final'
-    units='kg/kg/ln(r)'
-    call save_dg('bin',fieldbin,name,i_dgtime,units)
+    ! fieldbin(:,:)=dropsfinalm2d(:,nx,:)
+    ! name='mass_dist_final'
+    ! units='kg/kg/ln(r)'
+    ! call save_dg('bin',fieldbin,name,i_dgtime,units)
 
     if (bintype .eq. 'tau') then
         fieldbin(:,:)=dropsinitn2d(:,nx,:)
@@ -516,10 +523,10 @@ elseif (ampORbin .eq. 'amp') then
         units='1/kg/ln(r)'
         call save_dg('bin',fieldbin,name,i_dgtime,units)
 
-        fieldbin(:,:)=dropsfinaln2d(:,nx,:)
-        name='num_dist_final'
-        units='1/kg/ln(r)'
-        call save_dg('bin',fieldbin,name,i_dgtime,units)
+        ! fieldbin(:,:)=dropsfinaln2d(:,nx,:)
+        ! name='num_dist_final'
+        ! units='1/kg/ln(r)'
+        ! call save_dg('bin',fieldbin,name,i_dgtime,units)
 
     end if
 
@@ -528,13 +535,13 @@ endif
 !parameters
 do j=1,nx
    if (nx==1) then
-      call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
-      call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
+      ! call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
+      ! call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
       call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
       call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
    else
-      call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
-      call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
+      ! call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
+      ! call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
       call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
       call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
    endif

@@ -2145,12 +2145,6 @@ do k=1,nz
    enddo
 enddo
 
-do k=1,nz
-    !print*, k,sum(q_lem(j,k,icdkg_bin(:)))
-enddo
-
-!print*,'sq', sq_lem(1,31,icdkg_bin(:))/col
-
 end subroutine micro_proc_tau
 
 !-------------------------------------------------------------------
