@@ -2187,7 +2187,7 @@ contains
     integer :: tzdim(2), txdim(2), tzldim(3), tzxdim(3), tzfdim(3), dim, &
                dim2d(2), dim3d(3)
     integer, allocatable :: varid(:)
-    real, allocatable :: field3d(:,:,:)
+    real(8), allocatable :: field3d(:,:,:)
 
     write(6,*) 'Integration complete.'
 
