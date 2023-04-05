@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-conf_basename="fullmic_4m_nodown_nu$3" # case/folder name. determined automatically if set empty
-caselist=(101) #(101 102 103 105 106 107)
+conf_basename='fullmic_conftest2m' # case/folder name. determined automatically if set empty
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+ampORbin=("BIN" "AMP")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -15,12 +15,15 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
+imc1=0 # II moment for cloud
+imc2=0 # III moment for cloud
+imr1=0 # II moment for rain
+imr2=0 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
-t1=3600.
+t1=1800.
 t2=900.
-
 # switches
 l_nuc_cond_s=1
 l_coll_s=1
@@ -43,40 +46,31 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$1
-iw=$2
-var1str=Na$ia
-var2str=w$iw
+ia=400
+iw=16
+isp_c=$1
+isp_r=$2
+var1str=spc$1
+var2str=spr$2
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
   t2=$((($ztop-$zct)/$iw))
-  t1=$(($t2*4))
+  t1=$(($t2*2))
 fi
 
-config_fname=${conf_basename}
+echo t1=$t1
+echo t2=$t2
+config_fname=${conf_basename}_a${ia}w${iw}
+echo $config_fname
+echo Na=$ia
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
 do
   for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
   do
 	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
-   if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-      isp_c=4  # shape parameter for cloud
-      isp_r=4  # shape parameter for rain
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
-   else
-      isp_c=$3
-      isp_r=$3
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
-   fi
    if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-      nhm='4,4'
+      nhm='2,2'
       nhb='1,1'
    else
       if [[ ${bintype[$ibt]} = 'SBM' ]]; then
@@ -106,7 +100,7 @@ do
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2','M3','M4','M5','M6'
+mom_names='M1','M2'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -189,7 +183,6 @@ ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
-l_hist_run=.false.
 !l_diag_nu=.false.
 /
 END

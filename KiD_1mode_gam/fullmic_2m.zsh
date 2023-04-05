@@ -1,14 +1,11 @@
 #!/bin/zsh
 
-# make sure what's compiled is the right case
-./dimension_config.zsh 1D
-
 # config of the run
-mconfig_temp='fullmic_2m_dt_50' # case/folder name. determined automatically if set empty
-caselist=(102) #(101 102 103 105 106 107)
+conf_basename="fullmic_2m_nodown" # case/folder name. determined automatically if set empty
+caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("TAU" "SBM")
+bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -18,8 +15,6 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
-isp_c=4  # shape parameter for cloud
-isp_r=4  # shape parameter for rain
 imc1=0 # II moment for cloud
 imc2=0 # III moment for cloud
 imr1=0 # II moment for rain
@@ -27,7 +22,7 @@ imr2=0 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
-t1=1800.
+t1=3600.
 t2=900.
 # switches
 l_nuc_cond_s=1
@@ -35,23 +30,6 @@ l_coll_s=1
 l_sed_s=1
 l_adv_s=1
 
-
-# set initial water if nucleation/condensation and/or adv is turned off 
-if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
-   icimm=0.001     
-   icinm=100.e6  
-   irimm=0.5e-3
-   irinm=3.e3
-else 
-   icimm=0.
-   icinm=0.      
-fi
-
-# idmc=27
-# icimm=0.001
-# icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
-# irimm=0.
-# irinm=0.
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -68,28 +46,30 @@ else
    l_noadv_hyd='.true.'
 fi
 
-
-# two varying inputs
 ia=$1
 iw=$2
-var1str=a$1
-var2str=w$2
+var1str=Na$ia
+var2str=w$iw
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
   t2=$((($ztop-$zct)/$iw))
-  t1=$(($t2*2))
+  t1=$(($t2*4))
 fi
 
-echo t1=$t1
-echo t2=$t2
-mconfig=${mconfig_temp}
-echo Na=$ia
+config_fname=${conf_basename}
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
 do
   for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
   do
 	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
+   if [[ ${bintype[$ibt]} = 'SBM' ]]; then
+      isp_c=4  # shape parameter for cloud
+      isp_r=4  # shape parameter for rain
+   else
+      isp_c=$3
+      isp_r=$3
+   fi
     if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
       nhm='2,2'
       nhb='1,1'
@@ -102,7 +82,7 @@ do
           nhb='34,1'
         fi
       fi
-      outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+      outdir=output/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
 	  for ((ic=1; ic<=case_num; ic++))
 	  do
 	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -115,13 +95,13 @@ do
 	      mkdir -p $outdir
 	    fi
 	    echo "${caselist[ic]}"
-	    cat > namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
+	    cat > namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2','M3','M4','M5','M6'
+mom_names='M1','M2'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -148,7 +128,7 @@ imomr1 = ${imr1}  !1st predicted rain moment
 imomr2 = ${imr2}  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = ${l_nuc_cond_f}
+donucleation = .true.
 docondensation = ${l_nuc_cond_f}
 docollisions = ${l_coll_f}
 dosedimentation = ${l_sed_f}
@@ -172,9 +152,9 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=0.25           !Timestep length (s)
+dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=1.0         !Timestep for diagnostic output
+dg_dt=5.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -204,14 +184,12 @@ ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
+extralayer=.false.
+l_hist_run=.false.
 !l_diag_nu=.false.
 /
 END
-     ./bin/KiD_1D.exe namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
-#            done
-#          done
-#        done
-#      done
+     ./bin/KiD_1D.exe namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
     done
   done
 done

@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-conf_basename="fullmic_4m_nodown_nu$3" # case/folder name. determined automatically if set empty
+conf_basename='condcoll_momcombo' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+ampORbin=("BIN" "AMP")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -15,16 +15,19 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
+imc1=$1 # II moment for cloud
+imc2=$2 # III moment for cloud
+imr1=$1 # II moment for rain
+imr2=$2 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
-t1=3600.
+t1=1800.
 t2=900.
-
 # switches
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=1
+l_sed_s=0
 l_adv_s=1
 
 
@@ -43,18 +46,18 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$1
-iw=$2
-var1str=Na$ia
-var2str=w$iw
+ia=400
+iw=4
+var1str=pmomx$1
+var2str=pmomy$2
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
   t2=$((($ztop-$zct)/$iw))
-  t1=$(($t2*4))
+  t1=$(($t2*2))
 fi
 
-config_fname=${conf_basename}
+config_fname=${conf_basename}_a${ia}w${iw}
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
 do
   for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -63,17 +66,9 @@ do
    if [[ ${bintype[$ibt]} = 'SBM' ]]; then
       isp_c=4  # shape parameter for cloud
       isp_r=4  # shape parameter for rain
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
    else
-      isp_c=$3
-      isp_r=$3
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
+      isp_c=12
+      isp_r=12
    fi
    if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
       nhm='4,4'
@@ -189,7 +184,6 @@ ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
-l_hist_run=.false.
 !l_diag_nu=.false.
 /
 END

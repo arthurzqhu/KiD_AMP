@@ -12,18 +12,18 @@
 
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 
-dm_list=(200 300 400 500 600)
-sp_list=(1 2 3 5 9)
+dm_list=(200 400 600 800 1000)
+dz_list=(2000 3000 4000 5000 6000)
 
 len1=${#dm_list[@]}
-len2=${#sp_list[@]}
+len2=${#dz_list[@]}
 iid=$SLURM_ARRAY_TASK_ID
 
 jdm=$(($iid%$len1))
 [[ $jdm == 0 ]] && jdm=$len1
-jsp=$((($iid+$len1-1)/$len1))
+jdz=$((($iid+$len1-1)/$len1))
 
 echo $dm_list[$jdm]
-echo $sp_list[$jsp]
+echo $dz_list[$jdz]
 
-./collsed_4m.zsh $dm_list[$jdm] $sp_list[$jsp]
+./sedonly_2m.zsh $dm_list[$jdm] $dz_list[$jdz]

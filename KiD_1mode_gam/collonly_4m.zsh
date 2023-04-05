@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # config of the run
-mconfig_temp='colladvi_4m_3045' # case/folder name. determined automatically if set empty
+conf_basename='collonly_4m_M30' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN" "AMP")
+ampORbin=("AMP" "BIN")
 bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -21,12 +21,12 @@ imr1=4 # II moment for rain
 imr2=5 # III moment for rain
 ztop=6000. # top of the domain
 t1=10800.
-t2=1800.
+t2=900.
 # switches
 l_nuc_cond_s=0
 l_coll_s=1
 l_sed_s=0
-l_adv_s=1
+l_adv_s=0
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -43,7 +43,6 @@ else
    l_noadv_hyd='.true.'
 fi
 
-
 iw=2
 ia=100
 idmc=$1
@@ -52,17 +51,10 @@ isp_r=$2
 var1str=dm${idmc}
 var2str=sp${isp_c}
 
-#icinm=100.e6
-#icimm=$((($idmc*1.e-6)**3*3.14159/6*1000.*$icinm))
 icimm=0.001
 icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
-echo $icinm
 
-#irinm=${inr}
-#irimm=$((($idmr*1.e-6)**3*3.14159/6*1000.*$irinm))
-
-mconfig=${mconfig_temp}
-echo Na=$ia
+config_fname=${conf_basename}${imc1}${imc2}
   for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
   do
     for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -87,7 +79,7 @@ echo Na=$ia
             nhb='34,1'
           fi
         fi
-        outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/${var1str}/${var2str}/
+        outdir=output/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/${var1str}/${var2str}/
   	  for ((ic=1; ic<=case_num; ic++))
   	  do
   	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -100,7 +92,7 @@ echo Na=$ia
   	      mkdir -p $outdir
   	    fi
   	    echo "${caselist[ic]}"
-  	    cat > namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
+  	    cat > namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
@@ -159,7 +151,7 @@ icase=${caselist[ic]}
 mphys_scheme='amp'
 dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.0         !Timestep for diagnostic output
+dg_dt=20.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -191,7 +183,7 @@ initprof='i' ! 'i' for a initial water profile increase wrt height, 'c' for cons
 !l_diag_nu=.false.
 /
 END
-     ./bin/KiD_1D.exe namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
+     ./bin/KiD_1D.exe namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
     done
   done
 done

@@ -1,0 +1,33 @@
+#!/bin/zsh
+#SBATCH -J KiD
+#SBATCH --array=1-56
+#SBATCH -o KiD-%A-%a.out
+#SBATCH -e KiD-%A-%a.out
+#SBATCH -t 24:00:00
+#SBATCH -p high
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --mail-type=END
+#SBATCH --mail-user=azqhu@ucdavis.edu
+
+echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
+
+mom1_list=(1 2 4 5 6 7 8 9)
+mom2_list=(1 2 4 5 6 7 8 9)
+
+for (( i1 = 1; i1 <= ${#mom1_list[@]}; i1++ )); do
+   for (( i2 = 1; i2 <= ${#mom2_list[@]}; i2++ )); do
+      if [[ $i1 -ne $i2 ]]; then
+         momcombo+=(${mom1_list[i1]}${mom2_list[i2]})
+      fi
+   done
+done
+
+iid=$SLURM_ARRAY_TASK_ID
+
+imomc=$momcombo[$iid]
+mom1=$imomc[1]
+mom2=$imomc[2]
+
+echo $mom1 $mom2
+./condnuc_momcombo.zsh $mom1 $mom2

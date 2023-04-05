@@ -1,11 +1,14 @@
 #!/bin/zsh
 
+# make sure what's compiled is the right case
+./dimension_config.zsh 1D
+
 # config of the run
-conf_basename="fullmic_4m_nodown_nu$3" # case/folder name. determined automatically if set empty
-caselist=(101) #(101 102 103 105 106 107)
+mconfig_temp='advonly_2m' # case/folder name. determined automatically if set empty
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -15,18 +18,38 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
+imc1=0 # II moment for cloud
+imc2=0 # III moment for cloud
+imr1=0 # II moment for rain
+imr2=0 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
-t1=3600.
+t1=1800.
 t2=900.
-
 # switches
-l_nuc_cond_s=1
-l_coll_s=1
-l_sed_s=1
+l_nuc_cond_s=0
+l_coll_s=0
+l_sed_s=0
 l_adv_s=1
 
+
+# set initial water if nucleation/condensation and/or adv is turned off 
+if [[ $l_nuc_cond_s -eq 0 || $l_adv_s -eq 0 ]]; then 
+   icimm=0.001     
+   icinm=100.e6  
+   irimm=0.5e-3
+   irinm=3.e3
+else 
+   icimm=0.
+   icinm=0.      
+fi
+
+idmc=40
+icimm=0.001
+icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+irimm=0.
+irinm=0.
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -43,18 +66,23 @@ else
    l_noadv_hyd='.true.'
 fi
 
+
+# two varying inputs
 ia=$1
 iw=$2
-var1str=Na$ia
-var2str=w$iw
+var1str=a$1
+var2str=w$2
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
   t2=$((($ztop-$zct)/$iw))
-  t1=$(($t2*4))
+  t1=$(($t2*2))
 fi
 
-config_fname=${conf_basename}
+echo t1=$t1
+echo t2=$t2
+mconfig=${mconfig_temp}
+echo Na=$ia
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
 do
   for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -63,44 +91,36 @@ do
    if [[ ${bintype[$ibt]} = 'SBM' ]]; then
       isp_c=4  # shape parameter for cloud
       isp_r=4  # shape parameter for rain
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
    else
-      isp_c=$3
-      isp_r=$3
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
+      isp_c=4
+      isp_r=4
    fi
-   if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-      nhm='4,4'
+    if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
+      nhm='2,2'
       nhb='1,1'
-   else
-      if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-         nhm='1,1'
-         nhb='33,33'
       else
-         nhm='2,1'
-         nhb='34,1'
+        if [[ ${bintype[$ibt]} = 'SBM' ]]; then
+          nhm='1,1'
+          nhb='33,33'
+        else
+          nhm='2,1'
+          nhb='34,1'
+        fi
       fi
-   fi
-   outdir=output/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
-   for ((ic=1; ic<=case_num; ic++))
-   do
-      if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
-      then
-         zc=0
-      else
-         zc="$ztop,$zcb,$zct"
-      fi
-      if [ ! -d $outdir ]; then
-         mkdir -p $outdir
-      fi
-      echo "${caselist[ic]}"
-       cat > namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
+      outdir=output/$(date +'%Y-%m-%d')/$mconfig/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+	  for ((ic=1; ic<=case_num; ic++))
+	  do
+	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
+	    then
+	      zc=0
+        else
+	      zc="$ztop,$zcb,$zct"
+        fi
+	    if [ ! -d $outdir ]; then
+	      mkdir -p $outdir
+	    fi
+	    echo "${caselist[ic]}"
+	    cat > namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
@@ -133,7 +153,7 @@ imomr1 = ${imr1}  !1st predicted rain moment
 imomr2 = ${imr2}  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .true.
+donucleation = ${l_nuc_cond_f}
 docondensation = ${l_nuc_cond_f}
 docollisions = ${l_coll_f}
 dosedimentation = ${l_sed_f}
@@ -159,7 +179,7 @@ icase=${caselist[ic]}
 mphys_scheme='amp'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.0         !Timestep for diagnostic output
+dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -189,11 +209,14 @@ ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
-l_hist_run=.false.
 !l_diag_nu=.false.
 /
 END
-     ./bin/KiD_1D.exe namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
+     ./bin/KiD_1D.exe namelists/jobnml/${mconfig}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
+#            done
+#          done
+#        done
+#      done
     done
   done
 done
