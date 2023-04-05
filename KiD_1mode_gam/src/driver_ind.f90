@@ -8,6 +8,7 @@ use micro_prm
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean,dgmean
 use namelists, only: bintype
 use global_fun, only: get_meandiam
+use physconst, only: pi
 implicit none
 character(4)::momstr
 character(2)::rdrop_binstr
@@ -16,12 +17,24 @@ real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
 real(8), dimension(nz,nx,num_h_moments(2)) :: Mpr2d
 real(8), dimension(nz,nx,2) :: guessc2d,guessr2d
 real(8),dimension(max_nbins) :: ffcd_mass, ffcd_num
+real(8),dimension(nz,nx,max_nbins) :: dropsm2d, dropsn2d
 real(8),dimension(num_h_moments(1)) :: mc
 real(8),dimension(num_h_moments(2)) :: mr
 real(8) :: z_cbi,z_cti,d_cloudi
 real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d
-integer :: i,k,imom,ip
+real(8), dimension(max_nbins) :: diag_m, diag_D !diagnosed mass and diam of each bin
+integer :: i,k,imom,ip,ib
+double precision :: infinity
+integer, parameter :: max_rows = 120  ! Maximum number of rows in the CSV file
+integer, parameter :: max_cols = 34   ! Maximum number of columns in the CSV file
+integer :: row, colm, iostat
+character(1) :: delimiter = ','       ! The delimiter used in the CSV file
+character(100) :: filename, filenamen ! The name of the CSV file
+integer :: num_rows = 0               ! The number of rows in the CSV file
+integer :: num_cols = 0               ! The number of columns in the CSV file
+
+infinity = HUGE(dnr)
 
 !Set some parameters
 ndtcoll=1
@@ -114,6 +127,9 @@ elseif (bintype .eq. 'tau') then
     CALL micro_init_tau()
 endif
 
+D_min = diams(1)
+D_max = diams(nkr)
+
 if (initprof .eq. 'c') then
    if(cloud_init(1)>0.) then
       dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)* & 
@@ -123,7 +139,6 @@ if (initprof .eq. 'c') then
       dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)* &
              gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
    endif
-   
    if(cloud_init(1)>0. .or. rain_init(1)>0.) then
        if (bintype .eq. 'sbm') then
            CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),&
@@ -136,10 +151,8 @@ if (initprof .eq. 'c') then
       ffcd_mass(:)=0.
       if (bintype .eq. 'tau') ffcd_num(:)=0.
    endif
-   
    guessc2d(:,:,2)=dnc
    guessr2d(:,:,2)=dnr
-   
    do i=1,num_h_moments(1)
      if (bintype .eq. 'sbm') then
        mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
@@ -147,7 +160,6 @@ if (initprof .eq. 'c') then
        mc(i)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
      endif
    enddo
-   
    do i=1,num_h_moments(2)
      if (bintype .eq. 'sbm') then
        mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
@@ -159,15 +171,17 @@ endif
 
 do i=1,nx
    do k=1,nz
-      if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+      if (z(k)>zctrl(2) .and. z(k)<=zctrl(3)) then
          if (initprof .eq. 'i') then
             if (cloud_init(1)>0.) then
                dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
-               cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
+                  cloud_init(2)*gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
+               if (gamma(h_shape(1)+3) > infinity) dnc = 0.
             endif
             if (rain_init(1)>0.) then 
                dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
-               rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+                  rain_init(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+               if (gamma(h_shape(2)+3) > infinity) dnr = 0.
             endif
 
             if (cloud_init(1)>0. .or. rain_init(1)>0.) then
@@ -184,9 +198,6 @@ do i=1,nx
                ffcd_mass(:)=0.
                if (bintype .eq. 'tau') ffcd_num(:)=0.
             endif
-
-            guessc2d(k,i,2)=dnc
-            guessr2d(k,i,2)=dnr
 
             do imom=1,num_h_moments(1)
               if (bintype .eq. 'sbm') then
@@ -234,11 +245,130 @@ do i=1,nx
             Mpr2d(k,i,1:num_h_moments(2)) = mr(1:num_h_moments(2))
          else
             Mpc2d(k,i,1:num_h_moments(1)) = mc(1:num_h_moments(1)) + mr(1:num_h_moments(2))
-            ! print*, 'ffcd_mass', ffcd_mass
          endif
       endif
    enddo
 enddo
+
+if (extralayer) then
+   dnr = (2d-4*6./3.14159/1000./1.e5* & 
+          gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   if (bintype .eq. 'sbm') then
+       CALL init_dist_sbm(0d0,h_shape(1),dnc,2d-4,&
+                          h_shape(2),dnr,diams,ffcd_mass)
+   elseif (bintype .eq. 'tau') then
+       CALL init_dist_tau(0d0,h_shape(1),dnc,2d-4,&
+                          h_shape(2),dnr,ffcd_mass,ffcd_num)
+   endif
+   do i=1,num_h_moments(1)
+     if (bintype .eq. 'sbm') then
+       mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
+     elseif (bintype .eq. 'tau') then
+       mc(i)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
+     endif
+   enddo
+   do i=1,num_h_moments(2)
+     if (bintype .eq. 'sbm') then
+       mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
+     elseif (bintype .eq. 'tau') then
+       mr(i)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
+     end if
+   enddo
+   do k = 10,37
+      guessr2d(k,:,2)=dnr
+      if (npmc < 4) then
+         Mpc2d(k,1,1:num_h_moments(1)) = mc(1:num_h_moments(1))
+         Mpr2d(k,1,1:num_h_moments(2)) = mr(1:num_h_moments(2))
+      else
+         Mpc2d(k,1,1:num_h_moments(1)) = mc(1:num_h_moments(1))+mr(1:num_h_moments(2))
+      endif
+   enddo
+endif
+
+
+if (l_hist_run) then
+   ! Open the CSV file
+   filename='./hist_run_prof/sbm_a200w8_400s.txt'
+   ! if (bintype .eq. 'tau') filenamen='./hist_run_prof/'//trim(bintype)//'n.txt'
+   open(10, file=filename, status='old', action='read', iostat=iostat)
+   if (iostat /= 0) then
+      print *, "Error opening file:", filename
+      stop
+   endif
+
+   ! if (bintype .eq. 'tau') then
+   !    open(11, file=filenamen, status='old', action='read', iostat=iostat)
+   !    if (iostat /= 0) then
+   !       print *, "Error opening file:", filenamen
+   !       stop
+   !    endif
+   ! endif
+
+   ! Read the data from the CSV file
+   do while (.true.)
+      read(10, *, iostat=iostat) dropsm2d(num_rows+1,1,:)
+      ! if (bintype .eq. 'tau') read(11, *, iostat=iostat) dropsn2d(num_rows+1,1,:)
+      if (iostat /= 0) exit ! Exit the loop when there is no more data to read
+      num_rows = num_rows + 1
+      num_cols = size(dropsm2d, 3)
+      if (num_rows > max_rows) then
+         print *, "Error: Maximum number of rows exceeded"
+         stop
+      endif
+      if (num_cols > max_cols) then
+         print *, "Error: Maximum number of columns exceeded"
+         stop
+      endif
+   enddo
+
+   ! Close the CSV file
+   close(10)
+   ! if (bintype .eq. 'tau') close(11)
+   do k=1,nz
+      do i=1,nx
+         if (bintype .eq. 'tau') dropsn2d(k,i,:) = dropsm2d(k,i,:)/binmass
+      enddo
+   enddo
+
+   do i=1,nx
+      do k=1,nz
+
+         if (bintype .eq. 'tau') then
+            diag_m=binmass
+            diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+            do ib=1,nkr
+               if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>infinity)) diag_D(ib)=diams(ib)
+            end do
+         endif
+
+         do imom=1,num_h_moments(1)
+            if (bintype .eq. 'sbm') then
+               mc(imom)=sum(dropsm2d(k,i,1:split_bins)/xl(1:split_bins)*&
+                  diams(1:split_bins)**pmomsc(imom))*col*1000.
+            elseif (bintype .eq. 'tau') then
+               mc(imom)=sum(dropsn2d(k,i,1:split_bins)*diag_D(1:split_bins)**pmomsc(imom))*col
+            endif
+         enddo
+         do imom=1,num_h_moments(2)
+            if (bintype .eq. 'sbm') then
+               mr(imom)=sum(dropsm2d(k,i,split_bins+1:nkr)/xl(split_bins+1:nkr)*&
+                  diams(split_bins+1:nkr)**pmomsc(imom))*col*1000.
+            elseif (bintype .eq. 'tau') then
+               mr(imom)=sum(dropsn2d(k,i,split_bins+1:nkr)*diag_D(split_bins+1:nkr)**pmomsc(imom))*col
+            endif
+         enddo
+
+         if (npmc < 4) then
+            Mpc2d(k,i,1:num_h_moments(1)) = mc(1:num_h_moments(1))
+            Mpr2d(k,i,1:num_h_moments(2)) = mr(1:num_h_moments(2))
+         else
+            Mpc2d(k,i,1:num_h_moments(1)) = mc(1:num_h_moments(1)) + mr(1:num_h_moments(2))
+         endif
+
+      enddo
+   enddo
+endif ! l_hist_run
+
 end subroutine amp_init
 
 ! sbm_init: {{{
@@ -257,7 +387,16 @@ real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d
 real(8) :: z_cbi,z_cti,d_cloudi
 integer :: i,k
+real(8) :: infinity
+integer, parameter :: max_rows = 120  ! Maximum number of rows in the CSV file
+integer, parameter :: max_cols = 34   ! Maximum number of columns in the CSV file
+integer :: row, colm, iostat
+character(1) :: delimiter = ','       ! The delimiter used in the CSV file
+character(100) :: filename            ! The name of the CSV file
+integer :: num_rows = 0               ! The number of rows in the CSV file
+integer :: num_cols = 0               ! The number of columns in the CSV file
 
+infinity = huge(dnc)
 
 !Set some parameters
 ndtcoll=1
@@ -280,7 +419,48 @@ if (initprof .eq. 'c') then
    if(rain_init(1)>0.) dnr = (rain_init(1)*6./3.14159/1000. &
                              /rain_init(2)*gamma(h_shape(2)) &
                              /gamma(h_shape(2)+3))**(1./3.)
+   if (gamma(h_shape(1)+3) > infinity) dnc = 0.
+   if (gamma(h_shape(2)+3) > infinity) dnr = 0.
    CALL init_dist_sbm(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),dnr,diams,ffcd)
+endif
+
+if (l_hist_run) then
+   ! Open the CSV file
+   filename='./hist_run_prof/sbm_a200w8_400s.txt'
+   open(10, file=filename, status='old', action='read', iostat=iostat)
+   if (iostat /= 0) then
+      print *, "Error opening file:", filename
+      stop
+   endif
+
+   ! Read the data from the CSV file
+   do while (.true.)
+      read(10, *, iostat=iostat) dropsm2d(num_rows+1,1,:)
+      if (iostat /= 0) exit ! Exit the loop when there is no more data to read
+      num_rows = num_rows + 1
+      num_cols = size(dropsm2d, 3)
+      if (num_rows > max_rows) then
+         print *, "Error: Maximum number of rows exceeded"
+         stop
+      endif
+      if (num_cols > max_cols) then
+         print *, "Error: Maximum number of columns exceeded"
+         stop
+      endif
+   enddo
+
+   ! Close the CSV file
+   close(10)
+endif
+
+if (extralayer) then
+   dnr = (2d-4*6./3.14159/1000./1.e5* & 
+          gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   CALL init_dist_sbm(0d0,h_shape(1),dnc,2d-4,&
+                      h_shape(2),dnr,diams,ffcd)
+   do k=10,37
+      dropsm2d(k,1,:) = ffcd
+   enddo
 endif
 
 do i=1,nx
@@ -296,6 +476,8 @@ do i=1,nx
             if(rain_init(1)>0.) dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
                                       /rain_init(2)*gamma(h_shape(2)) &
                                       /gamma(h_shape(2)+3))**(1./3.)
+            if (gamma(h_shape(1)+3) > infinity) dnc = 0.
+            if (gamma(h_shape(2)+3) > infinity) dnr = 0.
             CALL init_dist_sbm(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,h_shape(1),&
                dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,h_shape(2),dnr,diams,ffcd)
 
@@ -305,6 +487,7 @@ do i=1,nx
       endif
    enddo
 enddo
+
 end subroutine sbm_init
 ! }}}
 
@@ -326,6 +509,18 @@ real(8),dimension(max_nbins) :: ffcd_mass,ffcd_num
 integer :: i,k
 real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d
 real(8) :: z_cbi,z_cti,d_cloudi
+real(8) :: infinity
+integer, parameter :: max_rows = 120  ! Maximum number of rows in the CSV file
+integer, parameter :: max_cols = 34   ! Maximum number of columns in the CSV file
+integer :: row, colm, iostat
+character(1) :: delimiter = ','       ! The delimiter used in the CSV file
+character(100) :: filename,filenamen  ! The name of the CSV file
+integer :: num_rows = 0               ! The number of rows in the CSV file
+integer :: num_cols = 0               ! The number of columns in the CSV file
+
+
+
+infinity = huge(dnc)
 
 z_cbi=zctrl(2)
 z_cti=zctrl(3)
@@ -341,9 +536,64 @@ if (initprof .eq. 'c')  then
    if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
                             /rain_init(2)*gamma(h_shape(2)) &
                             /gamma(h_shape(2)+3))**(1./3.)
+   if (gamma(h_shape(1)+3) > infinity) dnc = 0.
+   if (gamma(h_shape(2)+3) > infinity) dnr = 0.
    CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
                       dnr,ffcd_mass,ffcd_num)
 endif
+
+if (extralayer) then
+   dnr = (2d-4*6./3.14159/1000./1.e5* & 
+          gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   CALL init_dist_tau(0d0, h_shape(1), dnc, 2d-4, h_shape(2), dnr, ffcd_mass, ffcd_num)
+   do k=10,37
+      dropsm2d(k,1,:) = ffcd_mass
+      dropsn2d(k,1,:) = ffcd_num
+   enddo
+endif
+
+if (l_hist_run) then
+   ! Open the CSV file
+   filename='./hist_run_prof/sbm_a200w8_400s.txt'
+   ! filenamen='./hist_run_prof/'//trim(bintype)//'n.txt'
+   open(10, file=filename, status='old', action='read', iostat=iostat)
+   if (iostat /= 0) then
+      print *, "Error opening file:", filename
+      stop
+   endif
+
+   ! open(11, file=filenamen, status='old', action='read', iostat=iostat)
+   ! if (iostat /= 0) then
+   !    print *, "Error opening file:", filenamen
+   !    stop
+   ! endif
+
+   ! Read the data from the CSV file
+   do while (.true.)
+      read(10, *, iostat=iostat) dropsm2d(num_rows+1,1,:)
+      ! read(11, *, iostat=iostat) dropsn2d(num_rows+1,1,:)
+      if (iostat /= 0) exit ! Exit the loop when there is no more data to read
+      num_rows = num_rows + 1
+      num_cols = size(dropsm2d, 3)
+      if (num_rows > max_rows) then
+         print *, "Error: Maximum number of rows exceeded"
+         stop
+      endif
+      if (num_cols > max_cols) then
+         print *, "Error: Maximum number of columns exceeded"
+         stop
+      endif
+   enddo
+
+   ! Close the CSV file
+   close(10)
+endif
+
+do k=1,nz
+   do i=1,nx
+      if (bintype .eq. 'tau') dropsn2d(k,i,:) = dropsm2d(k,i,:)/binmass
+   enddo
+enddo
 
 do i=1,nx
    do k=1,nz
@@ -355,7 +605,8 @@ do i=1,nx
             if(rain_init(1)>0.)dnr = (rain_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
                                      /rain_init(2)*gamma(h_shape(2)) &
                                      /gamma(h_shape(2)+3))**(1./3.)
-            
+            if (gamma(h_shape(1)+3) > infinity) dnc = 0.
+            if (gamma(h_shape(2)+3) > infinity) dnr = 0.
             CALL init_dist_tau(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
                h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
                h_shape(2),dnr,ffcd_mass,ffcd_num)
@@ -400,39 +651,20 @@ real(8),dimension(nz,nx,1:10) :: mc,mr,mc0,mr0
 real(8),dimension(max_nbins) :: ffcloud_mass,ffrain_mass,ffcloud_num,ffrain_num
 real(8) :: tnum_gam, true_num, correct_ratio, true_mass, tmass_gam, tm1_gam, true_m1
 real(8) :: dummy,realpmom,newdiam,Dmin,Dmax,Dskip
-real(8) :: test_arr(1)
 real(real32) :: nan
+real(8) :: dn1_arr(100), dn2_arr(100), powers(100)
 
-! test_arr = 0.9999
-! call mapRange2R(1, test_arr, 1d-5, 1d0, 'f')
-! print*, 'no change', test_arr
-! call mapRange2R(1, test_arr, 1d-5, 1d0, 'b')
-! print*, 'no change', test_arr
-! stop
+diag_dt1 = 0.
+diag_dt2 = 0.
+diag_dt3 = 0.
+itries = 0
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
-
-!!debugging a problematic moment combination
-!Mpc(31,1,1:4) = (/1.297928000581651E-005, 366201294.177014, &
-!   1.568659066797011E-008, 2.170872332377945E-011/) 
-!guessc(31,1,:) = (/4., 5.462991549063160E-007/)
-!guessr(31,1,:) = (/4., 1.728192278921345E-004/)
-
-! ! testing starts: remember to delete later -ahu
-! ! basically a history run
-! do k=12,20
-!    Mpc(k,1,1:4) = (/1.369168707737964E-005, 187041173.364483, &
-!       4.003446348223070E-009, 2.776714016035594E-026/)
-!    guessc(k,1,:) = (/4., 0.000000000000000E+000/)
-!    guessr(k,1,:) = (/4., 2.643759570927481E-005/)
-! enddo
-! ! testing ends -ahu
-
 
 do k=1,nz
  do j=1,nx
 
-   flag(k,j,:,:) = 0
+   flag(k,j,:,:) = 0.
    !Find gamma PDF parameters
 
    if (npmc < 4) then
@@ -447,7 +679,7 @@ do k=1,nz
    momx=pmomsc(2) !momx is a global variable
    momy=pmomsc(3) !pmomsc(1)=3 always
 
-   if (Mp(1)>0.) then
+   if (Mp(1)>total_m3_th) then
       CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,ihyd,:))
       tmass_gam = sum(ffcloud_mass)*col
       true_mass = Mpc(k,j,1)*1000*pi/6
@@ -469,7 +701,7 @@ do k=1,nz
    skr=split_bins+1; ekr=nkr
    momx = pmomsr(2)
    momy=pmomsr(3) !pmomsr(1)=3 always
-   if (Mp(1)>0.) then
+   if (Mp(1)>total_m3_th) then
 
       CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,ihyd,:))
       tmass_gam = sum(ffrain_mass)*col
@@ -484,6 +716,7 @@ do k=1,nz
       flag(k,j,2,1)=-1
       flag(k,j,2,2:flag_count)=nan
    endif
+   ! if (k>=11 .and. k<=13)print*, 'ffcdr,Mp1', k, Mp(1), ffrain_mass
 
    ffcdr8_mass(k,j,:) = ffcloud_mass+ffrain_mass
    ffcdr8_num(k,j,:) = ffcloud_num+ffrain_num
@@ -494,7 +727,7 @@ do k=1,nz
    if(ffcdr8_mass(k,j,1).ne.ffcdr8_mass(k,j,1))then
       print*,'NaNs in ffcdr8_mass'
       print*,'NaN:',k,j,ffcloud_mass(1),ffrain_mass(1)
-      print*,Mpc(k,j,:),Mpr(k,j,:)
+      print*,'mpc, mpr', Mpc(k,j,:),Mpr(k,j,:)
       stop
    endif
 
@@ -538,75 +771,24 @@ do k=1,nz
       Dskip = dgmean(1)
       Dmax = dgmean(nkr)
    endif
-   ! Dmin = diams(1)
 
    ! if (Mp(1)>total_m3_th) then
    if (get_meandiam(Mp(1), Mp(2)) >= Dmin*1d6 .and. Mp(1) > total_m3_th) then
 
-      ! print*, 'moms predicted', Mpc(k,1,1:4)
       if (k==debug_k .and. i_dgtime >= debug_itime-10) then
          l_printflag = .true.
       else
          l_printflag = .false.
       endif
 
-      ! if (get_meandiam(Mp(1), Mp(2)) < Dskip*1d6) then ! skip parameter finding if too small
-      !    ffcdr8_mass(k,j,1) = Mp(1)*pi/6*1000/col
-      !    flag(k,j,ihyd,1) = 0
-      !    ! can set a default guessc and guessr here as well
-      ! elseif (get_meandiam(Mp(1), Mp(2)) > Dmax*1d6) then
-      !    ffcdr8_mass(k,j,nkr) = Mp(1)*pi/6*1000/col
-      !    if (get_meandiam(Mp(1), Mp(2)) >= Dmax*1d6*1.26) then
-      !       flag(k,j,ihyd,1) = 1
-      !    else
-      !       flag(k,j,ihyd,1) = 0
-      !    endif
-      ! else
       CALL searchparamsG2(guessc(k,j,:), guessr(k,j,:), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
-      if (l_printflag) print*, 'ffcd', ffcdr8_mass(k,j,:)
-
-      ! call searchParamsByFrac(frac_M3(k,j), frac_M0(k,j), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
-      ! stop
-      ! endif
+      ! print*, 'nuc, nur', k, guessc(k,j,2), guessr(k,j,2)
+      ! print*, 'ffcd', ffcdr8_mass(k,j,:)
 
       if (bintype .eq. 'tau') then
          ffcdr8_num(k,j,:) = ffcdr8_mass(k,j,:)/binmass
       endif
       
-      ! if (k==20) print*, 'cloud, rain Dn', guessc(k,j,2), guessr(k,j,2)
-
-      ! print*, 'Dn_r', guessr(:,:,2)
-
-      ! if (i_dgtime>=803 .and. k>=33 .and. k<=35) then
-      !    l_printflag = .true.
-      !    print*, 'k=', k
-      ! else
-      !    l_printflag = .false.
-      ! endif
-
-      if (k==debug_k .and. i_dgtime >= debug_itime-10 .or. l_printflag) then
-         l_printflag = .true.
-         print*, 'k=', k
-         ! print*, 'dn1, dn2', tempvar_debug(1:2)
-         print*, 'final Dn_c', guessc(k,:,2), guessr(k,:,2)
-         print*, 'dn1 fraction', tempvar_debug(9)
-         ! print*, 'm31, mz1, m32, mz2', tempvar_debug(3:7)
-         print*, 'moms predicted', Mpc(k,:,1:4)
-         print*, 'moms after pf ', tempvar_debug(10:13)
-         ! print*, 'meand predicted', get_meandiam(Mp(1), Mp(2))
-         ! print*, 'meand after pf ', get_meandiam(tempvar_debug(9), tempvar_debug(10))
-         ! print*, 'info=', tempvar_debug(9)
-         ! print*, 'total attempts', tempvar_debug(10)
-         ! if (allocated(tempvar_debug2)) then
-         !    print*, 'shape(tempvar_debug2)', shape(tempvar_debug2)
-         !    print*, 'all guesses', tempvar_debug2 
-         !    stop
-         ! endif
-         ! stop
-      else
-         l_printflag = .false.
-      endif
-
    else
       ffcdr8_mass(k,j,:) = 0.
       ffcdr8_num(k,j,:) = 0.
@@ -616,33 +798,6 @@ do k=1,nz
 
    ffcdr8_massinit(k,j,:) = ffcdr8_mass(k,j,:)
    ffcdr8_numinit(k,j,:) = ffcdr8_num(k,j,:)
-
-   ! if (l_toomanytries) then
-   !    print*, 'too many tries ffcdr8', ffcdr8_mass(k,j,:)
-   !    print*, 'hyd 1 fraction', tempvar_debug
-   !    print*, 'mean diam = ', get_meandiam(Mpc(k,j,1), Mpc(k,j,2)) , 'micron'
-   !    print*, 'smallest bin', Dmin
-   !    stop
-   ! endif
-
-   if (ffcdr8_mass(k,j,1) .ne. ffcdr8_mass(k,j,1)) then
-      print*, 'k=', k
-      print*, 'NaNs in ffcdr8_mass'
-      print*, 'ffcd', ffcdr8_mass(k,j,:)
-      print*, 'Mpc', Mpc(k,j,1:4)
-      print*, 'M3M0', Mpc(k,j,1)/Mpc(k,j,2)
-      print*, 'M3Mw', Mpc(k,j,1)/Mpc(k,j,3)
-      print*, 'M3Mx', Mpc(k,j,1)/Mpc(k,j,4)
-      ! print*, 'hyd 1 fraction', tempvar_debug
-      ! print*, 'guesses before filtering', tempvar_debug
-      print*, 'mean diam = ', get_meandiam(Mpc(k,j,1), Mpc(k,j,2)) , 'μm'
-      print*, 'guesses tempv', tempvar_debug(1:2)
-      print*, 'guesses out', guessc(k,j,2), guessr(k,j,2)
-      print*, 'dn1 frac', tempvar_debug(8)
-      ! print*, 'guesses before fixes', tempvar_debug
-      print*, 'smallest bin', Dmin
-      stop
-   endif
 
    if (ffcdr8_num(k,j,1) .ne. ffcdr8_num(k,j,1)) then
       print*,'NaNs in ffcd_num'
@@ -656,6 +811,9 @@ do k=1,nz
 
  enddo
 enddo
+! stop
+! print*, 'Mpc', Mpc(11,1,:)
+! print*, 'mc0', mc0(11,1,(/4,1/))
 
 !------CALL MICROPHYSICS--------------------
 
@@ -675,10 +833,6 @@ ffcdr8_mass=dble(ffcd_mass)
 ffcdr8_massf = ffcdr8_mass
 ffcdr8_numf = ffcdr8_num
 
-! ! print*, 'ffcd after mphys', ffcd_mass(40,1,:)
-! if (i_dgtime >= debug_itime-5) print*, ffcdr8_massf(debug_k, 1, :)
-! if (i_dgtime >= debug_itime-5) print*, ffcdr8_numf(debug_k, 1, :)
-
 !---------CALC MOMENTS-----------------------
 do k=1,nz
  do j=1,nx
@@ -695,8 +849,9 @@ do k=1,nz
 
    do i=1,npmc  !Loop over the moments
    ip=pmomsc(i)+1 !pmomsc contains the predicted moments. +1 to get correct index in mc and mc0
-   if (mc(k,j,ip) > 0.) then
-      dummy=mc(k,j,ip)!(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
+   if (mc0(k,j,ip) > 0.) then
+      dummy=mc(k,j,ip)
+      ! dummy=(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
       if(dummy<0.) then
          Mpc(k,j,i) = 0.
       else
@@ -710,8 +865,9 @@ do k=1,nz
  
    do i=1,npmr
    ip=pmomsr(i)+1
-   if (mr(k,j,ip)>0.) then
-      dummy=mr(k,j,ip)!(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
+   if (mr0(k,j,ip)>0.) then
+      dummy=mr(k,j,ip)
+      ! dummy=(mr(k,j,ip)-mr0(k,j,ip))*Mpr(k,j,i)/mr0(k,j,ip)+Mpr(k,j,i)
       if(dummy<0.) then
          Mpr(k,j,i)=0.
       else
@@ -732,6 +888,13 @@ do k=1,nz
    mr(k,j,ip)=Mpr(k,j,i)
    enddo
 
+   ! if (Mpr(k,j,1) .ne. Mpr(k,j,1)) then
+   !    print*, 'mr', mr(k,j,:)
+   !    print*, 'mr0', mr0(k,j,:)
+   !    print*, 'mpr', Mpr(k,j,:)
+   !    stop
+   ! endif
+
    if (any(mc(k,j,:)==0.)) then
       mc(k,j,:)=0;Mpc(k,j,:)=0
    endif
@@ -742,20 +905,18 @@ do k=1,nz
    else
    ! 1-cat AMP: {{{
    call calcmoms_sc(ffcdr8_mass(k,j,:), ffcdr8_num(k,j,:), 10, mc(k,j,:))
-   ! if (k==40) print*, 'meand after mphys', get_meandiam(mc(k,j,4), mc(k,j,1))
-   ! if (k==40) print*, 'mom3045 before mphys', mc0(40,1,(/4,1,5,6/))
-   ! if (k==40) print*, 'mom3045 after mphys ', mc(40,1,(/4,1,5,6/))
-   ! if (mc(k,j,4)>0) print*, 'mom3 mom0 meand after mphys', k, mc(k,j,(/4,1/)), get_meandiam(mc(k,j,4),mc(k,j,1))
    do i=1,npm  !Loop over the moments
       ip=pmomsc(i)+1 !pmomsc contains the predicted moments. +1 to get correct index in mc and mc0
-      if (mc(k,j,ip) > 0.) then
-         dummy=mc(k,j,ip)!(mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
+      if (mc0(k,j,ip) > 0.) then
+         ! dummy=mc(k,j,ip)!
+         dummy = (mc(k,j,ip)-mc0(k,j,ip))*Mpc(k,j,i)/mc0(k,j,ip)+Mpc(k,j,i)
          if(dummy<0.) then
            Mpc(k,j,i) = 0.
          else
            Mpc(k,j,i)=dummy
          endif
 
+         ! take a look at this part
          if (i>=2) then !check new mean size
            realpmom = real(pmomsc(i))
            newdiam = (Mpc(k,j,1)/Mpc(k,j,i))**(1./(3.-realpmom))
