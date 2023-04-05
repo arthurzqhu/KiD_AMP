@@ -139,8 +139,8 @@ contains
       if (ampORbin .eq. 'amp') then
          guessc2d(:,:,1) = h_shape(1) !shape parameter
          guessr2d(:,:,1) = h_shape(2)
-         guessc2d(:,:,2) = 1.e-6         !characteristic diameter dn
-         guessr2d(:,:,2) = 100.e-6
+         guessc2d(:,:,2) = dnc_def        !characteristic diameter dn
+         guessr2d(:,:,2) = dnr_def
          call amp_init(aer2d,Mpc2d,Mpr2d,guessc2d,guessr2d)
       elseif (ampORbin .eq. 'bin') then
          if (bintype .eq. 'sbm') then

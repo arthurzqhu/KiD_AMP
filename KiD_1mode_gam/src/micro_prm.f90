@@ -1,11 +1,11 @@
 module micro_prm
-use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins
+use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins, h_shape
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
                     num_h_bins, ampORbin,num_aero_moments,ss_init, &
-                    rain_source, mp_proc_dg, initprof
-use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK
+                    rain_source, mp_proc_dg, initprof, extralayer, l_hist_run
+use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK, lk_cloud
 use switches, only: zctrl
 
 !use parameters, only:nx,nz,num_h_moments
@@ -127,7 +127,7 @@ REAL, PARAMETER :: BFREEZMAX=0.66E0
 real, parameter :: AFREEZMY=0.3333E-04,BFREEZMY=0.6600E00
 real(8), parameter :: cloud_mr_th=2d-10, rain_mr_th=2d-10 ! cloud/rain mixing ratio threshold, in units of kg/kg
 real(8), parameter :: cloud_nmr_th=1d5, rain_nmr_th=1d2 ! cloud/rain number mixing ratio threshold, in units of 1/kg
-real(8), parameter :: total_m3_th=1d-15
+real(8), parameter :: total_m3_th=0.
 real(8), parameter :: mass_dist_th = 1d-10
 real(8), parameter :: num_dist_th = 1d-1
 
@@ -238,6 +238,7 @@ double precision, dimension(ntab,2) :: mintab,maxtab
 double precision, dimension(2,2) :: nubounds, dnbounds
 real(8),dimension(max_nbins) :: diams
 real(8),dimension(max_nbins) :: binmass
+real(8) :: D_min, D_max
 integer, parameter :: r4size = 4, r8size = 8
 INTEGER,PARAMETER :: ISIGN_KO_1 = 0, ISIGN_KO_2 = 0,  ISIGN_3POINT = 1,  &
                       IDebug_Print_DebugModule = 1
@@ -252,7 +253,8 @@ DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
 REAL (KIND=R4SIZE) :: FR_LIM(max_nbins), FRH_LIM(max_nbins)
 
 ! single category (sc) AMP related vars
-double precision :: DnRangeMin = 1e-9, DnRangeMax = 0.1
+double precision :: DnRangeMin = 1e-9, DnRangeMax = 1e-3
+double precision :: dnc_def = 3.d-6, dnr_def = 100.d-6
 character(len=100) :: folder_sclut, sc4m_lu_abspath
 character(len=20) :: sc4m_lufile, sigfig_fmt, momstr4
 double precision, dimension(:,:), allocatable :: sc4m_tab, &
@@ -276,10 +278,11 @@ double precision, parameter :: threshold_3m = 1.d-15
 ! marker for whether or not the autoconversion process has completed
 logical :: l_doneAC
 ! dummy variable for debugging
-real(8), allocatable :: tempvar_debug(:), tempvar_debug2(:)
+real(8), allocatable :: tempvar_debug(:), tempvar_debug2(:), tempvar_debug3(:), PF_change_mat(:,:)
 logical :: l_massnoguess = .false., l_printflag = .false., l_failed1
-real(8) :: debug_time, debug_itime
-integer :: debug_k
+real(8) :: debug_time, debug_itime, diag_dt1, diag_dt2, diag_dt3, diag_dt4, PF_change_arr(5)
+integer :: debug_k, itries
+real(8) :: nuterm31, nutermw1, nutermz1, nuterm32, nutermw2, nutermz2
 
 !******* for operating SBM when max_nbins is set to 34 *******
 integer :: idx &
@@ -294,7 +297,7 @@ contains
 
       if (bintype .eq. 'sbm') then
          nkr=33
-         split_bins=14
+         split_bins=krdrop
 
          if (ampORbin .eq. 'bin') then
             num_h_moments=(/1,1/)
@@ -304,13 +307,20 @@ contains
       elseif (bintype .eq. 'tau') then
          nkr=34
          num_aero_moments=1
-         split_bins=15
+         split_bins=lk_cloud
 
          if (ampORbin .eq. 'bin') then
             num_h_moments=(/2,2/)
             num_h_bins=(/34,34/)
          endif
       endif
+
+      nuterm31 = gamma(h_shape(1)+3)/gamma(h_shape(1))
+      nuterm32 = gamma(h_shape(2)+3)/gamma(h_shape(2))
+      nutermw1 = gamma(h_shape(1)+imomc1)/gamma(h_shape(1))
+      nutermw2 = gamma(h_shape(2)+imomc1)/gamma(h_shape(2))
+      nutermz1 = gamma(h_shape(1)+imomc2)/gamma(h_shape(1))
+      nutermz2 = gamma(h_shape(2)+imomc2)/gamma(h_shape(2))
 
    end subroutine check_bintype
 

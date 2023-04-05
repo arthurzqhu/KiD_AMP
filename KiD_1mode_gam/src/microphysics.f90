@@ -845,8 +845,6 @@ do kr=1,nkr
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
 enddo
 
-!print*, 'ffcd',ffcd
-
 return
 !Diagnose shape parameter
 !  if (mom<0) then
