@@ -73,6 +73,7 @@ module advection_interface
             & ,cscheme_id           &
             & ,wqv_surf             &
             )
+
        if (norm_factor .ne. 0.) then 
           field=field*norm_factor/scale_factor
           field_adv=field_adv*norm_factor/scale_factor
@@ -81,7 +82,7 @@ module advection_interface
        do j=1,nx
           do k=1,nz
              if (field(k,j)+dt*field_adv(k,j) < 0.0) &
-                  field_adv(k,j)=-0.999999*(field(k,j)/dt)
+                  field_adv(k,j)=-0.99999*(field(k,j)/dt)
           enddo
        end do
        dqv_adv(:,:)=field_adv(:,:) 
@@ -90,12 +91,15 @@ module advection_interface
     endif
 
     field(:,:)=ss(:,:)
+
     norm_factor=sum(field)
     if (norm_factor .ne. 0.) field=scale_factor*field/norm_factor
+
     call generic_advection(      &
          &  field                &
          & ,field_adv            &
          & ,scheme_id)
+
     if (norm_factor .ne. 0.) then 
        field=field*norm_factor/scale_factor
        field_adv=field_adv*norm_factor/scale_factor
@@ -112,17 +116,20 @@ module advection_interface
                    field(k,j)=aerosol(k,j,ih)%moments(ibin,imom)
                 end do
              enddo
+
              norm_factor=sum(field)
              if (norm_factor .ne. 0.) field=scale_factor*field/norm_factor
+
              call generic_advection(            &
                   &  field                      &
                   & ,field_adv                  &
                   & ,scheme_id)
+
              if (norm_factor .ne. 0.) then 
                 field=field*norm_factor/scale_factor
                 field_adv=field_adv*norm_factor/scale_factor
              endif
-             
+
              do j = 1,nx
                 do k=1,nz
                    if (field(k,j)+dt*field_adv(k,j) < 0.0) &
@@ -138,6 +145,7 @@ module advection_interface
     do ih=1,nspecies
        do ibin=1,num_h_bins(ih)
           do imom=1,num_h_moments(ih)
+
              do j=1,nx
                 do k=1,nz
                    field(k,j)=hydrometeors(k,j,ih)%moments(ibin,imom)
@@ -148,20 +156,33 @@ module advection_interface
              if (norm_factor .ne. 0.) field=scale_factor*field/norm_factor
 
              call generic_advection(            &
-                  &  field                      &
-                  & ,field_adv                  &
-                  & ,scheme_id)
+                &  field                      &
+                & ,field_adv                  &
+                & ,scheme_id)
+
+             ! ! print*, 'fieldadv', field_adv(1,1), norm_factor, scale_factor
+             ! if (norm_factor .ne. norm_factor .or. norm_factor > HUGE(norm_factor)) then
+             !    print*, 'field', field
+             !    stop
+             ! endif
+
              if (norm_factor .ne. 0.) then 
                 field=field*norm_factor/scale_factor
                 field_adv=field_adv*norm_factor/scale_factor
              endif
-            
+
              do j=1,nx
                 do k=1,nz
+                   ! if (field(k,j)<0) then
+                   !    print*, k, ih, ibin, imom, field(k,j)
+                   !    print*, 'hyd', hydrometeors(k,j,ih)%moments(ibin,imom)
+                   !    print*, 'dmphys', dhydrometeors_mphys(k,j,ih)%moments(ibin,imom)*dt
+                   !    stop 'moment<0'
+                   ! endif
                    if (field(k,j)+dt*field_adv(k,j) < 0.0) &
-                        field_adv(k,j)=-.999999*(field(k,j)/dt)
+                      field_adv(k,j)=-.999999*(field(k,j)/dt)
                    dhydrometeors_adv(k,j,ih)%moments(ibin,imom)=field_adv(k,j)
-                  
+
                 enddo
              end do
 
