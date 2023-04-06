@@ -50,8 +50,8 @@ ia=100
 
 idm=600
 imm=0.5
-irimm=$(($imm/1000))
-irinm=$(($irimm/(($idm*1.e-6)**3*3.14159/6*1000.)))
+irimm=$( ($imm/1000) )
+irinm=$( ($irimm/(($idm*1.e-6)**3*3.14159/6*1000.)) )
 
 config_fname=${conf_basename}
   for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))

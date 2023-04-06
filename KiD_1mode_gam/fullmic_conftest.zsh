@@ -46,12 +46,12 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$4
-iw=$5
+ia=$5
+iw=$6
 isp_c=$3
-isp_r=$3
+isp_r=$4
 var1str=pmomxy$1$2
-var2str=sp$3
+var2str=sp$3$4
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
@@ -81,7 +81,7 @@ do
          nhb='34,1'
       fi
    fi
-   outdir=output/conftest_nodown/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+   outdir=output/conftest_diffsp/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
