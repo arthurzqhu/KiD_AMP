@@ -50,3 +50,4 @@ THOM.nml
 .remote-sync.json
 .nfs*
 Session.vim
+*/job_outs/*
