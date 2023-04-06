@@ -1,9 +1,9 @@
 #!/bin/zsh
 #SBATCH -J KiD
-#SBATCH --array=1-8400
+#SBATCH --array=526-8400
 #SBATCH -o job_outs/KiD-%A-%a.out
 #SBATCH -e job_outs/KiD-%A-%a.out
-#SBATCH -t 00:04:00
+#SBATCH -t 04:00:00
 #SBATCH -p med2
 #SBATCH -N 1
 #SBATCH -n 1
@@ -45,7 +45,9 @@ while read -r var1 var2; do
 done < "$csv_file"
 
 len2=${#spc_list[@]}
-isp=$(( ($iid - 1)/$len1 +1 ))
+# isp=$(( ($iid - 1)/$len1 +1 ))
+isp=$(((($iid + $len1 - 1)/$len1)%$len2))
+[[ $isp == 0 ]] && isp=$len2
 
 # Define the name of the CSV file
 csv_file="raining_cases.csv"
@@ -58,5 +60,5 @@ done < "$csv_file"
 
 iaw=$(( ($iid - 1)/($len1*$len2) +1 ))
 
-
+# echo $mom1 $mom2 $isp $a_list[$iaw] $w_list[$iaw]
 ./fullmic_conftest.zsh $mom1 $mom2 $spc_list[$isp] $spr_list[$isp] $a_list[$iaw] $w_list[$iaw]

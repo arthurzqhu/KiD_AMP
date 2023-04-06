@@ -51,7 +51,7 @@ iw=$6
 isp_c=$3
 isp_r=$4
 var1str=pmomxy$1$2
-var2str=sp$3$4
+var2str=spcr$3$4
 
 # reset oscillation time based on updraft speed to prevent overshooting
 if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
