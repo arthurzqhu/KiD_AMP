@@ -5,10 +5,10 @@ module restore
 # module load deprecated/netcdf/4.7.4-intel
 
 # config of the run
-conf_basename='conftest' # case/folder name. determined automatically if set empty
+conf_basename='collonly_conftest' # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN" "AMP")
+ampORbin=("AMP" "BIN")
 bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -26,13 +26,13 @@ imr2=$2 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
-t1=3600.
+t1=1800.
 t2=900.
 # switches
-l_nuc_cond_s=1
+l_nuc_cond_s=0
 l_coll_s=1
-l_sed_s=1
-l_adv_s=1
+l_sed_s=0
+l_adv_s=0
 
 
 # []==if, &&==then, ||=else
@@ -50,25 +50,26 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$5
-iw=$6
+iw=4
+ia=100
+
+idmc=15
+icimm=$(($5/1000.))
+icinm=$(($icimm/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+
+irimm=$((0.001-$icimm))
+idmr=$6
+irinm=$(($irimm/(($idmr*1.e-6)**3*3.14159/6*1000.)))
+
 isp_c=$3
 isp_r=$4
 var1str=pmomxy${1}-${2}
 var2str=spcr${3}-${4}
 
-# reset oscillation time based on updraft speed to prevent overshooting
-
-if [[ $(((${ztop}-${zct})/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-  t2=$((($ztop-$zct)/$iw))
-  t1=$(($t2*4))
-fi
-
 echo t1=$t1
 echo t2=$t2
-config_fname=${conf_basename}_Na${ia}w${iw}
+config_fname=${conf_basename}_cm${5}_dcmr${idmr}
 echo $config_fname
-echo Na=$ia
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
 do
   for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
@@ -86,7 +87,7 @@ do
          nhb='34,1'
       fi
    fi
-   outdir=/group/aigelgrp2/arthurhu/KiD/conftest_fullmic/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+   outdir=output/conftest_collonly/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -156,9 +157,9 @@ icase=${caselist[ic]}
 
 &control
 mphys_scheme='amp'
-dt=0.5            !Timestep length (s)
+dt=1.0            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=10.0         !Timestep for diagnostic output
+dg_dt=5.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation

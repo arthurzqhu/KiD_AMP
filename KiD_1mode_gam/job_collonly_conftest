@@ -1,6 +1,6 @@
 #!/bin/zsh
 #SBATCH -J KiD
-#SBATCH --array=1-22400
+#SBATCH --array=1-6300
 #SBATCH -o job_outs/KiD-%A-%a.out
 #SBATCH -e job_outs/KiD-%A-%a.out
 #SBATCH -t 12:00:00
@@ -13,12 +13,12 @@
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 iid=$SLURM_ARRAY_TASK_ID
 
-mom1_list=(1 2 4 5 6 7 8 9)
+mom1_list=(1 2 4)
 mom2_list=(1 2 4 5 6 7 8 9)
 
 for (( i1 = 1; i1 <= ${#mom1_list[@]}; i1++ )); do
    for (( i2 = 1; i2 <= ${#mom2_list[@]}; i2++ )); do
-      if [[ ${mom1_list[$i1]} -ne ${mom2_list[$i2]} ]]; then
+      if [[ $i1 -ne $i2 ]]; then
          momcombo+=(${mom1_list[i1]}${mom2_list[i2]})
       fi
    done
@@ -50,15 +50,15 @@ isp=$(((($iid + $len1 - 1)/$len1)%$len2))
 [[ $isp == 0 ]] && isp=$len2
 
 # Define the name of the CSV file
-csv_file="raining_cases.csv"
+csv_file="collonly_cases.csv"
 
 # Read the CSV file
 while read -r var1 var2; do
-  w_list+=("$var1")
-  a_list+=("$var2")
+  cm_list+=("$var1")
+  dmr_list+=("$var2")
 done < "$csv_file"
 
-iaw=$(( ($iid - 1)/($len1*$len2) +1 ))
+icmdm=$(( ($iid - 1)/($len1*$len2) +1 ))
 
-# echo $mom1 $mom2 $isp $a_list[$iaw] $w_list[$iaw]
-./fullmic_conftest.zsh $mom1 $mom2 $spc_list[$isp] $spr_list[$isp] $a_list[$iaw] $w_list[$iaw]
+# echo $mom1 $mom2 $isp $dmr_list[$icmdm] $cm_list[$icmdm]
+./collonly_conftest.zsh $mom1 $mom2 $spc_list[$isp] $spr_list[$isp] $dmr_list[$icmdm] $cm_list[$icmdm]
