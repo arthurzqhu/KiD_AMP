@@ -2134,8 +2134,8 @@ do k=1,nz
             ! else
             !    sq_lem(j,k,iq) = (sq_lem(j,k,iq-1) + sq_lem(j,k,iq+1))/2
             ! endif
-            print*, 'some NaNs here'
-            print*,'sq', k,iq
+            ! print*, 'some NaNs here'
+            ! print*,'sq', k,iq
             ! print*, sq_lem
             ! stop
          end if

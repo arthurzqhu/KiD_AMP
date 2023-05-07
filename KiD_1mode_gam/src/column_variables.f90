@@ -10,12 +10,12 @@
 !
   Module column_variables
 
+    Use class_species, only : species
     Use typeKind
 
     Use parameters, only : nz, nx, nspecies, naerosol &
          , unset_real
 
-    Use class_species, only : species
 
     Implicit None
 

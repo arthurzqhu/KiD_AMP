@@ -221,17 +221,17 @@ contains
 dqv_mphys = 0.
 dtheta_mphys = 0.
 
-do imom=1,num_h_moments(1)
-  do i=1,num_h_bins(1)
-   dhydrometeors_mphys(:,:,1)%moments(i,imom)=0.
-  enddo
-enddo
+! do imom=1,num_h_moments(1)
+!   do i=1,num_h_bins(1)
+!    dhydrometeors_mphys(:,:,1)%moments(i,imom)=0.
+!   enddo
+! enddo
 
-do imom=1,num_h_moments(2)
-  do i=1,num_h_bins(2)
-   dhydrometeors_mphys(:,:,2)%moments(i,imom)=0.
-  enddo
-enddo
+! do imom=1,num_h_moments(2)
+!   do i=1,num_h_bins(2)
+!    dhydrometeors_mphys(:,:,2)%moments(i,imom)=0.
+!   enddo
+! enddo
 
 do i=1,nx
    do k=1,nz
@@ -315,10 +315,10 @@ if (ampORbin .eq. 'amp') then
    field(:)=flag(:,nx,2,1)
    call save_dg(field,'oflagr', i_dgtime,units='unitless', dim='z')
 
-   field(:)=flag(:,nx,1,2)
-   call save_dg(field,'flagoobc', i_dgtime,units='unitless', dim='z')
-   field(:)=flag(:,nx,2,2)
-   call save_dg(field,'flagoobr', i_dgtime,units='unitless', dim='z')
+   ! field(:)=flag(:,nx,1,2)
+   ! call save_dg(field,'flagoobc', i_dgtime,units='unitless', dim='z')
+   ! field(:)=flag(:,nx,2,2)
+   ! call save_dg(field,'flagoobr', i_dgtime,units='unitless', dim='z')
 
 !   field(:)=flag(:,nx,1,3)
 !   call save_dg(field,'fitting_flag_cloud_x_intol', i_dgtime,units='unitless', dim='z')

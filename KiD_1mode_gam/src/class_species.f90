@@ -19,10 +19,10 @@ module class_species
   implicit none
 
   type, public :: species
+     real(wp) , pointer :: moments(:,:)
      integer :: h_id
      integer :: nmoments
      integer :: nbins
-     real(wp) , pointer :: moments(:,:)
   end type species
 
   type, public :: species_hw

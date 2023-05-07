@@ -2206,6 +2206,8 @@ contains
       call sanitize(outfile)
       status=nf90_eexist
       do while(status==nf90_eexist)
+        ! set to "overwrite" mode for convenience -ahu
+        ! status=nf90_create(outfile, nf90_clobber, ncid)
         status=nf90_create(outfile, nf90_noclobber, ncid)
         if (status==nf90_eexist)then
           write(char4,'(I4.4)')itmp
