@@ -991,29 +991,6 @@ integer kr
   call calcmom(m0, md, 0)
   call calcmom(mw, md, momw)
 
-
-  ! if ((m3/m0)/(m3_ana/m0_ana)>1.1 .or. (m3/m0)/(m3_ana/m0_ana)<0.9) then
-  !    print*, 'fcn4p dn1, dn2', dn1, dn2
-  !    print*, 'm3/m0', m3/m0
-  !    print*, 'ana m3/m0', m3_ana/m0_ana
-  !    print*, '(m3/m0)/(m3_ana/m0_ana)', (m3/m0)/(m3_ana/m0_ana)
-  !    print*, 'm3_ana, m0_ana', m3_ana, m0_ana
-  !    print*, 'm3, m0, mw, m3frac', m3, m0, mw, m3frac
-  !    print*, '(m3/mw)/(m3_ana/mw_ana)', (m3/mw)/(m3_ana/mw_ana)
-  !    print*, 'm3/mw', m3/mw
-  !    print*, 'ana m3/mw', m3_ana/mw_ana
-  !    stop
-  ! endif
-
-  ! if ((m3/mw)/(m3_ana/mw_ana)>1.1 .or. (m3/mw)/(m3_ana/mw_ana)<0.9) then
-  !    print*, 'fcn4p dn1, dn2', dn1, dn2
-  !    print*, '(m3/mw)/(m3_ana/mw_ana)', (m3/mw)/(m3_ana/mw_ana)
-  !    print*, 'm3/mw', m3/mw
-  !    print*, 'ana m3/mw', m3_ana/mw_ana
-  !    print*, 'm3, mw, m3frac', m3, mw, m3frac
-  !    stop
-  ! endif
-
   fvec(1)=log10((M0p/M3p)*(m3/m0))
   fvec(2)=log10((Mwp/M3p)*(m3/mw))*relaxw
 
@@ -1095,7 +1072,7 @@ double precision :: gterm1a(max_nbins),gterm1b,gterm2a(max_nbins),gterm2b
 double precision :: md(max_nbins), md1(max_nbins), md2(max_nbins), m31,m32,mz1,mz2,MzM3
 double precision :: infinity
 double precision :: m31_ana, m32_ana, mz1m31_ana, mz2m32_ana, t1, t2, t3, t4, &
-   m3frac_ana, mw1, mw2
+   m3frac_ana, mw1, mw2, dummy
 integer :: kr, dn_change_counter
 
 dn_change_counter = 0
@@ -1104,6 +1081,12 @@ infinity = HUGE(rx)
 ! 100 continue
 
 n0=rx
+
+if (dn1 > dn2) then
+   dummy = dn1
+   dn1 = dn2
+   dn2 = dummy
+endif
 
 do kr=1,nkr
    gterm1a(kr)=-diams(kr)/dn1+(nu1+3)*log(diams(kr)/dn1)
@@ -1565,12 +1548,13 @@ if (guess(2).ne.0 .or. guess(4).ne.0) then
    tguess(2) = guess(4)
    CALL hybrd1(fcn_4p,n,tguess,vals(1:2),tol,info,wa,lwa)
 
-   ! reorder dn if they are not ordered correctly
-   if (tguess(2) < tguess(1)) then
-      dummy = tguess(1)
-      tguess(1) = tguess(2)
-      tguess(2) = dummy
-   endif
+   ! ! reorder dn if they are not ordered correctly
+   ! if (tguess(2) < tguess(1)) then
+   !    dummy = tguess(1)
+   !    tguess(1) = tguess(2)
+   !    tguess(2) = dummy
+   ! endif
+
    sqval = sqrt(sum(vals(1:2)**2))
    ! print*, 'sqval,osqval', sqval, osqval
    if (sqval .lt. osqval) then
@@ -1716,12 +1700,12 @@ if (iimp==1) then
    vals = ovals
 endif
 
-if (i>=1) then
-   ! print*, 'tries', i
-   ! print*, 'guess(2)/pguess(2)', guess(2)/pguess(2)
-   ! print*, 'guess(4)/pguess(4)', guess(4)/pguess(4)
-   PF_change_arr = (/dble(i),guess(2)/pguess(2),guess(4)/pguess(4),sqval,dble(info)/)
-endif
+! if (i>=1) then
+!    ! print*, 'tries', i
+!    ! print*, 'guess(2)/pguess(2)', guess(2)/pguess(2)
+!    ! print*, 'guess(4)/pguess(4)', guess(4)/pguess(4)
+!    PF_change_arr = (/dble(i),guess(2)/pguess(2),guess(4)/pguess(4),sqval,dble(info)/)
+! endif
 
 ! if (any(guess<0)) then
 !    print*, 'guess<0'
@@ -1734,11 +1718,12 @@ endif
 tguess = guess((/2,4/))
 
 ! make sure guesses are in the right order
-if (guess(2)>guess(4)) then
-   tguess = guess(1:2)
-   guess(1:2) = guess(3:4)
-   guess(3:4) = tguess
-endif
+
+! if (guess(2)>guess(4)) then
+!    tguess = guess(1:2)
+!    guess(1:2) = guess(3:4)
+!    guess(3:4) = tguess
+! endif
 
 if (guess(2) == 0. .and. guess(4) == 0.) then
    ! if (tempvar_debug(1) .ne. 0. .or. tempvar_debug(2) .ne. 0) then
@@ -1766,6 +1751,9 @@ CALL calcdist2(n,guess,md)
 if (guess(2) > DnRangeMax .or. guess(2) < DnRangeMin) guess(2) = dnc_def
 if (guess(4) > DnRangeMax .or. guess(4) < DnRangeMin) guess(4) = dnr_def
 
+if (vals(2)>tol) flag=1
+if (vals(1)>tol) flag=2
+if (vals(1)>tol .and. vals(2)>tol) flag=3
 
 ! if (l_printflag) print*, 'final error', vals(1:2)
 ! ! print*, 'frac', tempvar_debug(9)
@@ -1789,11 +1777,11 @@ if (guess(4) > DnRangeMax .or. guess(4) < DnRangeMin) guess(4) = dnr_def
 ! print*, 'guesses', guess((/2,4/))
 ! print*, 'total_m3_th', total_m3_th
 
-if (sqval>tol) then
-   ! print*, 'Mp predicted', Mp(1:4)
-   ! print*, 'Mp after pf ', (/m3t,m0t,mwt,mzt/)
-   flag = 1.
-endif
+! if (sqval>tol) then
+!    ! print*, 'Mp predicted', Mp(1:4)
+!    ! print*, 'Mp after pf ', (/m3t,m0t,mwt,mzt/)
+!    flag = 1.
+! endif
 
 ! if (l_printflag) then
 !    ! print*, 'predicted moms', Mp(1:4)
