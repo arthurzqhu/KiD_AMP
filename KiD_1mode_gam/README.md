@@ -3,16 +3,14 @@ Please see the documentation in doc/KiD.pdf for further details.
 Updated by Arthur Hu
 ===================================
 
-Just in case: please avoid running the shell script on the login node. 
-All jobs that take more than half a minute should be put into a job script. 
-Learn more: https://wiki.cse.ucdavis.edu/support/hpc/software/slurm?s[]=slurm
-
-Run a series of cases with different initial condition via `./indv_proc.sh`,
-or cases with individual processes switched on or off via `./indv_proc.sh`. 
-
-If you're on FARM, just change the email address in `job_*` and run `sbatch job_*`.
-
-
+Run cases with `./fullmic_*m.zsh $Na $w`, where $Na=initial aerosol 
+concentration, $w=max vertical velocity. By default, this script runs 
+four schemes sequentially (AMP-SBM, AMP-TAU, BIN-SBM, BIN-TAU) but can be
+changed from the scripts `ampORbin` and `bintype`. Individual microphysical
+processes can be turned on or off with `l_nuc_cond_s`, `l_coll_s`, `l_sed_s`,
+and `l_adv_s`. Output directory is set to the variable `outdir`. For any
+AMP-related question, please do not hesitate to contact Arthur Hu
+(arthurzqhu@gmail.com) or Adele Igel (aigel@ucdavis.edu).
 
 BELOW IS THE ORIGINAL README
 

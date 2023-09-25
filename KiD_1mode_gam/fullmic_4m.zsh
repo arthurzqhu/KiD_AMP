@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-conf_basename="fullmic_4m_nodown_nu$3" # case/folder name. determined automatically if set empty
+conf_basename="fullmic_4m" # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
@@ -21,7 +21,7 @@ zct=1200. # cloud bottom height
 t1=3600.
 t2=900.
 
-# switches
+# switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
 l_sed_s=1
@@ -61,15 +61,15 @@ do
   do
 	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
    if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-      isp_c=4  # shape parameter for cloud
-      isp_r=4  # shape parameter for rain
+      isp_c=2  # shape parameter for cloud
+      isp_r=2  # shape parameter for rain
       imc1=4 # II moment for cloud
       imc2=5 # III moment for cloud
       imr1=4 # II moment for rain
       imr2=5 # III moment for rain
    else
-      isp_c=$3
-      isp_r=$3
+      isp_c=4
+      isp_r=4
       imc1=4 # II moment for cloud
       imc2=5 # III moment for cloud
       imr1=4 # II moment for rain
@@ -87,7 +87,7 @@ do
          nhb='34,1'
       fi
    fi
-   outdir=output/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+   outdir=/group/aigelgrp2/arthurhu/KiD/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
