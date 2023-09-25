@@ -1,5 +1,7 @@
 Please see the documentation in doc/KiD.pdf for further details.
 
+[![DOI](https://zenodo.org/badge/238828035.svg)](https://zenodo.org/badge/latestdoi/238828035)
+
 Updated by Arthur Hu
 ===================================
 
