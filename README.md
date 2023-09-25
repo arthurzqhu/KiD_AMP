@@ -6,9 +6,9 @@ Updated by Arthur Hu
 ===================================
 
 Run cases with `KiD_1mode_gam/fullmic_*m.zsh $Na $w`, where $Na=initial aerosol 
-concentration, $w=max vertical velocity. By default, this script runs 
-four schemes sequentially (AMP-SBM, AMP-TAU, BIN-SBM, BIN-TAU) but can be
-changed from the scripts `ampORbin` and `bintype`. Individual microphysical
+concentration in [1/mg], $w=max vertical velocity in [m/s]. By default, this 
+script runs four schemes sequentially (AMP-SBM, AMP-TAU, BIN-SBM, BIN-TAU) but can
+be changed from the scripts `ampORbin` and `bintype`. Individual microphysical
 processes can be turned on or off with `l_nuc_cond_s`, `l_coll_s`, `l_sed_s`,
 and `l_adv_s`. Output directory is set to the variable `outdir`. For any
 AMP-related question, please do not hesitate to contact Arthur Hu
