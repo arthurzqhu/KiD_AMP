@@ -5,7 +5,7 @@ Please see the documentation in doc/KiD.pdf for further details.
 Updated by Arthur Hu
 ===================================
 
-Run cases with `./fullmic_*m.zsh $Na $w`, where $Na=initial aerosol 
+Run cases with `KiD_1mode_gam/fullmic_*m.zsh $Na $w`, where $Na=initial aerosol 
 concentration, $w=max vertical velocity. By default, this script runs 
 four schemes sequentially (AMP-SBM, AMP-TAU, BIN-SBM, BIN-TAU) but can be
 changed from the scripts `ampORbin` and `bintype`. Individual microphysical
