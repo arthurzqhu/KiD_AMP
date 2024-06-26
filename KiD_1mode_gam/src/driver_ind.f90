@@ -45,15 +45,18 @@ d_cloudi=z_cti-z_cbi
 
 npmc=num_h_moments(1)
 npmr=num_h_moments(2)
+npm = maxval(num_h_moments)
 dnc = guessc2d(1,1,2)
 dnr = guessr2d(1,1,2)
 
 if (npmc < 4) then
    pmomsc(1:3)=(/3,imomc1,imomc2/)
    pmomsr(1:3)=(/3,imomr1,imomr2/)
+   n_cat = 2
 else
    pmomsc(1:6)=(/3, 0, imomc1, imomc2, imomr1, imomr2/)
    pmomsr(1:6)=(/3, 0, imomc1, imomc2, imomr1, imomr2/)
+   n_cat = 1
 endif
 
 ! 3m initialization: {{{
@@ -129,6 +132,12 @@ endif
 
 D_min = diams(1)
 D_max = diams(nkr)
+
+do imom = 1,10
+  do ib = 1,nkr
+    pdiams(imom, ib) = diams(ib)**(dble(imom)-1.)
+  enddo
+enddo
 
 if (initprof .eq. 'c') then
    if(cloud_init(1)>0.) then
@@ -635,6 +644,7 @@ use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
 use global_fun
 use column_variables, only: hydrometeors
+use module_mp_amp, only: invert_moments
 
 implicit none
 integer:: i,j,k,ip
@@ -653,6 +663,7 @@ real(8) :: tnum_gam, true_num, correct_ratio, true_mass, tmass_gam, tm1_gam, tru
 real(8) :: dummy,realpmom,newdiam,Dmin,Dmax,Dskip
 real(real32) :: nan
 real(8) :: dn1_arr(100), dn2_arr(100), powers(100)
+real(8) :: mom_pred(npm, 2), gam_param(2,2), sqerr
 
 diag_dt1 = 0.
 diag_dt2 = 0.
@@ -667,100 +678,6 @@ do k=1,nz
    flag(k,j,:,:) = 0.
    !Find gamma PDF parameters
 
-   if (npmc < 4) then
-   ! 2-cat AMP: {{{
-   !searchparamsG returns the distribution bins
-   !-----------CLOUD---------------------------------
-   ihyd=1
-   npm=npmc
-   Mp(1:num_h_moments(1))=Mpc(k,j,:) !Mp is the global variable
-
-   skr=1; ekr=split_bins
-   momx=pmomsc(2) !momx is a global variable
-   momy=pmomsc(3) !pmomsc(1)=3 always
-
-   if (Mp(1)>total_m3_th) then
-      CALL searchparamsG(guessc(k,j,:),ihyd,ffcloud_mass,flag(k,j,ihyd,:))
-      tmass_gam = sum(ffcloud_mass)*col
-      true_mass = Mpc(k,j,1)*1000*pi/6
-      correct_ratio = true_mass/tmass_gam
-      ffcloud_mass = ffcloud_mass * correct_ratio
-      if (bintype .eq. 'tau') ffcloud_num=ffcloud_mass/binmass
-   else
-      ffcloud_mass=0.
-      ffcloud_num=0.
-      flag(k,j,1,1)=-1
-      flag(k,j,1,2:flag_count)=nan
-   endif
-
-  !----------RAIN--------------------------------
-   ihyd=2
-   npm=npmr
-   Mp(1:num_h_moments(2))=Mpr(k,j,:)
-
-   skr=split_bins+1; ekr=nkr
-   momx = pmomsr(2)
-   momy=pmomsr(3) !pmomsr(1)=3 always
-   if (Mp(1)>total_m3_th) then
-
-      CALL searchparamsG(guessr(k,j,:),ihyd,ffrain_mass,flag(k,j,ihyd,:))
-      tmass_gam = sum(ffrain_mass)*col
-      true_mass = Mpr(k,j,1)*1000*pi/6
-      correct_ratio = true_mass/tmass_gam
-      ffrain_mass = ffrain_mass * correct_ratio
-      if (bintype .eq. 'tau') ffrain_num=ffrain_mass/binmass
-
-   else
-      ffrain_mass=0.
-      ffrain_num=0.
-      flag(k,j,2,1)=-1
-      flag(k,j,2,2:flag_count)=nan
-   endif
-   ! if (k>=11 .and. k<=13)print*, 'ffcdr,Mp1', k, Mp(1), ffrain_mass
-
-   ffcdr8_mass(k,j,:) = ffcloud_mass+ffrain_mass
-   ffcdr8_num(k,j,:) = ffcloud_num+ffrain_num
-
-   ffcdr8_massinit(k,j,:)=ffcdr8_mass(k,j,:)
-   ffcdr8_numinit(k,j,:)=ffcdr8_num(k,j,:)
-
-   if(ffcdr8_mass(k,j,1).ne.ffcdr8_mass(k,j,1))then
-      print*,'NaNs in ffcdr8_mass'
-      print*,'NaN:',k,j,ffcloud_mass(1),ffrain_mass(1)
-      print*,'mpc, mpr', Mpc(k,j,:),Mpr(k,j,:)
-      stop
-   endif
-
-   if(ffcdr8_num(k,j,1).ne.ffcdr8_num(k,j,1))then
-      print*,'NaNs in ffcd_num'
-      print*,'NaN:',k,j,ffcloud_num(1),ffrain_num(1)
-      stop
-   endif
-
-   !Calculate moments - most of the time they're the same as what we used to find parameters
-   !But in the case that parameters couldn't be found, we want to know what the actual moment
-   !values are of our distributions
-   call calcmoms(ffcdr8_mass(k,j,:),ffcdr8_num(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10))
-
-   ! }}}
-   else
-   ! 1-cat AMP: {{{
-   ihyd = 1
-   npm = npmc
-   Mp(1:num_h_moments(1))=Mpc(k,j,1:num_h_moments(1)) !Mp is the global variable
-
-   if (npm .eq. 4) then
-      momw = imomc1
-      momz = imomc2  ! momx is a global variable
-      momx = imomr1  ! These last two don't matter
-      momy = imomr2
-   else
-      momw = imomc1
-      momx = imomc2  ! momx is a global variable
-      momy = imomr1
-      momz = imomr2
-   endif
-
    if (bintype .eq. 'sbm') then
       Dmin = diams(1) 
       Dskip = diams(1)*1.0001
@@ -772,58 +689,64 @@ do k=1,nz
       Dmax = dgmean(nkr)
    endif
 
+   mom_pred(:,1) = Mpc(k,j,:)
+   if (npmc < 4) then
+      mom_pred(:,2) = Mpr(k,j,:)
+   endif
+
+   gam_param(1,1) = guessc(k,j,2)
+   gam_param(2,1) = guessc(k,j,1)
+   gam_param(1,2) = guessr(k,j,2)
+   gam_param(2,2) = guessr(k,j,1)
+
    ! if (Mp(1)>total_m3_th) then
-   if (get_meandiam(Mp(1), Mp(2)) >= Dmin*1d6 .and. Mp(1) > total_m3_th) then
-
-      if (k==debug_k .and. i_dgtime >= debug_itime-10) then
-         l_printflag = .true.
-      else
-         l_printflag = .false.
-      endif
-
-      CALL searchparamsG2(guessc(k,j,:), guessr(k,j,:), ffcdr8_mass(k,j,:), npm, flag(k,j,ihyd,1))
-      ! print*, 'nuc, nur', k, guessc(k,j,2), guessr(k,j,2)
-      ! print*, 'ffcd', ffcdr8_mass(k,j,:)
-
-      if (bintype .eq. 'tau') then
-         ffcdr8_num(k,j,:) = ffcdr8_mass(k,j,:)/binmass
-      endif
-      
-   else
+   if (sum(mom_pred(1,:)) <= total_m3_th) then
       ffcdr8_mass(k,j,:) = 0.
       ffcdr8_num(k,j,:) = 0.
-      flag(k,j,1,1) = -1
-      flag(k,j,1,2:flag_count) = nan
-   endif  
-
-   ffcdr8_massinit(k,j,:) = ffcdr8_mass(k,j,:)
-   ffcdr8_numinit(k,j,:) = ffcdr8_num(k,j,:)
-
-   if (ffcdr8_num(k,j,1) .ne. ffcdr8_num(k,j,1)) then
-      print*,'NaNs in ffcd_num'
+      flag(k,j,:,1) = -1
+      flag(k,j,:,2:flag_count) = nan
+   else
+      ! print*, 'mom_pred', mom_pred(:,1)+mom_pred(:,2)
+      call invert_moments(mom_pred, gam_param, ffcd_mass(k,j,:), ffcd_num(k,j,:), flag(k,j,:,1), sqerr)
+      ! print*, 'mom_pred', mom_pred(:,1)+mom_pred(:,2)
+      ! print*, 'gam_param', gam_param
+      ! print*, 'sum(ffcd_mass(k,j,:))*col*ipio6rw', sum(ffcd_mass(k,j,1:nkr))*col*ipio6rw
+      ! print*, 'sum(ffcd_num(k,j,:))*col',sum(ffcd_num(k,j,1:nkr))*col
+      ! print*, 'ffcd_mass(k,j,:)',ffcd_mass(k,j,:)
       ! stop
    endif
 
-   call calcmoms_sc(ffcdr8_mass(k,j,:), ffcdr8_num(k,j,:), 10, mc0(k,j,1:10))
+   Mpc(k,j,:) = mom_pred(:,1)
+   if (npmc < 4) then
+      Mpr(k,j,:) = mom_pred(:,2)
+   endif
 
-   ! }}}
+   guessc(k,j,2) = gam_param(1,1)
+   guessc(k,j,1) = gam_param(2,1)
+   guessr(k,j,2) = gam_param(1,2)
+   guessr(k,j,1) = gam_param(2,2)
+
+   ffcdr8_massinit(k,j,:) = dble(ffcd_mass(k,j,:))
+   ffcdr8_numinit(k,j,:) = dble(ffcd_num(k,j,:))
+
+   if (n_cat == 2) then
+      call calcmoms(ffcdr8_massinit(k,j,:),ffcdr8_numinit(k,j,:),10,mc0(k,j,1:10),mr0(k,j,1:10))
+   elseif (n_cat == 1) then
+      call calcmoms_sc(ffcdr8_massinit(k,j,:), ffcdr8_numinit(k,j,:), 10, mc0(k,j,1:10))
    endif
 
  enddo
 enddo
-! stop
-! print*, 'Mpc', Mpc(11,1,:)
-! print*, 'mc0', mc0(11,1,(/4,1/))
 
 !------CALL MICROPHYSICS--------------------
 
-ffcd_mass=real(ffcdr8_mass)
+! ffcd_mass=real(ffcdr8_mass)
 
 ! print*, 'ffcd before mphys', ffcd_mass(40,1,:)
 if (bintype .eq. 'sbm') then
    call micro_proc_sbm(press,tempk,qv,fncn,ffcd_mass)
 elseif (bintype .eq. 'tau') then
-   ffcd_num=real(ffcdr8_num)
+   ! ffcd_num=real(ffcdr8_num)
    call micro_proc_tau(tempk,qv,ffcd_mass,ffcd_num)
    ffcdr8_num=dble(ffcd_num)
 endif
@@ -885,7 +808,7 @@ do k=1,nz
    else
       Mpr(k,j,i)=mr(k,j,ip)
    endif
-   mr(k,j,ip)=Mpr(k,j,i)
+   ! mr(k,j,ip)=Mpr(k,j,i)
    enddo
 
    ! if (Mpr(k,j,1) .ne. Mpr(k,j,1)) then
@@ -899,7 +822,7 @@ do k=1,nz
       mc(k,j,:)=0;Mpc(k,j,:)=0
    endif
    if (any(mr(k,j,:)==0.)) then
-      mr(k,j,:)=0;Mpr(k,j,:)=0
+      ! mr(k,j,:)=0;Mpr(k,j,:)=0
    endif
    ! }}}
    else
@@ -1039,7 +962,7 @@ use parameters, only: split_bins
 implicit none
 integer :: i,ib,ip,momnum
 real(8), dimension(max_nbins)::ffcdr8_mass
-real(8), optional, dimension(max_nbins) :: ffcdr8_num
+real(8), dimension(max_nbins) :: ffcdr8_num
 real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
 real(8), dimension(momnum) :: mc,mr ! moments
 real(8) :: inf=huge(mc(1))
@@ -1075,7 +998,7 @@ Use physconst, only: pi
 implicit none
 integer :: i,ib,ip,momnum
 real(8), dimension(max_nbins)::ffcdr8_mass
-real(8), optional, dimension(max_nbins) :: ffcdr8_num
+real(8), dimension(max_nbins) :: ffcdr8_num
 real(8), dimension(nkr) :: diag_m, diag_D !diagnosed mass and diam of each bin
 real(8), dimension(momnum) :: mc,mr ! moments
 real(8) :: inf=huge(mc(1))

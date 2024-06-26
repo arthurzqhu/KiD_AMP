@@ -1,11 +1,14 @@
 #!/bin/zsh
 
+module load deprecated/netcdf/4.7.4-intel
+module load intel-oneapi-compilers/2022.2.1
+
 # config of the run
-conf_basename="fullmic_2m" # case/folder name. determined automatically if set empty
+conf_basename="fullmic_5m" # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+bintype=("TAU" "SBM")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
@@ -15,10 +18,6 @@ irimm=0.
 irinm=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
-imc1=0 # II moment for cloud
-imc2=0 # III moment for cloud
-imr1=0 # II moment for rain
-imr2=0 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
@@ -65,44 +64,52 @@ do
   do
 	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
    if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-      isp_c=4  # shape parameter for cloud
-      isp_r=4  # shape parameter for rain
+      isp_c=2  # shape parameter for cloud
+      isp_r=2  # shape parameter for rain
+      imc1=4 # II moment for cloud
+      imc2=5 # III moment for cloud
+      imr1=6 # II moment for rain
+      imr2=5 # III moment for rain
    else
-      isp_c=10
-      isp_r=10
+      isp_c=4
+      isp_r=4
+      imc1=4 # II moment for cloud
+      imc2=5 # III moment for cloud
+      imr1=6 # II moment for rain
+      imr2=5 # III moment for rain
    fi
-    if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-      nhm='2,2'
+   if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
+      nhm='5,5'
       nhb='1,1'
+   else
+      if [[ ${bintype[$ibt]} = 'SBM' ]]; then
+         nhm='1,1'
+         nhb='33,33'
       else
-        if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-          nhm='1,1'
-          nhb='33,33'
-        else
-          nhm='2,1'
-          nhb='34,1'
-        fi
+         nhm='2,1'
+         nhb='34,1'
       fi
-      outdir=/group/aigelgrp2/arthurhu/KiD/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
-	  for ((ic=1; ic<=case_num; ic++))
-	  do
-	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
-	    then
-	      zc=0
-        else
-	      zc="$ztop,$zcb,$zct"
-        fi
-	    if [ ! -d $outdir ]; then
-	      mkdir -p $outdir
-	    fi
-	    echo "${caselist[ic]}"
-	    cat > namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
+   fi
+   outdir=/group/aigelgrp2/arthurhu/KiD/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+   for ((ic=1; ic<=case_num; ic++))
+   do
+      if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
+      then
+         zc=0
+      else
+         zc="$ztop,$zcb,$zct"
+      fi
+      if [ ! -d $outdir ]; then
+         mkdir -p $outdir
+      fi
+      echo "${caselist[ic]}"
+       cat > namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2'
+mom_names='M1','M2','M3','M4','M5','M6'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -184,8 +191,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin[$iab]:l}'
 bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
-initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
-extralayer=.false.
+initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 !l_diag_nu=.false.
 /

@@ -426,8 +426,7 @@ use column_variables, only:rho
 IMPLICIT NONE
 INTEGER,parameter :: hujisbm_unit1 = 22
 integer :: kr
-REAL PI, rhocgs, x0ccn
-data pi/3.141592654/
+REAL rhocgs, x0ccn
 ! dtime - timestep of integration (calculated in main program) :
 ! ax - coefficient used for masses calculation
 ! ima(i,j) - k-category number, c(i,j) - courant number
@@ -515,8 +514,7 @@ use parameters, only:dt
 IMPLICIT NONE
 INTEGER KR
 INTEGER,parameter :: hujisbm_unit1 = 22
-REAL PI,NDTCOLL_REAL
-data PI/3.141592654/
+REAL NDTCOLL_REAL
 
 !--- Read in various lookup tables
 ! CAPACITIES :

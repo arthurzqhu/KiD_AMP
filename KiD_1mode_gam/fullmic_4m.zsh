@@ -1,10 +1,13 @@
 #!/bin/zsh
 
+module load deprecated/netcdf/4.7.4-intel
+module load intel-oneapi-compilers/2022.2.1
+
 # config of the run
-conf_basename="fullmic_4m" # case/folder name. determined automatically if set empty
+conf_basename="fullmic_4m_new" # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
+ampORbin=("AMP")
 bintype=("SBM" "TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
