@@ -45,7 +45,7 @@ module module_mp_tau_bin
   Use switches, only: l_sediment, mphys_var, l_fix_aerosols
   Use switches_bin
   Use namelists, only: dosedimentation, docollisions, docondensation, &
-                       donucleation, dobreakup
+     donucleation, dobreakup, l_truncated
 
   IMPLICIT NONE
 
@@ -815,9 +815,13 @@ enddo
         amkcc(1) = 0.0
         ankcc(1) = 0.0
 
-        DO L = 1, LK
-          AN1(J,K) = AN1(J,K) + ANK(J,K,L)
-        ENDDO
+        if (l_truncated) then
+           DO L = 1, LK
+              AN1(J,K) = AN1(J,K) + ANK(J,K,L)
+           ENDDO
+        else
+           AN1(J,K) = hydrometeors(k,j,1)%moments(1,2)
+        endif
 
         AM1(J,K) = AMK(J,K,1)
         DDDD=(EA(J,K)/QST(J,K))*100

@@ -1,4 +1,4 @@
-#!/home/arthurhu/.linuxbrew/bin/python3
+#!/usr/local/bin/python3
 #
 # Make dependencies from fortran source
 #

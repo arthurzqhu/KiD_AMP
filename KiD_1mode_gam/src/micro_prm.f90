@@ -7,6 +7,7 @@ use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     rain_source, mp_proc_dg, initprof, extralayer, l_hist_run
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK, lk_cloud
 use switches, only: zctrl
+use physconst, only: pi
 
 !use parameters, only:nx,nz,num_h_moments
 implicit none
@@ -61,6 +62,10 @@ integer, parameter :: BULKNUC=0
 ! COL=Ln2/3 (for xl(k+1)=xl(k)*2.)
 real :: COL = 0.231049060186648 !=log(2.)/3.
 real :: COL3 = 0.693147180559945  !=log(2.)
+
+real(8) :: pio6rw=pi/6*1e3, ipio6rw=6/pi/1e3
+
+real(8) :: pdiams(10, max_nbins)
 
 ! Aerosols
 !  add for diagnostic CCN. If diagCCN=.false., CCN is prognostic
@@ -224,7 +229,7 @@ integer, dimension(6):: pmomsc,pmomsr
 !real, dimension(2):: cloud_init,rain_init
 double precision :: aeromedrad, naero=0., relax, relaxx, relaxy, relaxw, relaxz
 double precision :: nug, nug1, nug2
-integer :: aerotype=1,npm,npmc,npmr
+integer :: aerotype=1,npm,npmc,npmr,n_cat
 real :: dtlt
 double precision :: Mp(6),M3p,Mxp,Myp,Mwp,Mzp,M0p,rxfinal, fracfinal
 double precision :: M3temp, M0temp
@@ -253,8 +258,9 @@ DOUBLE PRECISION,PARAMETER::RATIO_ICEW_MIN = 1.0D-4
 REAL (KIND=R4SIZE) :: FR_LIM(max_nbins), FRH_LIM(max_nbins)
 
 ! single category (sc) AMP related vars
+character(10) :: tORf
 double precision :: DnRangeMin = 1e-9, DnRangeMax = 1e-3
-double precision :: dnc_def = 3.d-6, dnr_def = 100.d-6
+double precision :: dnc_def = 3.d-7, dnr_def = 1.d-4
 character(len=100) :: folder_sclut, sc4m_lu_abspath
 character(len=20) :: sc4m_lufile, sigfig_fmt, momstr4
 double precision, dimension(:,:), allocatable :: sc4m_tab, &
@@ -282,7 +288,7 @@ real(8), allocatable :: tempvar_debug(:), tempvar_debug2(:), tempvar_debug3(:), 
 logical :: l_massnoguess = .false., l_printflag = .false., l_failed1
 real(8) :: debug_time, debug_itime, diag_dt1, diag_dt2, diag_dt3, diag_dt4, PF_change_arr(5)
 integer :: debug_k, itries
-real(8) :: nuterm31, nutermw1, nutermz1, nuterm32, nutermw2, nutermz2
+real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2
 
 !******* for operating SBM when max_nbins is set to 34 *******
 integer :: idx &
@@ -319,107 +325,107 @@ contains
       nuterm32 = gamma(h_shape(2)+3)/gamma(h_shape(2))
       nutermw1 = gamma(h_shape(1)+imomc1)/gamma(h_shape(1))
       nutermw2 = gamma(h_shape(2)+imomc1)/gamma(h_shape(2))
-      nutermz1 = gamma(h_shape(1)+imomc2)/gamma(h_shape(1))
-      nutermz2 = gamma(h_shape(2)+imomc2)/gamma(h_shape(2))
+      nutermx1 = gamma(h_shape(1)+imomc2)/gamma(h_shape(1))
+      nutermx2 = gamma(h_shape(2)+imomc2)/gamma(h_shape(2))
 
    end subroutine check_bintype
 
-   real function mean(arr,n,wgt)
-      implicit none 
-      real(8), dimension(n) :: arr
-      real(8), optional, dimension(n) :: wgt
-      real(8), dimension(n) :: wgt_norm
-      integer :: n
+!   real function mean(arr,n,wgt)
+!      implicit none 
+!      real(8), dimension(n) :: arr
+!      real(8), optional, dimension(n) :: wgt
+!      real(8), dimension(n) :: wgt_norm
+!      integer :: n
 
-      ! calculates the mean of an array `arr` given the weights `wgt`
-      if (present(wgt)) then
-         if (any(wgt<0)) then
-            !print*, "weights can't be negative"
-            wgt(wgt<0)=0
-            return
-         else
-            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
-            mean=sum(arr*wgt_norm)
-         endif
-      else
-         mean=sum(arr)/n
-      endif
+!      ! calculates the mean of an array `arr` given the weights `wgt`
+!      if (present(wgt)) then
+!         if (any(wgt<0)) then
+!            !print*, "weights can't be negative"
+!            wgt(wgt<0)=0
+!            return
+!         else
+!            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+!            mean=sum(arr*wgt_norm)
+!         endif
+!      else
+!         mean=sum(arr)/n
+!      endif
 
-   end function mean
+!   end function mean
 
-   real function std(arr,n,wgt)
-      implicit none
-      real(8), dimension(n) :: arr
-      real(8), optional, dimension(n) :: wgt
-      real(8), dimension(n) :: wgt_norm
-      integer :: n
+!   real function std(arr,n,wgt)
+!      implicit none
+!      real(8), dimension(n) :: arr
+!      real(8), optional, dimension(n) :: wgt
+!      real(8), dimension(n) :: wgt_norm
+!      integer :: n
 
-      if (present(wgt)) then
-         if (any(wgt<0)) then
-            wgt(wgt<0)=0
-            !print*, "weights can't be negative"
-            !return
-         else
-            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
-            std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt_norm))
-         endif
-      else
-         std=sqrt(sum((arr-mean(arr,n))**2)/n)
-      end if
+!      if (present(wgt)) then
+!         if (any(wgt<0)) then
+!            wgt(wgt<0)=0
+!            !print*, "weights can't be negative"
+!            !return
+!         else
+!            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+!            std=sqrt(sum((arr-mean(arr,n,wgt))**2*wgt_norm))
+!         endif
+!      else
+!         std=sqrt(sum((arr-mean(arr,n))**2)/n)
+!      end if
 
-   end function std
+!   end function std
 
-   real function skewness(arr,n,wgt)
-      implicit none
-      real(8), dimension(n) :: arr
-      real(8), optional, dimension(n) :: wgt
-      real(8), dimension(n) :: wgt_norm
-      integer :: n
+!   real function skewness(arr,n,wgt)
+!      implicit none
+!      real(8), dimension(n) :: arr
+!      real(8), optional, dimension(n) :: wgt
+!      real(8), dimension(n) :: wgt_norm
+!      integer :: n
 
-      if (present(wgt)) then
-         if (any(wgt<0)) then
-            wgt(wgt<0)=0
-            ! print*, "weights can't be negative"
-            ! return
-         else
-            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
-            skewness=sum((arr-mean(arr,n,wgt))**3*wgt_norm)/(std(arr,n,wgt)**3)
-         endif
-      else
-         !skewness=
-      end if
+!      if (present(wgt)) then
+!         if (any(wgt<0)) then
+!            wgt(wgt<0)=0
+!            ! print*, "weights can't be negative"
+!            ! return
+!         else
+!            if (sum(wgt) .ne. 1.) wgt_norm=wgt/sum(wgt) !make sure the weights add up to 1
+!            skewness=sum((arr-mean(arr,n,wgt))**3*wgt_norm)/(std(arr,n,wgt)**3)
+!         endif
+!      else
+!         !skewness=
+!      end if
 
-   end function skewness
+!   end function skewness
 
-   real function logskewness(arr,n,wgt)
-      implicit none
-      real(8), dimension(n) :: arr, logarr
-      real(8), optional, dimension(n) :: wgt
-      integer :: n
+!   real function logskewness(arr,n,wgt)
+!      implicit none
+!      real(8), dimension(n) :: arr, logarr
+!      real(8), optional, dimension(n) :: wgt
+!      integer :: n
 
-      logarr=log10(arr)
-      logskewness=skewness(logarr,n,wgt)
+!      logarr=log10(arr)
+!      logskewness=skewness(logarr,n,wgt)
 
-   end function logskewness
+!   end function logskewness
 
-   real function reldisp(arr,n,wgt)
-      implicit none
-      real(8), dimension(n) :: arr
-      real(8), optional, dimension(n) :: wgt
-      integer :: n
+!   real function reldisp(arr,n,wgt)
+!      implicit none
+!      real(8), dimension(n) :: arr
+!      real(8), optional, dimension(n) :: wgt
+!      integer :: n
 
-      reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
+!      reldisp=std(arr,n,wgt)/mean(arr,n,wgt)
 
-   end function reldisp
+!   end function reldisp
 
-   real function shparam(arr,n,wgt)
-      implicit none
-      real(8), dimension(n) :: arr
-      real(8), optional, dimension(n) :: wgt
-      integer :: n
+!   real function shparam(arr,n,wgt)
+!      implicit none
+!      real(8), dimension(n) :: arr
+!      real(8), optional, dimension(n) :: wgt
+!      integer :: n
 
-      shparam=1/reldisp(arr,n,wgt)**2
+!      shparam=1/reldisp(arr,n,wgt)**2
 
-   end function shparam
+!   end function shparam
 
 end module micro_prm

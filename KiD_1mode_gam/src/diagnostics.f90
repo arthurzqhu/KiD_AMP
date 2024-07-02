@@ -107,8 +107,8 @@ Module diagnostics
         save_dg_1D_dp, save_dg_1D_point_dp, save_dg_scalar_dp,       &
         save_dg_2D_point_sp, save_dg_2D_point_dp,                    &
         save_dg_2D_sp, save_dg_2D_dp,                                &
-        save_dg_bin_sp, save_dg_bin_dp, save_dg_flag_sp,             &
-        save_dg_flag_dp, save_dg_bin_point_sp, save_dg_bin_point_dp
+        save_dg_bin_sp, save_dg_bin_dp!, save_dg_flag_sp,             &
+        ! save_dg_flag_dp, save_dg_bin_point_sp, save_dg_bin_point_dp
 
   end interface
 
@@ -1215,121 +1215,121 @@ contains
 
   end subroutine save_dg_1d_point_sp
 
-  subroutine save_dg_bin_point_sp(bin, k, field, name, itime, units, &
-     dim, longname)
+  !subroutine save_dg_bin_point_sp(bin, k, field, name, itime, units, &
+  !   dim, longname)
 
-    integer, intent(in) :: k ! index of value to input
-    real(sp), intent(in) :: field(:)
-    character(*), intent(in) :: name
-    character(*), intent(in) :: bin
-    integer, intent(in) :: itime
-    character(*), intent(in), optional :: units, dim, longname
+  !  integer, intent(in) :: k ! index of value to input
+  !  real(sp), intent(in) :: field(:)
+  !  character(*), intent(in) :: name
+  !  character(*), intent(in) :: bin
+  !  integer, intent(in) :: itime
+  !  character(*), intent(in), optional :: units, dim, longname
 
-    !local variables
-    type(diag_bin2DTS), pointer :: dg(:)
-    type(dgIDarray), pointer  :: dg_index
-    character(max_char_len):: cunits, cdim, clongname
-    integer :: ivar
+  !  !local variables
+  !  type(diag_bin2DTS), pointer :: dg(:)
+  !  type(dgIDarray), pointer  :: dg_index
+  !  character(max_char_len):: cunits, cdim, clongname
+  !  integer :: ivar
 
-    if (bin=='bin') then
-      if (.not. l_dgstep) return
+  !  if (bin=='bin') then
+  !    if (.not. l_dgstep) return
 
-      ! We're assuming diagnostics are instant for now
-      ! could put in an optional argument later to do
-      ! averaged, accumulated, etc. later.
-      dg=>instant_bindgs
-      dg_index=>ID_instant_bindgs
+  !    ! We're assuming diagnostics are instant for now
+  !    ! could put in an optional argument later to do
+  !    ! averaged, accumulated, etc. later.
+  !    dg=>instant_bindgs
+  !    dg_index=>ID_instant_bindgs
 
-      if (present(units))then
-        cunits=units
-      else
-        cunits='Not set'
-      end if
+  !    if (present(units))then
+  !      cunits=units
+  !    else
+  !      cunits='Not set'
+  !    end if
 
-      if (present(dim))then
-        cdim=dim
-      else
-        cdim='z'
-      end if
+  !    if (present(dim))then
+  !      cdim=dim
+  !    else
+  !      cdim='z'
+  !    end if
 
-      if (present(longname))then
-        clongname=longname
-      else
-        clongname=name
-      end if
+  !    if (present(longname))then
+  !      clongname=longname
+  !    else
+  !      clongname=name
+  !    end if
 
-      call getUniqueId(name, dg_index, ivar)
+  !    call getUniqueId(name, dg_index, ivar)
 
-      if (.not. associated(dg(ivar)%data)) then
-        call allocate_dgs(dg(ivar))
-        dg(ivar)%name=name
-        dg(ivar)%units=trim(cunits)
-        dg(ivar)%dim=trim(cdim)
-        dg(ivar)%longname=trim(clongname)
-      end if
+  !    if (.not. associated(dg(ivar)%data)) then
+  !      call allocate_dgs(dg(ivar))
+  !      dg(ivar)%name=name
+  !      dg(ivar)%units=trim(cunits)
+  !      dg(ivar)%dim=trim(cdim)
+  !      dg(ivar)%longname=trim(clongname)
+  !    end if
 
-      dg(ivar)%data(k,:,itime)=field(:)
-    end if
+  !    dg(ivar)%data(k,:,itime)=field(:)
+  !  end if
 
-  end subroutine save_dg_bin_point_sp
+  !end subroutine save_dg_bin_point_sp
 
-  subroutine save_dg_bin_point_dp(bin, k, field, name, itime, units, &
-     dim, longname)
+  !subroutine save_dg_bin_point_dp(bin, k, field, name, itime, units, &
+  !   dim, longname)
 
-    integer, intent(in) :: k ! index of value to input
-    real(dp), intent(in) :: field(:)
-    character(*), intent(in) :: name
-    character(*), intent(in) :: bin
-    integer, intent(in) :: itime
-    character(*), intent(in), optional :: units, dim, longname
+  !  integer, intent(in) :: k ! index of value to input
+  !  real(dp), intent(in) :: field(:)
+  !  character(*), intent(in) :: name
+  !  character(*), intent(in) :: bin
+  !  integer, intent(in) :: itime
+  !  character(*), intent(in), optional :: units, dim, longname
 
-    !local variables
-    type(diag_bin2DTS), pointer :: dg(:)
-    type(dgIDarray), pointer  :: dg_index
-    character(max_char_len):: cunits, cdim, clongname
-    integer :: ivar
+  !  !local variables
+  !  type(diag_bin2DTS), pointer :: dg(:)
+  !  type(dgIDarray), pointer  :: dg_index
+  !  character(max_char_len):: cunits, cdim, clongname
+  !  integer :: ivar
 
-    if (bin=='bin') then
-      if (.not. l_dgstep) return
+  !  if (bin=='bin') then
+  !    if (.not. l_dgstep) return
 
-      ! We're assuming diagnostics are instant for now
-      ! could put in an optional argument later to do
-      ! averaged, accumulated, etc. later.
-      dg=>instant_bindgs
-      dg_index=>ID_instant_bindgs
+  !    ! We're assuming diagnostics are instant for now
+  !    ! could put in an optional argument later to do
+  !    ! averaged, accumulated, etc. later.
+  !    dg=>instant_bindgs
+  !    dg_index=>ID_instant_bindgs
 
-      if (present(units))then
-        cunits=units
-      else
-        cunits='Not set'
-      end if
+  !    if (present(units))then
+  !      cunits=units
+  !    else
+  !      cunits='Not set'
+  !    end if
 
-      if (present(dim))then
-        cdim=dim
-      else
-        cdim='z'
-      end if
+  !    if (present(dim))then
+  !      cdim=dim
+  !    else
+  !      cdim='z'
+  !    end if
 
-      if (present(longname))then
-        clongname=longname
-      else
-        clongname=name
-      end if
+  !    if (present(longname))then
+  !      clongname=longname
+  !    else
+  !      clongname=name
+  !    end if
 
-      call getUniqueId(name, dg_index, ivar)
+  !    call getUniqueId(name, dg_index, ivar)
 
-      if (.not. associated(dg(ivar)%data)) then
-        call allocate_dgs(dg(ivar))
-        dg(ivar)%name=name
-        dg(ivar)%units=trim(cunits)
-        dg(ivar)%dim=trim(cdim)
-        dg(ivar)%longname=trim(clongname)
-      end if
+  !    if (.not. associated(dg(ivar)%data)) then
+  !      call allocate_dgs(dg(ivar))
+  !      dg(ivar)%name=name
+  !      dg(ivar)%units=trim(cunits)
+  !      dg(ivar)%dim=trim(cdim)
+  !      dg(ivar)%longname=trim(clongname)
+  !    end if
 
-      dg(ivar)%data(k,:,itime)=field(:)
-    end if
+  !    dg(ivar)%data(k,:,itime)=field(:)
+  !  end if
 
-  end subroutine save_dg_bin_point_dp
+  !end subroutine save_dg_bin_point_dp
 
   subroutine save_dg_2d_sp(field, name, itime, units, &
        dim, longname)
@@ -1921,113 +1921,113 @@ contains
 
   end subroutine save_dg_bin_dp
 
-  subroutine save_dg_flag_sp(field, flag, name, itime, units, &
-     dim, longname)
+  !subroutine save_dg_flag_sp(field, flag, name, itime, units, &
+  !   dim, longname)
 
-    real(sp), intent(in) :: field(:,:)
-    character(*), intent(in) :: name
-    character(*), intent(in) :: flag
-    integer, intent(in) :: itime
-    character(*), intent(in), optional :: units, dim, longname
+  !  real(sp), intent(in) :: field(:,:)
+  !  character(*), intent(in) :: name
+  !  character(*), intent(in) :: flag
+  !  integer, intent(in) :: itime
+  !  character(*), intent(in), optional :: units, dim, longname
 
-    !local variables
-    type(diag_flag2DTS), pointer :: dg(:)
-    type(dgIDarray), pointer  :: dg_index
-    character(max_char_len):: cunits, cdim, clongname
-    integer :: ivar
+  !  !local variables
+  !  type(diag_flag2DTS), pointer :: dg(:)
+  !  type(dgIDarray), pointer  :: dg_index
+  !  character(max_char_len):: cunits, cdim, clongname
+  !  integer :: ivar
 
-    if (flag=='flag') then
-      if (.not. l_dgstep) return
+  !  if (flag=='flag') then
+  !    if (.not. l_dgstep) return
 
-      dg=>instant_flagdgs
-      dg_index=>ID_instant_flagdgs
+  !    dg=>instant_flagdgs
+  !    dg_index=>ID_instant_flagdgs
 
-      if (present(units))then
-        cunits=units
-      else
-        cunits='Not set'
-      end if
+  !    if (present(units))then
+  !      cunits=units
+  !    else
+  !      cunits='Not set'
+  !    end if
 
-      if (present(dim))then
-        cdim=dim
-      else
-        cdim='z'
-      end if
+  !    if (present(dim))then
+  !      cdim=dim
+  !    else
+  !      cdim='z'
+  !    end if
 
-      if (present(longname))then
-        clongname=longname
-      else
-        clongname=name
-      end if
+  !    if (present(longname))then
+  !      clongname=longname
+  !    else
+  !      clongname=name
+  !    end if
 
-      call getUniqueId(name, dg_index, ivar)
+  !    call getUniqueId(name, dg_index, ivar)
 
-      if (.not. associated(dg(ivar)%data)) then
-        call allocate_dgs(dg(ivar))
-        dg(ivar)%name=name
-        dg(ivar)%units=trim(cunits)
-        dg(ivar)%dim=trim(cdim)
-        dg(ivar)%longname=trim(clongname)
-      end if
+  !    if (.not. associated(dg(ivar)%data)) then
+  !      call allocate_dgs(dg(ivar))
+  !      dg(ivar)%name=name
+  !      dg(ivar)%units=trim(cunits)
+  !      dg(ivar)%dim=trim(cdim)
+  !      dg(ivar)%longname=trim(clongname)
+  !    end if
 
-      dg(ivar)%data(:,:,itime)=field(:,:)
-    end if
+  !    dg(ivar)%data(:,:,itime)=field(:,:)
+  !  end if
 
-  end subroutine save_dg_flag_sp
+  !end subroutine save_dg_flag_sp
 
-  subroutine save_dg_flag_dp(field, flag, name, itime, units, &
-     dim, longname)
+  !subroutine save_dg_flag_dp(field, flag, name, itime, units, &
+  !   dim, longname)
 
-    real(dp), intent(in) :: field(:,:)
-    character(*), intent(in) :: name
-    character(*), intent(in) :: flag
-    integer, intent(in) :: itime
-    character(*), intent(in), optional :: units, dim, longname
+  !  real(dp), intent(in) :: field(:,:)
+  !  character(*), intent(in) :: name
+  !  character(*), intent(in) :: flag
+  !  integer, intent(in) :: itime
+  !  character(*), intent(in), optional :: units, dim, longname
 
-    !local variables
-    type(diag_flag2DTS), pointer :: dg(:)
-    type(dgIDarray), pointer  :: dg_index
-    character(max_char_len):: cunits, cdim, clongname
-    integer :: ivar
+  !  !local variables
+  !  type(diag_flag2DTS), pointer :: dg(:)
+  !  type(dgIDarray), pointer  :: dg_index
+  !  character(max_char_len):: cunits, cdim, clongname
+  !  integer :: ivar
 
-    if (flag=='flag') then
-      if (.not. l_dgstep) return
+  !  if (flag=='flag') then
+  !    if (.not. l_dgstep) return
 
-      dg=>instant_flagdgs
-      dg_index=>ID_instant_flagdgs
+  !    dg=>instant_flagdgs
+  !    dg_index=>ID_instant_flagdgs
 
-      if (present(units))then
-        cunits=units
-      else
-        cunits='Not set'
-      end if
+  !    if (present(units))then
+  !      cunits=units
+  !    else
+  !      cunits='Not set'
+  !    end if
 
-      if (present(dim))then
-        cdim=dim
-      else
-        cdim='z'
-      end if
+  !    if (present(dim))then
+  !      cdim=dim
+  !    else
+  !      cdim='z'
+  !    end if
 
-      if (present(longname))then
-        clongname=longname
-      else
-        clongname=name
-      end if
+  !    if (present(longname))then
+  !      clongname=longname
+  !    else
+  !      clongname=name
+  !    end if
 
-      call getUniqueId(name, dg_index, ivar)
+  !    call getUniqueId(name, dg_index, ivar)
 
-      if (.not. associated(dg(ivar)%data)) then
-        call allocate_dgs(dg(ivar))
-        dg(ivar)%name=name
-        dg(ivar)%units=trim(cunits)
-        dg(ivar)%dim=trim(cdim)
-        dg(ivar)%longname=trim(clongname)
-      end if
+  !    if (.not. associated(dg(ivar)%data)) then
+  !      call allocate_dgs(dg(ivar))
+  !      dg(ivar)%name=name
+  !      dg(ivar)%units=trim(cunits)
+  !      dg(ivar)%dim=trim(cdim)
+  !      dg(ivar)%longname=trim(clongname)
+  !    end if
 
-      dg(ivar)%data(:,:,itime)=field(:,:)
-    end if
+  !    dg(ivar)%data(:,:,itime)=field(:,:)
+  !  end if
 
-  end subroutine save_dg_flag_dp
+  !end subroutine save_dg_flag_dp
 
   subroutine save_binData_sp(field, name, units, &
        longname)
@@ -2207,8 +2207,8 @@ contains
       status=nf90_eexist
       do while(status==nf90_eexist)
         ! set to "overwrite" mode for convenience -ahu
-        ! status=nf90_create(outfile, nf90_clobber, ncid)
-        status=nf90_create(outfile, nf90_noclobber, ncid)
+        status=nf90_create(outfile, nf90_clobber, ncid)
+        ! status=nf90_create(outfile, nf90_noclobber, ncid)
         if (status==nf90_eexist)then
           write(char4,'(I4.4)')itmp
         else

@@ -1,14 +1,17 @@
 
+COMPILER=/usr/local/bin/gfortran# Gnu 
 #COMPILER=gfortran# Gnu 
 #COMPILER=pgf90#    Portland
-COMPILER=ifort#     Intel
+#COMPILER=ifort#     Intel
 #COMPILER=nagfor#      NAG 
 
 VPATH = ./:./UM_source
 
 #NCPATH=/usr/local/netcdf/$(COMPILER)/
 #NCPATH=/home/h01/lemdev/netcdf/$(COMPILER)/
-NCPATH=/share/apps/netcdf-c-4.7.4-intel/
+# NCPATH=/share/apps/netcdf-c-4.7.4-intel/
+NCPATH=/usr/local/Cellar/netcdf-fortran/4.6.1
+NCPATHC=/usr/local/Cellar/netcdf/4.9.2_1
 
 TESTING=
 
@@ -18,7 +21,7 @@ ifdef TESTING
 OPTS=-g -O0 -W -Wall -pedantic-errors -fbounds-check -fbacktrace \
 -ffpe-trap=invalid,zero,overflow -frange-check #-Werror
 else
-OPTS=-O3 -pg -g
+OPTS=-O3 -pg -g -fallow-argument-mismatch
 endif
 endif
 
@@ -54,7 +57,7 @@ F90=$(COMPILER) $(OPTS)
 LD=$(F90)   # Linker
 
 INCDF=-I$(NCPATH)/include
-LNCDF=-L$(NCPATH)/lib -lnetcdf -lnetcdff
+LNCDF=-L$(NCPATH)/lib -lnetcdff -L$(NCPATHC)/lib -lnetcdf 
 LDFLAGS=$(INCDF) $(LNCDF)
 #LDFLAGS=-lnetcdf -lnetcdff
 

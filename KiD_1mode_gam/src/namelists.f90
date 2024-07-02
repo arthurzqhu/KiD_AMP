@@ -32,8 +32,10 @@ module namelists
   integer:: imomc1,imomc2,imomr1,imomr2
   real(8) :: ss_init
   real(8), dimension(2):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
+  real(8) :: ovc_factor=0.0 ! overcorrection factor
+  real(8) :: rhctrl ! actually saturation ratio not relative humidity
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
-             dobreakup
+             dobreakup, l_truncated
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
@@ -53,13 +55,12 @@ module namelists
        , l_noadv_hydrometeors, l_nodiv_hydrometeors, l_sediment &
        , isurface, l_noadv_aerosols, l_nodiv_aerosols, l_fix_aerosols &
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
-       , l_force_positive, l_noevaporation, l_nocondensation
+       , l_force_positive, l_noevaporation, l_nocondensation &
+       , l_truncated
 
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''
   character(200) :: KiD_outfile=''
-  real(8) :: ovc_factor=0.0 ! overcorrection factor
-  real(8) :: rhctrl ! actually saturation ratio not relative humidity
   character(3) :: bintype='' ! underlying 'sbm' or 'tau'
   character(3) :: ampORbin='' ! run 'bin' as a standalone or with 'amp' on top of it
   character(1) :: initprof='' ! 'c' as a constant column of water, 'i' linearly increasing ...

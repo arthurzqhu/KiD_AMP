@@ -27,16 +27,11 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 30 Jan 2009
+!..Last Modified: Wed Jun 26 20:06:23 2024
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
 !
-!KiD
-#if COMPILER==f95
-#define DFLOAT(x) real(x,kind=wp)
-#define DEXP exp
-#endif
 !KiD
       MODULE module_mp_thompson09
 
