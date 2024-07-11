@@ -14,7 +14,7 @@ module module_mp_amp
   integer :: icat, scl, ecl, lcl_catbound1(2), lcl_catbound2(2), imomw, imomx, imomy, imomz, &
     imom_consv
   double precision :: M3p(2), M0p, Mwp, Mxp(2), Myp, Mzp, relaxw, &
-    relaxx, relaxy, nu_def, m1frac, dummy, nuterm_consv1, nuterm_consv2
+    relaxx, relaxy, nu_def, m1frac, dummy, nuterm_consv1, nuterm_consv2, relax0
   integer, parameter :: n_mom_diag=10
   double precision :: dntab(50,50,2), rx=1d-10 !, debug_arr(nkr,5)
   logical :: l_improved
@@ -91,6 +91,7 @@ endif
 if ( n_cat==1 ) then
 
   ! initialize variables
+  relax0 = 1.
   relaxw = 1.
   if (npm >= 5) then
     relaxx = 1.
@@ -120,38 +121,15 @@ if ( n_cat==1 ) then
     return
   endif
 
-  ! if (any(mom_helper>0)) then
-  !   do icat = 1,2
-  !     m3_comp = mom_helper(1,icat)
-  !     m0_comp = mom_helper(2,icat)
-  !     m0m3 = m0_comp/m3_comp
-  !     dn(icat) = (m0m3*gamma(nu_def(icat)+3.)/gamma(nu_def(icat)+0))**(1./(0-3.))
-  !   enddo
+  dn(1) = gam_param(1,1)
+  dn(2) = gam_param(1,2)
 
-  !   if (dn(1) > dn(2)) then
-  !     dummy = dn(2)
-  !     dn(2) = dn(1)
-  !     dn(1) = dummy
-  !     m1frac = 1-m1frac
-  !   endif
-  ! ! dn(1) = 1.6759355488671224E-006
-  ! ! dn(2) = 3.2713568253888552E-006
-
-  ! else
-    dn(1) = gam_param(1,1)
-    dn(2) = gam_param(1,2)
-  ! endif
-
-  if (l_init_test) then
-  ! dn = (/9.4211434469939569E-009, 1.1949529789423474E-005/)
-    dn = (/2.3912966562842920E-007, 1.2143703064605385E-004/)
-  ! dn = (/1.2573632505652478E-007, 1.1477880472092337E-004/)
-  ! dn = (/1.5933929353712500E-007, 1.1477948126264163E-004/)
-  endif
   guess_prev%l1prm(1) = dn(1)
   guess_prev%l2prm(1) = dn(2)
   guess_prev%l1prm(2) = gam_param(2,1) ! nu1
   guess_prev%l2prm(2) = gam_param(2,2) ! nu2
+  ! print*, guess_prev
+  ! stop
 
   ! a moment ratio needed for moment conservation
   if ( npm == 4 ) then
@@ -167,50 +145,10 @@ if ( n_cat==1 ) then
     imom_consv = imomz
   endif
 
-  ! output errors around the initial guess
-  ! gstep1 = dn(1)/100
-  ! gstep2 = dn(2)/125
-
-  ! gstep = 2e-8
-  ! dn1t = dn(1) + gstep1*(/(i,i=-100,100)/)
-  ! dn2t = dn(2) + gstep2*(/(i,i=-125,125)/)
-
-  ! open(20, file = 'dnts_'//trim(tORf)//'.txt')
-  ! write(20, '(201e15.7)') real(dn1t)
-  ! write(20, '(251e15.7)') real(dn2t)
-  ! close(20)
-
-  ! open(20, file = 'err1_minefield_'//trim(tORf)//'.txt')
-  ! open(21, file = 'err2_minefield_'//trim(tORf)//'.txt')
-  ! open(22, file = 'sqerr_minefield_'//trim(tORf)//'.txt')
-  ! do i1=1,201
-  !   do i2 = 1,251
-  !     guess_prev%l1prm(1) = dn1t(i1)
-  !     guess_prev%l2prm(1) = dn2t(i2)
-  !     CALL calcerr_1cat(guess_prev, Mconsv_M3)
-  !     ers(i1,i2) = guess_prev%sqerr
-  !     ers1(i1,i2) = guess_prev%error(1)
-  !     ers2(i1,i2) = guess_prev%error(2)
-  !   enddo
-  !   write(20, '(251e15.7)') real(ers1(i1,:))
-  !   write(21, '(251e15.7)') real(ers2(i1,:))
-  !   write(22, '(251e15.7)') real(ers(i1,:))
-  ! enddo
-  ! close(20)
-  ! close(21)
-  ! close(22)
-  ! stop
-
   ! calculate the error from the initial guesses
   CALL calcerr_1cat(guess_prev, Mconsv_M3)
   guess_best = guess_prev
-
-  ! print*, 'guess prev',guess_prev%l1prm(1), guess_prev%l2prm(1)
-  ! print*, 'errors', guess_prev%error(1:2)
-  ! print*, 'sqerr', guess_prev%sqerr
-  ! stop
-
-
+  guess_int = guess_best
 
   if (guess_prev%l1prm(1).ne.0 .or. guess_prev%l2prm(1).ne.0) then
     ! put initial guesses into find_params
@@ -223,14 +161,7 @@ if ( n_cat==1 ) then
       call find_params(fcn_6m, guess_try1, tol, exit_signal)
     endif
     call update_param_guess(guess_best, guess_try1, mark_improve=.false.)
-    guess_int = guess_best
   endif
-
-  ! print*, 'guess try1',guess_try1%l1prm(1), guess_try1%l2prm(1)
-  ! print*, 'errors', guess_try1%error(1:2)
-  ! print*, 'sqerr', guess_try1%sqerr
-  ! stop
-
 
   ! guess_start is fixed so that the gradient descent algorithm doesn't
   ! drift us away from the global minimum
@@ -259,6 +190,7 @@ if ( n_cat==1 ) then
     ntry = 0
     call random_init(.true., .true.)
     do itry = 1,10000
+       relax0 = 1.
        relaxw = 1.
        if ( npm >= 5 ) relaxx = 1.
        if ( npm >= 6 ) relaxy = 1.
@@ -320,7 +252,8 @@ if ( n_cat==1 ) then
           call find_params(fcn_6m, guess_try3, tol, exit_signal)
         endif
 
-        if ( abs(guess_try3%error(2))>tol ) relaxw = max(tol/abs(guess_try3%error(2)), tol)
+        ! if ( abs(guess_try3%error(2))>tol ) relaxw = max(tol/abs(guess_try3%error(2)), tol)
+        if ( abs(guess_try3%error(1))>tol ) relax0 = max(tol/abs(guess_try3%error(1)), tol)
         if ( npm >= 5 .and. abs(guess_try3%error(3))>tol ) &
           relaxx = max(tol/abs(guess_try3%error(3)), tol)
         if ( npm >= 6 .and. abs(guess_try3%error(4))>tol ) &
@@ -334,8 +267,10 @@ if ( n_cat==1 ) then
           call find_params(fcn_6m, guess_try3, tol, exit_signal)
         endif
 
-        t3err = guess_try3%error
-        t3err(2) = guess_try3%error(2)/relaxw
+        t3err(:) = 0.
+        t3err(1:2) = guess_try3%error(1:2)
+        ! t3err(2) = guess_try3%error(2)/relaxw
+        t3err(1) = guess_try3%error(1)/relax0
         if ( npm >= 5 ) then
           t3err(3) = guess_try3%error(3)/relaxx
         endif
@@ -346,7 +281,7 @@ if ( n_cat==1 ) then
         ! call update_param_guess(guess_best, guess_try3, mark_improve=.true.)
 
         if (t3sqerr <= guess_best%sqerr .or. (abs(guess_best%error(2))>.01 .and. &
-           abs(t3err(1))<.01 )) then
+           abs(t3err(2))<.01 )) then
            guess_best = guess_try3
            l_improved = .true.
         endif
@@ -447,15 +382,15 @@ elseif ( n_cat==2 ) then
 
   call calcdist(guess_best, amp_distm_dble)
 
-  ! if ( guess_best%l1prm(1)>=dn_max .or. guess_best%l1prm(1)<=dn_min ) then
-  !   guess_best%l1prm(1) = dnc_def
-  !   amp_distm_dble(:) = 0.
-  ! endif
+  if ( guess_best%l1prm(1)>=dn_max .or. guess_best%l1prm(1)<=dn_min ) then
+    guess_best%l1prm(1) = dnc_def
+    amp_distm_dble(:) = 0.
+  endif
 
-  ! if ( guess_best%l2prm(1)>=dn_max .or. guess_best%l2prm(1)<=dn_min ) then
-  !   guess_best%l2prm(1) = dnr_def
-  !   amp_distm_dble(:) = 0.
-  ! endif
+  if ( guess_best%l2prm(1)>=dn_max .or. guess_best%l2prm(1)<=dn_min ) then
+    guess_best%l2prm(1) = dnr_def
+    amp_distm_dble(:) = 0.
+  endif
 
   gam_param(1:2,1) = guess_best%l1prm(1:2)
   gam_param(1:2,2) = guess_best%l2prm(1:2)
@@ -675,7 +610,7 @@ return
 end subroutine incgamma_1cat
 
 ! --------------- get_mom_from_param -----------------
-subroutine get_mom_from_param(dn1, dn2, Mconsv_M3, m3, m0, mw)
+subroutine get_mom_from_param(dn1, dn2, nu1, nu2, Mconsv_M3, m3, m0, mw)
 double precision, intent(in) :: Mconsv_M3
 double precision, intent(out) :: m3, m0, mw!, mx, my, mz
 double precision, intent(inout) :: dn1, dn2
@@ -686,7 +621,12 @@ double precision :: gincf_01, gincf_02, gincf_31, gincf_32, gincf_w1, gincf_w2, 
 integer :: lcl
 
 if (npm > 4) then
-   stop '6M U-AMP not yet implemented.'
+   nuterm31 = gamma(nu1+3)/gamma(nu1)
+   nuterm32 = gamma(nu2+3)/gamma(nu2)
+   nutermw1 = gamma(nu1+imomw)/gamma(nu1)
+   nutermw2 = gamma(nu2+imomw)/gamma(nu2)
+   nuterm_consv1 = gamma(nu1+imom_consv)/gamma(nu1)
+   nuterm_consv2 = gamma(nu2+imom_consv)/gamma(nu2)
 endif
 
 ! make sure dn1 and dn2 are in the right order
@@ -695,9 +635,6 @@ if (dn1 > dn2) then
   dn1 = dn2
   dn2 = dummy
 endif
-
-nu1 = h_shape(1)
-nu2 = h_shape(2)
 
 gincf_01   = 1. !gammq(nu1, D_min/dn1)-gammq(nu1, D_max/dn1)
 gincf_02   = 1. !gammq(nu2, D_min/dn2)-gammq(nu2, D_max/dn2)
@@ -870,13 +807,13 @@ if (l_truncated) then
   call calc_mom(m0, md, 0)
   call calc_mom(mw, md, imomw)
 else
-  call get_mom_from_param(dn1, dn2, Mconsv_M3, m3, m0, mw)
+  call get_mom_from_param(dn1, dn2, nu1, nu2, Mconsv_M3, m3, m0, mw)
   ! ahu 2024-06-30
   dn = (/dn1,dn2/)
 endif
 
-err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )
-err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )*relaxw
+err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )*relax0
+err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )
 
 ! print*, 'err_vec', err_vec
 ! print*, 'relaxw', relaxw
@@ -905,8 +842,8 @@ call calc_mom(m0, md, 0)
 call calc_mom(mw, md, imomw)
 call calc_mom(my, md, imomy)
 
-err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )
-err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )*relaxw
+err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )*relax0
+err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )
 err_vec(3) = log10( (Myp/M3p(1))/(mx/m3) )*relaxx
 
 if (any(md<0)) then
@@ -935,8 +872,8 @@ call calc_mom(mw, md, imomw)
 call calc_mom(my, md, imomy)
 call calc_mom(mz, md, imomz)
 
-err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )
-err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )*relaxw
+err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )*relax0
+err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )
 err_vec(3) = log10( (Myp/M3p(1))/(my/m3) )*relaxx
 err_vec(4) = log10( (Mzp/M3p(1))/(mz/m3) )*relaxy
 
@@ -968,7 +905,7 @@ if (l_truncated) then
   call calc_mom(m0, md, 0)
   call calc_mom(mw, md, imomw)
 else
-  call get_mom_from_param(dn1, dn2, Mconsv_M3, m3, m0, mw)
+  call get_mom_from_param(dn1, dn2, nu1, nu2, Mconsv_M3, m3, m0, mw)
 endif
 
 ! if (l_init_test) then
