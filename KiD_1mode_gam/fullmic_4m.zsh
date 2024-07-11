@@ -1,18 +1,18 @@
 #!/bin/zsh
 
 # config of the run
-conf_basename="fullmic_4m" # case/folder name. determined automatically if set empty
+conf_basename="fullmic_4m_fullg_noacttreat" # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP" "BIN")
-bintype=("SBM" "TAU")
+ampORbin=("AMP")
+bintype=("TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
-icimm=0. # initial cloud mass kg/kg
-icinm=0. # initial cloud number 1/kg
-irimm=0.
-irinm=0.
+icimm=0. #1e-4 # initial cloud mass kg/kg
+icinm=0. #1.e8 # initial cloud number 1/kg
+irimm=0. #1e-4
+irinm=0. #1.e4
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 ztop=6000. # top of the domain
@@ -68,8 +68,8 @@ do
       imr1=4 # II moment for rain
       imr2=5 # III moment for rain
    else
-      isp_c=4
-      isp_r=4
+      isp_c=8
+      isp_r=8
       imc1=4 # II moment for cloud
       imc2=5 # III moment for cloud
       imr1=4 # II moment for rain
@@ -87,7 +87,7 @@ do
          nhb='34,1'
       fi
    fi
-   outdir=/group/aigelgrp2/arthurhu/KiD/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
+   outdir=output/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -180,7 +180,9 @@ l_nodiv_hydrometeors=.true.
 l_fix_theta=.true.
 l_diverge_advection=.false.
 l_fix_aerosols=.true.
-l_periodic_bound=.False.
+l_periodic_bound=.false.
+l_truncated=.false.
+l_init_test=.false.
 /
 
 &addcontrol
