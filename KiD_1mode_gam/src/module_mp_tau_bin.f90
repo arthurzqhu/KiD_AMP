@@ -815,13 +815,9 @@ enddo
         amkcc(1) = 0.0
         ankcc(1) = 0.0
 
-        if (l_truncated) then
-           DO L = 1, LK
-              AN1(J,K) = AN1(J,K) + ANK(J,K,L)
-           ENDDO
-        else
-           AN1(J,K) = hydrometeors(k,j,1)%moments(1,2)
-        endif
+        DO L = 1, LK
+          AN1(J,K) = AN1(J,K) + ANK(J,K,L)
+        ENDDO
 
         AM1(J,K) = AMK(J,K,1)
         DDDD=(EA(J,K)/QST(J,K))*100

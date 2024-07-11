@@ -35,7 +35,7 @@ module namelists
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   real(8) :: rhctrl ! actually saturation ratio not relative humidity
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
-             dobreakup, l_truncated
+             dobreakup, l_truncated, l_init_test
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
@@ -56,7 +56,7 @@ module namelists
        , isurface, l_noadv_aerosols, l_nodiv_aerosols, l_fix_aerosols &
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
        , l_force_positive, l_noevaporation, l_nocondensation &
-       , l_truncated
+       , l_truncated, l_init_test
 
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''

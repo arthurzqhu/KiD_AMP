@@ -260,7 +260,7 @@ REAL (KIND=R4SIZE) :: FR_LIM(max_nbins), FRH_LIM(max_nbins)
 ! single category (sc) AMP related vars
 character(10) :: tORf
 double precision :: DnRangeMin = 1e-9, DnRangeMax = 1e-3
-double precision :: dnc_def = 3.d-7, dnr_def = 1.d-4
+double precision :: dnc_def = 1.d-6, dnr_def = 1.d-4
 character(len=100) :: folder_sclut, sc4m_lu_abspath
 character(len=20) :: sc4m_lufile, sigfig_fmt, momstr4
 double precision, dimension(:,:), allocatable :: sc4m_tab, &

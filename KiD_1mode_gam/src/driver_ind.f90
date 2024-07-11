@@ -9,6 +9,7 @@ use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean,dgmean
 use namelists, only: bintype, l_truncated
 use global_fun, only: get_meandiam
 use physconst, only: pi
+use mphys_tau_bin_declare, only: diam
 implicit none
 character(4)::momstr
 character(2)::rdrop_binstr
@@ -136,8 +137,14 @@ elseif (bintype .eq. 'tau') then
     CALL micro_init_tau()
 endif
 
-D_min = diams(1)
-D_max = diams(nkr)
+if (bintype .eq. 'tau') then
+  D_min = diam(1)/100
+  D_max = diam(nkr+1)/100
+  ! D_min = diams(1)
+  ! D_max = diams(nkr)
+  ! print*, D_min, D_max
+  ! stop
+endif
 
 do imom = 1,10
   do ib = 1,nkr
@@ -651,7 +658,7 @@ use, intrinsic :: iso_fortran_env, only: real32
 use global_fun
 use column_variables, only: hydrometeors
 use module_mp_amp, only: invert_moments
-use namelists, only: l_truncated
+use namelists, only: l_truncated, l_init_test
 
 implicit none
 integer:: i,j,k,ip
@@ -696,7 +703,11 @@ do k=1,nz
       Dmax = dgmean(nkr)
    endif
 
-   ! Mpc(k,j,1:4) = (/3.7973635135794500E-003, 36444396034.348351, 5.8887802373450537E-006, 1.0437930052939370E-008/)
+   if (l_init_test) then
+     Mpc(k,j,1:4) = (/1.1958954365427025E-005, 12326993.134452719, 1.5975858216584202E-008, 2.3280344892313758E-011/)
+     ! Mpc(k,j,1:4) = (/1.1271152298852096E-005, 30032998.830784883, 1.4230874205695079E-008, 1.9600799200941356E-011/)
+     ! Mpc(k,j,1:4) = (/5.9659897103853119E-003, 8929380865.9754963, 8.2108958909978291E-006, 1.2169634741639012E-008/)
+   endif
 
    mom_pred(:,1) = Mpc(k,j,:)
    if (npmc < 4) then
@@ -708,23 +719,20 @@ do k=1,nz
    gam_param(1,2) = guessr(k,j,2)
    gam_param(2,2) = guessr(k,j,1)
 
-   ! if (Mp(1)>total_m3_th) then
    if (sum(mom_pred(1,:)) <= total_m3_th) then
       ffcd_mass(k,j,:) = 0.
       ffcd_num(k,j,:) = 0.
       flag(k,j,:,1) = -1
       flag(k,j,:,2:flag_count) = nan
    else
-      ! print*, 'mom_pred', mom_pred(:,1)+mom_pred(:,2)
-      call invert_moments(mom_pred, gam_param, ffcd_mass(k,j,:), ffcd_num(k,j,:), flag(k,j,:,1), sqerr)
-      ! print*, 'mom_pred', mom_pred(:,1)+mom_pred(:,2)
-      ! print*, 'gam_param', gam_param
-      ! print*, 'cloud m3', sum(ffcd_mass(k,j,1:split_bins))*col*ipio6rw
-      ! print*, 'rain m3', sum(ffcd_mass(k,j,split_bins+1:nkr))*col*ipio6rw
-      ! print*, 'sqerr', sqerr
-      ! print*, 'sum(ffcd_num(k,j,:))*col',sum(ffcd_num(k,j,1:nkr))*col
-      ! print*, 'ffcd_mass(k,j,:)',ffcd_mass(k,j,:)
-      ! stop
+     if (l_init_test) print*, 'mom_pred', mom_pred(:,1)+mom_pred(:,2)
+     call invert_moments(mom_pred, gam_param, ffcd_mass(k,j,:), ffcd_num(k,j,:), flag(k,j,:,1), sqerr)
+
+     if (l_init_test) print*, 'cloud m3', sum(ffcd_mass(k,j,1:split_bins))*col*ipio6rw
+     if (l_init_test) print*, 'rain m3', sum(ffcd_mass(k,j,split_bins+1:nkr))*col*ipio6rw
+     if (l_init_test) print*, 'gam_param after', gam_param
+     if (l_init_test) print*, 'sqerr', sqerr
+
    endif
 
    Mpc(k,j,:) = mom_pred(:,1)
@@ -734,10 +742,11 @@ do k=1,nz
 
    ! print*, 'ffcd', ffcd_mass(k,j,:)
    ! print*, 'sum(ffcd)', sum(ffcd_mass(k,j,:))*col*ipio6rw
-   ! open(20, file = 'ffcd_'//trim(tORf)//'.txt')
-   ! write(20, '(34e15.7)') real(ffcd_mass(k,j,:))
-   ! write(20, '(34e15.7)') real(ffcd_num(k,j,:))
-   ! close(20)
+
+   open(20, file = 'ffcd_'//trim(tORf)//'.txt')
+   write(20, '(34e15.7)') real(ffcd_mass(k,j,:))
+   write(20, '(34e15.7)') real(ffcd_num(k,j,:))
+   close(20)
 
    guessc(k,j,2) = gam_param(1,1)
    guessc(k,j,1) = gam_param(2,1)
@@ -753,23 +762,36 @@ do k=1,nz
       call calcmoms_sc(ffcdr8_massinit(k,j,:), ffcdr8_numinit(k,j,:), 10, mc0(k,j,1:10))
    endif
 
+   ! print*, 'sqerr', sqerr
+   ! print*, 'gam_param(1,:)',gam_param(1,:)
    ! print*, 'Mpc', Mpc(k,j,:)
    ! print*, 'mc0', mc0(k,j,(/4,1,5,6/))
+   ! print*, 'ffcd', ffcd_mass(k,j,:)
+   if (l_init_test) print*, 'mc0', mc0(k,j,(/4,1,5,6/))
+   if (l_init_test) stop
    ! stop
 
 
  enddo
 enddo
+! stop
 
-! if (i_dgtime>=178 .and. i_dgtime <= 180) then
-!   k=29
-!   print*, 'Mpc', Mpc(k,1,:)*pio6rw
-!   print*, 'mc0', sum(ffcd_mass(k,1,1:split_bins))*col
-!   ! print*, 'mr0', sum(ffcd_mass(k,1,split_bins+1:nkr))*col
+! if (i_dgtime>=184 .and. i_dgtime <= 185) then
+!   k=28
+!   print*, ''
+!   print*, 'Mpc', Mpc(k,1,:)
+!   print*, 'cloud mass', sum(ffcd_mass(k,1,1:split_bins))*col
+!   print*, 'rain mass', sum(ffcd_mass(k,1,split_bins+1:nkr))*col
+!   print*, 'mc0', mc0(k,1,(/4,1,5,6/))
+!   print*, 'guess', guessc(k,1,2), guessr(k,1,2)
+!   ! print*, 'ffcd', ffcd_mass(k,j,:)
+!   print*, ''
 !   ! print*, 'mc0+mr0', sum(ffcd_mass(k,1,1:nkr))*col
-!   ! print*, 'single', k,j, ffcd_mass(k,j,:)
+!   ! if (sum(ffcd_mass(k,1,split_bins+1:nkr))*col>1e-3) then
+!   !   stop
+!   ! endif
 ! endif
-! if (i_dgtime == 180) stop
+! if (i_dgtime == 185) stop
 
 !------CALL MICROPHYSICS--------------------
 

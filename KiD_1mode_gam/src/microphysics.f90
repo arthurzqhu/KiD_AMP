@@ -880,7 +880,7 @@ Use diagnostics, only: save_dg, i_dgtime, save_binData
 Use switches, only: l_sediment, mphys_var, l_fix_aerosols, l_noevaporation, l_nocondensation
 Use switches_bin
 Use namelists, only: dosedimentation, docollisions, docondensation, &
-                     donucleation, dobreakup, l_coll_coal, l_break, mp_proc_dg
+                     donucleation, dobreakup, l_coll_coal, l_break, mp_proc_dg, l_truncated
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
@@ -1573,9 +1573,11 @@ if (donucleation) then
       amkcc(1) = 0.0
       ankcc(1) = 0.0
 
-      DO L = 1, LK
-        AN1(J,K) = AN1(J,K) + ANK(J,K,L)
-      ENDDO
+      ! if (l_truncated) then
+        AN1(J,K) = sum(ANK(J,K,1:LK))
+      ! else
+      !   AN1(j,k) = hydrometeors(k,j,1)%moments(1,2)
+      ! endif
 
       AM1(J,K) = AMK(J,K,1)
       DDDD=(EA(J,K)/QSATPW(J,K))*100

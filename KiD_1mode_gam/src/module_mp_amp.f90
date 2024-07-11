@@ -1,12 +1,14 @@
 module module_mp_amp
   use micro_prm, only: pmomsc, pmomsr, dnc_def, dnr_def, npm, n_cat, nkr, &
                        diams, pio6rw, ipio6rw, pdiams, total_m3_th, max_nbins, col, &
-                       nuterm31, nuterm32, nutermx1, nutermx2, nutermw1, nutermw2
+                       nuterm31, nuterm32, nutermx1, nutermx2, nutermw1, nutermw2, tORf, &
+                       D_min, D_max
   use module_hujisbm, only: xl
   use mphys_tau_bin_declare, only: xkgmean
-  use namelists, only: bintype, l_truncated
+  use namelists, only: bintype, l_truncated, l_init_test
   use parameters, only: split_bins, h_shape
   use physconst, only: pi
+  use global_fun, only: gammq
   implicit none
   
   integer :: icat, scl, ecl, lcl_catbound1(2), lcl_catbound2(2), imomw, imomx, imomy, imomz, &
@@ -44,9 +46,10 @@ double precision :: minmxm3, maxmxm3, mw, mx, m3, m0
 type(guess_param) :: guess_best, guess_prev, guess_try1, guess_try2, &
                      guess_try3, guess_start, guess_old, guess_int
 double precision :: dn(2), rand1(4), rand2(4), Mconsv_M3, tol, &
-                    err_threshold, sqerr_threshold, sqerr
+                    err_threshold, sqerr_threshold, sqerr, t3sqerr, t3err(4)
 integer :: exit_signal, ntry, itry, ibguess,i,i1,i2
-double precision :: dn1t(2001), dn2t(2501), ers(2001,2501), gstep, ers1(2001,2501), ers2(2001,2501)
+double precision :: dn1t(201), dn2t(251), ers(201,251), gstep, ers1(201,251), ers2(201,251), &
+  gstep1, gstep2
 
 err_threshold = 100
 sqerr_threshold = 100
@@ -139,7 +142,12 @@ if ( n_cat==1 ) then
     dn(2) = gam_param(1,2)
   ! endif
 
-  ! dn = (/4.4979180577685599E-007, 2.2161494311284530E-004/)
+  if (l_init_test) then
+  ! dn = (/9.4211434469939569E-009, 1.1949529789423474E-005/)
+    dn = (/2.3912966562842920E-007, 1.2143703064605385E-004/)
+  ! dn = (/1.2573632505652478E-007, 1.1477880472092337E-004/)
+  ! dn = (/1.5933929353712500E-007, 1.1477948126264163E-004/)
+  endif
   guess_prev%l1prm(1) = dn(1)
   guess_prev%l2prm(1) = dn(2)
   guess_prev%l1prm(2) = gam_param(2,1) ! nu1
@@ -159,9 +167,49 @@ if ( n_cat==1 ) then
     imom_consv = imomz
   endif
 
+  ! output errors around the initial guess
+  ! gstep1 = dn(1)/100
+  ! gstep2 = dn(2)/125
+
+  ! gstep = 2e-8
+  ! dn1t = dn(1) + gstep1*(/(i,i=-100,100)/)
+  ! dn2t = dn(2) + gstep2*(/(i,i=-125,125)/)
+
+  ! open(20, file = 'dnts_'//trim(tORf)//'.txt')
+  ! write(20, '(201e15.7)') real(dn1t)
+  ! write(20, '(251e15.7)') real(dn2t)
+  ! close(20)
+
+  ! open(20, file = 'err1_minefield_'//trim(tORf)//'.txt')
+  ! open(21, file = 'err2_minefield_'//trim(tORf)//'.txt')
+  ! open(22, file = 'sqerr_minefield_'//trim(tORf)//'.txt')
+  ! do i1=1,201
+  !   do i2 = 1,251
+  !     guess_prev%l1prm(1) = dn1t(i1)
+  !     guess_prev%l2prm(1) = dn2t(i2)
+  !     CALL calcerr_1cat(guess_prev, Mconsv_M3)
+  !     ers(i1,i2) = guess_prev%sqerr
+  !     ers1(i1,i2) = guess_prev%error(1)
+  !     ers2(i1,i2) = guess_prev%error(2)
+  !   enddo
+  !   write(20, '(251e15.7)') real(ers1(i1,:))
+  !   write(21, '(251e15.7)') real(ers2(i1,:))
+  !   write(22, '(251e15.7)') real(ers(i1,:))
+  ! enddo
+  ! close(20)
+  ! close(21)
+  ! close(22)
+  ! stop
+
   ! calculate the error from the initial guesses
   CALL calcerr_1cat(guess_prev, Mconsv_M3)
   guess_best = guess_prev
+
+  ! print*, 'guess prev',guess_prev%l1prm(1), guess_prev%l2prm(1)
+  ! print*, 'errors', guess_prev%error(1:2)
+  ! print*, 'sqerr', guess_prev%sqerr
+  ! stop
+
 
 
   if (guess_prev%l1prm(1).ne.0 .or. guess_prev%l2prm(1).ne.0) then
@@ -181,6 +229,7 @@ if ( n_cat==1 ) then
   ! print*, 'guess try1',guess_try1%l1prm(1), guess_try1%l2prm(1)
   ! print*, 'errors', guess_try1%error(1:2)
   ! print*, 'sqerr', guess_try1%sqerr
+  ! stop
 
 
   ! guess_start is fixed so that the gradient descent algorithm doesn't
@@ -191,10 +240,14 @@ if ( n_cat==1 ) then
   if ( exit_signal .ne. 1 ) then
     ! snap back to default if outside a reasonable range
 
-    if ( guess_best%l1prm(1)>=dn_max .or. guess_best%l1prm(1)<=dn_min ) &
+    if ( guess_best%l1prm(1)>=dn_max .or. guess_best%l1prm(1)<=dn_min ) then
+      ! print*, 'dnc', guess_best%l1prm(1)
       guess_best%l1prm(1) = dnc_def
-    if ( guess_best%l2prm(1)>=dn_max .or. guess_best%l2prm(1)<=dn_min ) &
+    endif
+    if ( guess_best%l2prm(1)>=dn_max .or. guess_best%l2prm(1)<=dn_min ) then
+      ! print*, 'dnr', guess_best%l2prm(1)
       guess_best%l2prm(1) = dnr_def
+    endif
     if ( npm >= 5 ) then
       if ( guess_best%l1prm(2)>=nu_max .or. guess_best%l1prm(2)<=nu_min ) guess_best%l1prm(2) = h_shape(1)
     endif
@@ -281,25 +334,29 @@ if ( n_cat==1 ) then
           call find_params(fcn_6m, guess_try3, tol, exit_signal)
         endif
 
-        guess_try3%error(2) = guess_try3%error(2)/relaxw
+        t3err = guess_try3%error
+        t3err(2) = guess_try3%error(2)/relaxw
         if ( npm >= 5 ) then
-          guess_try3%error(3) = guess_try3%error(3)/relaxx
+          t3err(3) = guess_try3%error(3)/relaxx
         endif
         if ( npm >= 6 ) then
-          guess_try3%error(4) = guess_try3%error(4)/relaxy
+          t3err(4) = guess_try3%error(4)/relaxy
         endif
-        guess_try3%sqerr = sqrt(sum(guess_try3%error(1:(npm-2))**2))
+        t3sqerr = sqrt(sum(t3err(1:(npm-2))**2))
         ! call update_param_guess(guess_best, guess_try3, mark_improve=.true.)
 
-        if (guess_try3%sqerr <= guess_best%sqerr .or. (abs(guess_best%error(2))>.01 .and. &
-           abs(guess_try3%error(1))<.01 )) then
+        if (t3sqerr <= guess_best%sqerr .or. (abs(guess_best%error(2))>.01 .and. &
+           abs(t3err(1))<.01 )) then
            guess_best = guess_try3
            l_improved = .true.
         endif
 
         if ( exit_signal .eq. 1 .or. exit_signal .eq. 4 .or. abs(guess_best%error(2))<=.01 &
           .or. ntry >= 10 ) goto 10
-       ibguess = 0
+       ! ibguess = 0
+       ! relaxw = 1.
+       if ( npm >= 5 ) relaxx = 1.
+       if ( npm >= 6 ) relaxy = 1.
 
       endif
     enddo
@@ -311,10 +368,12 @@ if ( n_cat==1 ) then
 
   call calcdist(guess_start, amp_distm_dble)
 
-  if ( guess_start%l1prm(1)>=dn_max .or. guess_start%l1prm(1)<=dn_min ) &
+  if ( guess_start%l1prm(1)>=dn_max .or. guess_start%l1prm(1)<=dn_min ) then
     guess_start%l1prm(1) = dnc_def
-  if ( guess_start%l2prm(1)>=dn_max .or. guess_start%l2prm(1)<=dn_min ) &
+  endif
+  if ( guess_start%l2prm(1)>=dn_max .or. guess_start%l2prm(1)<=dn_min ) then
     guess_start%l2prm(1) = dnr_def
+  endif
   if ( npm >= 5 ) then
     if ( guess_start%l1prm(2)>=nu_max .or. guess_start%l1prm(2)<=nu_min ) guess_start%l1prm(2) = h_shape(1)
   endif
@@ -408,6 +467,8 @@ amp_distm = real(amp_distm_dble)
 if (bintype .eq. 'tau') amp_distn = amp_distm/xkgmean
 
 ! print*, 'itry', itry
+! print*, 'gam_param', gam_param(1,:)
+! stop
 ! print*, 'error', guess_start%error
 ! print*, 'relaxw', relaxw
 
@@ -444,6 +505,9 @@ if (n_cat == 1) then
     Mconsv_M3 = Mzp/M3p(1)
   endif
 
+  ! print*, 'dn1, dn2', dn
+  ! print*, 'm1frac', guess_best%l1_mfrac
+
   if (l_truncated) then
     call incgamma_1cat(dn(1), nu(1), dn(2), nu(2), Mconsv_M3, mass_dist)
     mass_dist = mass_dist*M3p(1)
@@ -454,16 +518,6 @@ if (n_cat == 1) then
     n01 = ml1/gamma(nu(1)+3)*log(2.)/3*pio6rw
     n02 = ml2/gamma(nu(2)+3)*log(2.)/3*pio6rw
 
-
-    ! m3 = n01*dn(1)**3*(gamma(nu(1)+3)/gamma(nu(1))) + n02*dn(2)**3*(gamma(nu(2)+3)/gamma(nu(2)))
-    ! mw = n01*dn(1)**imomw*(gamma(nu(1)+imomw)/gamma(nu(1))) + n02*dn(2)**imomw*(gamma(nu(2)+imomw)/gamma(nu(2)))
-    ! mx = n01*dn(1)**imomx*(gamma(nu(1)+imomx)/gamma(nu(1))) + n02*dn(2)**imomx*(gamma(nu(2)+imomx)/gamma(nu(2)))
-
-    ! print*, 'n01, n02', n01, n02
-    ! print*, 'm3', m3
-    ! print*, 'mw/m3', mw/m3
-    ! print*, 'Mwp/M3p(1)', Mwp/M3p(1)
-    ! ! stop
 
     do lcl=1,nkr
       if (ml1>0. .and. dn(1)>0.) then
@@ -477,18 +531,6 @@ if (n_cat == 1) then
     enddo
     mass_dist = mass_dist/col
   endif
-
-
-  ! if (myid.eq.0) print*, 'mass_dist', real(mass_dist)
-
-  ! if (myid.eq.0) then
-  !   open(20, file = 'mass_dist.txt')
-  !   write(20, '(35e15.7)') real(mass_dist)
-  !   close(20)
-  !   ! open(20, file = 'tau_binmass.txt')
-  !   ! write(20, '(35e15.7)') real(m_bin_gmean)
-  !   ! close(20)
-  ! endif
 
   return
 
@@ -514,15 +556,11 @@ elseif (n_cat == 2) then
     endif
 
     md_part(:, icat) = md_part(:, icat)*M3p(icat)/m3
-    ! print*, 'M3p(icat), m3', M3p(icat), m3
-    ! print*, 'sum(md_part)',sum(md_part)*col*ipio6rw
 
 112 continue
   enddo
 
   mass_dist(1:nkr) = md_part(1:nkr, 1) + md_part(1:nkr, 2)
-  ! print*, 'sum(mass_dist)',sum(mass_dist)*col*ipio6rw
-  ! print*, 'mass_dist', mass_dist
 
   return
 
@@ -574,7 +612,6 @@ if (dn1 > dn2) then
   dummy = dn1
   dn1 = dn2
   dn2 = dummy
-  m1frac = 1-m1frac
 endif
 
 ! get the base function shapes
@@ -642,9 +679,10 @@ subroutine get_mom_from_param(dn1, dn2, Mconsv_M3, m3, m0, mw)
 double precision, intent(in) :: Mconsv_M3
 double precision, intent(out) :: m3, m0, mw!, mx, my, mz
 double precision, intent(inout) :: dn1, dn2
-double precision :: md1(nkr), md2(nkr), m31, m32, mcs_1, mcs_2, mw1, mw2
-double precision :: infinity, mw1frac, mcsm31, mcsm32, m3mw1, m3mw2, M3Mw
-double precision :: m3f1, m3f2, mwf1, mwf2
+double precision :: md1(nkr), md2(nkr), m31, m32, mcs_1, mcs_2
+double precision :: infinity, mw1frac, mw2frac, mcsm31, mcsm32, mcsmw1, mcsmw2, M3Mw, m3mw1, m3mw2
+double precision :: m3f1, m3f2, mwf1, mwf2, nu1, nu2, n01, n02, mw1, mw2, m01, m02
+double precision :: gincf_01, gincf_02, gincf_31, gincf_32, gincf_w1, gincf_w2, gincf_csv1, gincf_csv2
 integer :: lcl
 
 if (npm > 4) then
@@ -656,8 +694,19 @@ if (dn1 > dn2) then
   dummy = dn1
   dn1 = dn2
   dn2 = dummy
-  m1frac = 1-m1frac
 endif
+
+nu1 = h_shape(1)
+nu2 = h_shape(2)
+
+gincf_01   = 1. !gammq(nu1, D_min/dn1)-gammq(nu1, D_max/dn1)
+gincf_02   = 1. !gammq(nu2, D_min/dn2)-gammq(nu2, D_max/dn2)
+gincf_31   = 1. !gammq(nu1+3, D_min/dn1)-gammq(nu1+3, D_max/dn1)
+gincf_32   = 1. !gammq(nu2+3, D_min/dn2)-gammq(nu2+3, D_max/dn2)
+gincf_w1   = 1. !gammq(nu1+imomw, D_min/dn1)-gammq(nu1+imomw, D_max/dn1)
+gincf_w2   = 1. !gammq(nu2+imomw, D_min/dn2)-gammq(nu2+imomw, D_max/dn2)
+gincf_csv1 = 1. !gammq(nu1+imom_consv, D_min/dn1)-gammq(nu1+imom_consv, D_max/dn1)
+gincf_csv2 = 1. !gammq(nu2+imom_consv, D_min/dn2)-gammq(nu2+imom_consv, D_max/dn2)
 
 infinity = HUGE(dummy)
 M3Mw = M3p(1)/Mwp
@@ -665,25 +714,26 @@ M3Mw = M3p(1)/Mwp
 101 continue
 
 ! shortcut for 4M. for 5-6M nu terms need to be recalculated for each iteration
-m31 = dn1**3*nuterm31
-m32 = dn2**3*nuterm32
-mcs_1 = dn1**imom_consv*nuterm_consv1
-mcs_2 = dn2**imom_consv*nuterm_consv2
-
-m0 = 1.
+! nutermk1 = gamma(nu1+k), where k = moment order
+m31 = dn1**3*nuterm31*gincf_31
+m32 = dn2**3*nuterm32*gincf_32
+! mw1 = dn1**imomw*nutermw1*gincf_w1
+! mw2 = dn2**imomw*nutermw2*gincf_w2
+mcs_1 = dn1**imom_consv*nuterm_consv1*gincf_csv1
+mcs_2 = dn2**imom_consv*nuterm_consv2*gincf_csv2
 
 mcsm31 = mcs_1/m31
 mcsm32 = mcs_2/m32
 if (dn1 <= 0. .or. m31>infinity .or. mcs_1>infinity) then 
    m1frac = 0.
    ! dn1 = dnc_def
-   ! m3 = m32
+   m3 = m32
    ! goto 102
    ! go to 101
 elseif (dn2 <= 0. .or. m32>infinity .or. mcs_2>infinity) then
    m1frac = 1.
    ! dn2 = dnr_def
-   ! m3 = m31
+   m3 = m31
    ! goto 102
    ! go to 101
 else
@@ -706,59 +756,24 @@ else
       m3f1 = m31/m1frac
       m3f2 = m32/(1-m1frac)
       m3 = min(m3f1, m3f2)
+      ! m3 = m1frac*m31 + (1-m1frac)*m32
       ! print*, m3, m3f1, m3f2
    endif
 endif
 
-! 102 continue
+m3f1 = m3*m1frac
+m3f2 = m3*(1-m1frac)
+n01 = m3f1/(dn1**(nu1+3)*gamma(nu1+3))
+n02 = m3f2/(dn2**(nu2+3)*gamma(nu2+3))
 
-mw1 = dn1**imomw*nutermw1
-mw2 = dn2**imomw*nutermw2
-mcs_1 = dn1**imom_consv*nuterm_consv1
-mcs_2 = dn2**imom_consv*nuterm_consv2
+m01 = n01*(dn1**nu1*gamma(nu1))*gincf_01
+mw1 = n01*(dn1**(nu1+imomw)*gamma(nu1+imomw))*gincf_w1
+m02 = n02*(dn2**nu2*gamma(nu2))*gincf_02
+mw2 = n02*(dn2**(nu2+imomw)*gamma(nu2+imomw))*gincf_w2
+m0 = m01+m02
+mw = mw1+mw2
 
-m3mw1 = m31/mw1
-m3mw2 = m32/mw2
-if (dn1<=0. .or. m31>infinity .or. mw1>infinity) then
-   mw1frac = 0.
-   ! dn1 = dnc_def
-   ! mw = mw2
-   ! return
-   ! go to 101
-elseif (dn2<=0. .or. m32>infinity .or. mw2>infinity) then
-   mw1frac = 1.
-   ! dn2 = dnr_def
-   ! mw = mw1
-   ! return
-   ! go to 101
-else
-   mw1frac = (M3Mw-m3mw2)/(m3mw1-m3mw2)
-   ! mw2frac = (m3mw1-M3Mw)/(m3mw1-m3mw2)
-   if (mw1frac <= 0.) then
-      mw1frac = 0.
-      mw = mw2
-   elseif (mw1frac >= 1.) then
-      mw1frac = 1.
-      mw = mw1
-   ! elseif (mw1frac < 0.001 .and. mw1frac > 0.) then
-   !    mw = mw2/(1-mw1frac)
-      ! print*, 'mw from mw2', mw2/(1-mw1frac)
-      ! print*, 'mw from mw1', mw1/mw1frac
-      ! stop
-   else
-      ! mw = mw1/mw1frac
-      mwf1 = mw1/mw1frac
-      mwf2 = mw2/(1-mw1frac)
-      mw = min(mwf1, mwf2)
-      ! print*, mw, mwf1, mwf2
-      ! stop
-   endif
-endif
 
-m0 = m0/m3
-mw = mw/m3
-m3 = 1.
-! print*, 'dn1, dn2, m1frac', dn1, dn2, m1frac
 return
 end subroutine get_mom_from_param
 
@@ -799,9 +814,6 @@ do imom=0,n_mom_diag-1
   momc(imom+1) = sum( distn(1:split_bins-1)*diag_D(1:split_bins-1)**(real(imom)) )
   momr(imom+1) = sum( distn(split_bins:nkr)*diag_D(split_bins:nkr)**(real(imom)) )
 enddo
-
-! print*, 'diag_D, n_mom_diag', diag_D, n_mom_diag
-! stop
 
 end subroutine calc_pmoms
 ! --------------- fcn_2m -----------------
@@ -863,21 +875,15 @@ else
   dn = (/dn1,dn2/)
 endif
 
-! print*, 'dn1, dn2', dn1, dn2
-! print*, 
-
 err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )
 err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )*relaxw
+
+! print*, 'err_vec', err_vec
+! print*, 'relaxw', relaxw
 
 if (any(md<0)) then
   err_vec = err_vec*1000
 endif
-
-! print*, 'm3, m0, mw',m3, m0, mw
-! print*, 'err_vec', err_vec(1:2)
-! print*, 'sqerr', sqrt(sum(err_vec)**2)
-! print*, 'Mwp/M3p(1), mw/m3', Mwp/M3p(1), mw/m3
-! print*, 'M0p/M3p(1), m0/m3', M0p/M3p(1), m0/m3
 
 end subroutine fcn_4m
 
@@ -965,7 +971,11 @@ else
   call get_mom_from_param(dn1, dn2, Mconsv_M3, m3, m0, mw)
 endif
 
-! print*, 'm3,m0,mw', m3, m0, mw
+! if (l_init_test) then
+!   print*, 'm3,m0,mw', m3, m0, mw
+!   print*, 'm3/m0 vs. M3p/M0p',m3/m0,M3p(1)/M0p
+!   print*, 'm3/mw vs. M3p/Mwp',m3/mw,M3p(1)/Mwp
+! endif
 
 ratio = (M0p/M3p(1)) * (m3/m0)
 if (ratio>0) then
@@ -1010,6 +1020,7 @@ endif
 
 if (any(md<0)) guess_eval%error=guess_eval%error*1000
 guess_eval%sqerr = sqrt(sum(guess_eval%error**2))
+guess_eval%l1_mfrac = m1frac
 
 end subroutine calcerr_1cat
 
@@ -1023,8 +1034,8 @@ logical, optional :: mark_improve
 
 if ( .not. present(mark_improve) ) mark_improve = .false.
 if ( guess_candidate%sqerr < guess_best%sqerr ) then
-   guess_best = guess_candidate
-   if ( mark_improve ) l_improved = .true.
+  guess_best = guess_candidate
+  if ( mark_improve ) l_improved = .true.
 endif
 
 end subroutine update_param_guess

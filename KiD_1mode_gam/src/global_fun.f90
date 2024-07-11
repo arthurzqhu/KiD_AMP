@@ -568,4 +568,91 @@ function linspace(start,end,num,endpoint,step) result(samples)
 end function linspace
 ! }}}
 
+! ------------------------------------------
+! Incomplete gamma function                                                                 
+! from Numerical Recipes in Fortran 77: The Art of                                          
+! Scientific Computing                                                                      
+
+      function gammq(a,x)
+
+      double precision a,gammq,x
+
+! USES gcf,gser                                                                             
+! Returns the incomplete gamma function Q(a,x) = 1-P(a,x)                                   
+
+      double precision gammcf,gamser,gln
+!     if (x.lt.0..or.a.le.0) pause 'bad argument in gammq'                                  
+      ! if (x.lt.0..or.a.le.0) print*, 'bad argument in gammq'
+      if (x.lt.a+1.) then
+         call gser(gamser,a,x,gln)
+         gammq=1.-gamser
+      else
+         call gcf(gammcf,a,x,gln)
+         gammq=gammcf
+      end if
+      return
+      end
+
+! ------------------------------------------
+
+      subroutine gser(gamser,a,x,gln)
+      integer itmax
+      double precision a,gamser,gln,x,eps
+      parameter(itmax=100,eps=3.e-7)
+      integer n
+      double precision ap,del,sum,gamma
+      gln = log(gamma(a))
+      if (x.le.0.) then
+!        if (x.lt.0.) pause 'x < 0 in gser'                                                 
+         ! if (x.lt.0.) print*, 'x < 0 in gser'
+         gamser = 0.
+         return
+      end if
+      ap=a
+      sum=1./a
+      del=sum
+      do n=1,itmax
+         ap=ap+1.
+         del=del*x/ap
+         sum=sum+del
+         if (abs(del).lt.abs(sum)*eps) goto 1
+      end do
+!     pause 'a too large, itmax too small in gser'                                          
+      ! print*, 'a too large, itmax too small in gser'
+ 1    gamser=sum*exp(-x+a*log(x)-gln)
+      return
+      end
+
+! ------------------------------------------
+
+      subroutine gcf(gammcf,a,x,gln)
+      integer itmax
+      double precision a,gammcf,gln,x,eps,fpmin
+      parameter(itmax=100,eps=3.e-7,fpmin=1.e-30)
+      integer i
+      double precision an,b,c,d,del,h,gamma
+      gln=log(gamma(a))
+      b=x+1.-a
+      c=1./fpmin
+      d=1./b
+      h=d
+      do i=1,itmax
+         an=-i*(i-a)
+         b=b+2.
+         d=an*d+b
+         if(abs(d).lt.fpmin) d=fpmin
+         c=b+an/c
+         if(abs(c).lt.fpmin) c=fpmin
+         d=1./d
+         del=d*c
+         h = h*del
+         if(abs(del-1.).lt.eps)goto 1
+      end do
+!     pause 'a too large, itmax too small in gcf'                                           
+      ! print*, 'a too large, itmax too small in gcf'
+ 1    gammcf=exp(-x+a*log(x)-gln)*h
+      return
+    end subroutine gcf
+
+
 end module global_fun
