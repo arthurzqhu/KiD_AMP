@@ -2,7 +2,7 @@ module module_mp_amp
   use micro_prm, only: pmomsc, pmomsr, dnc_def, dnr_def, npm, n_cat, nkr, &
                        diams, pio6rw, ipio6rw, pdiams, total_m3_th, max_nbins, col, &
                        nuterm31, nuterm32, nutermx1, nutermx2, nutermw1, nutermw2, tORf, &
-                       D_min, D_max
+                       D_min, D_max, tempvar_debug, rtemp_debug
   use module_hujisbm, only: xl
   use mphys_tau_bin_declare, only: xkgmean
   use namelists, only: bintype, l_truncated, l_init_test
@@ -16,7 +16,7 @@ module module_mp_amp
   double precision :: M3p(2), M0p, Mwp, Mxp(2), Myp, Mzp, relaxw, &
     relaxx, relaxy, nu_def, m1frac, dummy, nuterm_consv1, nuterm_consv2, relax0
   integer, parameter :: n_mom_diag=10
-  double precision :: dntab(50,50,2), rx=1d-10 !, debug_arr(nkr,5)
+  double precision :: dntab(50,50,2) !, debug_arr(nkr,5)
   logical :: l_improved
   type, private :: guess_param
     double precision :: & 
@@ -384,12 +384,10 @@ elseif ( n_cat==2 ) then
 
   if ( guess_best%l1prm(1)>=dn_max .or. guess_best%l1prm(1)<=dn_min ) then
     guess_best%l1prm(1) = dnc_def
-    amp_distm_dble(:) = 0.
   endif
 
   if ( guess_best%l2prm(1)>=dn_max .or. guess_best%l2prm(1)<=dn_min ) then
     guess_best%l2prm(1) = dnr_def
-    amp_distm_dble(:) = 0.
   endif
 
   gam_param(1:2,1) = guess_best%l1prm(1:2)
@@ -420,8 +418,9 @@ subroutine calcdist(guess_best, mass_dist)
 type(guess_param), intent(in) :: guess_best
 integer :: ntry, lcl
 double precision, dimension(nkr), intent(out) :: mass_dist
-double precision :: md_part(nkr,2), dn(2), nu(2), rxfinal, rx
-double precision :: m3, Mconsv_M3, exptermc, exptermr, n01, n02, ml1, ml2, m0, mw, mx
+double precision :: md_part(nkr,2), dn(2), nu(2)
+double precision :: m3, Mconsv_M3, exptermc, exptermr, n01, n02, ml1, ml2, m0, mw, mx, n0, &
+  exptermrc(nkr)
 
 dn(1) = guess_best%l1prm(1)!*1e-6
 dn(2) = guess_best%l2prm(1)!*1e-6
@@ -476,21 +475,32 @@ elseif (n_cat == 2) then
 
     if (M3p(icat) <= total_m3_th) goto 112 ! skip loop. can also do cycle...?
 
-    scl = lcl_catbound1(icat)
-    ecl = lcl_catbound2(icat)
+    if (l_truncated) then
 
-    call incgamma_2cat(nu(icat), dn(icat), md_part(:, icat))
-    call calc_mom(m3, md_part(:,icat), 3)
+      scl = lcl_catbound1(icat)
+      ecl = lcl_catbound2(icat)
+      call incgamma_2cat(nu(icat), dn(icat), md_part(:, icat))
+      call calc_mom(m3, md_part(:,icat), 3)
+      if (m3==0. .or. dn(icat)==0.) then
+        print*, 'scl, ecl', scl, ecl
+        print*, 'md_part', md_part(:,icat)
+        print*, 'cannot find rxfinal and mass = ',M3p(icat)*pio6rw, Mxp(icat)
+        print*, 'm3, nu, dn, icat', m3, nu, dn, icat!, dnbounds(:,icat)
+        stop
+      endif
+      md_part(:, icat) = md_part(:, icat)*M3p(icat)/m3
+    else
 
-    if (m3==0. .or. dn(icat)==0.) then
-       print*, 'scl, ecl', scl, ecl
-       print*, 'md_part', md_part(:,icat)
-      print*, 'cannot find rxfinal and mass = ',M3p(icat)*pio6rw, Mxp(icat)
-      print*, 'm3, nu, dn, icat', m3, nu, dn, icat!, dnbounds(:,icat)
-      stop
+      n0 = M3p(icat)/gamma(nu(1)+3)*log(2.)/3*pio6rw
+      do lcl=1,nkr
+        if (M3p(icat)>0. .and. dn(1)>0.) then
+          exptermrc(lcl)=exp(-1.*diams(lcl)/dn(icat))
+          md_part(lcl,icat) = n0*exptermrc(lcl)*(diams(lcl)/dn(icat))**(nu(icat)+3)/col
+        endif
+      enddo
+
     endif
 
-    md_part(:, icat) = md_part(:, icat)*M3p(icat)/m3
 
 112 continue
   enddo
@@ -609,6 +619,24 @@ endif
 return
 end subroutine incgamma_1cat
 
+! --------------- get_mom_2m -------------------------
+subroutine get_mom_2m(nu,dn,m3,mx)
+double precision, intent(in) :: nu, dn
+double precision, intent(out) :: m3, mx
+double precision :: nuterm3, nutermx
+
+if (icat == 1) then
+  nuterm3 = nuterm31
+  nutermx = nutermw1 ! this is not a typo
+else
+  nuterm3 = nuterm32
+  nutermx = nutermw2 ! this is not a typo
+endif
+
+m3 = dn**3*nuterm3
+mx = dn**imomx*nutermx
+end subroutine get_mom_2m
+
 ! --------------- get_mom_from_param -----------------
 subroutine get_mom_from_param(dn1, dn2, nu1, nu2, Mconsv_M3, m3, m0, mw)
 double precision, intent(in) :: Mconsv_M3
@@ -700,8 +728,8 @@ endif
 
 m3f1 = m3*m1frac
 m3f2 = m3*(1-m1frac)
-n01 = m3f1/(dn1**(nu1+3)*gamma(nu1+3))
-n02 = m3f2/(dn2**(nu2+3)*gamma(nu2+3))
+n01 = m3f1/(dn1**(nu1+3)*gamma(nu1+3)*gincf_31)
+n02 = m3f2/(dn2**(nu2+3)*gamma(nu2+3)*gincf_32)
 
 m01 = n01*(dn1**nu1*gamma(nu1))*gincf_01
 mw1 = n01*(dn1**(nu1+imomw)*gamma(nu1+imomw))*gincf_w1
@@ -766,9 +794,13 @@ else
   if (icat == 2) nu = h_shape(2)
   md_part(:) = 0.
 
-  call incgamma_2cat(nu, dn(1), md_part)
-  call calc_mom(m3, md_part, 3)
-  call calc_mom(mx, md_part, imomx)
+  if (l_truncated) then
+    call incgamma_2cat(nu, dn(1), md_part)
+    call calc_mom(m3, md_part, 3)
+    call calc_mom(mx, md_part, imomx)
+  else
+    call get_mom_2m(nu,dn(1),m3,mx)
+  endif
 
   if (m3>0.) then
     err_vec(1) = log10( (Mxp(icat)/M3p(icat))*(m3/mx) )

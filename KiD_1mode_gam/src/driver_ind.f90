@@ -704,7 +704,9 @@ do k=1,nz
    endif
 
    if (l_init_test) then
-     Mpc(k,j,1:4) = (/1.1958954365427025E-005, 12326993.134452719, 1.5975858216584202E-008, 2.3280344892313758E-011/)
+     Mpc(k,j,1:2) = (/1e-007, 1e8/)
+     Mpr(k,j,1:2) = (/1.4000821838411837E-007,   70.996367122565701/)
+     ! Mpc(k,j,1:4) = (/1.1958954365427025E-005, 12326993.134452719, 1.5975858216584202E-008, 2.3280344892313758E-011/)
      ! Mpc(k,j,1:4) = (/1.1271152298852096E-005, 30032998.830784883, 1.4230874205695079E-008, 1.9600799200941356E-011/)
      ! Mpc(k,j,1:4) = (/5.9659897103853119E-003, 8929380865.9754963, 8.2108958909978291E-006, 1.2169634741639012E-008/)
    endif
@@ -743,10 +745,10 @@ do k=1,nz
    ! print*, 'ffcd', ffcd_mass(k,j,:)
    ! print*, 'sum(ffcd)', sum(ffcd_mass(k,j,:))*col*ipio6rw
 
-   open(20, file = 'ffcd_'//trim(tORf)//'.txt')
-   write(20, '(34e15.7)') real(ffcd_mass(k,j,:))
-   write(20, '(34e15.7)') real(ffcd_num(k,j,:))
-   close(20)
+   ! open(20, file = 'ffcd_'//trim(tORf)//'.txt')
+   ! write(20, '(34e15.7)') real(ffcd_mass(k,j,:))
+   ! write(20, '(34e15.7)') real(ffcd_num(k,j,:))
+   ! close(20)
 
    guessc(k,j,2) = gam_param(1,1)
    guessc(k,j,1) = gam_param(2,1)
@@ -768,6 +770,7 @@ do k=1,nz
    ! print*, 'mc0', mc0(k,j,(/4,1,5,6/))
    ! print*, 'ffcd', ffcd_mass(k,j,:)
    if (l_init_test) print*, 'mc0', mc0(k,j,(/4,1,5,6/))
+   if (l_init_test) print*, 'mr0', mr0(k,j,(/4,1,5,6/))
    if (l_init_test) stop
    ! stop
 
@@ -775,6 +778,21 @@ do k=1,nz
  enddo
 enddo
 ! stop
+
+! if (i_dgtime>=272 .and. i_dgtime<=273) then
+!   k=8
+!   print*, 'rain', mr0(k,1,4)
+!   print*, guessc(k,1,2)
+!   print*, guessr(k,1,2)
+!   print*, 'Mpc', Mpc(k,1,:)
+!   print*, 'Mpr', Mpr(k,1,:)
+!   print*, 'ffcd', ffcd_mass(k,1,:)
+!   print*, 'amp_distm_dble', tempvar_debug(2:35)
+!   print*, 'amp_distm', rtemp_debug(1:34)
+!   ! print*, 'mdpart', tempvar_debug(35:68)
+!   ! print*, 'mdist', tempvar_debug(69:102)
+! endif
+! if (i_dgtime == 273) stop
 
 ! if (i_dgtime>=184 .and. i_dgtime <= 185) then
 !   k=28
@@ -893,16 +911,16 @@ do k=1,nz
           if(dummy<0.) then
             Mpc(k,j,i) = 0.
           else
-            if (l_truncated) then
+            ! if (l_truncated) then
               Mpc(k,j,i)=dummy
-            else
+            ! else
               ! if (dummy .ne. dummy) then
               !   print*, 'mc', mc(k,j,:)
               !   stop
               ! endif
               ! Mpc(k,j,i)=dummy
-              Mpc(k,j,i)=mc(k,j,ip)-mc0(k,j,ip) + Mpc(k,j,i)
-            endif
+              ! Mpc(k,j,i)=mc(k,j,ip)-mc0(k,j,ip) + Mpc(k,j,i)
+            ! endif
           endif
 
           ! take a look at this part
