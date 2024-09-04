@@ -83,8 +83,6 @@ contains
       endif
 
       do itime=1,n_times
-         ! print*, 't=', itime*dt
-
          time=time+dt
          time_step=time_step+1
 
@@ -119,17 +117,17 @@ contains
          !print*, ss(25,1)
          ! if (itime*dt>=842) stop
          ! if (itime >= debug_itime) stop
-         diag_dt3 = diag_dt3 + diag_dt1
-         diag_dt4 = diag_dt4 + diag_dt2
-         call append_mat(PF_change_mat, PF_change_arr, 5)
+         ! diag_dt3 = diag_dt3 + diag_dt1
+         ! diag_dt4 = diag_dt4 + diag_dt2
+         ! call append_mat(PF_change_mat, PF_change_arr, 5)
       end do
 
       ! open(55, file = "./output/PF_analysis.txt")
       ! sigfig_fmt = '(5e'//itoa(7+8)//'.'//itoa(7)//')'
       ! write(55, trim(sigfig_fmt)) PF_change_mat
       ! close(55)
-      print*, 'total 1st try', diag_dt3
-      print*, 'total 2nd try', diag_dt4
+      ! print*, 'total 1st try', diag_dt3
+      ! print*, 'total 2nd try', diag_dt4
 
       if (l_write_dgs) call write_diagnostics
 

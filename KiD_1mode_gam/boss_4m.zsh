@@ -1,24 +1,11 @@
 #!/bin/zsh
 
 # config of the run
-conf_basename="fullmic_2m_fullg" # case/folder name. determined automatically if set empty
+conf_basename="boss_4m" # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP")
-bintype=("TAU")
-tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
 # initial condition for all cases
-icimm=0. # initial cloud mass kg/kg
-icinm=0. # initial cloud number 1/kg
-irimm=0.
-irinm=0.
-rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
-rs_N=0. # number mixing ratio (#/kg)
-imc1=0 # II moment for cloud
-imc2=0 # III moment for cloud
-imr1=0 # II moment for rain
-imr2=0 # III moment for rain
 ztop=6000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
@@ -27,10 +14,18 @@ t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
-l_coll_s=0
+l_coll_s=1
 l_sed_s=0
 l_adv_s=1
 
+# moments
+imc1=6
+imc2=9
+imr1=6
+imr2=9
+
+nhm='4,4'
+nhb='1,1'
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -59,62 +54,26 @@ if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
 fi
 
 config_fname=${conf_basename}
-for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
+outdir=output/2024-08-28/nosed/$var1str/$var2str/$config_fname/
+for ((ic=1; ic<=case_num; ic++))
 do
-  for ((ibt=1; ibt<=${#bintype[@]}; ibt=ibt+1))
-  do
-	echo "${ampORbin[$iab]}"-"${bintype[$ibt]}"
-   if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-      isp_c=4  # shape parameter for cloud
-      isp_r=4  # shape parameter for rain
+   if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
+   then
+      zc=0
    else
-      isp_c=10
-      isp_r=10
+      zc="$ztop,$zcb,$zct"
    fi
-    if [[ ${ampORbin[$iab]} = 'AMP' ]]; then
-      nhm='2,2'
-      nhb='1,1'
-      else
-        if [[ ${bintype[$ibt]} = 'SBM' ]]; then
-          nhm='1,1'
-          nhb='33,33'
-        else
-          nhm='2,1'
-          nhb='34,1'
-        fi
-      fi
-      outdir=output/$(date +'%Y-%m-%d')/$config_fname/${ampORbin[$iab]}_${bintype[$ibt]}/$var1str/$var2str/
-	  for ((ic=1; ic<=case_num; ic++))
-	  do
-	    if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
-	    then
-	      zc=0
-        else
-	      zc="$ztop,$zcb,$zct"
-        fi
-	    if [ ! -d $outdir ]; then
-	      mkdir -p $outdir
-	    fi
-	    echo "${caselist[ic]}"
-	    cat > namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml << END
+   if [ ! -d $outdir ]; then
+      mkdir -p $outdir
+   fi
+   echo "${caselist[ic]}"
+   cat > namelists/jobnml/${config_fname}_${var1str}_${var2str}.nml << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2'
-
-!Initial shape parameter
-h_shape=${isp_c},${isp_r}
-
-!Initial cloud mixing ratio (kg/kg) and number mixing ratio (#/kg)
-cloud_init=${icimm},${icinm}  !.001,100.e6
-
-!Initial rain mixing ratio (kg/kg) and number mixing ratio (#/kg)
-rain_init=${irimm},${irinm}
-
-!Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
-rain_source=${rs_dm},${rs_N}
+mom_names='M1','M2','M3','M4','M5','M6'
 
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
@@ -133,6 +92,7 @@ donucleation = .true.
 docondensation = ${l_nuc_cond_f}
 docollisions = ${l_coll_f}
 dosedimentation = ${l_sed_f}
+log_predictNc = .true.
 
 ! Aerosol initialization
 num_aero_moments=1
@@ -141,10 +101,8 @@ aero_N_init=${ia}.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
-! Background values for each moment (assumed the same for all species)
-!This is the original KiD method for initializing hydrometeors. Not
-!recommended (Adele)
-mom_init=0,0,0
+param_val_fpath="../../CloudBOSS/boss_slc_param_values_3069.csv"
+param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 /
 
 &case
@@ -152,7 +110,7 @@ icase=${caselist[ic]}
 /
 
 &control
-mphys_scheme='amp'
+mphys_scheme='boss'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=5.0         !Timestep for diagnostic output
@@ -176,23 +134,18 @@ l_nodiv_hydrometeors=.true.
 l_fix_theta=.true.
 l_diverge_advection=.false.
 l_fix_aerosols=.true.
-l_periodic_bound=.False.
-l_truncated=.true.
+l_periodic_bound=.false.
+l_truncated=.false.
 l_init_test=.false.
 /
 
 &addcontrol
 KiD_outdir='$outdir'
-ampORbin='${ampORbin[$iab]:l}'
-bintype='${bintype[$ibt]:l}'
 mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
-extralayer=.false.
 l_hist_run=.false.
 !l_diag_nu=.false.
 /
 END
-     ./bin/KiD_1D.exe namelists/jobnml/${config_fname}_${ampORbin[$iab]}_${bintype[$ibt]}_${var1str}_${var2str}.nml
-    done
-  done
+  ./bin/KiD_1D.exe namelists/jobnml/${config_fname}_${var1str}_${var2str}.nml
 done

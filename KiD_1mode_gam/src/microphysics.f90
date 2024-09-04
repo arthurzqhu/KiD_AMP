@@ -1491,6 +1491,8 @@ DO K=2,KKP
              print*, 'negative temperature', k,tbase(j,k)
              print*, 'dm',dm
              print*, 'dT', AL*DM/CPBIN
+             print*, 'amkorig', amkorig(j,k,:)
+             print*, 'ankorig', ankorig(j,k,:)
              stop
          endif
 

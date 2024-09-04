@@ -2,7 +2,8 @@ module module_mp_amp
   use micro_prm, only: pmomsc, pmomsr, dnc_def, dnr_def, npm, n_cat, nkr, &
                        diams, pio6rw, ipio6rw, pdiams, total_m3_th, max_nbins, col, &
                        nuterm31, nuterm32, nutermx1, nutermx2, nutermw1, nutermw2, tORf, &
-                       D_min, D_max, tempvar_debug, rtemp_debug
+                       D_min, D_max, tempvar_debug, rtemp_debug, gamnu1_3, gamnu1_0, &
+                       gamnu1_w, gamnu1_x, gamnu2_3, gamnu2_0, gamnu2_w, gamnu2_x
   use module_hujisbm, only: xl
   use mphys_tau_bin_declare, only: xkgmean
   use namelists, only: bintype, l_truncated, l_init_test
@@ -728,13 +729,13 @@ endif
 
 m3f1 = m3*m1frac
 m3f2 = m3*(1-m1frac)
-n01 = m3f1/(dn1**(nu1+3)*gamma(nu1+3)*gincf_31)
-n02 = m3f2/(dn2**(nu2+3)*gamma(nu2+3)*gincf_32)
+n01 = m3f1/(dn1**(nu1+3)*gamnu1_3*gincf_31)
+n02 = m3f2/(dn2**(nu2+3)*gamnu2_3*gincf_32)
 
-m01 = n01*(dn1**nu1*gamma(nu1))*gincf_01
-mw1 = n01*(dn1**(nu1+imomw)*gamma(nu1+imomw))*gincf_w1
-m02 = n02*(dn2**nu2*gamma(nu2))*gincf_02
-mw2 = n02*(dn2**(nu2+imomw)*gamma(nu2+imomw))*gincf_w2
+m01 = n01*(dn1**nu1*gamnu1_0)*gincf_01
+mw1 = n01*(dn1**(nu1+imomw)*gamnu1_w)*gincf_w1
+m02 = n02*(dn2**nu2*gamnu2_0)*gincf_02
+mw2 = n02*(dn2**(nu2+imomw)*gamnu2_w)*gincf_w2
 m0 = m01+m02
 mw = mw1+mw2
 

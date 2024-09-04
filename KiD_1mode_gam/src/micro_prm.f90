@@ -234,7 +234,7 @@ real :: dtlt
 double precision :: Mp(6),M3p,Mxp,Myp,Mwp,Mzp,M0p,rxfinal, fracfinal
 double precision :: M3temp, M0temp
 logical :: parcel!, docollisions, docondensation, donucleation, dosedimentation
-integer :: skr,ekr,momw,momx,momy,momz,ihyd
+integer :: skr,ekr,ihyd
 integer, parameter :: ntab=100
 double precision, dimension(ntab,ntab,2) :: nutab,dntab
 double precision, dimension(2,10,2) :: minmaxmx
@@ -285,10 +285,17 @@ double precision, parameter :: threshold_3m = 1.d-15
 logical :: l_doneAC
 ! dummy variable for debugging
 real(8), allocatable :: tempvar_debug(:), tempvar_debug2(:), tempvar_debug3(:), PF_change_mat(:,:)
+real, allocatable :: rtemp_debug(:)
 logical :: l_massnoguess = .false., l_printflag = .false., l_failed1
 real(8) :: debug_time, debug_itime, diag_dt1, diag_dt2, diag_dt3, diag_dt4, PF_change_arr(5)
 integer :: debug_k, itries
-real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2
+real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2, &
+    gamnu1_3, gamnu2_3, gamnu1_0, gamnu2_0, gamnu1_w, gamnu2_w, gamnu1_x, gamnu2_x
+
+
+
+
+
 
 !******* for operating SBM when max_nbins is set to 34 *******
 integer :: idx &
@@ -321,12 +328,22 @@ contains
          endif
       endif
 
-      nuterm31 = gamma(h_shape(1)+3)/gamma(h_shape(1))
-      nuterm32 = gamma(h_shape(2)+3)/gamma(h_shape(2))
-      nutermw1 = gamma(h_shape(1)+imomc1)/gamma(h_shape(1))
-      nutermw2 = gamma(h_shape(2)+imomc1)/gamma(h_shape(2))
-      nutermx1 = gamma(h_shape(1)+imomc2)/gamma(h_shape(1))
-      nutermx2 = gamma(h_shape(2)+imomc2)/gamma(h_shape(2))
+      gamnu1_3 = gamma(h_shape(1)+3)
+      gamnu2_3 = gamma(h_shape(2)+3)
+      gamnu1_0 = gamma(h_shape(1))
+      gamnu2_0 = gamma(h_shape(2))
+      gamnu1_w = gamma(h_shape(1)+imomc1)
+      gamnu2_w = gamma(h_shape(2)+imomc1)
+      gamnu1_x = gamma(h_shape(1)+imomc2)
+      gamnu2_x = gamma(h_shape(2)+imomc2)
+
+      nuterm31 = gamnu1_3/gamnu1_0
+      nuterm32 = gamnu2_3/gamnu2_0
+      nutermw1 = gamnu1_w/gamnu1_0
+      nutermw2 = gamnu2_w/gamnu2_0
+      nutermx1 = gamnu1_x/gamnu1_0
+      nutermx2 = gamnu2_x/gamnu2_0
+
 
    end subroutine check_bintype
 

@@ -31,17 +31,89 @@ module namelists
   implicit none
   integer:: imomc1,imomc2,imomr1,imomr2
   real(8) :: ss_init
-  real(8), dimension(2):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
+  real(8), dimension(4):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   real(8) :: rhctrl ! actually saturation ratio not relative humidity
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
-             dobreakup, l_truncated, l_init_test
+             dobreakup, l_truncated, l_init_test, log_predictNc
+  character(100) :: param_val_fpath = "../../CloudBOSS/boss_slc_param_values.csv"
+  character(100) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
+
+! integer switch for type of BOSS autoconversion (q)
+!1 = 1-term auto wo rain dependence
+!2 = 2-term auto wo rain dependence
+!3 = 2-term auto w rain dependence
+integer, public :: iautoq=1
+
+! integer switch for type of BOSS Nc fall speed 
+! 1 = default P3 method 
+! 2 = Stokes velocity of mean mass radius cloud (mc)
+integer, public :: ivTnc = 1
+
+! integer switch for type of BOSS qc fall speed
+! 1 = default P3 method 
+! 2 = power law based on mc
+integer, public :: ivTqc = 1
+
+! integer switch for type of BOSS Nr fall speed 
+! 1 = default P3 method 
+! 2 = power law based on mr 
+integer, public :: ivTnr = 1
+
+! integer switch for type of BOSS qr fall speed
+! 1 = default P3 method 
+! 2 = power law based on mr
+integer, public :: ivTqr = 1
+
+!!!!!!!!!!!!!!!!!!!!!!!
+! P3 limiters in nml 
+! defaults set to current P3 values 
+! kl add 101923
+
+! minimum number mean cloud drop diameter [m]
+real,public :: dNc_min = 1e-6
+! maximum number mean cloud drop diameter [m]
+real,public :: dNc_max = 40e-6
+! minimum number mean raindrop diameter [m]
+real,public :: dNr_min = 10e-6
+! maximum number mean raindrop diameter [m]
+real,public :: dNr_max = 2e-3
+
+! cloud number fall speed parameters 
+! for ivTnc = 1
+! no parameters used 
+! for ivTnc = 2
+! vTnc = min(vT_stokes(mc),vTncmax)
+real, public :: vTncmax = 0.5 ! [m/s]
+
+! cloud mass fall speed parameters 
+! for ivTqc = 1
+! no parameters used 
+! for ivTqc = 2
+! vTqc = min(10^log_a_vTqc * mr^b_vTqc,vTqcmax)
+real, public :: vTqcmax = 0.5 ! [m/s]
+
+! rain number fall speed parameters 
+! for ivTnr = 1
+! no parameters used 
+! for ivTnr = 2
+! vTnr = min(10^log_a_vTnr * mr^b_vTnr,vTnrmax)
+real, public :: vTnrmax = 10. ! [m/s]
+
+! rain mass fall speed parameters 
+! for ivTqr = 1
+! no parameters used 
+! for ivTqr = 2
+! vTqrmax = min(10^log_a_vTqr * mr^b_vTqr,vTqrmax)
+real, public :: vTqrmax = 10. ! [m/s]
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
        aero_mom_init, aero_N_init, aero_sig_init, aero_rd_init, aero_names, &
        imomc1,imomc2,imomr1,imomr2,donucleation,docondensation,docollisions, &
-       dosedimentation,dobreakup,cloud_init,rain_init,ss_init, rain_source
+       dosedimentation,dobreakup,cloud_init,rain_init,ss_init, rain_source, &
+       param_val_fpath, log_predictNc, param_val_fpath_2cat,iautoq,ivTnc,ivTqc, &
+       ivTnr,ivTqr,dNc_min,dNc_max,dNr_min,dNr_max,vTncmax,vTqcmax,vTnrmax,vTqrmax
 
   namelist/control/dt, dg_dt, mphys_scheme, mphys_var &
        , wctrl, zctrl, tctrl, pctrl_z, pctrl_v, pctrl_T, ipctrl &
@@ -188,6 +260,9 @@ contains
     case('amp')
        imphys=imphys_amp
        mphys_id='amp'
+    case('boss')
+       imphys=imphys_boss
+       mphys_id='boss'
      case default
        print*, 'Mphys scheme not recognized: ', mphys_scheme
        print*, 'Did you mean:'

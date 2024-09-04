@@ -97,7 +97,8 @@ Module switches
        ,imphys_wsm6             =10 & ! WSM6 scheme
        ,imphys_wdm6             =11 & ! WDM6 scheme
        ,imphys_4A               =12 & ! Shipway scheme
-       ,imphys_amp              =13   ! Adele Igel scheme
+       ,imphys_amp              =13 & ! Adele Igel scheme
+       ,imphys_boss             =14   ! BOSS scheme (van-Lier Walqui et al. 2020)
       
   ! Integer switches to choose input data type and/or test case
   integer, parameter ::    & 
@@ -115,7 +116,8 @@ Module switches
        ,igcss_warm5   =105 &  
        ,igcss_warm6   =106 &  
        ,igcss_warm7   =107 &  
-       ,igcss_warm8   =108   
+       ,igcss_warm8   =108 &
+       ,idriz_warm1   =111
        ! GCSS mixed-phase cases
   integer, parameter ::    & 
         igcss_mixed1  =201 &  

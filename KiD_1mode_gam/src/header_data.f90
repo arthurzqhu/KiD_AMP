@@ -23,7 +23,7 @@ module header_data
        ,references=    & ! references - Do not change this!!
        ''              &
        ,username=      & ! User name
-       'Adele'   &
+       'ahu'   &
        ,institution=   & ! Institution
        ''          &
        ,mphys_id=      & ! default microphysics scheme identifier  

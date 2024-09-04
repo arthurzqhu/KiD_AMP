@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 # config of the run
-conf_basename="fullmic_4m_fullg_noacttreat" # case/folder name. determined automatically if set empty
+conf_basename="fullmic_4m_fullg" # case/folder name. determined automatically if set empty
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("AMP")
+ampORbin=("AMP" "BIN")
 bintype=("TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -23,8 +23,8 @@ t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
-l_coll_s=1
-l_sed_s=1
+l_coll_s=0
+l_sed_s=0
 l_adv_s=1
 
 

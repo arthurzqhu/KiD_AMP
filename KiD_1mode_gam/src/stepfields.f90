@@ -26,7 +26,7 @@ module stepfields
      Use switches
      Use column_variables
      Use namelists, only : ampORbin, bintype
-     Use micro_prm, only : pmomsc, diams, nkr, D_min, D_max, npmc, tempvar_debug3
+     Use micro_prm, only : pmomsc, diams, nkr, D_min, D_max, npmc, tempvar_debug3, pio6rw
 
 
      !local variables
@@ -35,8 +35,6 @@ module stepfields
      logical :: sp_test ! test for rounding error
      character(100) :: fmt ! format string
      real :: field(nz,0:nx+1)
-     real(wp) :: moment_tentative, M_prev, M_curr, DIAM_CHAR(num_h_moments(1)), &
-        mom3, mom0, momx, momy, DIAM_CHAR0, DIAM_CHARX, DIAM_CHARY
      integer :: mom_number, mom_previous_number, imomx, imomy
      logical :: l_print
 
@@ -176,118 +174,6 @@ module stepfields
            end do
         end do
 
-                 ! ! constraining the moment ratios 0 -> <largest> -> <intermediate>
-
-                 ! if (ampORbin .eq. 'amp' .and. npmc == 4 &
-                 !    .and. all(hydrometeors(k,j,ih)%moments(ibin,1:4)>0.)) then
-                 !    mom3 = hydrometeors(k,j,ih)%moments(ibin,1)
-                 !    mom0 = hydrometeors(k,j,ih)%moments(ibin,2)
-                 !    momx = hydrometeors(k,j,ih)%moments(ibin,3)
-                 !    momy = hydrometeors(k,j,ih)%moments(ibin,4)
-                 !    imomx = pmomsc(3)
-                 !    imomy = pmomsc(4)
-
-
-                 !    ! review this part
-                 !    if (pmomsc(3) > 3) then
-                 !       DIAM_CHAR0 = (mom3/mom0)**(1./3.)
-                 !       DIAM_CHARX = (momx/mom3)**(1./(imomx-3.))
-                 !       DIAM_CHARY = (momy/momx)**(1./(imomy-imomx))
-                 !    elseif (pmomsc(3) < 3 .and. pmomsc(4) > 3) then
-                 !       DIAM_CHAR0 = (momx/mom0)**(1./imomx)
-                 !       DIAM_CHARX = (mom3/momx)**(1./(3.-imomx))
-                 !       DIAM_CHARY = (momy/mom3)**(1./(imomy-3.))
-                 !    elseif (pmomsc(4) < 3) then
-                 !       DIAM_CHAR0 = (momx/mom0)**(1./imomx)
-                 !       DIAM_CHARX = (momy/momx)**(1./(imomy-imomx))
-                 !       DIAM_CHARY = (mom3/momy)**(1./(3.-imomy))
-                 !    endif
-
-                 !    if (DIAM_CHAR0 .ne. DIAM_CHAR0) then
-                 !       print*, 'nan in DIAM_CHAR0 during adv'
-                 !       print*, k,ih,ibin
-                 !       print*, 'moms', hydrometeors(k,j,ih)%moments(ibin,:)
-                 !       stop
-                 !    endif
-
-                 !    if (DIAM_CHARX .ne. DIAM_CHARX) then
-                 !       print*, 'nan in DIAM_CHARX during adv'
-                 !       print*, k,ih,ibin
-                 !       print*, 'moms', hydrometeors(k,j,ih)%moments(ibin,:)
-                 !       stop
-                 !    endif
-
-                 !    if (DIAM_CHARY .ne. DIAM_CHARY) then
-                 !       print*, 'nan in DIAM_CHARY during adv'
-                 !       print*, k,ih,ibin
-                 !       print*, 'moms', hydrometeors(k,j,ih)%moments(ibin,:)
-                 !       print*, 'from adv interface:', tempvar_debug3
-                 !       stop
-                 !    endif
-
-
-                 !    if (DIAM_CHAR0 .ne. DIAM_CHAR0) then
-                 !       print*, 'mom3, mom0', mom3, mom0, momx, momy
-                 !       print*, 'hyd0, dhyd0', k, hydrometeors(k,j,ih)%moments(ibin,2), &
-                 !          dhydrometeors_adv(k,j,ih)%moments(ibin,2)
-                 !       print*, 'from adv intf:', tempvar_debug3
-                 !       stop
-                 !    endif
-
-                 !    if (DIAM_CHAR0 < D_min) then
-                 !       DIAM_CHAR0 = D_min
-                 !       print*, 'DIAM_CHAR0 < D_min', DIAM_CHAR0, D_min
-                 !    endif
-                 !    if (DIAM_CHAR0 > D_max*0.997) then
-                 !       DIAM_CHAR0 = D_max*0.997
-                 !       print*, 'DIAM_CHAR0 > D_max', DIAM_CHAR0, D_max
-                 !    endif
-                 !    if (DIAM_CHARX < DIAM_CHAR0*1.001) then
-                 !       DIAM_CHARX = DIAM_CHAR0*1.001
-                 !       print*, 'DIAM_CHARX < DIAM_CHAR0', DIAM_CHARX, DIAM_CHAR0
-                 !    endif
-                 !    if (DIAM_CHARX > D_max*0.998) then
-                 !       DIAM_CHARX = D_max*0.998
-                 !       print*, 'DIAM_CHARX > D_max', DIAM_CHARX, D_max
-                 !    endif
-                 !    if (DIAM_CHARY < DIAM_CHARX*1.001) then
-                 !       DIAM_CHARY = DIAM_CHARX*1.001
-                 !       print*, 'DIAM_CHARY < DIAM_CHARX', DIAM_CHARY, DIAM_CHARX
-                 !    endif
-                 !    if (DIAM_CHARY > D_max) then
-                 !       DIAM_CHARY = D_max*0.999
-                 !       print*, 'DIAM_CHARY > D_max', DIAM_CHARY, D_max
-                 !    endif
-                 !    ! if (DIAM_CHAR0 .eq. DIAM_CHAR0) then
-                 !    !    print*, DIAM_CHAR0, DIAM_CHARX, DIAM_CHARY
-                 !    !    stop
-                 !    ! endif
-
-                 !    if (pmomsc(3) > 3) then
-                 !       mom0 = mom3/(DIAM_CHAR0**3.)
-                 !       momx = DIAM_CHARX**(imomx-3.)*mom3
-                 !       momy = DIAM_CHARY**(imomy-imomx)*momx
-                 !    elseif (pmomsc(3) < 3 .and. pmomsc(4) > 3) then
-                 !       momx = DIAM_CHARX**(imomx-3.)*mom3
-                 !       mom0 = momx/(DIAM_CHAR0**imomx)
-                 !       momy = DIAM_CHARY**(imomy-3.)*mom3
-                 !    elseif (pmomsc(4) < 3) then
-                 !       momy = DIAM_CHARY**(imomy-3.)*mom3
-                 !       momx = DIAM_CHARX**(imomx-imomy)*momy
-                 !       mom0 = momx/(DIAM_CHAR0**imomx)
-                 !    endif
-                 !    hydrometeors(k,j,ih)%moments(ibin,2) = mom0
-                 !    hydrometeors(k,j,ih)%moments(ibin,3) = momx
-                 !    hydrometeors(k,j,ih)%moments(ibin,4) = momy
-                 ! endif
-
-
-                 ! if (any(hydrometeors(k,j,ih)%moments(ibin,:)<0)) then
-                 !    print*, k,j,ih
-                 !    print*, hydrometeors(k,j,ih)%moments(ibin,:)
-                 !    stop 'adv moment<0'
-                 ! endif
-
      end if
      ! if (l_print) stop
 
@@ -306,6 +192,12 @@ module stepfields
            end do
         end do
      end do
+
+     ! if (dhydrometeors_mphys(20,1,1)%moments(1,1)>0) then
+     !   print*, 'dqc in stepfields', dhydrometeors_mphys(20,1,1)%moments(1,1)*dt*pio6rw
+     !   stop
+     ! endif
+     
 
      ! divergence part
      if (.not. l_nodiv_hydrometeors)then

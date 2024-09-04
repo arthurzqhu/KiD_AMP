@@ -19,9 +19,9 @@ ifeq ($(COMPILER), gfortran)
 FPP= -x f95-cpp-input
 ifdef TESTING
 OPTS=-g -O0 -W -Wall -pedantic-errors -fbounds-check -fbacktrace \
--ffpe-trap=invalid,zero,overflow -frange-check #-Werror
+-ffpe-trap=invalid,zero,overflow -frange-check #-Werror -fsanitize=address
 else
-OPTS=-O3 -pg -g -fallow-argument-mismatch
+OPTS=-O3 -pg -g -fallow-argument-mismatch -fno-backtrace
 endif
 endif
 

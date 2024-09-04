@@ -20,7 +20,9 @@ module mphys_interface
 #endif
   Use mphys_amp, only:mphys_amp_interface
   Use mphys_tau_bin, only:mphys_tau_bin_interface
+  Use mphys_boss, only: mphys_boss_interface
   Use switches
+  use parameters, only: num_h_moments
 
 contains
 
@@ -39,20 +41,18 @@ contains
 
     case(imphys_um7_3)      ! mphys scheme from um version 7.3
        call mphys_um7_3_interface
-!print*, "test1"
 #endif
 
     case(imphys_tau_bin)    ! TAU bin mphys scheme
        call mphys_tau_bin_interface
-!print*, "test2"
 #if SHIPWAY_MICRO == 1
     case(imphys_4A)         ! Shipway 4A scheme
        call mphys_4A_interface
-!print*, "test3"
 #endif
     case(imphys_amp)
        call mphys_amp_interface
-!print*, "test4"
+    case(imphys_boss)
+      call mphys_boss_interface(num_h_moments)
     end select
 
   end subroutine mphys_column

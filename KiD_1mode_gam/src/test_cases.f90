@@ -28,7 +28,7 @@ module test_cases
   Implicit none
 
   !local variables
-  integer, private :: k, itime, ih, j
+  integer, private :: k, itime, ih, j,iz
   
   ! Levels for interpolation
   real(wp), allocatable :: &
@@ -153,6 +153,47 @@ contains
             call interpolate(z,w_t(:,j,itime),z_half,w_t_half(:,j,itime),scheme_id=1) 
           enddo
        end do
+
+       do ih=1,naerosol
+         indices(ih)=ih
+         if (aero_N_init(ih) > 0)lainits(ih) = .true.
+         Nds(ih)    = aero_N_init(ih)
+         sigmas(ih) = aero_sig_init(ih)
+         rds(ih)    = aero_rd_init(ih)
+       end do
+       densitys(:) = 1777.
+       fscale(:) = 1.
+
+       call set_aerosol(Ninit, indices, lainits, Nds, sigmas, rds, densitys, fscale) 
+
+    case(idriz_warm1)
+       !==============================================
+       ! GCSS microphysics intercomparison Warm Rain 2
+       !==============================================
+       ! Set default control values
+       if (all(zctrl==0.))zctrl(1)=2000.
+       if (all(wctrl==0.))wctrl(1)=2.
+       if (all(tctrl==0.))tctrl(1:2)=(/7200., 600./)
+       if (ipctrl==0)ipctrl=8
+
+       maxZ=zctrl(1)
+       maxT=tctrl(1)
+       n_times=int(maxT/dt)
+
+       call set_standard_profile(ipctrl,maxZ)
+
+       call allocate_forcing(nz,nx,n_times)
+
+       do itime=1,n_times
+          t=itime*dt
+          time_in(itime)=t
+          do iz = 1,nz
+            w_t(iz,:,itime)=wctrl(1)*sin(pi*t/tctrl(2))*sin(pi*z(iz)/maxZ)
+          enddo
+          do j = 0, nx+1 
+            call interpolate(z,w_t(:,j,itime),z_half,w_t_half(:,j,itime),scheme_id=1) 
+          enddo
+        end do
 
        do ih=1,naerosol
          indices(ih)=ih
@@ -776,11 +817,59 @@ contains
        call set_MPACE_profile(maxZ)
     case (7)
        call set_deep_profile(maxZ)
+    case (8)
+       call set_90RH_profile(maxZ)
     case default
        call set_RICO_profile(maxZ)
     end select
 
   end subroutine set_standard_profile
+
+  subroutine set_90RH_profile(maxZ)
+    !
+    ! Set up the profile according to the RICO GCSS intercomparison 
+    ! 
+    real(wp), intent(in) :: maxZ
+
+    allocate(pHeight(3))
+    allocate(pTheta(3))
+    allocate(pqv(3))
+    allocate(theta_1d(nz))
+    allocate(qv_1d(nz))
+    
+    ! if (rhctrl==0.)rhctrl=0.75
+    pheight=(/ 0., 2000./)
+    ptheta=(/ 288, 295/)
+    ! pqv=(/ rhctrl*.020, rhctrl*.020*.92, dble(.0024) /)
+    pqv=(/ .0096, .0051 /)
+    ! pqv=(/0.019, .0137, .0086/)*rhctrl
+
+    do k=1,nz
+       z(k)=maxZ*k/float(nz)
+    end do
+
+    call interpolate(pHeight, ptheta, z, theta_1d)
+    call interpolate(pHeight, pqv, z, qv_1d)   
+    
+    do j = 0,nx+1
+       theta(:,j) = theta_1d(:)
+       qv(:,j) = qv_1d(:)
+    enddo
+
+    where (qv<1e-6) qv=1e-6
+
+    p_surf=p0
+    call z2exner
+    
+    call calc_derived_fields
+    
+    deallocate(pqv)
+    deallocate(pTheta)
+    deallocate(pHeight)
+    deallocate(theta_1d)
+    deallocate(qv_1d)
+
+  end subroutine set_90RH_profile
 
   subroutine set_RICO_profile(maxZ)
     !
@@ -794,7 +883,7 @@ contains
     allocate(theta_1d(nz))
     allocate(qv_1d(nz))
     
-    if (rhctrl==0.)rhctrl=0.75
+    ! if (rhctrl==0.)rhctrl=0.75
     pheight=(/ 0., 740., 3260./)
     ptheta=(/ 297.9, 297.9, 312.66/)
     ! pqv=(/ rhctrl*.020, rhctrl*.020*.92, dble(.0024) /)
