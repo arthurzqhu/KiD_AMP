@@ -1,16 +1,16 @@
 #!/bin/zsh
 
 # config of the run
-mps=("boss_2m")
+# mps=("boss_2m" "boss_4m")
 # mps=("BIN_TAU" "AMP2m_TAU" "AMP4m_TAU")
-# mps=("BIN_TAU" "AMP2m_TAU" "AMP4m_TAU" "boss_2m" "boss_4m")
+mps=("BIN_TAU" "AMP2m_TAU" "AMP4m_TAU" "boss_2m" "boss_4m")
 config_name="fullmic"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 # initial condition for all cases
-cim3=0. #1e-4 # initial cloud mass kg/kg
-cim0=0. #1.e8 # initial cloud number 1/kg
+cim3=0.  #1e-4 # initial cloud mass kg/kg
+cim0=0.  #1.e8 # initial cloud number 1/kg
 cimx=0.
 cimy=0.
 rim3=0. #1e-4
@@ -174,10 +174,11 @@ imomr1 = ${imr1}  !1st predicted rain moment
 imomr2 = ${imr2}  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = .true.
+donucleation = ${l_nuc_cond_f}
 docondensation = ${l_nuc_cond_f}
 docollisions = ${l_coll_f}
 dosedimentation = ${l_sed_f}
+log_predictNc = .true.
 
 ! Aerosol initialization
 num_aero_moments=1

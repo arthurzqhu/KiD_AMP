@@ -1048,7 +1048,7 @@ d_cloudi=z_cti-z_cbi
 
  do i = its,ite
    do k = kts,kte
-     if (z(k)>=zctrl(2) .or. z(k)<=zctrl(3)) then
+     if (z(k)>zctrl(2) .and. z(k)<zctrl(3)) then
        if (initprof .eq. 'c') then
          qcs(k,i,1) = cloud_init(1)
          qrs(k,i,1) = rain_init(1)
@@ -1061,8 +1061,6 @@ d_cloudi=z_cti-z_cbi
      endif
    enddo
  enddo
-
-
 
  return
 
@@ -1660,7 +1658,7 @@ d_cloudi=z_cti-z_cbi
 
  do i = its,ite
    do k = kts,kte
-     if (z(k)>=zctrl(2) .or. z(k)<=zctrl(3)) then
+     if (z(k)>zctrl(2) .and. z(k)<zctrl(3)) then
        if (initprof .eq. 'c') then
          qcs(k,i,1) = cloud_init(1)
          qcs(k,i,3) = cloud_init(3)
@@ -6141,14 +6139,14 @@ end subroutine boss_slc_main
              dum = qr(k,i)/(qr(k,i)+qc(k,i))
              dum1  = 600.*dum**0.68*(1.-dum**0.68)**3
              
-             ! qcaut =  kc*1.9230769e-5*(nu(k,i)+2.)*(nu(k,i)+4.)/(nu(k,i)+1.)**2*         &
-                      !(rho(k,i)*qc(k,i)*iSCF(k)*1.e-3)**4/                               &
-                      !(rho(k,i)*nc(k,i)*iSCF(k)*1.e-6)**2*(1.+                           &
+             ! qcaut =  kc*1.9230769e-5*(nu(k,i)+2.)*(nu(k,i)+4.)/(nu(k,i)+1.)**2*&
+                      !(rho(k,i)*qc(k,i)*iSCF(k)*1.e-3)**4/                       &
+                      !(rho(k,i)*nc(k,i)*iSCF(k)*1.e-6)**2*(1.+                   &
                       !dum1/(1.-dum)**2)*1000.*inv_rho(k,i)*SCF(k)
 
-             qcaut =  kc*1.9230769e+5*(nu(k,i)+2.)*(nu(k,i)+4.)/(nu(k,i)+1.)**2*         &
-                      (rho(k,i)*qc(k,i)*iSCF(k)*1.e-3)**4/                               &
-                      (rho(k,i)*nc(k,i)*iSCF(k)*1.e-6)**2*(1.+                           &
+             qcaut =  kc*1.9230769e+5*(nu(k,i)+2.)*(nu(k,i)+4.)/(nu(k,i)+1.)**2* &
+                      (rho(k,i)*qc(k,i)*iSCF(k)*1.e-3)**4/                       &
+                      (rho(k,i)*nc(k,i)*iSCF(k)*1.e-6)**2*(1.+                   &
                       dum1/(1.-dum)**2)*1000.*inv_rho(k,i)*SCF(k)
             !print*, "qcaut=", qcaut             
             
