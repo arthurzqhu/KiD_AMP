@@ -530,8 +530,8 @@ contains
     n_dgtimes=i_dgtime
 
     ! Write out progress indicator in 2% chunks.
-    if ( mod( int(100*i_dgtime/float(maxn_dgtimes)), 10) < &
-         mod( int(100*(i_dgtime-1)/float(maxn_dgtimes)), 10) ) &
+    if ( mod( int(100*i_dgtime/float(maxn_dgtimes)), 2) < &
+         mod( int(100*(i_dgtime-1)/float(maxn_dgtimes)), 2) ) &
          write (unit=6,fmt='(T3, i3, a)') int(100*i_dgtime&
          &/float(maxn_dgtimes)), '% completed...'
 

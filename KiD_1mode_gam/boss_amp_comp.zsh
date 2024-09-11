@@ -2,19 +2,19 @@
 
 # config of the run
 # mps=("boss_2m" "boss_4m")
-# mps=("BIN_TAU" "AMP2m_TAU" "AMP4m_TAU")
-mps=("BIN_TAU" "AMP2m_TAU" "AMP4m_TAU" "boss_2m" "boss_4m")
+mps=("AMP4m_TAU")
+# mps=("BIN_TAU" "AMP2m_TAU" "AMP4m_TAU" "boss_2m" "boss_4m")
 config_name="fullmic"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 # initial condition for all cases
-cim3=0.  #1e-4 # initial cloud mass kg/kg
-cim0=0.  #1.e8 # initial cloud number 1/kg
+cim3=0. # initial cloud mass kg/kg
+cim0=0. # initial cloud number 1/kg
 cimx=0.
 cimy=0.
-rim3=0. #1e-4
-rim0=0. #1.e4
+rim3=0.
+rim0=0.
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 ztop=6000. # top of the domain
@@ -22,6 +22,8 @@ zcb=600. # cloud base height
 zct=1200. # cloud bottom height
 t1=3600.
 t2=900.
+
+l_use_nn='.true.'
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
@@ -93,6 +95,13 @@ echo $mp
       imc2=9
       imr1=6
       imr2=9
+   fi
+
+   if [[ $l_use_nn = '.true.' ]]; then
+     imc1=4
+     imc2=6
+     imr1=4
+     imr2=6
    fi
 
    if [[ $mp = *boss* ]] then
@@ -241,6 +250,8 @@ l_fix_aerosols=.true.
 l_periodic_bound=.false.
 l_truncated=.false.
 l_init_test=.false.
+l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
+
 /
 
 &addcontrol
@@ -248,7 +259,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin:l}'
 bintype='${bintype:l}'
 mp_proc_dg=.true.
-initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
+initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 !l_diag_nu=.false.
 /

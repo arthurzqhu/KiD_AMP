@@ -35,7 +35,7 @@ module namelists
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   real(8) :: rhctrl ! actually saturation ratio not relative humidity
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
-             dobreakup, l_truncated, l_init_test, log_predictNc
+             dobreakup, l_truncated, l_init_test, log_predictNc, l_use_nn
   character(100) :: param_val_fpath = "../../CloudBOSS/boss_slc_param_values.csv"
   character(100) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
 
@@ -128,7 +128,7 @@ real, public :: vTqrmax = 10. ! [m/s]
        , isurface, l_noadv_aerosols, l_nodiv_aerosols, l_fix_aerosols &
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
        , l_force_positive, l_noevaporation, l_nocondensation &
-       , l_truncated, l_init_test
+       , l_truncated, l_init_test, l_use_nn
 
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''

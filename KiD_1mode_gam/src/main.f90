@@ -27,8 +27,7 @@ Module main
   Use mphys_interface, only : mphys_column
   Use stepfields, only : step_column
   Use divergence, only : diverge_column
-  Use micro_prm, only: check_bintype,nkr,npm,l_sctab_mod,npmc,debug_itime,debug_k,&
-     diag_dt3, diag_dt4, diag_dt1, diag_dt2, PF_change_mat, PF_change_arr
+  Use micro_prm, only: check_bintype,nkr,npm,l_sctab_mod
   Use column_variables
   Use global_fun
   Implicit none
@@ -40,16 +39,6 @@ contains
       integer :: itime      ! loop counter for time
       real(8) :: t1, t2
       character(len=100) :: sigfig_fmt
-
-      ! debug_itime = 1639
-      ! debug_k = 46
-
-      ! debug_itime = 1
-      ! debug_k = 12
-
-      diag_dt3 = 0.
-      diag_dt4 = 0.
-      allocate(PF_change_mat(5,n_times))
 
       ! Start by reading in namelists
       allocate(temp_field(nz,0:nx+1))
@@ -82,6 +71,7 @@ contains
          call save_diagnostics_2d
       endif
 
+      call CPU_TIME(t1)
       do itime=1,n_times
          time=time+dt
          time_step=time_step+1
@@ -114,20 +104,9 @@ contains
          else
             call save_diagnostics_2d
          endif
-         !print*, ss(25,1)
-         ! if (itime*dt>=842) stop
-         ! if (itime >= debug_itime) stop
-         ! diag_dt3 = diag_dt3 + diag_dt1
-         ! diag_dt4 = diag_dt4 + diag_dt2
-         ! call append_mat(PF_change_mat, PF_change_arr, 5)
       end do
-
-      ! open(55, file = "./output/PF_analysis.txt")
-      ! sigfig_fmt = '(5e'//itoa(7+8)//'.'//itoa(7)//')'
-      ! write(55, trim(sigfig_fmt)) PF_change_mat
-      ! close(55)
-      ! print*, 'total 1st try', diag_dt3
-      ! print*, 'total 2nd try', diag_dt4
+      call CPU_TIME(t2)
+      print*, 'main loop time', t2-t1
 
       if (l_write_dgs) call write_diagnostics
 

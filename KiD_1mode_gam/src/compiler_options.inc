@@ -10,6 +10,7 @@ VPATH = ./:./UM_source
 #NCPATH=/usr/local/netcdf/$(COMPILER)/
 #NCPATH=/home/h01/lemdev/netcdf/$(COMPILER)/
 # NCPATH=/share/apps/netcdf-c-4.7.4-intel/
+FKBPATH=/Users/arthurhu/github/FKB/build
 NCPATH=/usr/local/Cellar/netcdf-fortran/4.6.1
 NCPATHC=/usr/local/Cellar/netcdf/4.9.2_1
 
@@ -58,7 +59,9 @@ LD=$(F90)   # Linker
 
 INCDF=-I$(NCPATH)/include
 LNCDF=-L$(NCPATH)/lib -lnetcdff -L$(NCPATHC)/lib -lnetcdf 
-LDFLAGS=$(INCDF) $(LNCDF)
+FKBINC=-I$(FKBPATH)/include
+FKBLIB=-L$(FKBPATH)/lib -lneural
+LDFLAGS=$(FKBINC) $(FKBLIB) $(INCDF) $(LNCDF) 
 #LDFLAGS=-lnetcdf -lnetcdff
 
 EXECUTABLE=$(MODEL)_$(CASE).exe

@@ -3,13 +3,15 @@ module module_mp_amp
                        diams, pio6rw, ipio6rw, pdiams, total_m3_th, max_nbins, col, &
                        nuterm31, nuterm32, nutermx1, nutermx2, nutermw1, nutermw2, tORf, &
                        D_min, D_max, tempvar_debug, rtemp_debug, gamnu1_3, gamnu1_0, &
-                       gamnu1_w, gamnu1_x, gamnu2_3, gamnu2_0, gamnu2_w, gamnu2_x
+                       gamnu1_w, gamnu1_x, gamnu2_3, gamnu2_0, gamnu2_w, gamnu2_x, &
+                       cloud_mr_th, rain_mr_th
   use module_hujisbm, only: xl
   use mphys_tau_bin_declare, only: xkgmean
   use namelists, only: bintype, l_truncated, l_init_test
   use parameters, only: split_bins, h_shape
   use physconst, only: pi
   use global_fun, only: gammq
+  use mod_network, only: network_type
   implicit none
   
   integer :: icat, scl, ecl, lcl_catbound1(2), lcl_catbound2(2), imomw, imomx, imomy, imomz, &
@@ -30,11 +32,121 @@ module module_mp_amp
       ! mass fraction of liquid category 1
       l1_mfrac
   end type
+  type(network_type) :: moment2state_net
 
   ! constants
   double precision, parameter :: dn_min=1e-9, dn_max=1e-3, nu_max=100, nu_min=-1
 
 contains
+
+subroutine invert_moments_nn(mom_pred, amp_distm, amp_distn)
+
+double precision, dimension(npm, n_cat), intent(inout) :: mom_pred
+real, dimension(nkr), intent(out) :: amp_distm, amp_distn
+! double precision, intent(out) :: flags(n_cat)
+
+double precision :: exptermc, exptermr, ml1, ml2
+real :: nc,nr,qc,qr,mu1,mu2,lam1,lam2,n01,n02,test(4)
+integer :: lcl
+
+M3p(1) = mom_pred(1,1)
+M0p = mom_pred(2,1)
+Mwp = mom_pred(3,1)
+Mxp(1) = mom_pred(4,1)
+mu1 = h_shape(1)
+mu2 = h_shape(2)
+
+call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
+
+! NN is tuned to only use a single shape parameter for now
+! print*, 'mom_pred(:,1)', mom_pred(:,1)
+call ml_moment2state(mu1,mom_pred(:,1),nc,nr,qc,qr)
+! print*, 'nc, nr, qc, qr', nc, nr, qc, qr
+
+if (qc+qr<=total_m3_th) then
+  amp_distm(:) = 0.
+  amp_distn(:) = 0.
+endif
+
+if (qc >= cloud_mr_th) then
+  ! check if i need to +1 for the h_shapes
+  lam1=(nc/(qc*ipio6rw)*nuterm31)**(1/3.)
+  ! n01=nc*lam1**mu1/gamnu1_0
+else
+  n01 = 0.
+  lam1 = 1.
+endif
+
+if (qr >= rain_mr_th) then
+  ! check if i need to +1 for the h_shapes
+  lam2=(nr/(qr*ipio6rw)*nuterm32)**(1/3.)
+  ! n02=nr*lam2**mu2/gamnu2_0
+else
+  lam2 = 1.
+  n02 = 0.
+endif
+
+ml1 = M3p(1) * qc/(qc+qr)
+ml2 = M3p(1) - ml1
+n01 = ml1/gamnu1_3*log(2.)/3*pio6rw
+n02 = ml2/gamnu2_3*log(2.)/3*pio6rw
+
+! print*, 'dn1, n01, dn2, n02', 1/lam1, n01, 1/lam2, n02
+! print*, 'ml1, ml2', ml1, ml2
+! print*, 'ml1, ml2, n01, n02', ml1, ml2, n01, n02
+
+
+do lcl = 1,nkr
+  if (ml1>0. .and. lam1>0.) then
+    exptermc = exp(-1.*diams(lcl)*lam1)
+    amp_distm(lcl) = n01*exptermc*(diams(lcl)*lam1)**(mu1+3)
+  endif
+  if (ml2>0. .and. lam2>0.) then
+    exptermr = exp(-1.*diams(lcl)*lam2)
+    amp_distm(lcl) = amp_distm(lcl) + n02*exptermr*(diams(lcl)*lam2)**(mu2+3)
+  endif
+enddo
+
+amp_distm = amp_distm/col
+if (bintype .eq. 'tau') amp_distn = amp_distm/xkgmean
+
+end subroutine invert_moments_nn
+
+subroutine ml_moment2state(mu,mom_pred,nc,nr,qc,qr)
+  double precision, intent(in) :: mom_pred(npm)
+  real, intent(in) :: mu
+  real, intent(out) :: nc,nr,qc,qr
+
+  ! local variables                                                                                                                    
+  double precision, dimension(3) :: nn_input
+  double precision, dimension(2) :: nn_output
+  real :: m0, m3, m4, m6
+  real :: w_n, w_q
+  real, parameter :: eps = 1.e-16
+
+  m3 = mom_pred(1)
+  m0 = mom_pred(2)
+  m4 = mom_pred(3)
+  m6 = mom_pred(4)
+
+  nn_input(1) = log( m4 * m0**(1./3.) / m3**(4./3.))
+  nn_input(2) = log( m6 * m0 / m3**2.)
+  nn_input(3) = mu/10.
+  ! print*, 'nn_input', nn_input
+
+  nn_output = moment2state_net % output(nn_input)
+
+  ! print*, 'nn_output', nn_output
+
+  w_n = nn_output(1)*(1.-2.*eps) + eps
+  w_q = nn_output(2)*(1.-2.*eps) + eps
+
+  nc = m0 * w_n
+  nr = m0 * (1. - w_n)
+  qc = m3 * pio6rw * w_q
+  qr = m3 * pio6rw * (1. - w_q)
+
+end subroutine ml_moment2state
 
 subroutine  invert_moments(mom_pred, gam_param, amp_distm, amp_distn, flags, sqerr)
 
@@ -440,9 +552,6 @@ if (n_cat == 1) then
     Mconsv_M3 = Mzp/M3p(1)
   endif
 
-  ! print*, 'dn1, dn2', dn
-  ! print*, 'm1frac', guess_best%l1_mfrac
-
   if (l_truncated) then
     call incgamma_1cat(dn(1), nu(1), dn(2), nu(2), Mconsv_M3, mass_dist)
     mass_dist = mass_dist*M3p(1)
@@ -452,6 +561,7 @@ if (n_cat == 1) then
     ml2 = M3p(1) - ml1
     n01 = ml1/gamma(nu(1)+3)*log(2.)/3*pio6rw
     n02 = ml2/gamma(nu(2)+3)*log(2.)/3*pio6rw
+    print*, 'ml1, ml2, n01, n02', ml1, ml2, n01, n02
 
 
     do lcl=1,nkr

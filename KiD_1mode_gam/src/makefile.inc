@@ -49,7 +49,7 @@ $(OBJSF90_4A): $(OBJDIR)/%.o: %.f90
 	$(F90D) -c $< -o $@ $(INCDF)
 
 $(OBJSF90): $(OBJDIR)/%.o: %.f90 
-	$(F90D) -cpp -c $< -o $@ $(INCDF)
+	$(F90D) -cpp -c $< -o $@ $(INCDF) $(FKBINC)
 
 $(OBJSF): $(OBJDIR)/%.o: %.f 
 	$(F90D)  -c $< -o $@ $(INCDF)

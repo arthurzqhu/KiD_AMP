@@ -67,7 +67,7 @@ if (npm<4) then
   enddo
 endif
 
-! qc(:,:,1) now mass
+! qcs(:,:,1) now mass
 qcs(:,:,1) = qcs(:,:,1)*pio6rw
 if (npm<4) qrs(:,:,1) = qrs(:,:,1)*pio6rw
 th_old(:,1) = theta(:,1)
@@ -106,25 +106,16 @@ else ! two cat
       qcs=qcs,qrs=qrs,its=1,ite=nx,kts=1,kte=nz,npm=npm)
     micro_unset = .false.
   endif
-  
-  ! qcs(1:120,1,1) = 1.41372E-3
-  ! qcs(1:120,1,2) = 100e6
-  ! print*, 'qcs(20,1,1:2)', qcs(20,1,1:2)
-  ! if (prep_stop) stop
+
   call boss_2cat_main(qcs(:,:,1),qcs(:,:,2),qrs(:,:,1),qrs(:,:,2),th_old,th_new, &
     qv_old,qv_new,dt,qitot,qirim,nitot,birim,ssat,uzpl,pres,dzq,it,prt_liq,prt_sol, &
     1,nx,1,nz,1,diag_ze,diag_effc,diag_effi,diag_vmi,diag_di,diag_rhoi,4,log_predictNc, &
     typeDiags_ON,trim(model),clbfact_dep,clbfact_sub,debug_on,scpf_on,scpf_pfrac,&
     scpf_resfact,SCF_out)
-  ! print*, 'qcs(20,1,1:2)', qcs(20,1,1:2)
-  ! stop
-  ! print*, 'number', qcs(20,1,2)
-  ! print*, 'after', qcs(1:120,1,1:2)
-  ! stop
 
 endif
 
-! qc(:,:,1) now 3rd moment
+! qcs(:,:,1) now 3rd moment
 qcs(:,:,1) = qcs(:,:,1)*ipio6rw
 if (npm < 4) qrs(:,:,1) = qrs(:,:,1)*ipio6rw
 
