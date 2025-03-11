@@ -1,8 +1,8 @@
 #!/bin/zsh
 
 # config of the run
-mps=("BIN_TAU")
-config_name="condcoll"
+mps=("boss_4m_3069")
+config_name="condcoll_ppe_isd"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
@@ -42,20 +42,18 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$1
-iw=$2
-var1str=Na$ia
-var2str=w$iw
-
 isp_c=4
 isp_r=4
 
+Na_min=$1
+Na_max=$2
+w_min=$3
+w_max=$4
+
 # # reset oscillation time based on updraft speed to prevent overshooting
-# if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-#   t2=$((($ztop-$zct)/$iw))
-#   if [[ $t1 -gt $(($t2*4)) ]]; then
-#     t1=$(($t2*4))
-#   fi
+# if [[ $((($ztop-$zct)/$w_max)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+#   t2=$((($ztop-$zct)/$w_max))
+#   t1=$(($t2*4))
 # fi
 
 for ((imp=1; imp<=${#mps[@]}; imp=imp+1))
@@ -110,12 +108,6 @@ echo $mp
      Pdep=''
    fi
 
-   if [[ $mp = *oldboss_4m* ]]; then
-     dirdep='gdrive/'
-   else
-     dirdep=''
-   fi
-
    if [[ $mp = *boss* ]] then
      mp_id='boss'
      bintype='tau'
@@ -145,8 +137,6 @@ echo $mp
      momnames="'M1','M2'"
      imc1=6
      imc2=9
-     imr1=6
-     imr2=9
    fi
 
    if [[ $mp = *AMP* ]]; then
@@ -164,7 +154,7 @@ echo $mp
    fi
 
 
-   outdir=/data1/arthurhu/KiD_output/$(date +'%Y-%m-%d')/$config_name/$var1str/$var2str/${mp}/
+   outdir=/data1/arthurhu/KiD_output/$(date +'%Y-%m-%d')/$config_name/${mp}_ens${5}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -176,14 +166,15 @@ echo $mp
       if [ ! -d $outdir ]; then
          mkdir -p $outdir
       fi
-      echo ${config_name}_${mp}_${var1str}_${var2str}
-      cat > namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml << END
+      echo ${config_name}_${mp}
+      nml_fn=namelists/jobnml/${config_name}_${mp}_ens${5}.nml
+      cat > $nml_fn << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
 
 !Moment names
-mom_names=${momnames}
+mom_names='M1','M2','M3','M4','M5','M6'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -219,7 +210,7 @@ log_predictNc = .true.
 ! Aerosol initialization
 num_aero_moments=1
 num_aero_bins=1
-aero_N_init=${ia}.e6 !or CCN at 1% SS
+aero_N_init=0. !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -228,8 +219,9 @@ aero_rd_init=0.05e-6
 !recommended (Adele)
 mom_init=0,0,0
 
-!param_val_fpath="../../CloudBOSS/${dirdep}boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
-param_val_fpath="../../Cloud_BOSS/param_consolid.csv"
+! param_val_fpath="../../CloudBOSS/boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
+param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid.csv"
+! param_infl_sigma_fpath="../../CloudBOSS/boss_slc_param_sigma_${Pdep}30${imc1}${imc2}.csv"
 !param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
 
@@ -263,27 +255,25 @@ mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
 dg_dt=5.0         !Timestep for diagnostic output
-wctrl(1)=${iw}      !Updraft speed
+wctrl(1)=0.      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-!irealz=2001
 /
 
 &ppe
-l_ppe=.false.
-n_perturbed_param=18
-n_ppe=2000
-irealz=1
-deflation_factor=.3
-Na_min=0.
-Na_max=0.
-w_min=0.
-w_max=0.
+l_ppe=.true.
+n_perturbed_param=14
+n_ppe=$6
+irealz=$5
+deflation_factor=1.
+Na_min=${Na_min}e6
+Na_max=${Na_max}e6
+w_min=$w_min
+w_max=$w_max
 /
-
 
 &switch
 l_advect=${l_adv}
@@ -309,13 +299,13 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin:l}'
 bintype='${bintype:l}'
 mp_proc_dg=.true.
-initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
+initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
 !l_diag_nu=.false.
 moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /
 END
-     ./bin/KiD_1D.exe namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml
+     ./bin/KiD_1D.exe $nml_fn
   done
 done

@@ -1,8 +1,17 @@
 #!/bin/zsh
 
 # config of the run
-mps=("BIN_TAU")
-config_name="condcoll"
+# mps=("dboss_4m_3069" "BIN_TAU")
+mps=("dboss_2m_lwp")
+# mps=("AMP4m_TAU_3069" "BIN_TAU")
+# mps=("dboss_2m" "AMP2m_TAU" "AMP4m_TAU_3046" "dboss_4m_3046" "BIN_TAU" "dboss_4m_3069" "AMP4m_TAU_3069")
+# mps=("dboss_2m")
+# mps=("AMP4m_TAU_3045")
+# mps=("AMP4m_TAU_3069" "AMP4m_TAU_3046" "AMP2m_TAU" "BIN_TAU" "dboss_4m_3046" "dboss_4m_3069")
+# config_name="fullmic"
+# config_name="fall_1l_i"
+config_name="collonly_ppelwp"
+# config_name="fall_1l_c_nomax_dt1_lr"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
@@ -10,22 +19,32 @@ case_num=${#caselist[@]}
 cim3=0.
 cim0=0.
 
+# cim3=1e-3 # initial cloud mass kg/kg
+# cim0=1e8 # initial cloud number 1/kg
+
 rim3=0.
 rim0=0.
+# rim3=5e-4
+# rim0=4e3
 
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 ztop=6000. # top of the domain
-zcb=1000. # cloud base height
-zct=3000. # cloud bottom height
+zcb=600. # cloud base height
+zct=1200. # cloud bottom height
 t1=3600.
 t2=900.
+# zcb=2500. # cloud base height
+# zct=5500. # cloud bottom height
+# t1=4800.
+# t2=0.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
-l_nuc_cond_s=1
+l_nuc_cond_s=0
 l_coll_s=1
 l_sed_s=0
-l_adv_s=1
+l_adv_s=0
+
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -42,21 +61,39 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$1
-iw=$2
-var1str=Na$ia
-var2str=w$iw
-
 isp_c=4
 isp_r=4
 
-# # reset oscillation time based on updraft speed to prevent overshooting
-# if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-#   t2=$((($ztop-$zct)/$iw))
-#   if [[ $t1 -gt $(($t2*4)) ]]; then
-#     t1=$(($t2*4))
-#   fi
-# fi
+# iw=2
+# ia=100
+# idmr=$1
+# isp_c=$2
+# isp_r=$2
+# var1str=dm${idmr}
+# var2str=sp${isp_r}
+# rim3=0.0005
+# rim0=$(($rim3/(($idmr*1.e-6)**3*3.14159/6*1000.)))
+
+iw=2
+ia=100
+idmc=$1
+isp_c=$2
+isp_r=$2
+var1str=dm${idmc}
+var2str=sp${isp_c}
+cim3=0.001
+cim0=$(($cim3/(($idmc*1.e-6)**3*3.14159/6*1000.)))
+
+# ia=$1
+# iw=$2
+# var1str=Na$ia
+# var2str=w$iw
+
+# reset oscillation time based on updraft speed to prevent overshooting
+if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+  t2=$((($ztop-$zct)/$iw))
+  t1=$(($t2*4))
+fi
 
 for ((imp=1; imp<=${#mps[@]}; imp=imp+1))
 do
@@ -110,12 +147,6 @@ echo $mp
      Pdep=''
    fi
 
-   if [[ $mp = *oldboss_4m* ]]; then
-     dirdep='gdrive/'
-   else
-     dirdep=''
-   fi
-
    if [[ $mp = *boss* ]] then
      mp_id='boss'
      bintype='tau'
@@ -127,26 +158,19 @@ echo $mp
    fi
 
    if [[ $mp = *4m* ]]; then
-     nhm='4,4'
-     nhb='1,1'
-     n_cat=1
-     momnames="'M1','M2','M3','M4'"
+      nhm='4,4'
+      nhb='1,1'
+      n_cat=1
    elif [[ $mp = *2m* ]]; then
-     nhm='2,2'
-     nhb='1,1'
-     n_cat=2
-     momnames="'M1','M2'"
+      nhm='2,2'
+      nhb='1,1'
+      n_cat=2
    elif [[ $mp = 'BIN_SBM' ]]; then
-     nhm='1,1'
-     nhb='33,33'
+         nhm='1,1'
+         nhb='33,33'
    elif [[ $mp = 'BIN_TAU' ]]; then
-     nhm='2,2'
-     nhb='34,1'
-     momnames="'M1','M2'"
-     imc1=6
-     imc2=9
-     imr1=6
-     imr2=9
+         nhm='2,2'
+         nhb='34,1'
    fi
 
    if [[ $mp = *AMP* ]]; then
@@ -163,8 +187,9 @@ echo $mp
      bintype='sbm'
    fi
 
+   for (( idraw = 1; idraw <= 100; idraw++ )); do
 
-   outdir=/data1/arthurhu/KiD_output/$(date +'%Y-%m-%d')/$config_name/$var1str/$var2str/${mp}/
+   outdir=/Users/arthurhu/KiD_outputs/$(date +'%Y-%m-%d')/$config_name/$var1str/$var2str/${mp}_${idraw}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -177,13 +202,13 @@ echo $mp
          mkdir -p $outdir
       fi
       echo ${config_name}_${mp}_${var1str}_${var2str}
-      cat > namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml << END
+      cat > namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}_${idraw}.nml << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
 
 !Moment names
-mom_names=${momnames}
+mom_names='M1','M2','M3','M4','M5','M6'
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -228,9 +253,7 @@ aero_rd_init=0.05e-6
 !recommended (Adele)
 mom_init=0,0,0
 
-!param_val_fpath="../../CloudBOSS/${dirdep}boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
-param_val_fpath="../../Cloud_BOSS/param_consolid.csv"
-!param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
+param_val_fpath="../../CloudBOSS/boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
 
 iautoq = 1,
@@ -248,9 +271,8 @@ vTnrmax = 10.,
 vTqrmax = 10.,
 
 n_cat = ${n_cat}
-idraw=1
 
-nmom_diag = 14
+idraw = $idraw
 
 /
 
@@ -262,28 +284,14 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.0         !Timestep for diagnostic output
+dg_dt=1.0         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-!irealz=2001
 /
-
-&ppe
-l_ppe=.false.
-n_perturbed_param=18
-n_ppe=2000
-irealz=1
-deflation_factor=.3
-Na_min=0.
-Na_max=0.
-w_min=0.
-w_max=0.
-/
-
 
 &switch
 l_advect=${l_adv}
@@ -299,9 +307,7 @@ l_periodic_bound=.false.
 l_truncated=.false.
 l_init_test=.false.
 l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
-l_boss_partition_liq=.true.
-l_boss_save_dsd=.false.
-l_getrates=.false.
+l_diag_boss_dsd=.false.
 /
 
 &addcontrol
@@ -313,9 +319,9 @@ initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for c
 l_hist_run=.false.
 extralayer=.false.
 !l_diag_nu=.false.
-moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /
 END
-     ./bin/KiD_1D.exe namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml
-  done
+     ./bin/KiD_1D.exe namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}_${idraw}.nml
+   done
+ done
 done

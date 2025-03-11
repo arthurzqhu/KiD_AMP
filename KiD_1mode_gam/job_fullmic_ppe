@@ -1,0 +1,29 @@
+#!/bin/zsh
+
+# a_list=(100 200 400)
+# a_list=(100 200 400)
+# w_list=(1 2 4)
+a_range=(40 500)
+w_range=(0.4 5)
+
+# len1=${#a_list[@]}
+# len2=${#w_list[@]}
+# nruns=$(($len1*$len2))
+
+nens=10000
+
+# for (( iens = 1; iens <= nens; iens++ )); do
+# for (( iid = 1; iid <= nruns; iid++ )); do
+
+# ja=$(($iid%$len1))
+# [[ $ja == 0 ]] && ja=$len1
+# jw=$((($iid+$len1-1)/$len1))
+
+# echo $ja $a_list[$ja]
+# echo $jw $w_list[$jw]
+echo $a_range $w_range
+
+seq $nens | parallel -j 32 --workdir $PWD ./boss_ppe_runs.zsh $a_range[1] $a_range[2] $w_range[1] $w_range[2] {} $nens
+# seq $nens | parallel -j 32 --workdir $PWD ./boss_ppe_runs.zsh $a_list[$ja] $w_list[$jw] {}
+# done
+# done

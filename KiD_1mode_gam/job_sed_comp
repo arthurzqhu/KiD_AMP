@@ -1,0 +1,22 @@
+#!/bin/zsh
+
+dm_list=(200 400 600 800)
+sp_list=(4)
+
+len1=${#dm_list[@]}
+len2=${#sp_list[@]}
+nruns=$(($len1*$len2))
+
+for (( iid = 1; iid <= nruns; iid++ )); do
+
+jdm=$(($iid%$len1))
+[[ $jdm == 0 ]] && jdm=$len1
+jsp=$((($iid+$len1-1)/$len1))
+
+echo $jdm $dm_list[$jdm]
+echo $jsp $sp_list[$jsp]
+
+./fall1l.zsh $dm_list[$jdm] $sp_list[$jsp] &
+./fall2l.zsh $dm_list[$jdm] $sp_list[$jsp] &
+
+done

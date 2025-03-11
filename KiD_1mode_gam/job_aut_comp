@@ -1,0 +1,29 @@
+#!/bin/zsh
+
+# # dr_list=(20 25 30 35 40 50)
+# dr_list=(15)
+# xc_list=(0.999)
+# suffix="dr"
+
+dr_list=(30)
+xc_list=(0.001)
+# xc_list=(0.999990000000000 0.999977241540739 0.999948205253208 0.999882123136521 0.999731730420472 0.999389459770341 0.998610504505627 0.996837722339832 0.992803143269989 0.983621062930459 0.962724062796851 0.915165710175593 0.806930227111675 0.560602943923921 0)
+suffix="xc"
+
+len1=${#dr_list[@]}
+len2=${#xc_list[@]}
+
+nruns=$(($len1*$len2))
+
+for (( iid = 1; iid <= nruns; iid++ )); do
+
+jdr=$(($iid%$len1))
+[[ $jdr == 0 ]] && jdr=$len1
+jxc=$((($iid+$len1-1)/$len1))
+
+# echo $jdr $dr_list[$jdr]
+# echo $jxc $xc_list[$jxc]
+
+./autoconv.zsh $dr_list[$jdr] $xc_list[$jxc] $suffix &
+done
+

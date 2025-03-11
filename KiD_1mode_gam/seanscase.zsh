@@ -4,7 +4,7 @@
 conf_basename="seans_case" # case/folder name. determined automatically if set empty
 caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
-ampORbin=("BIN")
+ampORbin=("AMP" "BIN")
 bintype=("TAU")
 tests2run_num=$((${#ampORbin[@]}*${#bintype[@]}))
 
@@ -15,11 +15,12 @@ irimm=0. #1e-4
 irinm=0. #1.e4
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
-ztop=6000. # top of the domain
+ztop=3000. # top of the domain
 zcb=600. # cloud base height
 zct=1200. # cloud bottom height
-t1=4800.
-t2=900.
+t1=3600.
+t2=600.
+rh=0.6
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
@@ -48,11 +49,11 @@ iw=$2
 var1str=Na$ia
 var2str=w$iw
 
-# reset oscillation time based on updraft speed to prevent overshooting
-if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-  t2=$((($ztop-$zct)/$iw))
-  t1=$(($t2*4))
-fi
+# # reset oscillation time based on updraft speed to prevent overshooting
+# if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+#   t2=$((($ztop-$zct)/$iw))
+#   t1=$(($t2*4))
+# fi
 
 config_fname=${conf_basename}
 for ((iab=1; iab<=${#ampORbin[@]}; iab=iab+1))
@@ -166,7 +167,7 @@ tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period o
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-!rhctrl=${rh}
+rhctrl=${rh}
 !pctrl_v=${pcpt}
 /
 
