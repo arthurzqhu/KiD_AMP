@@ -654,5 +654,141 @@ end function linspace
       return
     end subroutine gcf
 
+! ------------------------------------------
 
+! Diagnose any moment for a bin from M0 and M3 in that bin.
+elemental function diagnose_moment(x, m0, m3) result(mx)
+  real(8), intent(in) :: x, m0, m3
+  real(8) :: mx
+  real(8) :: m3o0
+
+  if (m0<=1d-14) then
+    mx = 0.
+  else
+    m3o0 = m3 / m0
+    mx = m0 * m3o0**(x/3.)
+  endif
+
+end function diagnose_moment
+
+! ----------------------------------------------------------
+
+subroutine random_stduniform(u)
+   implicit none
+   double precision,intent(out) :: u
+   double precision :: r
+   call random_number(r)
+   u = 1 - r
+end subroutine random_stduniform
+
+! Randomly sample from a normal distribution
+subroutine random_stdnormal(x)
+   implicit none
+   double precision,intent(out) :: x
+   double precision,parameter :: pi=3.14159265
+   double precision :: u1,u2
+   call random_stduniform(u1)
+   call random_stduniform(u2)
+   x = sqrt(-2*log(u1))*cos(2*pi*u2)
+end subroutine random_stdnormal
+
+! ----------------------------------------------------------
+ subroutine read_netcdf(variable, filename, varname)
+     use netcdf
+     implicit none
+
+     ! Variable declarations
+     integer :: ncid         ! NetCDF file ID
+     integer :: varid        ! Variable ID
+     integer :: retval       ! Return value for error handling
+     integer :: dimids(2)    ! Dimension IDs for the variable
+     integer :: var_dims(2)  ! Dimensions of the variable
+     integer :: nx, ny, ndims! Dimensions sizes
+     real(8), dimension(:,:), allocatable :: variable   ! Array to hold the variable data
+
+     character(len=200) :: filename
+     character(len=100) :: varname
+
+     ! Open the NetCDF file (read-only mode)
+     retval = nf90_open(filename, nf90_nowrite, ncid)
+     if (retval /= nf90_noerr) then
+       print *, 'Error opening NetCDF file'
+       stop
+     end if
+
+     ! Get dimension lengths (assuming a 2D variable here)
+     dimids = (/1,2/)
+     retval = nf90_inquire_dimension(ncid, dimids(1), len=nx)
+     if (retval /= nf90_noerr) then
+       print *, 'Error getting dimension length for dim 1:', nf90_strerror(retval)
+       retval = nf90_close(ncid)
+       stop
+     endif
+
+     retval = nf90_inquire_dimension(ncid, dimids(2), len=ny)
+     if (retval /= nf90_noerr) then
+       print *, 'Error getting dimension length for dim 2:', nf90_strerror(retval)
+       retval = nf90_close(ncid)
+       stop
+     endif
+
+     retval = nf90_inq_varid(ncid, varname, varid)
+     if (retval /= nf90_noerr) then
+       print *, 'Error getting variable ID'
+       retval = nf90_close(ncid)
+       stop
+     end if
+
+
+     ! Allocate the array to hold the data
+     allocate(variable(nx, ny))
+
+     ! Read the variable data
+     retval = nf90_get_var(ncid, varid, variable)
+     if (retval /= nf90_noerr) then
+       print *, 'Error reading variable data'
+       retval = nf90_close(ncid)
+       stop
+     end if
+
+     ! Close the NetCDF file
+     retval = nf90_close(ncid)
+     if (retval /= nf90_noerr) then
+       print *, 'Error closing NetCDF file'
+       stop
+     end if
+
+     ! Output the data (or process as needed)
+     ! print *, 'Data read successfully:', variable
+
+ end subroutine read_netcdf
+
+! ----------------------------------------------------------
+
+subroutine load_latinhc(n_perturbed_param, n_ppe)
+use parameters, only: lsample, aero_N_init
+use switches, only: wctrl
+use namelists, only: irealz, Na_max, Na_min, w_max, w_min
+  
+integer, intent(in) :: n_perturbed_param, n_ppe
+character(len=200) :: filename
+character(len=100) :: varname
+character(len=6) :: n_ppe_str, n_perturbed_param_str
+
+write(n_perturbed_param_str,'(I0)') n_perturbed_param
+write(n_ppe_str,'(I0)') n_ppe
+
+filename = '/home/arthurhu/KiD_AMP/KiD_1mode_gam/lhs_module/lhs_out_p'// &
+  trim(n_perturbed_param_str)//'_n'//trim(n_ppe_str)//'.nc'
+print*, 'loading LHS:', filename
+varname = 'lhs_sample'
+call read_netcdf(lsample, filename, varname)
+
+! draw a aero_N_init between Na_min and Na_max
+aero_N_init(1) = lsample(1, irealz) * (Na_max - Na_min) + Na_min
+! draw a wctrl(1) between w_min and w_max
+wctrl(1) = lsample(2, irealz) * (w_max - w_min) + w_min
+
+end subroutine load_latinhc
+! ----------------------------------------------------------
 end module global_fun

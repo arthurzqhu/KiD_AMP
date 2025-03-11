@@ -15,7 +15,7 @@ Module main
 
   Use typeKind
   Use parameters, only : dt, dg_dt, nx, nz, num_h_moments, h_shape
-  Use namelists, only : read_namelist
+  Use namelists, only : read_namelist, l_ppe, n_perturbed_param, n_ppe
   Use runtime, only : time, time_step, n_times
   Use switches
   Use set_profiles,  only : read_profiles
@@ -27,7 +27,7 @@ Module main
   Use mphys_interface, only : mphys_column
   Use stepfields, only : step_column
   Use divergence, only : diverge_column
-  Use micro_prm, only: check_bintype,nkr,npm,l_sctab_mod
+  Use micro_prm, only: check_bintype,set_constants,nkr,npm,l_sctab_mod,diag_dt3,diag_dt4
   Use column_variables
   Use global_fun
   Implicit none
@@ -45,6 +45,8 @@ contains
       if (l_namelists) call read_namelist
 
       call check_bintype
+      call set_constants
+      if (l_ppe) call load_latinhc(n_perturbed_param, n_ppe)
       ! call read_sctab
 
       ! Set up the initial fields and forcing
@@ -72,6 +74,9 @@ contains
       endif
 
       call CPU_TIME(t1)
+      diag_dt3 = 0.
+      diag_dt4 = 0.
+
       do itime=1,n_times
          time=time+dt
          time_step=time_step+1
@@ -107,6 +112,8 @@ contains
       end do
       call CPU_TIME(t2)
       print*, 'main loop time', t2-t1
+      print*, 'invert_moments time', diag_dt3, ' s'
+      ! print*, 'ml_moment2state time', diag_dt4, ' s'
 
       if (l_write_dgs) call write_diagnostics
 

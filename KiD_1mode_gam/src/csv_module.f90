@@ -47,7 +47,7 @@
         character(len=1) :: delimiter = ','  !! delimiter character
 
         ! for reading a csv file:
-        integer :: n_rows = 0  !! number of rows in the file
+        integer,public :: n_rows = 0  !! number of rows in the file
         integer :: n_cols = 0  !! number of columns in the file
         integer :: chunk_size = 1024 !! for expanding vectors
         type(csv_string),dimension(:),allocatable :: header      !! the header
@@ -643,21 +643,28 @@
 !  Returns the header as a `character(len=*)` array.
 !  (`read` must have already been called to read the file).
 
-    subroutine get_header_str(me,header,status_ok)
+    subroutine get_header_str(me,header,status_ok, header_offset)
 
     implicit none
 
     class(csv_file),intent(inout) :: me
     character(len=*),dimension(:),allocatable,intent(out) :: header
     logical,intent(out) :: status_ok
+    integer, optional :: header_offset
 
-    integer :: i !! column counter
+    integer :: i,j !! column counter
+    
+    if (.not. present(header_offset)) then
+      header_offset = 0
+    endif
 
+    print*, 'header_offset', header_offset
     if (allocated(me%header)) then
 
-        allocate(header(me%n_cols))
-        do i=1,me%n_cols
-            header(i) = me%header(i)%str
+        allocate(header(me%n_cols-header_offset))
+        do i=1+header_offset,me%n_cols
+            j = i-header_offset
+            header(j) = me%header(i)%str
         end do
         status_ok = .true.
 

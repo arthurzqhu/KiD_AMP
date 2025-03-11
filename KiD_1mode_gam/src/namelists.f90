@@ -29,14 +29,17 @@ module namelists
 #endif
 
   implicit none
-  integer:: imomc1,imomc2,imomr1,imomr2
+  integer:: imomc1,imomc2,imomr1,imomr2,n_cat,nmom_diag
   real(8) :: ss_init
   real(8), dimension(4):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   real(8) :: rhctrl ! actually saturation ratio not relative humidity
+  real(8), allocatable :: moments_diag(:)
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
-             dobreakup, l_truncated, l_init_test, log_predictNc, l_use_nn
+             dobreakup, l_truncated, l_init_test, log_predictNc, l_use_nn, &
+             l_boss_partition_liq, l_ppe, l_getrates, l_boss_save_dsd
   character(100) :: param_val_fpath = "../../CloudBOSS/boss_slc_param_values.csv"
+  character(100) :: param_infl_sigma_fpath = "../../CloudBOSS/boss_slc_param_sigma.csv"
   character(100) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
 
 ! integer switch for type of BOSS autoconversion (q)
@@ -106,20 +109,28 @@ real, public :: vTnrmax = 10. ! [m/s]
 ! for ivTqr = 2
 ! vTqrmax = min(10^log_a_vTqr * mr^b_vTqr,vTqrmax)
 real, public :: vTqrmax = 10. ! [m/s]
+integer, public :: idraw = 1, rand_seed
+
+! ppe variables
+integer, public :: irealz, n_perturbed_param, n_ppe
+real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
        aero_mom_init, aero_N_init, aero_sig_init, aero_rd_init, aero_names, &
        imomc1,imomc2,imomr1,imomr2,donucleation,docondensation,docollisions, &
        dosedimentation,dobreakup,cloud_init,rain_init,ss_init, rain_source, &
-       param_val_fpath, log_predictNc, param_val_fpath_2cat,iautoq,ivTnc,ivTqc, &
-       ivTnr,ivTqr,dNc_min,dNc_max,dNr_min,dNr_max,vTncmax,vTqcmax,vTnrmax,vTqrmax
+       param_val_fpath, param_infl_sigma_fpath, log_predictNc, param_val_fpath_2cat,iautoq,ivTnc,ivTqc, &
+       ivTnr,ivTqr,dNc_min,dNc_max,dNr_min,dNr_max,vTncmax,vTqcmax,vTnrmax,vTqrmax,&
+       n_cat,idraw,rand_seed,nmom_diag
 
   namelist/control/dt, dg_dt, mphys_scheme, mphys_var &
        , wctrl, zctrl, tctrl, pctrl_z, pctrl_v, pctrl_T, ipctrl &
        , xctrl, lhf_ctrl, shf_ctrl, diaglevel, dgstart, rhctrl
-
   namelist/case/input_file, l_input_file, ifiletype, icase
+
+  namelist/ppe/l_ppe, irealz, deflation_factor, Na_min, Na_max &
+       , w_min, w_max, n_perturbed_param, n_ppe
 
   namelist/switch/l_mphys, l_advect, l_diverge, l_pupdate &
        , l_fix_qv, l_nomphys_qv, l_noadv_qv, l_posadv_qv &
@@ -128,7 +139,8 @@ real, public :: vTqrmax = 10. ! [m/s]
        , isurface, l_noadv_aerosols, l_nodiv_aerosols, l_fix_aerosols &
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
        , l_force_positive, l_noevaporation, l_nocondensation &
-       , l_truncated, l_init_test, l_use_nn
+       , l_truncated, l_init_test, l_use_nn, l_boss_partition_liq &
+       , l_getrates, l_boss_save_dsd
 
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''
@@ -141,7 +153,7 @@ real, public :: vTqrmax = 10. ! [m/s]
 
   namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, &
           mp_proc_dg, bintype, ampORbin, l_coll_coal, initprof, extralayer, &
-          l_hist_run &
+          l_hist_run, moments_diag &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &
@@ -218,8 +230,11 @@ contains
 !    rewind(1)
     read(1,control)
 !    rewind(1)
+    read(1,ppe)
+!    rewind(1)
     read(1,switch)
 !    rewind(1)
+allocate(moments_diag(nmom_diag))
     read(1,addcontrol)
     close(1)
 

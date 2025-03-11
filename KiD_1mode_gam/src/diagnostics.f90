@@ -17,9 +17,10 @@ Module diagnostics
   Use physconst, only: r_on_cp, p0, pi
   Use common_physics, only : qsaturation, qisaturation
   Use header_data
-  Use switches, only: l_diverge
+  Use switches, only: l_diverge, wctrl
 
-  Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin
+  Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin,nmom_diag
+  use micro_prm, only: QtoM3
 
   Implicit none
 
@@ -64,6 +65,12 @@ Module diagnostics
      real(wp), pointer :: data(:,:,:)
   end type diag_bin2DTS
 
+  type, public :: diag_proc2DTS   ! Holds 2D procrate-height timeseries data
+      character(max_char_len) :: name, units, longname
+      character(max_char_len) :: dim
+      real(wp), pointer :: data(:,:,:)
+  end type diag_proc2DTS
+
   type, public :: diag_flag2DTS   ! Holds 2D flag-height timeseries data
       character(max_char_len) :: name, units, longname
       character(max_char_len) :: dim
@@ -82,6 +89,7 @@ Module diagnostics
   type(diagScalarTS), target :: scalars(max_dgs) ! Instantaneous scalars
   type(diagBinData), target :: binData(max_dgs) ! bin data
   type(diag_bin2DTS), target :: instant_bindgs(max_dgs) ! Instantaneous bin diags
+  type(diag_proc2DTS), target :: instant_procdgs(max_dgs) ! Instantaneous proc rates diags
   type(diag_flag2DTS), target :: instant_flagdgs(max_dgs) ! Instantaneous flag diags
 
   type(dgIDarray), save, target :: ID_instant_column
@@ -90,6 +98,7 @@ Module diagnostics
   type(dgIDarray), save, target :: ID_scalars
   type(dgIDarray), save, target :: ID_binData
   type(dgIDarray), save, target :: ID_instant_bindgs
+  type(dgIDarray), save, target :: ID_instant_procdgs
   type(dgIDarray), save, target :: ID_instant_flagdgs
 
   integer :: maxn_dgtimes=0
@@ -141,7 +150,7 @@ contains
 
   subroutine query_dgstep
 
-    if(mod(time,dg_dt)<dt.and.time>dgstart)then
+    if(mod(time,dg_dt)<dt.and.time>=dgstart)then
        l_dgstep=.true.
        i_dgtime=i_dgtime+1
     else
@@ -158,6 +167,7 @@ contains
     real(wp), allocatable :: field_bin_c(:)
     real(wp), allocatable :: field_bin_r(:)
     real(wp), allocatable :: field_bin(:,:)
+    real(wp), allocatable :: field_moms(:,:)
     character(max_char_len) :: name, units, dims
     integer :: k, ih, imom, ibin, ift
 
@@ -173,6 +183,7 @@ contains
     allocate(field_bin_c(nz))
     allocate(field_bin_r(nz))
     allocate(field_bin(nz,max_nbins))
+    allocate(field_moms(nz,nmom_diag))
 
     ! set dimensions for the diagnostic column or grid output, i.e.
     ! 1-D set-up is dimensioned with column - 'z'
@@ -216,10 +227,11 @@ contains
           do k=1,nz
              if (ampORbin .eq. 'bin') then
                 if (ih==1) then ! cloud
-                    field(k)=sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                  field(k)=sum(hydrometeors(k,nx,1)%moments(1:split_bins,imom))
                 elseif (ih==2) then ! rain
-                    field(k)=sum(hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                  field(k)=sum(hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                 endif
+                if (imom==1) field(k)=field(k)*QtoM3
              else
                 field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
              endif
@@ -286,12 +298,11 @@ contains
           do k=1,nz
              if (ampORbin .eq. 'bin')then
                 if (ih==1) then
-                    field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                    field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(1:split_bins,imom))
                 elseif (ih==2) then
-                    field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
-                else
-                    ! need in case there's ice -ahu
+                    field(k)=sum(dhydrometeors_adv(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                 endif
+                if (imom==1) field(k)=field(k)*QtoM3
              else
                  field(k)=sum(dhydrometeors_adv(k,nx,ih)%moments(:,imom))
              endif
@@ -336,12 +347,13 @@ contains
              do k=1,nz
                 if (ampORbin .eq. 'bin')then
                    if (ih==1) then
-                       field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                       field(k)=sum(dhydrometeors_div(k,nx,1)%moments(1:split_bins,imom))
                    elseif (ih==2) then
-                       field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                       field(k)=sum(dhydrometeors_div(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                    else
                         ! need in case there's ice -ahu
                    endif
+                   if (imom==1) field(k)=field(k)*QtoM3
                 else
                    field(k)=sum(dhydrometeors_div(k,nx,ih)%moments(:,imom))
                 endif
@@ -385,12 +397,13 @@ contains
           do k=1,nz
               if (ampORbin .eq. 'bin')then
                  if (ih==1) then
-                     field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                     field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(1:split_bins,imom))
                  elseif (ih==2) then
-                     field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                     field(k)=sum(dhydrometeors_mphys(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                  else
                      ! need in case there's ice -ahu
                  endif
+                 if (imom==1) field(k)=field(k)*QtoM3
               else
                  field(k)=sum(dhydrometeors_mphys(k,nx,ih)%moments(:,imom))
               endif
@@ -418,9 +431,9 @@ contains
     !      do k=1,nz
     !          if (ampORbin .eq. 'bin')then
     !             if (ih==1) then
-    !                 field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+    !                 field(k)=sum(dhydrometeors_force(k,nx,1)%moments(1:split_bins,imom))*QtoM3
     !             elseif (ih==2) then
-    !                 field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+    !                 field(k)=sum(dhydrometeors_force(k,nx,1)%moments(split_bins+1:max_nbins,imom))*QtoM3
     !             else
     !                 ! need in case there's ice -ahu
     !             endif
@@ -484,44 +497,31 @@ contains
           do k=1,nz
               if (ampORbin .eq. 'bin')then
                  if (ih==1) then
-                     field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))/(pi/6*1000)
+                     field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(1:split_bins,imom))
                  elseif (ih==2) then
-                     field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                     field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,imom))
                  endif
+                 if (imom==1) field(k)=field(k)*QtoM3
               else
                   field(k)=sum(rho(k)*dz(k)*hydrometeors(k,nx,ih)%moments(:,imom))
               endif
           end do
 
+          if (ih==2 .and. imom==1) then
+            if (sum(field) /= sum(field)) then
+              print*, field
+              stop
+            endif
+          endif
+
+          ! if (ih==2) print*, i_dgtime, sum(field)
           call save_dg(sum(field), name, i_dgtime,  units,dim='time')
+          ! print*, 'path', imom, sum(field)
        end do
     end do
 
-    !do ih=1,nspecies
-    !   if (ampORbin .eq. 'bin')then
-    !      field(:)=0.0
-    !      ! field_bin_r(:)=0.0
-    !      do k=1,nz
-    !         if (ih==1) then
-    !             field(k)= sum(rho(k)*dz(k)* &
-    !                 hydrometeors(k,nx,1)%moments(1:split_bins,1))
-    !         elseif (ih==2) then
-    !             field(k)= sum(rho(k)*dz(k)* &
-    !                 hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1))
-    !         endif
-    !      enddo
-
-    !      if (ih==1) then
-    !          call save_dg(sum(field), 'cloud_water_path',&
-    !               i_dgtime, units='kg/m2',dim='time')
-    !      elseif (ih==2) then
-    !          call save_dg(sum(field), 'rain_water_path',&
-    !               i_dgtime, units='kg/m2',dim='time')
-    !      endif
-    !   endif
-    !enddo
-
     deallocate(field_bin)
+    deallocate(field_moms)
     deallocate(field)
     deallocate(field_nx)
     deallocate(field_bin_c)
@@ -530,8 +530,8 @@ contains
     n_dgtimes=i_dgtime
 
     ! Write out progress indicator in 2% chunks.
-    if ( mod( int(100*i_dgtime/float(maxn_dgtimes)), 2) < &
-         mod( int(100*(i_dgtime-1)/float(maxn_dgtimes)), 2) ) &
+    if ( mod( int(100*i_dgtime/float(maxn_dgtimes)), 20) < &
+         mod( int(100*(i_dgtime-1)/float(maxn_dgtimes)), 20) ) &
          write (unit=6,fmt='(T3, i3, a)') int(100*i_dgtime&
          &/float(maxn_dgtimes)), '% completed...'
 
@@ -616,12 +616,11 @@ contains
              do j=1,nx
                 if (ampORbin .eq. 'bin') then
                    if (ih==1) then
-                      field_2D(k,j)=sum(hydrometeors(k,j,1)%&
-                         moments(1:split_bins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(hydrometeors(k,j,1)%moments(1:split_bins,imom))
                    elseif (ih==2) then
-                      field_2D(k,j)=sum(hydrometeors(k,j,1)%&
-                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(hydrometeors(k,j,1)%moments(split_bins+1:max_nbins,imom))
                    endif
+                   if (imom==1) field_2d(k,j)=field_2d(k,j)*QtoM3
                 else
                    field_2D(k,j)=sum(hydrometeors(k,j,ih)%moments(:,imom))
                 endif
@@ -668,12 +667,11 @@ contains
              do j=1,nx
                 if (ampORbin .eq. 'bin') then
                    if (ih==1) then
-                      field_2D(k,j)=sum(dhydrometeors_adv(k,j,1)%&
-                         moments(1:split_bins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(dhydrometeors_adv(k,j,1)%moments(1:split_bins,imom))
                    elseif (ih==2) then
-                      field_2D(k,j)=sum(dhydrometeors_adv(k,j,1)%&
-                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(dhydrometeors_adv(k,j,1)%moments(split_bins+1:max_nbins,imom))
                    endif
+                   if (imom==1) field_2d(k,j)=field_2d(k,j)*QtoM3
                 else
                    field_2D(k,j)=sum(dhydrometeors_adv(k,j,ih)%moments(:,imom))
                 endif
@@ -719,12 +717,11 @@ contains
                 do j=1,nx
                    if (ampORbin .eq. 'bin') then
                       if (ih==1) then
-                         field_2D(k,j)=sum(dhydrometeors_div(k,j,1)%&
-                            moments(1:split_bins,imom))/(pi/6*1000)
+                         field_2D(k,j)=sum(dhydrometeors_div(k,j,1)%moments(1:split_bins,imom))
                       elseif (ih==2) then
-                         field_2D(k,j)=sum(dhydrometeors_div(k,j,1)%&
-                            moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                         field_2D(k,j)=sum(dhydrometeors_div(k,j,1)%moments(split_bins+1:max_nbins,imom))
                       endif
+                      if (imom==1) field_2d(k,j)=field_2d(k,j)*QtoM3
                    else
                       field_2D(k,j)=sum(dhydrometeors_div(k,j,ih)%moments(:,imom))
                    endif
@@ -770,12 +767,11 @@ contains
              do j=1,nx
                 if (ampORbin .eq. 'bin') then
                    if (ih==1) then
-                      field_2D(k,j)=sum(dhydrometeors_mphys(k,j,1)%&
-                         moments(1:split_bins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(dhydrometeors_mphys(k,j,1)%moments(1:split_bins,imom))
                    elseif (ih==2) then
-                      field_2D(k,j)=sum(dhydrometeors_mphys(k,j,1)%&
-                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(dhydrometeors_mphys(k,j,1)%moments(split_bins+1:max_nbins,imom))
                    endif
+                   if (imom==1) field_2d(k,j)=field_2d(k,j)*QtoM3
                 else
                    field_2D(k,j)=sum(dhydrometeors_mphys(k,j,ih)%moments(:,imom))
                 endif
@@ -804,12 +800,11 @@ contains
              do j=1,nx
                 if (ampORbin .eq. 'bin') then
                    if (ih==1) then
-                      field_2D(k,j)=sum(dhydrometeors_force(k,j,1)%&
-                         moments(1:split_bins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(dhydrometeors_force(k,j,1)%moments(1:split_bins,imom))
                    elseif (ih==2) then
-                      field_2D(k,j)=sum(dhydrometeors_force(k,j,1)%&
-                         moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                      field_2D(k,j)=sum(dhydrometeors_force(k,j,1)%moments(split_bins+1:max_nbins,imom))
                    endif
+                   if (imom==1) field_2d(k,j)=field_2d(k,j)*QtoM3
                 else
                    field_2D(k,j)=sum(dhydrometeors_force(k,j,ih)%moments(:,imom))
                 endif
@@ -872,12 +867,11 @@ contains
             do k=1,nz
               if (ampORbin .eq. 'bin')then
                  if (ih==1) then
-                    field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,1)%&
-                       moments(1:split_bins,imom))/(pi/6*1000)
+                    field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,1)%moments(1:split_bins,imom))
                  elseif (ih==2) then
-                    field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,1)%&
-                       moments(split_bins+1:max_nbins,imom))/(pi/6*1000)
+                    field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,1)%moments(split_bins+1:max_nbins,imom))
                  endif
+                 if (imom==1) field_2d(k,j)=field_2d(k,j)*QtoM3
               else
                  field_2D(k,j)=sum(rho(k)*dz(k)*hydrometeors(k,j,ih)%moments(:,imom))
               endif
@@ -891,29 +885,6 @@ contains
           call save_dg(field_nx(1:nx), name, i_dgtime,  units,dim='x')
        end do
     end do
-
-    !do ih=1,nspecies
-    !   if (ampORbin .eq. 'bin')then
-    !      field_bin_c(:)=0.0
-    !      field_bin_r(:)=0.0
-    !      do k=1,nz
-    !         do j=1,nx
-    !            field_bin_c_2d(k,j)= sum(rho(k)*dz(k)* &
-    !                 hydrometeors(k,j,ih)%moments(1:split_bins,1))
-    !            field_bin_r_2d(k,j)= sum(rho(k)*dz(k)* &
-    !                 hydrometeors(k,j,ih)%moments(split_bins+1:max_nbins,1))
-    !         enddo
-    !         field_bin_c(k) = sum(field_bin_c_2d(k,1:nx))/nx
-    !         field_bin_r(k) = sum(field_bin_r_2d(k,1:nx))/nx
-    !      enddo
-
-    !      call save_dg(sum(field_bin_c), 'cloud_water_path',&
-    !           i_dgtime, units='kg/m2',dim='time')
-    !      call save_dg(sum(field_bin_r), 'rain_water_path',&
-    !           i_dgtime, units='kg/m2',dim='time')
-    !   endif
-    !enddo
-
 
     deallocate(field_nx)
     deallocate(field_2D)
@@ -939,7 +910,7 @@ contains
     integer :: n_offset, n_dgtimes
 
     n_offset = dgstart/dt-1
-    n_dgtimes = n_times - n_offset
+    n_dgtimes = n_times !- n_offset
 
     if (nx == 1) then
 
@@ -962,7 +933,7 @@ contains
     type(diag2DTS), intent(inout) :: dgStore
     integer :: n_offset, n_dgtimes
     n_offset = dgstart/dt-1
-    n_dgtimes = n_times - n_offset
+    n_dgtimes = n_times !- n_offset
 
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(nz, 1:nx, maxn_dgtimes))
@@ -976,7 +947,7 @@ contains
     integer :: n_offset, n_dgtimes
 
     n_offset = dgstart/dt-1
-    n_dgtimes = n_times - n_offset
+    n_dgtimes = n_times !- n_offset
 
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(nz, max_nbins, maxn_dgtimes))
@@ -984,13 +955,27 @@ contains
 
   end subroutine allocate_dgs_bindgs
 
+  subroutine allocate_procdgs(dgStore)
+
+    type(diag_proc2dTS), intent(inout) :: dgStore
+    integer :: n_offset, n_dgtimes
+
+    n_offset = dgstart/dt-1
+    n_dgtimes = n_times !- n_offset
+
+    maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
+    allocate(dgStore%data(nz, nmom_diag, maxn_dgtimes))
+    dgStore%data=unset_real
+
+  end subroutine allocate_procdgs
+
   subroutine allocate_dgs_flagdgs(dgStore)
 
     type(diag_flag2DTS), intent(inout) :: dgStore
     integer :: n_offset, n_dgtimes
 
     n_offset = dgstart/dt-1
-    n_dgtimes = n_times - n_offset
+    n_dgtimes = n_times !- n_offset
 
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(nz, flag_count, maxn_dgtimes))
@@ -1004,7 +989,7 @@ contains
     integer :: n_offset, n_dgtimes
 
     n_offset = dgstart/dt-1
-    n_dgtimes = n_times - n_offset
+    n_dgtimes = n_times !- n_offset
     maxn_dgtimes=max(maxn_dgtimes, int(n_dgtimes*dt/dg_dt)+1)
     allocate(dgStore%data(maxn_dgtimes))
     dgStore%data=unset_real
@@ -1921,6 +1906,60 @@ contains
 
   end subroutine save_dg_bin_dp
 
+  subroutine save_proc_dp(field, name, itime, units, &
+     dim, longname)
+
+    real(dp), intent(in) :: field(:,:)
+    character(*), intent(in) :: name
+    integer, intent(in) :: itime
+    character(*), intent(in), optional :: units, dim, longname
+
+    !local variables
+    type(diag_proc2DTS), pointer :: dg(:)
+    type(dgIDarray), pointer  :: dg_index
+    character(max_char_len):: cunits, cdim, clongname
+    integer :: ivar
+
+    if (.not. l_dgstep) return
+    ! print*, 'dp called nmom'
+    ! We're assuming diagnostics are instant for now
+    ! could put in an optional argument later to do
+    ! averaged, accumulated, etc. later.
+    dg=>instant_procdgs
+    dg_index=>ID_instant_procdgs
+
+    if (present(units))then
+      cunits=units
+    else
+      cunits='Not set'
+    end if
+
+    if (present(dim))then
+      cdim=dim
+    else
+      cdim='z'
+    end if
+
+    if (present(longname))then
+      clongname=longname
+    else
+      clongname=name
+    end if
+
+    call getUniqueId(name, dg_index, ivar)
+
+    if (.not. associated(dg(ivar)%data)) then
+      call allocate_procdgs(dg(ivar))
+      dg(ivar)%name=name
+      dg(ivar)%units=trim(cunits)
+      dg(ivar)%dim=trim(cdim)
+      dg(ivar)%longname=trim(clongname)
+    end if
+
+    dg(ivar)%data(:,:,itime)=field(:,:)
+
+  end subroutine save_proc_dp
+
   !subroutine save_dg_flag_sp(field, flag, name, itime, units, &
   !   dim, longname)
 
@@ -2179,13 +2218,13 @@ contains
     character(max_char_len) :: outfile, nmlfile, outdir, name
 
     ! Local variables
-    integer :: ivar, itmp=1, offset=3, n_dgs, k, iq, tim
+    integer :: ivar, itmp=1, offset=3, n_dgs, k, iq, tim, imom
     character(4) :: char4
 
     ! netcdf variables
-    integer :: status, ncid, zid, xid, timeid, binsid, flagsid
+    integer :: status, ncid, zid, xid, timeid, binsid, flagsid, nmomid
     integer :: tzdim(2), txdim(2), tzldim(3), tzxdim(3), tzfdim(3), dim, &
-               dim2d(2), dim3d(3)
+               dim2d(2), dim3d(3), tzmdim(3)
     integer, allocatable :: varid(:)
     real(8), allocatable :: field3d(:,:,:)
 
@@ -2249,10 +2288,14 @@ contains
     status=nf90_put_att(ncid, nf90_global, 'Advection ID', advection_id)
     status=nf90_put_att(ncid, nf90_global, 'references', references)
     status=nf90_put_att(ncid, nf90_global, 'comments', comments)
+    status=nf90_put_att(ncid, nf90_global, 'Na', aero_N_init/1e6)
+    status=nf90_put_att(ncid, nf90_global, 'w', wctrl)
 
     status=nf90_def_dim(ncid, 'time', int(n_dgtimes, kind=incdfp), timeid)
     call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'z', int(nz, kind=incdfp), zid)
+    call check_ncstatus(status)
+    status=nf90_def_dim(ncid, 'nmom', int(nmom_diag, kind=incdfp), nmomid)
     call check_ncstatus(status)
     status=nf90_def_dim(ncid, 'bins', int(max_nbins, kind=incdfp), binsid)
     call check_ncstatus(status)
@@ -2264,6 +2307,7 @@ contains
     tzdim=(/ timeid, zid /)
     txdim=(/ timeid, xid /)
     tzldim=(/ timeid, binsid, zid /)
+    tzmdim=(/ timeid, nmomid, zid /)
     tzxdim=(/ timeid, xid, zid /)
     tzfdim=(/timeid, flagsid, zid/)
 
@@ -2271,12 +2315,12 @@ contains
     n_dgs=2
     allocate(varid(n_dgs))
     ivar=1
-    status=nf90_def_var(ncid, 'z', nf90_float, zid, varid(ivar))
+    status=nf90_def_var(ncid, 'z', NF90_DOUBLE, zid, varid(ivar))
     call check_ncstatus(status)
     status=nf90_put_att(ncid, varid(ivar),'units', 'm')
     call check_ncstatus(status)
     ivar=2
-    status=nf90_def_var(ncid, 'x', nf90_float, xid, varid(ivar))
+    status=nf90_def_var(ncid, 'x', NF90_DOUBLE, xid, varid(ivar))
     call check_ncstatus(status)
     status=nf90_put_att(ncid, varid(ivar),'units', 'm')
     call check_ncstatus(status)
@@ -2304,7 +2348,7 @@ contains
        name=binData(ivar)%name
        call sanitize(name)
        status=nf90_def_var(ncid, name &
-            , nf90_float, dim, varid(ivar))
+            , NF90_DOUBLE, dim, varid(ivar))
        call check_ncstatus(status, binData(ivar)%name)
        status=nf90_put_att(ncid, varid(ivar),        &
             'units', binData(ivar)%units)
@@ -2335,7 +2379,7 @@ contains
        name=scalars(ivar)%name
        call sanitize(name)
        status=nf90_def_var(ncid, name &
-            , nf90_float, dim, varid(ivar))
+            , NF90_DOUBLE, dim, varid(ivar))
        call check_ncstatus(status, scalars(ivar)%name)
        status=nf90_put_att(ncid, varid(ivar),        &
             'units', scalars(ivar)%units)
@@ -2368,9 +2412,9 @@ contains
        ! print *, 'ivar', ivar
 
           status=nf90_def_var(ncid, instant_column(ivar)%name &
-               , nf90_float, dim2d, varid(ivar))
+               , NF90_DOUBLE, dim2d, varid(ivar))
             ! print*, ncid, instant_column(ivar)%name
-            ! print*, nf90_float, dim2d, varid(ivar)
+            ! print*, NF90_DOUBLE, dim2d, varid(ivar)
           call check_ncstatus(status)
           status=nf90_put_att(ncid, varid(ivar),        &
                'units', instant_column(ivar)%units)
@@ -2398,7 +2442,7 @@ contains
 
        do ivar=1,n_dgs
           status=nf90_def_var(ncid, instant_bindgs(ivar)%name &
-               , nf90_float, dim3d, varid(ivar))
+               , NF90_DOUBLE, dim3d, varid(ivar))
           call check_ncstatus(status)
           status=nf90_put_att(ncid, varid(ivar),        &
                'units', instant_bindgs(ivar)%units)
@@ -2431,6 +2475,47 @@ contains
        deallocate(varid)
 
 
+       ! Do the instantaneous proc diags (2D)
+       n_dgs=ID_instant_procdgs%nids
+       allocate(varid(n_dgs))
+       status=nf90_redef(ncid)
+       dim3d=tzmdim
+
+       do ivar=1,n_dgs
+          status=nf90_def_var(ncid, instant_procdgs(ivar)%name &
+               , NF90_DOUBLE, dim3d, varid(ivar))
+          call check_ncstatus(status)
+          status=nf90_put_att(ncid, varid(ivar),        &
+               'units', instant_procdgs(ivar)%units)
+          status=nf90_put_att(ncid, varid(ivar),        &
+               'dim', instant_procdgs(ivar)%dim)
+          status=nf90_put_att(ncid, varid(ivar),        &
+               'missing_value', unset_real)
+       end do
+
+       status=nf90_enddef(ncid)
+
+       allocate(field3d(n_dgtimes, nmom_diag, nz))
+
+       do ivar=1,n_dgs
+          do tim=1,n_dgtimes
+             do imom=1, nmom_diag
+                do k = 1,nz
+                   field3d(tim,imom,k)= instant_procdgs(ivar)%data(k,imom,tim)
+                enddo
+             enddo
+          enddo
+          status=nf90_put_var(ncid, varid(ivar), field3d)
+
+          call check_ncstatus(status)
+
+       enddo
+
+       deallocate(field3d)
+
+       deallocate(varid)
+
+
        ! Do the instantaneous flag diags (2D)
        n_dgs=ID_instant_flagdgs%nids
        allocate(varid(n_dgs))
@@ -2439,7 +2524,7 @@ contains
 
        do ivar=1,n_dgs
           status=nf90_def_var(ncid, instant_flagdgs(ivar)%name &
-               , nf90_float, dim3d, varid(ivar))
+               , NF90_DOUBLE, dim3d, varid(ivar))
           call check_ncstatus(status)
           status=nf90_put_att(ncid, varid(ivar),        &
                'units', instant_flagdgs(ivar)%units)
@@ -2481,7 +2566,7 @@ contains
 
        do ivar=1,n_dgs
           status=nf90_def_var(ncid, instant_2D(ivar)%name &
-               , nf90_float, dim3d, varid(ivar))
+               , NF90_DOUBLE, dim3d, varid(ivar))
           call check_ncstatus(status)
           status=nf90_put_att(ncid, varid(ivar),        &
                'units', instant_2D(ivar)%units)
@@ -2522,7 +2607,7 @@ contains
 
        do ivar=1,n_dgs
           status=nf90_def_var(ncid, instant_column(ivar)%name &
-               , nf90_float, dim2d, varid(ivar))
+               , NF90_DOUBLE, dim2d, varid(ivar))
           call check_ncstatus(status)
           status=nf90_put_att(ncid, varid(ivar),        &
                'units', instant_column(ivar)%units)

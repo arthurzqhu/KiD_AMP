@@ -26,7 +26,7 @@ module stepfields
      Use switches
      Use column_variables
      Use namelists, only : ampORbin, bintype
-     Use micro_prm, only : pmomsc, diams, nkr, D_min, D_max, npmc, tempvar_debug3, pio6rw
+     Use micro_prm, only : pmomsc, diams, nkr, D_min, D_max, npmc, tempvar_debug3, M3toq
 
 
      !local variables
@@ -194,7 +194,7 @@ module stepfields
      end do
 
      ! if (dhydrometeors_mphys(20,1,1)%moments(1,1)>0) then
-     !   print*, 'dqc in stepfields', dhydrometeors_mphys(20,1,1)%moments(1,1)*dt*pio6rw
+     !   print*, 'dqc in stepfields', dhydrometeors_mphys(20,1,1)%moments(1,1)*dt*M3toq
      !   stop
      ! endif
      

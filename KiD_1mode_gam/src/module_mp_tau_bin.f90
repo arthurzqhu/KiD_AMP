@@ -1554,7 +1554,8 @@ enddo
       SUBROUTINE BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 !SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
-      use micro_prm, only: VT_TAU
+      use micro_prm, only: VT_TAU, QtoM3, diams, nkr, pmomsc, pmomsr
+      use module_mp_boss, only: momx, momy
       IMPLICIT NONE
 
 ! This routine calculates the tendency for each bin due to sedimentation
@@ -1570,21 +1571,23 @@ enddo
       REAL, DIMENSION(JMINP:JMAXP,KKP,NQP):: SQ!moisture tendency
       REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: QLORIG
       REAL, DIMENSION(JMINP:JMAXP,KKP,LK) :: QLNORIG
+      REAL(8), DIMENSION(JMINP:JMAXP,KKP,LK,10) :: QLXORIG
       REAL :: DM
       REAL :: DN
+      double precision :: meand
       REAL, DIMENSION(KKP) :: DMTOT
       REAL, DIMENSION(KKP) :: DNTOT
       INTEGER,PARAMETER :: IORD=1
-      INTEGER J,K,L,ITER
+      INTEGER J,K,L,ITER,ib
       REAL,DIMENSION(JMINP:JMAXP,KKP,LK)::binmass,binnum
       REAL, DIMENSION(JMINP:JMAXP,KKP) :: SED_FLUX, sed_field,fztemp
       REAL sqmassbef, sqnumbef,conserve_mass, conserve_no
       REAL, DIMENSION(KKP) :: mass_before,num_before,mass_after,&
                                num_after
      ! REAL, DIMENSION(KKP,LK) :: vt
-      REAL :: DIAM
 
        character(2) :: str2
+
 
      dmtot(:) = 0.0
      dntot(:) = 0.0
@@ -1600,6 +1603,13 @@ enddo
           DO K=2,KKP
             QLORIG(J,K,L) = AMKORIG(J,K,L)
             QLNORIG(J,K,L) = ANKORIG(J,K,L)
+            meand = (QLORIG(j,k,l)*QtoM3/QLNORIG(j,k,l))**(1./3.)
+            if ((meand .ne. meand) .or. (meand>huge(meand))) then
+              meand=diams(L)
+            endif
+            do I=1,10
+              QLXORIG(J,K,L,I) = meand**real(i-1)*QLNORIG(j,k,l)
+            enddo
             IF(QLORIG(J,K,L) > eps.AND.             &
      &         QLNORIG(J,K,L) > eps)THEN
                   !AMS(J,K)=QLORIG(J,K,L)/QLNORIG(J,K,L)
@@ -1650,6 +1660,14 @@ enddo
               IF (j .EQ. jjp) THEN
                  dntot(k) = dntot(k)+dn
               endif
+
+!3) WORK OUT THE XTH AND YTH MOMENT SEDIMENTATION FOR EACH BIN
+              do i = 1,10
+                QLX_SED(J,K,L,I) = - DT*(RHON(K+1)* QLXORIG(J,K+1,L,I)* &
+                                 VBAR(J,K+1) - RHON(K)* QLXORIG(J,K,L,I)* &
+                                 VBAR(J,K))/(RHON(K)*DZN(K))
+              enddo
+
             ENDDO
           ENDDO
           DO J = JMINP, JMAXP
@@ -1662,6 +1680,12 @@ enddo
      &               VBAR(J,KKP))/(RHON(KKP)*DZN(KKP))
              DN = QLN_SED(J,KKP,L) - QLNORIG(J,KKP,L)
              QLN_SED(J,KKP,L) = DN
+
+             do i=1,10
+               QLX_SED(J,KKP,L,I) = - DT*(-RHON(KKP)* QLXORIG(J,KKP,L,I)* &
+                 VBAR(J,KKP))/(RHON(KKP)*DZN(KKP))
+             enddo
+
           ENDDO
 
 !deal with K=1
@@ -1670,6 +1694,12 @@ enddo
             SQ(J,1,ICDNC_BIN(L)) = 0.0
          ENDDO
       ENDDO
+        ! if (sum(QLNORIG(j,k,:))>0) print*, 'q orig', sum(QLXORIG(j,k,:,1)), sum(QLNORIG(j,k,:))
+
+      ! do k = 1,KKP
+      !   if (sum(QLN_SED(j,k,:))>0) print*, 'sedflux', sum(QLX_SED(j,k,:,1))/sum(QLN_SED(j,k,:))
+      !   if (sum(QLNORIG(j,k,:))>0) print*, 'q orig', sum(QLXORIG(j,k,:,1)), sum(QLNORIG(j,k,:))
+      ! enddo
 
       name='mean_surface_ppt'
       units='kg m-2 s-1'

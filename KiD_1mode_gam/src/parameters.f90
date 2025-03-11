@@ -40,6 +40,9 @@ module parameters
   integer, parameter :: naerosol=1 ! number of aerosol species
 #endif
 
+  ! ppe and latin hypercube
+  double precision, allocatable :: lsample(:,:)
+
   ! diagnostic parameters
   integer, parameter ::     &
        max_dgs       = 300  & ! Maximum number of dg variables in

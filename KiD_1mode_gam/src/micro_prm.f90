@@ -8,6 +8,7 @@ use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK, lk_cloud
 use switches, only: zctrl
 use physconst, only: pi
+use mod_network, only: network_type ! for ML-AMP
 
 !use parameters, only:nx,nz,num_h_moments
 implicit none
@@ -63,7 +64,7 @@ integer, parameter :: BULKNUC=0
 real :: COL = 0.231049060186648 !=log(2.)/3.
 real :: COL3 = 0.693147180559945  !=log(2.)
 
-real(8) :: pio6rw=pi/6*1e3, ipio6rw=6/pi/1e3
+real(8) :: M3toQ=pi/6*1e3, QtoM3=6/pi/1e3
 
 real(8) :: pdiams(10, max_nbins)
 
@@ -130,9 +131,9 @@ REAL, PARAMETER :: BFREEZMAX=0.66E0
 
 !c other parameters and thresholds
 real, parameter :: AFREEZMY=0.3333E-04,BFREEZMY=0.6600E00
-real(8), parameter :: cloud_mr_th=2d-10, rain_mr_th=2d-10 ! cloud/rain mixing ratio threshold, in units of kg/kg
+real(8), parameter :: cloud_mr_th=1d-12, rain_mr_th=1d-12 ! cloud/rain mixing ratio threshold, in units of kg/kg
 real(8), parameter :: cloud_nmr_th=1d5, rain_nmr_th=1d2 ! cloud/rain number mixing ratio threshold, in units of 1/kg
-real(8), parameter :: total_m3_th=0.
+real(8), parameter :: total_m3_th=1d-12
 real(8), parameter :: mass_dist_th = 1d-10
 real(8), parameter :: num_dist_th = 1d-1
 
@@ -229,7 +230,7 @@ integer, dimension(6):: pmomsc,pmomsr
 !real, dimension(2):: cloud_init,rain_init
 double precision :: aeromedrad, naero=0., relax, relaxx, relaxy, relaxw, relaxz
 double precision :: nug, nug1, nug2
-integer :: aerotype=1,npm,npmc,npmr,n_cat
+integer :: aerotype=1,npm,npmc,npmr
 real :: dtlt
 double precision :: Mp(6),M3p,Mxp,Myp,Mwp,Mzp,M0p,rxfinal, fracfinal
 double precision :: M3temp, M0temp
@@ -292,6 +293,9 @@ integer :: debug_k, itries
 real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2, &
     gamnu1_3, gamnu2_3, gamnu1_0, gamnu2_0, gamnu1_w, gamnu2_w, gamnu1_x, gamnu2_x
 
+! for ML-AMP
+type(network_type) :: moment2state_net
+
 
 
 
@@ -328,24 +332,26 @@ contains
          endif
       endif
 
-      gamnu1_3 = gamma(h_shape(1)+3)
-      gamnu2_3 = gamma(h_shape(2)+3)
-      gamnu1_0 = gamma(h_shape(1))
-      gamnu2_0 = gamma(h_shape(2))
-      gamnu1_w = gamma(h_shape(1)+imomc1)
-      gamnu2_w = gamma(h_shape(2)+imomc1)
-      gamnu1_x = gamma(h_shape(1)+imomc2)
-      gamnu2_x = gamma(h_shape(2)+imomc2)
-
-      nuterm31 = gamnu1_3/gamnu1_0
-      nuterm32 = gamnu2_3/gamnu2_0
-      nutermw1 = gamnu1_w/gamnu1_0
-      nutermw2 = gamnu2_w/gamnu2_0
-      nutermx1 = gamnu1_x/gamnu1_0
-      nutermx2 = gamnu2_x/gamnu2_0
-
-
    end subroutine check_bintype
+
+   subroutine set_constants
+     implicit none
+     gamnu1_3 = gamma(h_shape(1)+3)
+     gamnu2_3 = gamma(h_shape(2)+3)
+     gamnu1_0 = gamma(h_shape(1))
+     gamnu2_0 = gamma(h_shape(2))
+     gamnu1_w = gamma(h_shape(1)+imomc1)
+     gamnu2_w = gamma(h_shape(2)+imomc1)
+     gamnu1_x = gamma(h_shape(1)+imomc2)
+     gamnu2_x = gamma(h_shape(2)+imomc2)
+
+     nuterm31 = gamnu1_3/gamnu1_0
+     nuterm32 = gamnu2_3/gamnu2_0
+     nutermw1 = gamnu1_w/gamnu1_0
+     nutermw2 = gamnu2_w/gamnu2_0
+     nutermx1 = gamnu1_x/gamnu1_0
+     nutermx2 = gamnu2_x/gamnu2_0
+   end subroutine set_constants
 
 !   real function mean(arr,n,wgt)
 !      implicit none 

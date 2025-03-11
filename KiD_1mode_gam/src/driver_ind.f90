@@ -6,10 +6,12 @@ use column_variables, only: z
 use module_hujisbm
 use micro_prm
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean,dgmean
-use namelists, only: bintype, l_truncated
+use namelists, only: bintype, l_truncated, l_use_nn
 use global_fun, only: get_meandiam
 use physconst, only: pi
 use mphys_tau_bin_declare, only: diam
+! use module_mp_boss
+
 implicit none
 character(4)::momstr
 character(2)::rdrop_binstr
@@ -26,7 +28,7 @@ real(8) :: dnc,dnr
 real(8), dimension(nz,nx,max_nbins) :: aer2d
 real(8), dimension(max_nbins) :: diag_m, diag_D !diagnosed mass and diam of each bin
 integer :: i,k,imom,ip,ib
-double precision :: infinity
+double precision :: infinity, ratio_fix
 integer, parameter :: max_rows = 120  ! Maximum number of rows in the CSV file
 integer, parameter :: max_cols = 34   ! Maximum number of columns in the CSV file
 integer :: row, colm, iostat
@@ -59,11 +61,9 @@ dnr = guessr2d(1,1,2)
 if (npmc < 4) then
    pmomsc(1:3)=(/3,imomc1,imomc2/)
    pmomsr(1:3)=(/3,imomr1,imomr2/)
-   n_cat = 2
 else
    pmomsc(1:6)=(/3, 0, imomc1, imomc2, imomr1, imomr2/)
    pmomsr(1:6)=(/3, 0, imomc1, imomc2, imomr1, imomr2/)
-   n_cat = 1
 endif
 
 ! 3m initialization: {{{
@@ -77,13 +77,13 @@ else !Run AMP
   lutfolder='./src/input_data/'//trim(bintype)//'_lutables_'//rdrop_binstr//'/'
 endif
 
-if (npmc >= 4) then
-  if (bintype .eq. 'tau') then
-     lutfolder='./src/input_data/'//trim(bintype)//'_lutables_34/'
-  elseif (bintype .eq. 'sbm') then
-     lutfolder='./src/input_data/'//trim(bintype)//'_lutables_33/'
-  endif
-endif
+! if (npmc >= 4) then
+!   if (bintype .eq. 'tau') then
+!      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_34/'
+!   elseif (bintype .eq. 'sbm') then
+!      lutfolder='./src/input_data/'//trim(bintype)//'_lutables_33/'
+!   endif
+! endif
 
 if (npmc==3) then
    write(momstr,'(A,I1,A,I1)') 'M',imomc1,'M',imomc2
@@ -154,11 +154,11 @@ enddo
 
 if (initprof .eq. 'c') then
    if(cloud_init(1)>0.) then
-      dnc = (cloud_init(1)*6./3.14159/1000./cloud_init(2)* & 
+      dnc = (cloud_init(1)*QtoM3/cloud_init(2)* & 
              gamma(h_shape(1))/gamma(h_shape(1)+3))**(1./3.)
    endif
    if(rain_init(1)>0.) then
-      dnr = (rain_init(1)*6./3.14159/1000./rain_init(2)* &
+      dnr = (rain_init(1)*QtoM3/rain_init(2)* &
              gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
    endif
    if(cloud_init(1)>0. .or. rain_init(1)>0.) then
@@ -175,25 +175,46 @@ if (initprof .eq. 'c') then
    endif
    guessc2d(:,:,2)=dnc
    guessr2d(:,:,2)=dnr
+   ratio_fix = (cloud_init(1)+rain_init(1))/sum(ffcd_mass*col)
+   ffcd_mass = ffcd_mass*ratio_fix
+   ratio_fix = (cloud_init(2)+rain_init(2))/sum(ffcd_num*col)
+   ffcd_num = ffcd_num*ratio_fix
+   ! stop
    do i=1,num_h_moments(1)
      if (bintype .eq. 'sbm') then
        mc(i)=sum(ffcd_mass(1:split_bins)/xl(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col*1000.
      elseif (bintype .eq. 'tau') then
+     select case (pmomsc(i))
+     case (0)
+       mc(i)=sum(ffcd_num(1:split_bins))*col
+     case default
        mc(i)=sum(ffcd_mass(1:split_bins)/binmass(1:split_bins)*diams(1:split_bins)**pmomsc(i))*col
+     end select 
      endif
    enddo
    do i=1,num_h_moments(2)
      if (bintype .eq. 'sbm') then
        mr(i)=sum(ffcd_mass(split_bins+1:nkr)/xl(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsr(i))*col*1000.
      elseif (bintype .eq. 'tau') then
+     select case (pmomsr(i))
+     case (0)
+       mr(i)=sum(ffcd_num(split_bins+1:nkr))*col
+     case default
        mr(i)=sum(ffcd_mass(split_bins+1:nkr)/binmass(split_bins+1:nkr)*diams(split_bins+1:nkr)**pmomsc(i))*col
+     end select 
      end if
    enddo
 endif
 
+! print*, mc+mr
+! print*, dnc, dnr
+! print*, cloud_init(1)*QtoM3/(dnc**(h_shape(1)+3)*gamnu1_3)*dnc**(h_shape(1)+pmomsc(3))*gamnu1_w
+! ! print*, cloud_init(2)
+! stop
+
 do i=1,nx
    do k=1,nz
-      if (z(k)>zctrl(2) .and. z(k)<=zctrl(3)) then
+      if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
          if (initprof .eq. 'i') then
             if (cloud_init(1)>0.) then
                dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000./&
@@ -307,6 +328,10 @@ if (extralayer) then
    enddo
 endif
 
+! print*, mc+mr
+! stop
+
+
 
 if (l_hist_run) then
    ! Open the CSV file
@@ -357,7 +382,7 @@ if (l_hist_run) then
 
          if (bintype .eq. 'tau') then
             diag_m=binmass
-            diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+            diag_D=(diag_m*QtoM3)**(1./3.)
             do ib=1,nkr
                if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>infinity)) diag_D(ib)=diams(ib)
             end do
@@ -390,6 +415,13 @@ if (l_hist_run) then
       enddo
    enddo
 endif ! l_hist_run
+
+if (l_use_nn) &
+  call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
+
+! momx = imomc1
+! momy = imomc2
+! if (npm>=4) call read_boss_slc_param
 
 end subroutine amp_init
 
@@ -522,6 +554,8 @@ use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
 use column_variables, only: z
 use micro_prm
 use mphys_tau_bin_declare, only: xk, x_bin, xkgmean
+! use module_mp_boss
+use namelists, only: moments_diag, nmom_diag
 
 implicit none
 !real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
@@ -539,6 +573,7 @@ character(1) :: delimiter = ','       ! The delimiter used in the CSV file
 character(100) :: filename,filenamen  ! The name of the CSV file
 integer :: num_rows = 0               ! The number of rows in the CSV file
 integer :: num_cols = 0               ! The number of columns in the CSV file
+integer :: ib
 
 
 
@@ -562,16 +597,6 @@ if (initprof .eq. 'c')  then
    if (gamma(h_shape(2)+3) > infinity) dnr = 0.
    CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
                       dnr,ffcd_mass,ffcd_num)
-endif
-
-if (extralayer) then
-   dnr = (2d-4*6./3.14159/1000./1.e5* & 
-          gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
-   CALL init_dist_tau(0d0, h_shape(1), dnc, 2d-4, h_shape(2), dnr, ffcd_mass, ffcd_num)
-   do k=10,37
-      dropsm2d(k,1,:) = ffcd_mass
-      dropsn2d(k,1,:) = ffcd_num
-   enddo
 endif
 
 if (l_hist_run) then
@@ -640,6 +665,28 @@ do i=1,nx
    enddo
 enddo
 
+if (extralayer) then
+   dnr = (2d-4*6./3.14159/1000./1.e5* & 
+          gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
+   CALL init_dist_tau(0d0, h_shape(1), dnc, 2d-4, h_shape(2), dnr, ffcd_mass, ffcd_num)
+
+   ! ib = 31
+   ! ffcd_mass(:) = 0.
+   ! ffcd_num(:) = 0.
+   ! ffcd_num(ib) = 1d5/col
+   ! ffcd_mass(ib) = xkgmean(ib)*ffcd_num(ib)
+
+   ! do k=50,50
+   do k=10,37
+      dropsm2d(k,1,:) = ffcd_mass
+      dropsn2d(k,1,:) = ffcd_num
+   enddo
+endif
+
+! momx = imomc1
+! momy = imomc2
+! call read_boss_slc_param
+
 end subroutine tau_init
 ! }}}
 
@@ -658,7 +705,7 @@ use, intrinsic :: iso_fortran_env, only: real32
 use global_fun
 use column_variables, only: hydrometeors
 use module_mp_amp, only: invert_moments, invert_moments_nn
-use namelists, only: l_truncated, l_init_test, l_use_nn
+use namelists, only: l_truncated, l_init_test, l_use_nn, n_cat
 
 implicit none
 integer:: i,j,k,ip
@@ -681,11 +728,12 @@ real(8) :: mom_pred(npm, 2), gam_param(2,2), sqerr
 
 diag_dt1 = 0.
 diag_dt2 = 0.
-diag_dt3 = 0.
+! diag_dt3 = 0.
 itries = 0
 
 nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
 
+call CPU_TIME(diag_dt1)
 do k=1,nz
  do j=1,nx
 
@@ -704,6 +752,7 @@ do k=1,nz
    endif
 
    if (l_init_test) then
+     mpc(k,j,1:4) = (/5.1056581531715761E-006, 362680242.18796563, 1.5132587792741748E-010, 1.7143553902324072E-019/)
      ! Mpc(k,j,1:2) = (/1e-007, 1e8/)
      ! Mpr(k,j,1:2) = (/1.4000821838411837E-007,   70.996367122565701/)
      ! Mpc(k,j,1:4) = (/1.1958954365427025E-005, 12326993.134452719, 1.5975858216584202E-008, 2.3280344892313758E-011/)
@@ -730,17 +779,26 @@ do k=1,nz
      if (l_init_test) print*, 'mom_pred', mom_pred(:,1)+mom_pred(:,2)
 
      if (l_use_nn .and. npm>=4) then
-       call invert_moments_nn(mom_pred, ffcd_mass(k,j,:), ffcd_num(k,j,:))
+       call invert_moments_nn(mom_pred, gam_param, ffcd_mass(k,j,:), ffcd_num(k,j,:))
      else
+       ! print*, k, Mpc(k,1,1:2)
        call invert_moments(mom_pred, gam_param, ffcd_mass(k,j,:), ffcd_num(k,j,:), flag(k,j,:,1), sqerr)
      endif
 
-     if (l_init_test) print*, 'cloud m3', sum(ffcd_mass(k,j,1:split_bins))*col*ipio6rw
-     if (l_init_test) print*, 'rain m3', sum(ffcd_mass(k,j,split_bins+1:nkr))*col*ipio6rw
+     if (ffcd_mass(k,j,1).ne.ffcd_mass(k,j,1)) then
+     print*, k, mom_pred
+       print*, 'ffcd nan'
+       print*, 'gam_param', gam_param
+       ! print*, (ffcd_mass(k,j,:))
+       stop
+     endif
+
+     if (l_init_test) print*, 'cloud m3', sum(ffcd_mass(k,j,1:split_bins))*col*QtoM3
+     if (l_init_test) print*, 'rain m3', sum(ffcd_mass(k,j,split_bins+1:nkr))*col*QtoM3
      if (l_init_test) print*, 'cloud m0', sum(ffcd_num(k,j,1:split_bins))*col
      if (l_init_test) print*, 'rain m0', sum(ffcd_num(k,j,split_bins+1:nkr))*col
      if (l_init_test .and. (.not. l_use_nn)) print*, 'gam_param after', gam_param
-     if (l_init_test) stop
+     ! if (l_init_test) stop
      ! if (l_init_test) print*, 'sqerr', sqerr
 
    endif
@@ -751,7 +809,7 @@ do k=1,nz
    endif
 
    ! print*, 'ffcd', ffcd_mass(k,j,:)
-   ! print*, 'sum(ffcd)', sum(ffcd_mass(k,j,:))*col*ipio6rw
+   ! print*, 'sum(ffcd)', sum(ffcd_mass(k,j,:))*col*QtoM3
 
    ! open(20, file = 'ffcd_'//trim(tORf)//'.txt')
    ! write(20, '(34e15.7)') real(ffcd_mass(k,j,:))
@@ -772,6 +830,24 @@ do k=1,nz
       call calcmoms_sc(ffcdr8_massinit(k,j,:), ffcdr8_numinit(k,j,:), 10, mc0(k,j,1:10))
    endif
 
+   if (npm == 4) then
+     if (mc0(k,j,4)>1 .or. mc0(k,j,4).ne.mc0(k,j,4)) then
+       print*, 'mpc(k,j,:)',mpc(k,j,:)
+       print*, 'ffcd',ffcd_mass(k,j,:), ffcd_num(k,j,:)
+       print*, 'mc0(k,j,pmomsc(1:4)+1)',mc0(k,j,pmomsc(1:4)+1)
+       print*, 'gam_param(1,:)', gam_param(1,:)
+       stop 'mass too high'
+     endif
+   endif
+
+   ! if (mpc(k,j,1)>0) then
+   !   ! print*, 'pmomsc(1:4)+1',pmomsc(1:4)+1
+   !   print*, 'before', k, sngl(mpc(k,j,:))
+   !   print*, 'after ', k, sngl(mc0(k,j,pmomsc(1:4)+1))
+   !   print*, ''
+   !   ! stop
+   ! endif
+
    ! print*, 'sqerr', sqerr
    ! print*, 'gam_param(1,:)',gam_param(1,:)
    ! print*, 'Mpc', Mpc(k,j,:)
@@ -784,6 +860,10 @@ do k=1,nz
 
  enddo
 enddo
+call CPU_TIME(diag_dt2)
+diag_dt3 = diag_dt3 + diag_dt2-diag_dt1
+
+     ! print*, 'invert_moments', diag_dt3
    if (l_init_test) stop
 ! stop
 
@@ -1061,7 +1141,7 @@ real(8) :: inf=huge(mc(1))
 
 if (bintype .eq. 'tau') then
    diag_m=ffcdr8_mass/ffcdr8_num
-   diag_D=(diag_m/(1000.*pi/6))**(1./3.)
+   diag_D=(diag_m*QtoM3)**(1./3.)
    do ib=1,nkr
       if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>inf)) diag_D(ib)=diams(ib)
    end do
