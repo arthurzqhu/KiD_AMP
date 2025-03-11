@@ -1,17 +1,15 @@
 module module_mp_amp
-  use micro_prm, only: pmomsc, pmomsr, dnc_def, dnr_def, npm, n_cat, nkr, &
-                       diams, pio6rw, ipio6rw, pdiams, total_m3_th, max_nbins, col, &
+  use micro_prm, only: pmomsc, pmomsr, dnc_def, dnr_def, npm, nkr, &
+                       diams, M3toq, QtoM3, pdiams, total_m3_th, max_nbins, col, &
                        nuterm31, nuterm32, nutermx1, nutermx2, nutermw1, nutermw2, tORf, &
                        D_min, D_max, tempvar_debug, rtemp_debug, gamnu1_3, gamnu1_0, &
                        gamnu1_w, gamnu1_x, gamnu2_3, gamnu2_0, gamnu2_w, gamnu2_x, &
-                       cloud_mr_th, rain_mr_th
+                       cloud_mr_th, rain_mr_th,diag_dt4,moment2state_net
   use module_hujisbm, only: xl
   use mphys_tau_bin_declare, only: xkgmean
-  use namelists, only: bintype, l_truncated, l_init_test
+  use namelists, only: bintype, l_truncated, l_init_test, n_cat
   use parameters, only: split_bins, h_shape
-  use physconst, only: pi
   use global_fun, only: gammq
-  use mod_network, only: network_type
   implicit none
   
   integer :: icat, scl, ecl, lcl_catbound1(2), lcl_catbound2(2), imomw, imomx, imomy, imomz, &
@@ -20,7 +18,7 @@ module module_mp_amp
     relaxx, relaxy, nu_def, m1frac, dummy, nuterm_consv1, nuterm_consv2, relax0
   integer, parameter :: n_mom_diag=10
   double precision :: dntab(50,50,2) !, debug_arr(nkr,5)
-  logical :: l_improved
+  logical :: l_improved, l_relax0
   type, private :: guess_param
     double precision :: & 
       ! guesses of dn, nu for two modes l1 and l2, not the most concise implementation
@@ -32,21 +30,21 @@ module module_mp_amp
       ! mass fraction of liquid category 1
       l1_mfrac
   end type
-  type(network_type) :: moment2state_net
 
   ! constants
   double precision, parameter :: dn_min=1e-9, dn_max=1e-3, nu_max=100, nu_min=-1
 
 contains
 
-subroutine invert_moments_nn(mom_pred, amp_distm, amp_distn)
+subroutine invert_moments_nn(mom_pred, gam_param, amp_distm, amp_distn)
 
 double precision, dimension(npm, n_cat), intent(inout) :: mom_pred
 real, dimension(nkr), intent(out) :: amp_distm, amp_distn
+double precision, dimension(2,2), intent(inout) :: gam_param
 ! double precision, intent(out) :: flags(n_cat)
 
 double precision :: exptermc, exptermr, ml1, ml2
-real :: nc,nr,qc,qr,mu1,mu2,lam1,lam2,n01,n02,test(4)
+real :: nc,nr,qc,qr,mu1,mu2,lam1,lam2,n01,n02,test(4),t1,t2
 integer :: lcl
 
 M3p(1) = mom_pred(1,1)
@@ -54,23 +52,33 @@ M0p = mom_pred(2,1)
 Mwp = mom_pred(3,1)
 Mxp(1) = mom_pred(4,1)
 mu1 = h_shape(1)
-mu2 = h_shape(2)
+mu2 = mu1
 
-call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
+! call CPU_TIME(t1)
+! call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
+! call CPU_TIME(t2)
+! diag_dt4 = diag_dt4 + t2 - t1
 
 ! NN is tuned to only use a single shape parameter for now
 ! print*, 'mom_pred(:,1)', mom_pred(:,1)
-call ml_moment2state(mu1,mom_pred(:,1),nc,nr,qc,qr)
-! print*, 'nc, nr, qc, qr', nc, nr, qc, qr
-
-if (qc+qr<=total_m3_th) then
+call ml_moment2state(mu1-1,mom_pred(:,1),nc,nr,qc,qr)
+! print*, 'mom_pred', mom_pred
+! print*, 'nc+nr, qc+qr', nc+nr, qc+qr
+if (qr/=qr .or. qc/=qc) then
   amp_distm(:) = 0.
   amp_distn(:) = 0.
+  return
+endif
+
+if (qc+qr<=total_m3_th .or. nc+nr<=1e-4) then
+  amp_distm(:) = 0.
+  amp_distn(:) = 0.
+  return
 endif
 
 if (qc >= cloud_mr_th) then
   ! check if i need to +1 for the h_shapes
-  lam1=(nc/(qc*ipio6rw)*nuterm31)**(1/3.)
+  lam1=(nc/(qc*QtoM3)*nuterm31)**(1/3.)
   ! n01=nc*lam1**mu1/gamnu1_0
 else
   n01 = 0.
@@ -79,22 +87,17 @@ endif
 
 if (qr >= rain_mr_th) then
   ! check if i need to +1 for the h_shapes
-  lam2=(nr/(qr*ipio6rw)*nuterm32)**(1/3.)
+  lam2=(nr/(qr*QtoM3)*nuterm32)**(1/3.)
   ! n02=nr*lam2**mu2/gamnu2_0
 else
-  lam2 = 1.
   n02 = 0.
+  lam2 = 1.
 endif
 
 ml1 = M3p(1) * qc/(qc+qr)
 ml2 = M3p(1) - ml1
-n01 = ml1/gamnu1_3*log(2.)/3*pio6rw
-n02 = ml2/gamnu2_3*log(2.)/3*pio6rw
-
-! print*, 'dn1, n01, dn2, n02', 1/lam1, n01, 1/lam2, n02
-! print*, 'ml1, ml2', ml1, ml2
-! print*, 'ml1, ml2, n01, n02', ml1, ml2, n01, n02
-
+n01 = ml1/gamnu1_3*log(2.)/3*M3toq
+n02 = ml2/gamnu2_3*log(2.)/3*M3toq
 
 do lcl = 1,nkr
   if (ml1>0. .and. lam1>0.) then
@@ -109,6 +112,11 @@ enddo
 
 amp_distm = amp_distm/col
 if (bintype .eq. 'tau') amp_distn = amp_distm/xkgmean
+
+gam_param(1,1) = 1/lam1
+gam_param(1,2) = 1/lam2
+gam_param(2,1) = mu1
+gam_param(2,2) = mu2
 
 end subroutine invert_moments_nn
 
@@ -129,10 +137,13 @@ subroutine ml_moment2state(mu,mom_pred,nc,nr,qc,qr)
   m4 = mom_pred(3)
   m6 = mom_pred(4)
 
-  nn_input(1) = log( m4 * m0**(1./3.) / m3**(4./3.))
-  nn_input(2) = log( m6 * m0 / m3**2.)
+  ! nn_input(1) = log( m4 * m0**(1./3.) / m3**(4./3.))
+  ! nn_input(2) = log( m6 * m0 / m3**2.)
+  nn_input(1) = log(m4)+(1./3.)*log(m0) - (4./3.)*log(m3)
+  nn_input(2) = log(m6)+log(m0)-2*log(m3)
   nn_input(3) = mu/10.
-  ! print*, 'nn_input', nn_input
+  ! print*, 'nn_input', nn_input(1:2)
+  ! print*, log( m4)+(1./3.)*log(m0) - (4./3.)*log(m3), log(m6)+log(m0)-2*log(m3)
 
   nn_output = moment2state_net % output(nn_input)
 
@@ -143,8 +154,8 @@ subroutine ml_moment2state(mu,mom_pred,nc,nr,qc,qr)
 
   nc = m0 * w_n
   nr = m0 * (1. - w_n)
-  qc = m3 * pio6rw * w_q
-  qr = m3 * pio6rw * (1. - w_q)
+  qc = m3 * M3toq * w_q
+  qr = m3 * M3toq * (1. - w_q)
 
 end subroutine ml_moment2state
 
@@ -162,7 +173,7 @@ double precision :: dn(2), rand1(4), rand2(4), Mconsv_M3, tol, &
                     err_threshold, sqerr_threshold, sqerr, t3sqerr, t3err(4)
 integer :: exit_signal, ntry, itry, ibguess,i,i1,i2
 double precision :: dn1t(201), dn2t(251), ers(201,251), gstep, ers1(201,251), ers2(201,251), &
-  gstep1, gstep2
+  gstep1, gstep2, t1, t2
 
 err_threshold = 100
 sqerr_threshold = 100
@@ -241,8 +252,6 @@ if ( n_cat==1 ) then
   guess_prev%l2prm(1) = dn(2)
   guess_prev%l1prm(2) = gam_param(2,1) ! nu1
   guess_prev%l2prm(2) = gam_param(2,2) ! nu2
-  ! print*, guess_prev
-  ! stop
 
   ! a moment ratio needed for moment conservation
   if ( npm == 4 ) then
@@ -279,17 +288,17 @@ if ( n_cat==1 ) then
   ! guess_start is fixed so that the gradient descent algorithm doesn't
   ! drift us away from the global minimum
   guess_start = guess_best
+  ! print*, 'guesses before itry', guess_start%l1prm, guess_start%l2prm, guess_start%l1_mfrac
+  call CPU_TIME(t1)
   
   ! if guess_try1 is not good enough then start random guess
   if ( exit_signal .ne. 1 ) then
     ! snap back to default if outside a reasonable range
 
     if ( guess_best%l1prm(1)>=dn_max .or. guess_best%l1prm(1)<=dn_min ) then
-      ! print*, 'dnc', guess_best%l1prm(1)
       guess_best%l1prm(1) = dnc_def
     endif
     if ( guess_best%l2prm(1)>=dn_max .or. guess_best%l2prm(1)<=dn_min ) then
-      ! print*, 'dnr', guess_best%l2prm(1)
       guess_best%l2prm(1) = dnr_def
     endif
     if ( npm >= 5 ) then
@@ -393,8 +402,7 @@ if ( n_cat==1 ) then
         t3sqerr = sqrt(sum(t3err(1:(npm-2))**2))
         ! call update_param_guess(guess_best, guess_try3, mark_improve=.true.)
 
-        if (t3sqerr <= guess_best%sqerr .or. (abs(guess_best%error(2))>.01 .and. &
-           abs(t3err(2))<.01 )) then
+        if (t3sqerr <= guess_best%sqerr .or. (abs(guess_best%error(2))>.01 .and. abs(t3err(2))<.01 )) then
            guess_best = guess_try3
            l_improved = .true.
         endif
@@ -409,8 +417,9 @@ if ( n_cat==1 ) then
       endif
     enddo
    endif
-
   10 continue
+
+  call CPU_TIME(t2)
 
   if (l_improved) guess_start = guess_best
 
@@ -483,6 +492,8 @@ elseif ( n_cat==2 ) then
       print*, 'Mconsv_M3', Mconsv_M3
       print*, 'nu_def', nu_def
       print*, 'imomx', imomx
+      print*, 'dn', dn(icat)
+      stop
     endif
 
     if (icat == 1) guess_best%l1prm(1) = dn(1)
@@ -509,6 +520,12 @@ elseif ( n_cat==2 ) then
 
 endif
 
+! print*, 'itry', itry
+! print*, 'gam_param', gam_param, guess_best%l1_mfrac
+! print*, 'exit_signal', exit_signal
+! print*, 'time wasted', t2-t1
+! stop
+
 amp_distm = real(amp_distm_dble)
 if (bintype .eq. 'tau') amp_distn = amp_distm/xkgmean
 
@@ -518,7 +535,7 @@ if (bintype .eq. 'tau') amp_distn = amp_distm/xkgmean
 ! print*, 'error', guess_start%error
 ! print*, 'relaxw', relaxw
 
-! print*, 'sum(amp_distm)',sum(amp_distm)*col*ipio6rw
+! print*, 'sum(amp_distm)',sum(amp_distm)*col*QtoM3
 ! print*, 'amp_distm', amp_distm
 ! print*, 'guess_best%l1prm(1:2)', guess_best%l1prm(1:2)
 ! print*, 'guess_best%l2prm(1:2)', guess_best%l2prm(1:2)
@@ -533,7 +550,7 @@ integer :: ntry, lcl
 double precision, dimension(nkr), intent(out) :: mass_dist
 double precision :: md_part(nkr,2), dn(2), nu(2)
 double precision :: m3, Mconsv_M3, exptermc, exptermr, n01, n02, ml1, ml2, m0, mw, mx, n0, &
-  exptermrc(nkr)
+  exptermrc(nkr), ratio
 
 dn(1) = guess_best%l1prm(1)!*1e-6
 dn(2) = guess_best%l2prm(1)!*1e-6
@@ -559,9 +576,8 @@ if (n_cat == 1) then
 
     ml1 = M3p(1)*guess_best%l1_mfrac
     ml2 = M3p(1) - ml1
-    n01 = ml1/gamma(nu(1)+3)*log(2.)/3*pio6rw
-    n02 = ml2/gamma(nu(2)+3)*log(2.)/3*pio6rw
-    print*, 'ml1, ml2, n01, n02', ml1, ml2, n01, n02
+    n01 = ml1/gamma(nu(1)+3)*log(2.)/3*M3toq
+    n02 = ml2/gamma(nu(2)+3)*log(2.)/3*M3toq
 
 
     do lcl=1,nkr
@@ -574,7 +590,9 @@ if (n_cat == 1) then
         mass_dist(lcl) = mass_dist(lcl) + n02*exptermr*(diams(lcl)/dn(2))**(nu(2)+3)
       endif
     enddo
-    mass_dist = mass_dist/col
+    mass_dist = mass_dist
+    ratio = M3p(1)/(sum(mass_dist)*QtoM3)
+    mass_dist = mass_dist*ratio/col
   endif
 
   return
@@ -595,14 +613,16 @@ elseif (n_cat == 2) then
       if (m3==0. .or. dn(icat)==0.) then
         print*, 'scl, ecl', scl, ecl
         print*, 'md_part', md_part(:,icat)
-        print*, 'cannot find rxfinal and mass = ',M3p(icat)*pio6rw, Mxp(icat)
+        print*, 'cannot find Q and N = ',M3p(icat)*M3toq, Mxp(icat)
         print*, 'm3, nu, dn, icat', m3, nu, dn, icat!, dnbounds(:,icat)
         stop
       endif
       md_part(:, icat) = md_part(:, icat)*M3p(icat)/m3
     else
 
-      n0 = M3p(icat)/gamma(nu(1)+3)*log(2.)/3*pio6rw
+      n0 = M3p(icat)/gamma(nu(icat)+3)*col*M3toq
+      ! print*, log(2.)/3, col
+      ! stop
       do lcl=1,nkr
         if (M3p(icat)>0. .and. dn(1)>0.) then
           exptermrc(lcl)=exp(-1.*diams(lcl)/dn(icat))
@@ -617,6 +637,9 @@ elseif (n_cat == 2) then
   enddo
 
   mass_dist(1:nkr) = md_part(1:nkr, 1) + md_part(1:nkr, 2)
+
+  ! ratio = (M3p(1)+M3p(2))/(sum(mass_dist)*col*QtoM3)
+  ! mass_dist = mass_dist*ratio
 
   return
 
@@ -849,25 +872,10 @@ mw2 = n02*(dn2**(nu2+imomw)*gamnu2_w)*gincf_w2
 m0 = m01+m02
 mw = mw1+mw2
 
+! print*, 'dn1, dn2, m1frac', dn1, dn2, m1frac
 
 return
 end subroutine get_mom_from_param
-
-! --------------- calc_mom -------------------
-subroutine calc_mom(mom_val, mass_dist, mom_order)
-! calculate moment value (mom_val) from mass_dist given an order of moment (mom_order)
-
-integer, intent(in) :: mom_order
-double precision, intent(in) :: mass_dist(nkr)
-double precision, intent(out) :: mom_val
-
-if (bintype .eq. 'tau') then
-   mom_val = sum(mass_dist(1:nkr)/xkgmean*pdiams(mom_order+1,1:nkr))*col
-elseif (bintype .eq. 'sbm') then
-   mom_val = sum(mass_dist(1:nkr)/xl*pdiams(mom_order+1,1:nkr))*col*1000
-endif
-
-end subroutine calc_mom
 
 ! --------------- calc_pmoms -------------------
 subroutine calc_pmoms(momc, momr, distm, distn)
@@ -879,7 +887,7 @@ integer :: ibin, imom
 real, dimension(nkr) :: diag_m, diag_D
 
 diag_m = distm/distn
-diag_D = (diag_m*ipio6rw)**(1./3.)
+diag_D = (diag_m*QtoM3)**(1./3.)
 
 do ibin = 1,nkr
   if ( (diag_D(ibin) .ne. diag_D(ibin)) .or. (.not. ieee_is_finite(diag_D(ibin))) ) &
@@ -958,8 +966,7 @@ endif
 err_vec(1) = log10( (M0p/M3p(1))/(m0/m3) )*relax0
 err_vec(2) = log10( (Mwp/M3p(1))/(mw/m3) )
 
-! print*, 'err_vec', err_vec
-! print*, 'relaxw', relaxw
+! print*, 'err', err_vec
 
 if (any(md<0)) then
   err_vec = err_vec*1000
@@ -1184,5 +1191,22 @@ guess_best%l1_mfrac = m1frac
 
 end subroutine find_params
 ! --------------- end of minpack interface -----------------
+
+! --------------- calc_mom -------------------
+subroutine calc_mom(mom_val, mass_dist, mom_order)
+! calculate moment value (mom_val) from mass_dist given an order of moment (mom_order)
+
+integer, intent(in) :: mom_order
+double precision, intent(in) :: mass_dist(nkr)
+double precision, intent(out) :: mom_val
+
+if (bintype .eq. 'tau') then
+   mom_val = sum(mass_dist(1:nkr)/xkgmean*pdiams(mom_order+1,1:nkr))*col
+elseif (bintype .eq. 'sbm') then
+   mom_val = sum(mass_dist(1:nkr)/xl*pdiams(mom_order+1,1:nkr))*col*1000
+endif
+
+end subroutine calc_mom
+
 
 end module

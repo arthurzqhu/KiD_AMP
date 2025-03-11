@@ -153,6 +153,13 @@ module advection_interface
              enddo
 
              norm_factor=sum(field)
+
+             if (norm_factor /= norm_factor) then
+               print*, 'ih, ibin, imom', ih, ibin, imom
+               print*, 'nan in hydrometeors, check dhydrometeors_* at the previous timestep of', time
+               stop
+             endif
+
              if (norm_factor .ne. 0.) field=scale_factor*field/norm_factor
 
              call generic_advection(            &
@@ -185,6 +192,7 @@ module advection_interface
 
                 enddo
              end do
+             ! print*, 'adv', time, hydrometeors(1,1,1)%moments(1,1), hydrometeors(1,1,2)%moments(1,1)
 
           end do 
        end do

@@ -16,16 +16,17 @@ module mphys_amp
 
   Use module_hujisbm
   Use micro_prm
-  Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
+  Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp, save_proc_dp
   Use switches, only: l_advect,l_diverge, l_noadv_theta, l_noadv_qv
-  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors
+  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors, nmom_diag, moments_diag
   use switches, only: zctrl
+  use runtime, only: l_dgstep
   use global_fun
   Implicit None
 
   !Logical switches
   logical :: micro_unset=.True.
-  integer:: ih, imom
+  integer:: ih
   character(max_char_len) :: name, units
 
 contains
@@ -42,7 +43,9 @@ contains
     real(8),dimension(nz,nx,10) :: mc,mr
     real(8), save, dimension(nz,nx,2) :: guessc2d,guessr2d
     real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d,dropsinitm2d,dropsinitn2d,&
-                                           dropsfinalm2d, dropsfinaln2d
+                                           dropsfinalm2d, dropsfinaln2d, binm0, binm4, binm5,&
+                                           binm6,binm9
+    real(8), dimension(max_nbins) :: meand
     real, dimension(nz) :: field
     real(8),dimension(nz,flag_count) :: fieldflag
     real(8),dimension(nz,nx) :: dm
@@ -54,6 +57,7 @@ contains
     real(8) :: Deffc, Dbarc, eps_realc, Deffr, Dbarr, eps_realr, delta_realc, delta_gamc &
        , skns_gamc, skns_realc, delta_realr, delta_gamr, skns_gamr, skns_realr
     real(8), dimension(nz,max_nbins) :: fieldbin
+    real(8), dimension(nz,nmom_diag) :: fieldproc
     real(8), dimension(nz,nx,max_nbins) :: fieldbin2d
     real(8), dimension(nz,nx,2,flag_count) :: flag
     real(8), dimension(num_h_moments(2)) :: mr_s
@@ -62,11 +66,12 @@ contains
     real(8), dimension(nx) :: opdep,albd
     real(8), dimension(nz) :: lwc
     real(8), dimension(nz) :: nmask ! mask for non-NaN values
-    real(8) :: m2w, m0w
+    real(8) :: m2w, m0w, cmom(nz,nx,nmom_diag), mom
     character(1) :: Mnum
     real(8) :: dnr_s,rm_s !source dnr and rain mass
+    double precision :: val1, val2
     real(real32) :: nan
-    logical, parameter :: l_dynBeforeMphys = .true.
+    logical, parameter :: l_dynBeforeMphys = .false.
     integer :: ip
 
     nan = IEEE_VALUE(nan, IEEE_QUIET_NAN)
@@ -199,15 +204,50 @@ contains
       dropsinitm2d=0.
       dropsinitn2d=0.
 
-      ! print*, 'mc before mp', Mpc2d(20,1,:)
 
+      ! print*, 'mc before mp', Mpc2d(20,1,:)+Mpr2d(20,1,:)
+      ! print*, 'mr before mp', Mpr2d(20,1,:)
+      ! val1 = sum(Mpc2d(:,1,1))!+Mpr2d(12:24,1,1)
+      ! print*, 'bef amp', sum(Mpc2d(:,1,1))!+Mpr2d(20,1,1)
+      ! print*, 'bef', Mpc2d(12,1,:), hydrometeors(12,1,1)%moments(1,:)
+         ! print*, 'bef Mpc2d(1,1,1)',Mpc2d(1,1,1)
+         ! print*, 'bef Mpr2d(1,1,1)',Mpr2d(1,1,1)
+   ! print*, 'Mpc2d 6', Mpc2d(46,1,1)
       call mp_amp(Mpc2d,Mpr2d,guessc2d,guessr2d, &
            p2d,t2d,qv2d,aer2d,dropsm2d,dropsn2d,mc,&
            mr,flag,dropsinitm2d,dropsinitn2d,dropsfinalm2d,dropsfinaln2d)
-      ! print*, 'mc after mp', Mpc2d(20,1,:)
+         ! print*, 'dropsinitm2d', dropsinitm2d(11,1,:)
+   ! print*, 'mc', mc(46,1,4)
+         ! print*, 'bef mc(1,1,4)',mc(1,1,4)
+         ! print*, 'bef mr(1,1,4)',mr(1,1,4)
+      ! print*, 'aft', Mpc2d(12,1,:)
+      val2 = sum(Mpc2d(:,1,1))!+Mpr2d(20,1,1)
+      ! print*, 'aft amp', sum(Mpc2d(:,1,1))!+Mpr2d(20,1,1)
+      ! print*, 'val2/val1',val2/val1
+      ! print*, 'mc after mp', mc(20,1,pmomsc(1:4)+1)+mr(20,1,pmomsc(1:4)+1)
+      ! print*, 'mr after mp', mr(20,1,pmomsc(1:4)+1)
+      ! print*, ''
+      ! stop
       if (l_printflag) stop
 
    elseif (ampORbin .eq. 'bin') then
+
+     if (l_dgstep) then
+       do imom = 1,nmom_diag
+         mom = moments_diag(imom)
+         do k = 1,nz
+           do j = 1,nx
+             cmom(k,j,imom) = momk(dropsm2d(k,j,:), dropsn2d(k,j,:), mom)
+           enddo
+         enddo
+       enddo
+
+       fieldproc=cmom(:,nx,:)
+       name='cliq_mom'
+       units='m^k/kg'
+     endif
+
+  call save_proc_dp(fieldproc,name,i_dgtime, units)
       if (bintype .eq. 'sbm') then
          ! print*, 'mc before mp', mc(20,1,(/4,1,5,6/))+mr(20,1,(/4,1,5,6/))
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
@@ -217,24 +257,83 @@ contains
       endif
    endif
 
+   ! binm0(:,:,:) = 0.
+   ! binm4(:,:,:) = 0.
+   ! binm5(:,:,:) = 0.
+   ! binm6(:,:,:) = 0.
+   ! binm9(:,:,:) = 0.
+   ! meand = diams
+
+   ! if (ampORbin .eq. 'bin') then
+   !   if (bintype .eq. 'tau') binm0 = dropsn2d*col
+   !   do k = 1,nz
+   !     do j = 1,nx
+   !       if (bintype .eq. 'sbm') then
+   !         binm0(k,j,1:33) = dropsm2d(k,j,1:33)*col/XL(1:33)
+   !       elseif (bintype .eq. 'tau') then
+   !         meand = (dropsm2d(k,j,:)*QtoM3/dropsn2d(k,j,:))**(1./3.)
+   !         do ib=1,nkr
+   !           if ((meand(ib) .ne. meand(ib)) .or. (meand(ib)>inf)) then
+   !             meand(ib)=diams(ib)
+   !           endif
+   !         enddo
+   !       endif
+   !       binm4(k,j,1:nkr) = binm0(k,j,1:nkr)*meand(1:nkr)**4.
+   !       binm5(k,j,1:nkr) = binm0(k,j,1:nkr)*meand(1:nkr)**5.
+   !       binm6(k,j,1:nkr) = binm0(k,j,1:nkr)*meand(1:nkr)**6.
+   !       binm9(k,j,1:nkr) = binm0(k,j,1:nkr)*meand(1:nkr)**9.
+   !     enddo
+   !   enddo
+
+!      if (bintype .eq. 'sbm') then
+!        fieldbin(:,:)=binm0(:,nx,:)
+!        name='num_dist'
+!        units='#/kg/ln(r)'
+!        call save_dg('bin',fieldbin,name,i_dgtime,units)
+!      endif
+
+!      fieldbin(:,:)=binm4(:,nx,:)
+!      name='m4_dist'
+!      units='m4/kg/ln(r)'
+!      call save_dg('bin',fieldbin,name,i_dgtime,units)
+
+!      fieldbin(:,:)=binm5(:,nx,:)
+!      name='m5_dist'
+!      units='m5/kg/ln(r)'
+!      call save_dg('bin',fieldbin,name,i_dgtime,units)
+
+!      fieldbin(:,:)=binm6(:,nx,:)
+!      name='m6_dist'
+!      units='m6/kg/ln(r)'
+!      call save_dg('bin',fieldbin,name,i_dgtime,units)
+
+!      fieldbin(:,:)=binm9(:,nx,:)
+!      name='m9_dist'
+!      units='m9/kg/ln(r)'
+!      call save_dg('bin',fieldbin,name,i_dgtime,units)
+
+
+   ! endif
+
   ! back out tendencies
 dqv_mphys = 0.
 dtheta_mphys = 0.
 
-! do imom=1,num_h_moments(1)
-!   do i=1,num_h_bins(1)
-!    dhydrometeors_mphys(:,:,1)%moments(i,imom)=0.
-!   enddo
-! enddo
-
-! do imom=1,num_h_moments(2)
-!   do i=1,num_h_bins(2)
-!    dhydrometeors_mphys(:,:,2)%moments(i,imom)=0.
-!   enddo
-! enddo
-
 do i=1,nx
    do k=1,nz
+
+     do imom=1,num_h_moments(1)
+       do j=1,num_h_bins(1)
+         dhydrometeors_mphys(k,i,1)%moments(j,imom)=0.
+       enddo
+     enddo
+
+     do imom=1,num_h_moments(2)
+       do j=1,num_h_bins(2)
+         dhydrometeors_mphys(k,i,2)%moments(j,imom)=0.
+       enddo
+     enddo
+
       dtheta_mphys(k,i)=(t2d(k,i)/exner(k,i)-theta(k,i))/dt
       dqv_mphys(k,i)=(qv2d(k,i)-qv(k,i))/dt
 
@@ -279,6 +378,9 @@ do i=1,nx
 
       else ! when bin
          do j=1,nkr
+           if (dropsm2d(k,i,j)<0 .or. dropsn2d(k,i,j)<0.) then
+             dropsm2d(k,i,j)=0.; dropsn2d(k,i,j)=0.;
+           endif
             dhydrometeors_mphys(k,i,1)%moments(j,1)= &
                (dropsm2d(k,i,j)*col-hydrometeors(k,i,1)%moments(j,1))/dt
             if (l_dynBeforeMphys .and. .not. (bintype .eq. 'tau')) then
@@ -300,6 +402,7 @@ do i=1,nx
                !       dhydrometeors_mphys(k,i,1)%moments(j,2) &
                !       -dhydrometeors_div(k,i,1)%moments(j,2)
                ! endif
+             else
             endif
          enddo
       endif
@@ -342,29 +445,29 @@ endif
    ! endif
 
 !diagnosed moments
-do i=1,10
-  write(Mnum,'(I1)') i-1
+if (l_dgstep) then
+  do i=1,10
+    write(Mnum,'(I1)') i-1
 
-  name='diagM'//Mnum//'_cloud'
-  units='m^'//Mnum
-  if (nx==1) then
-     fielddp(:)=mc(:,1,i)
-     call save_dg(fielddp,name,i_dgtime,units,dim='z')
-  else
-     fielddp2d(:,:)=mc(:,:,i)
-     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-  endif
+    name='diagM'//Mnum//'_cloud'
+    units='m^'//Mnum
+    if (nx==1) then
+      fielddp(:)=mc(:,1,i)
+      call save_dg(fielddp,name,i_dgtime,units,dim='z')
+    else
+      fielddp2d(:,:)=mc(:,:,i)
+      call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+    endif
 
-  name='diagM'//Mnum//'_rain'
-  if (nx==1) then
-     fielddp(:)=mr(:,1,i)
-     call save_dg(fielddp,name,i_dgtime,units,dim='z')
-  else
-     fielddp2d(:,:)=mr(:,:,i)
-     call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
-  endif
-enddo
-
+    name='diagM'//Mnum//'_rain'
+    if (nx==1) then
+      fielddp(:)=mr(:,1,i)
+      call save_dg(fielddp,name,i_dgtime,units,dim='z')
+    else
+      fielddp2d(:,:)=mr(:,:,i)
+      call save_dg(fielddp2d,name,i_dgtime,units,dim='z,x')
+    endif
+  enddo
 ! diagnose mass mean diameter and effective radius
 ! mc and mr here might not be additive because it's updated after diagnosing from
 ! the DSD after mphys -ahu
@@ -376,12 +479,12 @@ do j=1,nx
       m0w=mc(k,j,1)+mr(k,j,1)
       reff(k,j)=m3w(k,j)/m2w*0.5
       ! if (nx==1) then
-      !    dm_w(k)=(m3w(k,j)/m0w)**(1./3.)
-      !    dm_c(k)=(mc(k,j,4)/mc(k,j,1))**(1./3.)
-      !    dm_r(k)=(mr(k,j,4)/mr(k,j,1))**(1./3.)
-      !    if ( (dm_w(k) .ne. dm_w(k)) .or. (dm_w(k)>inf) ) dm_w(k)=0.
-      !    if ( (dm_c(k) .ne. dm_c(k)) .or. (dm_c(k)>inf) ) dm_c(k)=0.
-      !    if ( (dm_r(k) .ne. dm_r(k)) .or. (dm_r(k)>inf) ) dm_r(k)=0.
+         dm_w(k)=(m3w(k,j)/m0w)**(1./3.)
+         dm_c(k)=(mc(k,j,4)/mc(k,j,1))**(1./3.)
+         dm_r(k)=(mr(k,j,4)/mr(k,j,1))**(1./3.)
+         if ( (dm_w(k) .ne. dm_w(k)) .or. (dm_w(k)>inf) ) dm_w(k)=0.
+         if ( (dm_c(k) .ne. dm_c(k)) .or. (dm_c(k)>inf) ) dm_c(k)=0.
+         if ( (dm_r(k) .ne. dm_r(k)) .or. (dm_r(k)>inf) ) dm_r(k)=0.
       ! else
       !    dm_w2d(k,j)=(m3w(k,j)/m0w)**(1./3.)
       !    dm_c2d(k,j)=(mc(k,j,4)/mc(k,j,1))**(1./3.)
@@ -395,9 +498,9 @@ do j=1,nx
 enddo
 
 if (nx==1) then
-!    call save_dg(dm_w,'Dm_w',i_dgtime,'micron',dim='z')
-!    call save_dg(dm_c,'Dm_c',i_dgtime,'micron',dim='z')
-!    call save_dg(dm_r,'Dm_r',i_dgtime,'micron',dim='z')
+   call save_dg(dm_w,'Dm_w',i_dgtime,'m',dim='z')
+   call save_dg(dm_c,'Dm_c',i_dgtime,'m',dim='z')
+   call save_dg(dm_r,'Dm_r',i_dgtime,'m',dim='z')
    call save_dg(reff(:,1)*1.e6,'reff',i_dgtime,'micron',dim='z')
 else
 !    call save_dg(dm_w2d,'Dm_w',i_dgtime,'micron',dim='z,x')
@@ -532,21 +635,45 @@ elseif (ampORbin .eq. 'amp') then
 
 endif
 
-!parameters
-do j=1,nx
-   if (nx==1) then
-      ! call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
-      ! call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
-      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
-      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
-   else
-      ! call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
-      ! call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
-      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
-      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
-   endif
-enddo
+endif
+
+!!parameters
+!do j=1,nx
+!   if (nx==1) then
+!      ! call save_dg(guessc2d(:,nx,1),'nu_c', i_dgtime,units='unitless', dim='z')
+!      ! call save_dg(guessr2d(:,nx,1),'nu_r', i_dgtime,units='unitless', dim='z')
+!      call save_dg(guessc2d(:,nx,2),'Dn_c', i_dgtime,units='m', dim='z')
+!      call save_dg(guessr2d(:,nx,2),'Dn_r', i_dgtime,units='m', dim='z')
+!   else
+!      ! call save_dg(guessc2d(:,:,1),'nu_c', i_dgtime,units='unitless', dim='z,x')
+!      ! call save_dg(guessr2d(:,:,1),'nu_r', i_dgtime,units='unitless', dim='z,x')
+!      call save_dg(guessc2d(:,:,2),'Dn_c', i_dgtime,units='m', dim='z,x')
+!      call save_dg(guessr2d(:,:,2),'Dn_r', i_dgtime,units='m', dim='z,x')
+!   endif
+!enddo
 
 end Subroutine mphys_amp_interface
+
+double precision function momk(ffcdm, ffcdn, mk)
+  double precision, dimension(max_nbins), intent(in) :: ffcdm, ffcdn
+  double precision :: mk, diag_m(max_nbins), diag_D(max_nbins), inf
+  integer :: ib
+
+  inf = huge(mk)
+  if (bintype .eq. 'tau') then
+    diag_m=ffcdm/ffcdn
+    diag_D=(diag_m*QtoM3)**(1./3.)
+    do ib=1,nkr
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>maxval(diams)) .or. (diag_D(ib)<minval(diams))) then
+        diag_D(ib)=diams(ib)
+      endif
+    end do
+    momk=sum(ffcdn(1:nkr)*diag_D**mk)*col
+  else
+    stop 'only implemented TAU'
+  endif
+
+
+end function momk
 
 end module mphys_amp

@@ -29,8 +29,8 @@ REAL :: SUP2_OLD,dthalf
 ! tmp vars to calculate process rate. not necessary but make the code look cleaner -ahu
 real, dimension(max_nbins) :: ff1r_prev
 REAL, DIMENSION(nz,max_nbins) :: ff1z_prev
-real :: proc_tmass, proc_cmass, proc_rmass
-real :: proc_tnum, proc_cnum, proc_rnum
+real :: proc_lmass, proc_cmass, proc_rmass
+real :: proc_lnum, proc_cnum, proc_rnum
 
 DOUBLE PRECISION :: ss_max=0.003d0
 double precision del1in_limit
@@ -146,11 +146,11 @@ do i=1,nx
                     ff1in(1)=ff1in(1)+(concccn-concdrop)*rhocgs/(3.0*col*xl(1))
 
                     if (mp_proc_dg) then
-                       proc_tmass = (ff1in(1)-ff1r(1))/(rhocgs/xl(1)/xl(1)/3.0)*col
+                       proc_lmass = (ff1in(1)-ff1r(1))/(rhocgs/xl(1)/xl(1)/3.0)*col
                        if (nx==1) then
-                          call save_dg(k,proc_tmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+                          call save_dg(k,proc_lmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
                        else
-                          call save_dg(k,i,proc_tmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+                          call save_dg(k,i,proc_lmass/dt,'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
                        endif
 
 
@@ -207,39 +207,39 @@ do i=1,nx
                   if (mp_proc_dg) then
                      proc_cmass=0.
                      proc_rmass=0.
-                     proc_tmass=0.
+                     proc_lmass=0.
                      proc_cnum=0.
                      proc_rnum=0.
-                     proc_tnum=0.
+                     proc_lnum=0.
 
                      do kr=1,split_bins
                         proc_cmass = proc_cmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
-                        proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                        proc_lmass = proc_lmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                         proc_cnum = proc_cnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
-                        proc_tnum = proc_tnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
+                        proc_lnum = proc_lnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
                      enddo
 
                      do kr=split_bins+1,nkr
                         proc_rmass = proc_rmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
-                        proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+                        proc_lmass = proc_lmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                         proc_rnum = proc_rnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
-                        proc_tnum = proc_tnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
+                        proc_lnum = proc_lnum + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/3.0)*col*1e3
                      enddo
 
                      if (nx==1) then
                         call save_dg(k,proc_cmass/dt,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
                         call save_dg(k,proc_rmass/dt,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z')
-                        call save_dg(k,proc_tmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+                        call save_dg(k,proc_lmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
                         call save_dg(k,proc_cnum/dt,'dn_cloud_ce',i_dgtime,units='1/kg/s',dim='z')
                         call save_dg(k,proc_rnum/dt,'dn_rain_ce',i_dgtime,units='1/kg/s',dim='z')
-                        call save_dg(k,proc_tnum/dt,'dn_ce',i_dgtime,units='1/kg/s',dim='z')
+                        call save_dg(k,proc_lnum/dt,'dn_ce',i_dgtime,units='1/kg/s',dim='z')
                      else
                         call save_dg(k,i,proc_cmass/dt,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z,x')
                         call save_dg(k,i,proc_rmass/dt,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z,x')
-                        call save_dg(k,i,proc_tmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_lmass/dt,'dm_ce',i_dgtime,units='kg/kg/s',dim='z,x')
                         call save_dg(k,i,proc_cnum/dt,'dn_cloud_ce',i_dgtime,units='1/kg/s',dim='z,x')
                         call save_dg(k,i,proc_rnum/dt,'dn_rain_ce',i_dgtime,units='1/kg/s',dim='z,x')
-                        call save_dg(k,i,proc_tnum/dt,'dn_ce',i_dgtime,units='1/kg/s',dim='z,x')
+                        call save_dg(k,i,proc_lnum/dt,'dn_ce',i_dgtime,units='1/kg/s',dim='z,x')
                      endif
 
                   endif
@@ -303,26 +303,26 @@ do i=1,nx
 
                   proc_cmass=0.
                   proc_rmass=0.
-!                  proc_tmass=0.
+!                  proc_lmass=0.
 
                   do kr=1,split_bins
                      proc_cmass = proc_cmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
-!                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+!                     proc_lmass = proc_lmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                   enddo
 
                   do kr=split_bins,nkr
                      proc_rmass = proc_rmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
-!                     proc_tmass = proc_tmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
+!                     proc_lmass = proc_lmass + (ff1r(kr)-ff1r_prev(kr))/(rhocgs/xl(kr)/xl(kr)/3.0)*col
                   enddo
 
                   if (nx==1) then
                      call save_dg(k,proc_cmass/dt,'dm_cloud_coll',i_dgtime,units='kg/kg/s',dim='z')
                      call save_dg(k,proc_rmass/dt,'dm_rain_coll',i_dgtime,units='kg/kg/s',dim='z')
-                     !call save_dg(k,proc_tmass/dt,'dm_coll',i_dgtime,units='kg/kg/s',dim='z')
+                     !call save_dg(k,proc_lmass/dt,'dm_coll',i_dgtime,units='kg/kg/s',dim='z')
                   else
                      call save_dg(k,i,proc_cmass/dt,'dm_cloud_coll',i_dgtime,units='kg/kg/s',dim='z,x')
                      call save_dg(k,i,proc_rmass/dt,'dm_rain_coll',i_dgtime,units='kg/kg/s',dim='z,x')
-                     !call save_dg(k,i,proc_tmass/dt,'dm_coll',i_dgtime,units='kg/kg/s',dim='z,x')
+                     !call save_dg(k,i,proc_lmass/dt,'dm_coll',i_dgtime,units='kg/kg/s',dim='z,x')
                   endif
 
                endif
@@ -357,18 +357,18 @@ do i=1,nx
       call falfluxhucm_z(ff1z,vr1z,rhocgs_z,pcgs_z,zcgs_z,dt,1,nz,nkr,sppt(i))
 
       if (mp_proc_dg) then
-         proc_tmass=0.
+         proc_lmass=0.
 
          ! probably not the most efficient way to implement -ahu
          do k=1,nz
             do kr=1,nkr
-               proc_tmass = proc_tmass + (ff1z(k,kr)-ff1z_prev(k,kr))/(1./xl(kr)/xl(kr)/3.0)*col
+               proc_lmass = proc_lmass + (ff1z(k,kr)-ff1z_prev(k,kr))/(1./xl(kr)/xl(kr)/3.0)*col
             enddo
 
             if (nx==1) then
-               call save_dg(k,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z')
+               call save_dg(k,proc_lmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z')
             else
-               call save_dg(k,i,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z,x')
+               call save_dg(k,i,proc_lmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z,x')
             endif
          enddo
 
@@ -844,43 +844,18 @@ do kr=1,nkr
 enddo
 
 return
-!Diagnose shape parameter
-!  if (mom<0) then
-!    !Shape parameter is given by mx
-!    gnu=mx
-!  elseif (mom==1) then
-!    xx=cx**(-2./3.)*mx/m3**(1./3.)
-!    if (xx>=1.) xx=0.99
-!    x3=xx**3.
-!    gnu=(-3.*x3-xx**1.5*sqrt(x3+8.))/(2.*(x3-1))
-!  elseif (mom==2) then
-!    xx=cx**(-1./3.)*mx/m3**(2./3.)
-!    if (xx>=1.) xx=0.99
-!    x3=xx**3.
-!    gnu=(-4.*x3-sqrt(8.*x3+1.)+1)/(2.*(x3-1))
-!  elseif (mom==4) then
-!    xx=cx**(1./3.)*mx/m3**(4./3.)
-!    if (xx<=1.) xx=1.01
-!    x3=xx**3.
-!    xa=(45*x3**2.+27*x3+(0.,1.)*sqrt(3.)*xx**3.)**(1./3.)
-!    gnu=real(-1.*(x3-3.)/(x3-1.)+xa/(3.**(2./3.)*(x3-1.))+(3.*x3**2.+33.*x3)/(3.**(4./3.)*(x3-1.)*xa))
-!  elseif (mom==6) then
-!    xx=cx*mx/m3**(2.)
-!    if (xx<=1.) xx=1.01
-!    xa=(729.*xx**2.+sqrt(4.*(-3.*xx**2.-75.*xx-3.)**3.+(729.*xx**2.+729.*xx)**2.)+729.*xx)**(1./3.)
-!    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
-!  endif
 END SUBROUTINE init_dist_sbm
 
 !---------------------------------------------------------------------------------
 subroutine micro_proc_tau(tempk,qv,ffcd_mass2d,ffcd_num2d)
-use parameters, only: nz, nx, dt, max_nbins
+use parameters, only: nz, nx, dt, max_nbins, max_char_len, dg_dt, dgstart
 use common_physics, only: qsaturation
-Use diagnostics, only: save_dg, i_dgtime, save_binData
+Use diagnostics, only: save_dg, i_dgtime, save_binData, save_proc_dp
 Use switches, only: l_sediment, mphys_var, l_fix_aerosols, l_noevaporation, l_nocondensation
 Use switches_bin
 Use namelists, only: dosedimentation, docollisions, docondensation, &
-                     donucleation, dobreakup, l_coll_coal, l_break, mp_proc_dg, l_truncated
+                     donucleation, dobreakup, l_coll_coal, l_break, mp_proc_dg, l_truncated, &
+                     nmom_diag, moments_diag
 use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
                             dss_div, daerosol_adv, daerosol_div, &
                             dhydrometeors_adv, dhydrometeors_div, exner, &
@@ -890,12 +865,14 @@ use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
 use mphys_tau_bin_declare
 use namelists, only: aero_N_init,l_advect,l_diverge,ampORbin
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem, &
-                     ffcdprev_mass, ffcdprev_num
+                     ffcdprev_mass, ffcdprev_num, nkr, diams, VT_TAU, M3toQ, QtoM3
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
                              XACT
+use runtime, only: time, l_dgstep
 use global_fun
+! use module_mp_boss
 
 implicit none
 
@@ -985,7 +962,7 @@ real :: t
 !
 INTEGER, DIMENSION(JMINP:JMAXP) :: KQLINV
 INTEGER :: KQLMAX
-character(2) :: str2
+character(1) :: Mnum
 
 !vars in CLOUDBIN subroutine
 REAL,PARAMETER :: AL=597  !latent heat of evaporation and cond
@@ -1019,7 +996,8 @@ REAL ::  delm
 REAL,DIMENSION(JMINP:JMAXP,KKP) :: NCC,MCC
 real, dimension(kkp) :: auto_con_mass, d_rmass, d_rnum, d_cmass, d_cnum
 real :: rmass_tot_orig, rmass_tot_new
-real :: proc_cmass, proc_rmass, proc_tmass, proc_cnum, proc_rnum, proc_tnum
+real :: proc_cmass, proc_rmass, proc_lmass, proc_cnum, proc_rnum, proc_lnum
+real(8) :: proc_lmx(nx,nz,10)
 real :: dtcalc
 INTEGER :: LT, IT, inhom_evap
 INTEGER :: ccn_pos, cloud_pos, count, loop_count
@@ -1029,8 +1007,14 @@ real, dimension(nz,nx) :: tempk, qv
 real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
 real(8) :: inf=huge(sq(1,1,1))
-
-
+real(8) :: g_fall, kk03x, kk3xy, m3(nz), m0(nz), mx(nz), my(nz), mscale=1d-12, &
+  V_nc(nz), V_qc(nz), V_qx(nz), m3_3d(nx,nz,max_nbins), m0_3d(nx,nz,max_nbins),&
+  V_qy(nz), mm, mtilde, meand(max_nbins), m0_diag, m3_diag, mk
+real(8), allocatable :: mom_fall(:,:,:), cfall(:,:,:), ccond(:,:,:), cevap(:,:,:), ccoal(:,:,:), &
+  act(:,:,:)
+integer :: mom
+character(max_char_len) :: vname, vunits
+real(8),dimension(nz,nmom_diag) :: fieldproc
 
 !press & tempk currently not used
 
@@ -1170,32 +1154,154 @@ do J = JMINP,JMAXP
 ENDDO
 ENDDO
 
+
+if (l_dgstep) then
+  allocate(mom_fall(nz,nx,nmom_diag))
+  allocate(cfall(nz,nx,nmom_diag))
+  mom_fall(:,:,:)=0.
+  cfall(:,:,:)=0.
+endif
+
 if (dosedimentation) then
-   CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
 
-   if (mp_proc_dg) then
-      do k=2,kkp
-         do j=jminp,jmaxp
-            proc_tmass=0.0
-            proc_tnum=0.0
-            do l=1,lk
-                proc_tmass=proc_tmass+ql_sed(j,k,l)
-                proc_tnum=proc_tnum+qln_sed(j,k,l)
+  CALL BIN_SEDIMENT(I,DT,AMKORIG,ANKORIG,Q,SQ,RDT)
+
+  if (mp_proc_dg .and. l_dgstep) then
+    m3_3d = amkorig*QtoM3
+
+    do k=kkp,2,-1
+      do j=jminp,jmaxp
+        proc_lmass=0.0
+        proc_lnum=0.0
+        proc_lmx(j,k,:)=0.0
+        do l=1,lk
+          do imom = 1,nmom_diag
+            mom = moments_diag(imom)
+            select case(mom)
+            case(0)
+              mom_fall(k,j,imom) = mom_fall(k,j,imom) + ankorig(j,k,l)
+              if (mom_fall(k,j,imom)>0) cfall(k,j,imom) = cfall(k,j,imom) + ankorig(j,k,l) * VT_TAU(l)
+            case(3)
+              mom_fall(k,j,imom) = mom_fall(k,j,imom) + m3_3d(j,k,l)
+              if (mom_fall(k,j,imom)>0) cfall(k,j,imom) = cfall(k,j,imom) + m3_3d(j,k,l) * VT_TAU(l)
+            case default
+              if (ankorig(j,k,l) > 0. .and. m3_3d(j,k,l) > 0.) then
+                m0_diag = ankorig(j,k,l)
+                m3_diag = m3_3d(j,k,l)
+              else
+                ! If values are 0 after time step, skip
+                ! this calculation.
+                cycle
+              end if
+              mk = diagnose_moment(dble(mom), m0_diag, m3_diag)
+              ! print*, m3_diag, m0_diag, mk
+              ! stop
+              mom_fall(k,j,imom) = mom_fall(k,j,imom) + mk
+              if (mom_fall(k,j,imom)>0) cfall(k,j,imom) = cfall(k,j,imom) + mk * VT_TAU(l)
+            end select
+
+            proc_lmass= proc_lmass+ql_sed(j,k,l)
+            proc_lnum = proc_lnum +qln_sed(j,k,l)
+            do i=1,10
+              proc_lmx(j,k,i) = proc_lmx(j,k,i) + qlx_sed(j,k,l,i)
             enddo
-   
-            if (nx==1) then
-               call save_dg(k,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z')
-               call save_dg(k,proc_tnum/dt,'dn_sed',i_dgtime,units='#/kg/s',dim='z')
-            else
-               call save_dg(k,j,proc_tmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z,x')
-               call save_dg(k,j,proc_tnum/dt,'dn_sed',i_dgtime,units='#/kg/s',dim='z,x')
-            endif
-         enddo 
+          enddo
+
+          if (nx==1) then
+            do i=1,10
+              write(Mnum,'(I1)') i-1
+              name='dm'//Mnum//'_sed'
+              units='m^'//Mnum//'/m^2/s'
+              call save_dg(proc_lmx(1,:,i)/dt,name,i_dgtime,units,dim='z')
+            enddo
+            call save_dg(k,proc_lmass/dt,'dm_sed',i_dgtime,units='kg/m^2/s',dim='z')
+            call save_dg(k,proc_lnum/dt,'dn_sed',i_dgtime,units='#/m^2/s',dim='z')
+            ! call save_dg(k,proc_lmx/dt,'dmx_sed',i_dgtime,units='m^x/kg/s',dim='z')
+            ! call save_dg(k,proc_lmy/dt,'dmy_sed',i_dgtime,units='m^y/kg/s',dim='z')
+          else
+            stop '2D not yet implemented'
+            ! call save_dg(k,j,proc_lmass/dt,'dm_sed',i_dgtime,units='kg/kg/s',dim='z,x')
+            ! call save_dg(k,j,proc_lnum/dt,'dn_sed',i_dgtime,units='#/kg/s',dim='z,x')
+            ! call save_dg(k,j,proc_lmx/dt,'dmx_sed',i_dgtime,units='m^x/kg/s',dim='z,x')
+            ! call save_dg(k,j,proc_lmy/dt,'dmy_sed',i_dgtime,units='m^y/kg/s',dim='z,x')
+          endif
+
+          ! {{{
+
+          ! print*, 'bin mass flux', proc_lmass
+          ! print*, k, proc_lmass/dt, proc_lnum/dt, proc_lmx/dt, proc_lmy/dt
+
+!           m3(k)=sum(amkorig(j,k,:))*QtoM3
+
+!           if (m3(k)>=1d-14) then
+!             g_fall = (1.18796E0/rho(k))**0.54
+!             m0(k)=sum(ankorig(j,k,:))
+!             mm=m3(k)/m0(k) ! convert qc from mass mix ratio to M3
+!             meand(:) = (amkorig(j,k,:)/ankorig(j,k,:)*QtoM3)**(1./3.)
+!             do i = 1,nkr
+!               if ((meand(i) .ne. meand(i)) .or. (meand(i)>huge(meand(i)))) then
+!                 meand(i)=diams(i)
+!               endif
+!             enddo
+!             mx(k)=sum(ankorig(j,k,:)*meand**momx)
+!             my(k)=sum(ankorig(j,k,:)*meand**momy)
+
+!             mtilde=mm/mscale
+!             kk03x=m0(k)**(2*(momx-3)/momx)*mx(k)**(6/momx)/m3(k)**2 ! convert qc from mass mix ratio to M3
+!             kk3xy=m3(k)**(2*(momy-momx)/(momy-3))*my(k)**(2*(momx-3)/(momy-3))/mx(k)**2 ! convert qc from mass mix ratio to M3
+
+!             ! all units below are m/s 
+!             V_nc(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!               (kk03x**bx0fall*kk3xy**by0fall)
+!             V_qc(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!               (kk03x**bx3fall*kk3xy**by3fall)
+!             V_qx(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!               (kk03x**bxxfall*kk3xy**byxfall)
+!             V_qy(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!               (kk03x**bxyfall*kk3xy**byyfall)
+
+!             ! print*, 'meand', meand
+!             ! print*, 'diams', diams
+!             ! print*, 'test', (amkorig(j,k,:)/ankorig(j,k,:)*QtoM3)**(1./3.)
+
+!             V_nc(k) = min(V_nc(k),9.1)
+!             V_qc(k) = min(V_qc(k),9.1)
+!             V_qx(k) = min(V_qx(k),9.1)
+!             V_qy(k) = min(V_qy(k),9.1)
+
+!             if (k==kkp) then
+!               proc_lmass = -V_qc(k)*m3(k)*M3toq*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lnum  = -V_nc(k)*m0(k)*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lmx   = -V_qx(k)*mx(k)*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lmy   = -V_qy(k)*my(k)*rho(k)/dzn(k)*dt/rho(k)
+!             else
+!               proc_lmass = (V_qc(k+1)*m3(k+1)*M3toq*rho(k+1)-V_qc(k)*m3(k)*M3toq*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lnum  = (V_nc(k+1)*m0(k+1)*rho(k+1)-V_nc(k)*m0(k)*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lmx   = (V_qx(k+1)*mx(k+1)*rho(k+1)-V_qx(k)*mx(k)*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lmy   = (V_qy(k+1)*my(k+1)*rho(k+1)-V_qy(k)*my(k)*rho(k))/dzn(k)*dt/rho(k)
+!             endif
+
+
+!             ! print*, 'boss mass flux', proc_lmass
+!           else
+!             proc_lmass=0.0
+!             proc_lnum=0.0
+!             proc_lmx=0.0
+!             proc_lmy=0.0
+!           endif
+
+!           ! print*, k, proc_lmass, proc_lnum, proc_lmx, proc_lmy
+!           call save_dg(k,proc_lmass/dt,'boss_dm_sed',i_dgtime,units='kg/kg/s',dim='z')
+!           call save_dg(k,proc_lnum /dt,'boss_dn_sed',i_dgtime,units='#/kg/s',dim='z')
+!           call save_dg(k,proc_lmx  /dt,'boss_dmx_sed',i_dgtime,units='m^x/kg/s',dim='z')
+!           call save_dg(k,proc_lmy  /dt,'boss_dmy_sed',i_dgtime,units='m^y/kg/s',dim='z')
+          ! }}}
+
+        enddo 
       enddo
-   endif
-
+    enddo
+  endif
 endif                    ! sedimentation calculation
-
 
 totevap = 0.0
 totevap2 = 0.0
@@ -1205,6 +1311,18 @@ QLOLD(:,:) = 0.0
 NQLOLD(:,:) = 0.0
 QLNEW(:,:) = 0.0
 NQLNEW(:,:) = 0.0
+
+if (l_dgstep) then
+  allocate(ccond(nz,nx,nmom_diag))
+  allocate(cevap(nz,nx,nmom_diag))
+  allocate(ccoal(nz,nx,nmom_diag))
+  allocate(act(nz,nx,nmom_diag))
+
+  ccond(:,:,:) = 0.
+  cevap(:,:,:) = 0.
+  ccoal(:,:,:) = 0.
+  act(:,:,:) = 0.
+endif
 
 DO K=2,KKP
     PMB = 0.01*PREFN(K)
@@ -1388,6 +1506,8 @@ DO K=2,KKP
              stop
           ENDIF
 
+
+
        ELSEIF(DS_force < -eps .and. docondensation .and. (.not. l_noevaporation)) then !DS_force < 0.0
 !****************************************************************
     !                     EVAPORATION
@@ -1448,6 +1568,7 @@ DO K=2,KKP
 
             amk(j,k,l)=amk(j,k,l)*1.e3/rhon(k)
             ank(j,k,l)=ank(j,k,l)*1.e6/rhon(k)
+
 !!!!!!!!!! AMK and ANK now have the right units !!!!!!!!!! -ahu
 
             if(amk(j,k,l) < eps.or.                 &
@@ -1629,13 +1750,40 @@ if (donucleation) then
     ENDIF                          ! end of do activation
 
     if (mp_proc_dg) then
-       if (nx==1) then
-          call save_dg(k,MCC(j,k),'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
-       else
-          call save_dg(k,j,MCC(j,k),'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
-       endif
+      if (nx==1) then
+        call save_dg(k,MCC(j,k),'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+      else
+        call save_dg(k,j,MCC(j,k),'dm_nuc',i_dgtime,units='kg/kg/s',dim='z')
+      endif
     endif
+
 endif
+
+    if (l_dgstep) then
+      do imom = 1, nmom_diag
+        mom = moments_diag(imom)
+        select case (mom)
+        case(0)
+          act(k,j,imom) = AN2(j,k) / dt
+        case(3)
+          act(k,j,imom) = MCC(j,k) * QtoM3 / dt
+        case default
+          ! See below explanation for the rain version of this calculation.
+          if (ANK(j,k,1) > 0. .and. AMK(j,k,1) > 0.) then
+            m0_diag = ANK(j,k,1)
+            m3_diag = AMK(j,k,1)
+          else
+            ! If values are 0 both before and after time step, skip
+            ! this calculation.
+            cycle
+          end if
+          mk = diagnose_moment(dble(mom), m0_diag, m3_diag)
+          act(k,j,imom) = act(k,j,imom) + mk * &
+            ((mom/3.) * (QtoM3 * MCC(j,k) / dt) / m3_diag + &
+            (1. - mom/3.) * (AN2(j,k) / dt) / m0_diag)
+        end select
+      end do
+    endif
 
     AN1(j,k) = 0.0
     DO L = 1, LK
@@ -1783,6 +1931,60 @@ endif
                 ANK(J,K,L)=DIENC(L)+ANKORIG(J,K,L)
             ENDIF
         ENDDO
+
+
+        if (l_dgstep) then
+          do l=1,lk
+            m3_3d(j,k,l)=amk(j,k,l)*QtoM3
+            m0_3d(j,k,l)=ank(j,k,l)
+
+            do imom = 1,nmom_diag
+              mom = moments_diag(imom)
+              select case(mom)
+              case(0)
+                ccond(k,j,imom) = ccond(k,j,imom) + DIENC(L)
+                ccoal(k,j,imom) = ccoal(k,j,imom) + DIEND(L)
+              case(3)
+                ccond(k,j,imom) = ccond(k,j,imom) + DIEMC(L)*QtoM3
+                ccoal(k,j,imom) = ccoal(k,j,imom) + DIEMD(L)*QtoM3
+              case default
+                if (m0_3d(j,k,l) > 0. .and. m3_3d(j,k,l) > 0.) then
+                  m0_diag = m0_3d(j,k,l)
+                  m3_diag = m3_3d(j,k,l)
+                else
+                  ! If values are 0 after time step, skip
+                  ! this calculation.
+                  cycle
+                end if
+                mk = diagnose_moment(dble(mom), m0_diag, m3_diag)
+
+                ccond(k,j,imom) = ccond(k,j,imom) + mk * &
+                  ((mom/3.) * DIEMC(L)*QtoM3 / m3_diag + &
+                  (1. - mom/3.) * DIENC(L) / m0_diag)
+
+                ccoal(k,j,imom) = ccoal(k,j,imom) + mk * &
+                  ((mom/3.) * DIEMD(L)*QtoM3 / m3_diag + &
+                  (1. - mom/3.) * DIEND(L) / m0_diag)
+                ! print*, 'why the extra term', mom, mk, (mom/3.) * DIEMC(L)*QtoM3 / m3_diag+(1. - mom/3.) * DIENC(L) / m0_diag
+                ! print*, 'extra term 2', (mom/3.) * DIEMD(L)*QtoM3 / m3_diag + (1. - mom/3.) * DIEND(L) / m0_diag
+                ! stop
+              end select
+            enddo
+          enddo
+
+          ! if (ccoal(k,j,9)>0.) then
+          !   print*, ccoal(k,j,3), ccoal(k,j,9)
+          !   print*, sum(DIEND), sum(DIEMD)*QtoM3
+          ! endif
+
+          ! if (DS_force < -eps) then
+          if (ccond(k,j,6)<0) then
+            cevap(k,j,:) = -ccond(k,j,:)
+            ! print*, ccond(k,j,(/3,6/)), cevap(k,j,(/3,6/))
+            ccond(k,j,:) = 0.
+          endif
+        endif
+
 !
 !     Calculate the change in "rain bin" mass and number
 !     (i.e. bin greater than  100 microns diameter)
@@ -1841,26 +2043,6 @@ endif
             ! sum the effects of cond/evap+coll/coal+sedi
             ! on mass and number
 
-            ! if (DIEMC(L) .ne. DIEMC(L)) then
-            !    print*, 'cond/evap nans'
-            !    print*, 'j,k', j, k
-            !    print*, 'diemc', diemc
-            !    print*, 'AN2', AN2(k,j)
-            !    print*, 'cond/evap dm', dm
-            !    print*, 'delta T', AL*DM/CPBIN
-            !    stop
-            ! endif
-
-            ! if (DIEMD(L) .ne. DIEMD(L)) then
-            !    print*, 'coll/coal nans'
-            !    stop
-            ! endif
-
-            ! if (QL_SED(J,K,L) .ne. QL_SED(J,K,L)) then
-            !    print*, 'sed nans'
-            !    stop
-            ! endif
-
              DAMKDT=(DIEMC(L)+DIEMD(L)+QL_SED(J,K,L)) * RDT
              DANKDT=(DIENC(L)+DIEND(L)+QLN_SED(J,K,L)) * RDT
             ELSE
@@ -1905,6 +2087,53 @@ endif
 
     ENDDO
 ENDDO
+
+! print*, ''
+! print*, 'QL_SED', QL_SED(1,:,16)
+! print*, ''
+
+    ! if (sum(DIEMC)>0.) then
+      ! print*, 'cond', sum(ccond(:,:,6))
+      ! print*, 'evap', sum(cevap(:,:,6))
+      ! print*, 'coal', sum(ccoal(:,:,6)), sum(ccoal(:,:,3)), sum(ccoal(:,:,9))
+    ! endif
+
+    if (l_dgstep) then
+    where (mom_fall > 0.) cfall = cfall/mom_fall
+      name='cfall'
+      units='m/s'
+      fieldproc=cfall(:,nx,:)
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='ccond'
+      units='m^k/kg/s'
+      fieldproc=ccond(:,nx,:)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      ! print*, 'ccond -6th', i_dgtime, sum(ccond(:,1,3))
+
+      name='cevap'
+      units='m^k/kg/s'
+      fieldproc=cevap(:,nx,:)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='ccoal'
+      units='m^k/kg/s'
+      fieldproc=ccoal(:,nx,:)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='act'
+      units='m^k/kg/s'
+      fieldproc=act(:,nx,:)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      deallocate(mom_fall)
+      deallocate(cfall)
+      deallocate(ccond)
+      deallocate(cevap)
+      deallocate(ccoal)
+    endif
+
 
 !
 !regeneration for single prognostic CCN variable
@@ -2129,17 +2358,17 @@ do k=1,nz
             stop
          endif
          if (sq_lem(j,k,iq) .ne. sq_lem(j,k,iq)) then
-            ! if (iq == 1) then
-            !    sq_lem(j,k,iq) = sq_lem(j,k,iq+1)
-            ! elseif (iq == nqp) then
-            !    sq_lem(j,k,iq) = sq_lem(j,k,iq-1)
-            ! else
-            !    sq_lem(j,k,iq) = (sq_lem(j,k,iq-1) + sq_lem(j,k,iq+1))/2
-            ! endif
-            ! print*, 'some NaNs here'
+            if (iq == 1) then
+               sq_lem(j,k,iq) = sq_lem(j,k,iq+1)
+            elseif (iq == nqp) then
+               sq_lem(j,k,iq) = sq_lem(j,k,iq-1)
+            else
+               sq_lem(j,k,iq) = (sq_lem(j,k,iq-1) + sq_lem(j,k,iq+1))/2
+            endif
+            print*, 'some NaNs here'
             ! print*,'sq', k,iq
-            ! print*, sq_lem
-            ! stop
+            ! print*, sq_lem(1,:,:)
+            stop
          end if
       enddo
    enddo
@@ -2333,32 +2562,6 @@ do kr=1,nkr
 !       .or. ffcd(kr)/ffcd(kr).ne. 1.0) ffcd(kr)=0.
 enddo
 return
-!Diagnose shape parameter
-!  if (mom<0) then
-!    !Shape parameter is given by mx
-!    gnu=mx
-!  elseif (mom==1) then
-!    xx=cx**(-2./3.)*mx/m3**(1./3.)
-!    if (xx>=1.) xx=0.99
-!    x3=xx**3.
-!    gnu=(-3.*x3-xx**1.5*sqrt(x3+8.))/(2.*(x3-1))
-!  elseif (mom==2) then
-!    xx=cx**(-1./3.)*mx/m3**(2./3.)
-!    if (xx>=1.) xx=0.99
-!    x3=xx**3.
-!    gnu=(-4.*x3-sqrt(8.*x3+1.)+1)/(2.*(x3-1))
-!  elseif (mom==4) then
-!    xx=cx**(1./3.)*mx/m3**(4./3.)
-!    if (xx<=1.) xx=1.01
-!    x3=xx**3.
-!    xa=(45*x3**2.+27*x3+(0.,1.)*sqrt(3.)*xx**3.)**(1./3.)
-!    gnu=real(-1.*(x3-3.)/(x3-1.)+xa/(3.**(2./3.)*(x3-1.))+(3.*x3**2.+33.*x3)/(3.**(4./3.)*(x3-1.)*xa))
-!  elseif (mom==6) then
-!    xx=cx*mx/m3**(2.)
-!    if (xx<=1.) xx=1.01
-!    xa=(729.*xx**2.+sqrt(4.*(-3.*xx**2.-75.*xx-3.)**3.+(729.*xx**2.+729.*xx)**2.)+729.*xx)**(1./3.)
-!    gnu=-1.*(xx-4.)/(xx-1.)+xa/(3.*2.**(1./3.)*(xx-1.))+2.**(1./3.)*(3.*xx**2.+75*xx+3)/(3.*xa*(xx-1.))
-!  endif
 END SUBROUTINE init_dist_tau
 
 ! ------------ originally part of mphys_tau_bin ------------
