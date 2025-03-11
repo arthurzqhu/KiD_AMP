@@ -46,6 +46,10 @@ BIN_TAU.nml
 THOM.nml
 */namelists/jobnml/*
 */lhs_module/*.nc
+*/dnts*.txt
+*/err*.txt
+*/ffcd*.txt
+*/p3*oldDimax
 
 # misc
 .remote-sync.json
