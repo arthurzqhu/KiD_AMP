@@ -10448,8 +10448,8 @@ END SUBROUTINE access_lookup_table
 
 subroutine read_boss_slc_param
 
-use namelists, only: param_val_fpath, KiD_outdir, irealz, l_ppe, &
-                     deflation_factor
+use namelists, only: param_val_fpath, KiD_outdir, irealz, l_ppe, deflation_factor, &
+                     s_sample_dist, custom_dens_path, custom_bins_path
 use netcdf
 use csv_module
 use parameters, only: lsample
@@ -10460,18 +10460,20 @@ use namelists, only: n_perturbed_param, n_ppe
 
 real, allocatable, dimension(:) :: pvalue_mean, pvalue_sd, pvalue_isd, params_save, &
   pvalue_isd_slice, pvalue_sd_slice
-integer :: io_status, iiparam, n_perturbed_param_mp
+integer :: io_status, iiparam, n_perturbed_param_mp, n_bins, ibin
 integer :: seed_size, i
 integer, allocatable :: seed(:)
 
 
 type(csv_file) :: pv_file, ps_file ! param val and param sigma
+type(csv_file) :: dens_csv, bins_csv
 character(len=30),dimension(:),allocatable :: header, pnames
 logical,dimension(:),allocatable :: t
 logical :: stat_ok, stat_ok2
 integer,dimension(:),allocatable :: itypes
-double precision, allocatable :: nudge_diff(:), rand_perturb(:)
-double precision :: logspan, perturb_ratio(n_param), infl_std(n_param)
+double precision, allocatable :: rand_perturb(:), posterior_dens(:,:), posterior_binedges(:,:), &
+  posterior_cdf(:,:), posterior_binmeans(:,:)
+double precision :: logspan, perturb_ratio(n_param), nudge_diff, infl_std(n_param)
 character(len=200) :: filename
 character(len=100) :: varname
 character(len=4) :: n_ppe_str, n_param_ppe_str
@@ -10487,6 +10489,7 @@ call pv_file%get_header(header,stat_ok,1)
 
 n_param = size(header)
 n_perturbed_param_mp = n_perturbed_param - 2
+n_bins = 50
 
 ! n_perturbed_param = 16
 ! n_ppe = 1000
@@ -10517,56 +10520,73 @@ do iiparam = 1, n_param
   call pv_file%get(3,iiparam+1,pvalue_isd(iiparam),stat_ok)
 enddo
 
-
-if (l_ppe) then
-
-  allocate(pvalue_isd_slice(n_perturbed_param_mp))
-  allocate(pvalue_sd_slice(n_perturbed_param_mp))
-  allocate(rand_perturb(n_perturbed_param_mp))
-  ! pvalue_isd_slice(1:4)=pvalue_isd(1:4)
-  pvalue_isd_slice(1:n_perturbed_param_mp)=pvalue_isd(13:n_param-n_perturbed_param_mp+1)
-  pvalue_isd_slice(1) = 10
-  pvalue_isd_slice(2) = 50
-  pvalue_isd_slice(3:n_perturbed_param_mp) = 2
-  ! pvalue_sd_slice(1:4)=pvalue_sd(1:4)
-  pvalue_sd_slice(1:n_perturbed_param_mp)=pvalue_sd(13:n_param-n_perturbed_param_mp+1)
-  call random_seed(size=seed_size)
-  allocate(seed(seed_size))
-
-  ! do i = 1, seed_size
-  !   seed(i) = irealz * 341   ! Just an example pattern
-  ! end do
-
-  ! if (irealz<=n_ppe) then
-    ! LHS on the first half
-    ! lsample varies between 0 and 1 so need a transformation
-
-    allocate(nudge_diff(n_perturbed_param_mp))
-    do iiparam = 1,n_perturbed_param_mp
-      nudge_diff(iiparam) = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-    enddo
-  ! else
-  !   ! normal dist on the second half
-  !   call RANDOM_SEED(put=seed)
-  !   do iiparam = 1,n_perturbed_param_mp
-  !     call random_stdnormal(rand_perturb(iiparam))
-  !   enddo
-  !   ! print*, 'rand_perturb', rand_perturb
-  !   nudge_diff = rand_perturb*pvalue_sd_slice!*deflation_factor
-  ! endif
-endif
-
 print*, 'loading ', param_val_fpath
 
 params_save = pvalue_mean
+
+
 if (l_ppe) then
-  ! todo: try both prior functional form and normal with posterior inflated sigma
-  ! do iiparam = 1,4
-  !   params_save(iiparam) = pvalue_mean(iiparam)+nudge_diff(iiparam)
-  ! enddo
-  do iiparam = 1,n_perturbed_param_mp
-    params_save(iiparam+12) = pvalue_mean(iiparam+12)+nudge_diff(iiparam)
-  enddo
+
+  if (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
+    allocate(pvalue_isd_slice(n_perturbed_param_mp))
+    allocate(pvalue_sd_slice(n_perturbed_param_mp))
+    ! pvalue_isd_slice(1:4)=pvalue_isd(1:4)
+    pvalue_isd_slice(1:n_perturbed_param_mp)=pvalue_isd(13:n_param-n_perturbed_param_mp+1)
+    pvalue_isd_slice(1) = 10
+    pvalue_isd_slice(2) = 50
+    pvalue_isd_slice(3:n_perturbed_param_mp) = 2
+    ! pvalue_sd_slice(1:4)=pvalue_sd(1:4)
+    pvalue_sd_slice(1:n_perturbed_param_mp)=pvalue_sd(13:n_param-n_perturbed_param_mp+1)
+
+    do iiparam = 1,n_perturbed_param_mp
+      nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+      params_save(iiparam+12) = pvalue_mean(iiparam+12) + nudge_diff
+    enddo
+
+  elseif (s_sample_dist .eq. 'custom') then
+    allocate(posterior_dens(n_bins, n_perturbed_param_mp))
+    allocate(posterior_binedges(n_bins+1, n_perturbed_param_mp))
+    allocate(posterior_binmeans(n_bins, n_perturbed_param_mp))
+    allocate(posterior_cdf(n_bins, n_perturbed_param_mp))
+
+    ! read the file
+    call dens_csv%read(trim(custom_dens_path),header_row=1,status_ok=stat_ok)
+    call bins_csv%read(trim(custom_bins_path),header_row=1,status_ok=stat_ok)
+
+    ! get MCMC posterior distributions
+    do iiparam = 1, n_perturbed_param_mp
+      do ibin = 1, n_bins+1
+        call bins_csv%get(ibin,iiparam+1,posterior_binedges(ibin, iiparam),stat_ok)
+        if (ibin > n_bins) cycle
+        call dens_csv%get(ibin,iiparam+1,posterior_dens(ibin, iiparam),stat_ok)
+      enddo
+    enddo
+    posterior_binmeans = (posterior_binedges(2:n_bins+1, :) + posterior_binedges(1:n_bins, :))/2
+
+    ! build the cdf
+    posterior_cdf(1, :) = posterior_dens(1, :)
+    do ibin = 2, n_bins
+      posterior_cdf(ibin, :) = posterior_cdf(ibin-1, :) + posterior_dens(ibin, :)
+    enddo
+
+    ! in case CDF doesn't sum up to 1
+    do iparam = 1, n_perturbed_param_mp
+      posterior_cdf(:, iparam) = posterior_cdf(:, iparam)/posterior_cdf(n_bins, iparam)
+    enddo
+
+    ! pick a number between 0 and 1 from lhs and find it in the cdf
+    rand_perturb = lsample(2:n_perturbed_param,irealz)
+
+    do iparam = 1, n_perturbed_param_mp
+      do ibin = 1, n_bins
+        if (rand_perturb(iparam) <= posterior_cdf(ibin, iparam)) then
+          ! print *, 'Selected bin = ', ibin, posterior_binmeans(ibin, iparam), iparam
+          params_save(iparam) = posterior_binmeans(ibin, iparam)
+          exit
+        endif
+      enddo
+    enddo
+  endif
 endif
 
 print*, 'params:', params_save

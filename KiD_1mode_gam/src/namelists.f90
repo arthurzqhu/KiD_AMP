@@ -41,6 +41,8 @@ module namelists
   character(100) :: param_val_fpath = "../../CloudBOSS/boss_slc_param_values.csv"
   character(100) :: param_infl_sigma_fpath = "../../CloudBOSS/boss_slc_param_sigma.csv"
   character(100) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
+  character(20)  :: s_sample_dist
+  character(100) :: custom_dens_path, custom_bins_path
 
 ! integer switch for type of BOSS autoconversion (q)
 !1 = 1-term auto wo rain dependence
@@ -129,8 +131,8 @@ real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
        , xctrl, lhf_ctrl, shf_ctrl, diaglevel, dgstart, rhctrl
   namelist/case/input_file, l_input_file, ifiletype, icase
 
-  namelist/ppe/l_ppe, irealz, deflation_factor, Na_min, Na_max &
-       , w_min, w_max, n_perturbed_param, n_ppe
+  namelist/ppe/l_ppe, s_sample_dist, custom_dens_path, custom_bins_path, irealz, &
+               deflation_factor, Na_min, Na_max, w_min, w_max, n_perturbed_param, n_ppe
 
   namelist/switch/l_mphys, l_advect, l_diverge, l_pupdate &
        , l_fix_qv, l_nomphys_qv, l_noadv_qv, l_posadv_qv &

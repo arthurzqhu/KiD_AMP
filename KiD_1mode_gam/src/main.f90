@@ -46,8 +46,9 @@ contains
 
       call check_bintype
       call set_constants
+
+      ! the initial condition will be sampled from LH regardless of s_sample_dist
       if (l_ppe) call load_latinhc(n_perturbed_param, n_ppe)
-      ! call read_sctab
 
       ! Set up the initial fields and forcing
       if (l_input_file)then

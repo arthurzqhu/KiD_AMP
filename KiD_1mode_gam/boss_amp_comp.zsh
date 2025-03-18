@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 # config of the run
-mps=("BIN_TAU")
+mps=("boss_4m_3069")
 config_name="condcoll"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
@@ -274,6 +274,7 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 
 &ppe
 l_ppe=.false.
+s_sample_dist='custom'
 n_perturbed_param=18
 n_ppe=2000
 irealz=1

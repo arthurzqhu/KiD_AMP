@@ -2,7 +2,7 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="condcoll_ppe_isd"
+config_name="condcoll_ppe_posterior_r1"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
@@ -265,6 +265,9 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 
 &ppe
 l_ppe=.true.
+s_sample_dist='custom'
+custom_dens_path='/home/arthurhu/BOSS_PPE/MCMC_posterior/r1_param_density.csv'
+custom_bins_path='/home/arthurhu/BOSS_PPE/MCMC_posterior/r1_param_bins.csv'
 n_perturbed_param=14
 n_ppe=$6
 irealz=$5
