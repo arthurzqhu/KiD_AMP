@@ -775,7 +775,7 @@ character(len=200) :: filename
 character(len=100) :: varname
 character(len=6) :: n_ppe_str, n_perturbed_param_str
 
-write(n_perturbed_param_str,'(I0)') n_perturbed_param
+write(n_perturbed_param_str,'(I0)') n_perturbed_param+2
 write(n_ppe_str,'(I0)') n_ppe
 
 filename = '/home/arthurhu/KiD_AMP/KiD_1mode_gam/lhs_module/lhs_out_p'// &

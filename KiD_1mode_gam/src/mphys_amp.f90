@@ -232,20 +232,20 @@ contains
 
    elseif (ampORbin .eq. 'bin') then
 
-     if (l_dgstep) then
-       do imom = 1,nmom_diag
-         mom = moments_diag(imom)
-         do k = 1,nz
-           do j = 1,nx
-             cmom(k,j,imom) = momk(dropsm2d(k,j,:), dropsn2d(k,j,:), mom)
-           enddo
-         enddo
-       enddo
+     ! if (l_dgstep) then
+     !   do imom = 1,nmom_diag
+     !     mom = moments_diag(imom)
+     !     do k = 1,nz
+     !       do j = 1,nx
+     !         cmom(k,j,imom) = momk(dropsm2d(k,j,:), dropsn2d(k,j,:), mom)
+     !       enddo
+     !     enddo
+     !   enddo
 
-       fieldproc=cmom(:,nx,:)
-       name='cliq_mom'
-       units='m^k/kg'
-     endif
+       ! fieldproc=cmom(:,nx,:)
+       ! name='cliq_mom'
+       ! units='m^k/kg'
+     ! endif
 
   call save_proc_dp(fieldproc,name,i_dgtime, units)
       if (bintype .eq. 'sbm') then
@@ -654,23 +654,33 @@ endif
 
 end Subroutine mphys_amp_interface
 
-double precision function momk(ffcdm, ffcdn, mk)
-  double precision, dimension(max_nbins), intent(in) :: ffcdm, ffcdn
-  double precision :: mk, diag_m(max_nbins), diag_D(max_nbins), inf
-  integer :: ib
+double precision function momk(ffcdm, ffcdn, mk, bin_i)
+  double precision, allocatable, dimension(:), intent(in) :: ffcdm, ffcdn
+  integer, intent(in) :: bin_i
+  double precision, allocatable :: diag_m(:), diag_D(:)
+  double precision :: inf, mk
+  integer :: ib, bins
 
   inf = huge(mk)
+  bins = size(ffcdm)
   if (bintype .eq. 'tau') then
     diag_m=ffcdm/ffcdn
     diag_D=(diag_m*QtoM3)**(1./3.)
-    do ib=1,nkr
-      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>maxval(diams)) .or. (diag_D(ib)<minval(diams))) then
-        diag_D(ib)=diams(ib)
+    do ib=1,bins
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(ib+bin_i)) .or. (diag_D(ib)<diams(ib+bin_i-1))) then
+        diag_D(ib)=diams(ib+bin_i-1)
       endif
     end do
-    momk=sum(ffcdn(1:nkr)*diag_D**mk)*col
+    momk=sum(ffcdn(1:size(ffcdm))*diag_D**mk)*col
   else
     stop 'only implemented TAU'
+  endif
+
+  if (momk > inf) then
+    print*, 'diag_D', diag_D
+    ! print*, 'ffcds', ffcdm, ffcdn
+    print*, ffcdn(1:size(ffcdm)), diag_D, mk, col
+    stop
   endif
 
 

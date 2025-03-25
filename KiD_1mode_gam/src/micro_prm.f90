@@ -331,6 +331,8 @@ contains
             num_h_bins=(/34,34/)
          endif
       endif
+      pmomsc=(/3,0,imomc1,imomc2,imomc1,imomc2/)
+      pmomsr=(/3,0,imomr1,imomr2,imomr1,imomr2/)
 
    end subroutine check_bintype
 

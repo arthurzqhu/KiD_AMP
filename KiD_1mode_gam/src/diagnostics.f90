@@ -19,8 +19,8 @@ Module diagnostics
   Use header_data
   Use switches, only: l_diverge, wctrl
 
-  Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin,nmom_diag
-  use micro_prm, only: QtoM3
+  Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin,nmom_diag, imomc1, imomc2
+  use micro_prm, only: QtoM3, pmomsc
 
   Implicit none
 
@@ -161,6 +161,7 @@ contains
 
 
   subroutine save_diagnostics_1d
+    use mphys_amp, only: momk
     real(wp), allocatable :: field(:)
     real(wp), allocatable :: field_flag(:,:)
     real(wp), allocatable :: field_nx(:)
@@ -168,6 +169,7 @@ contains
     real(wp), allocatable :: field_bin_r(:)
     real(wp), allocatable :: field_bin(:,:)
     real(wp), allocatable :: field_moms(:,:)
+    real(wp), allocatable :: m3_arr(:), m0_arr(:), mx_arr(:)
     character(max_char_len) :: name, units, dims
     integer :: k, ih, imom, ibin, ift
 
@@ -236,28 +238,33 @@ contains
                 field(k)=sum(hydrometeors(k,nx,ih)%moments(:,imom))
              endif
           end do
-
           call save_dg(field, name, i_dgtime,  units,dim=dims)
-
-          ! if (ampORbin .eq. 'bin') then
-          !    name=trim('cloud_only_'//trim(mom_names(imom)))
-          !    call save_dg(field_bin_c, name, i_dgtime, units, dim=dims)
-          !    name=trim('rain_only_'//trim(mom_names(imom)))
-          !    call save_dg(field_bin_r, name, i_dgtime, units, dim=dims)
-          !    do ibin= 1,num_h_bins(ih)
-          !       field_bin(:,ibin) = 0.0
-          !       do k=1,nz
-          !          field_bin(k,ibin) = hydrometeors(k,nx,ih)%moments(ibin,imom)
-          !       end do
-          !    end do
-          !
-          !    ! cloud_bin and rain_bin can be derived at analysis,
-          !    ! commented out for smaller file size -ahu
-          !    ! name=trim(h_names(ih))//'_bin_'//trim(mom_names(imom))
-          !    ! call save_dg('bin',field_bin, name, i_dgtime,  units,dim=dims)
-          ! end if
        end do
     end do
+
+    ! output extra moments
+
+    if (ampORbin .eq. 'bin') then
+      do ih = 1,nspecies
+        do imom=3,4
+          name=trim(h_names(ih))//'_'//trim(mom_names(imom))
+          units='m^k/m2'
+          do k=1,nz
+            if (ih==1) then
+              m3_arr = hydrometeors(k,nx,1)%moments(1:split_bins,1)
+              m0_arr = hydrometeors(k,nx,1)%moments(1:split_bins,2)
+            elseif(ih==2) then
+              m3_arr = hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1)
+              m0_arr = hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,2)
+            endif
+            if (ih==1) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), 1)
+            if (ih==2) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), split_bins+1)
+          enddo
+          call save_dg(field, name, i_dgtime, units, dim='z')
+        enddo
+      enddo
+    endif
+
 
     !4D flags
     !do ift=1,4 !iflagtype
@@ -519,6 +526,41 @@ contains
           ! print*, 'path', imom, sum(field)
        end do
     end do
+
+    ! output extra moments
+
+    field(:) = 0.
+
+    if (ampORbin .eq. 'bin') then
+      do ih = 1,nspecies
+        do imom=3,4
+          name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_path'
+          units='m^k/m2'
+          do k=1,nz
+            if (ih==1) then
+              m3_arr = hydrometeors(k,nx,1)%moments(1:split_bins,1)
+              m0_arr = hydrometeors(k,nx,1)%moments(1:split_bins,2)
+            elseif(ih==2) then
+              m3_arr = hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1)
+              m0_arr = hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,2)
+            endif
+            if (ih==1) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), 1)
+            if (ih==2) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), split_bins+1)
+            ! field(k)=sum(rho(k)*dz(k)*mx_arr)
+            ! if (field(k) > 1e-4) then
+            !   print*, 'ih', ih
+            !   print*, 'm0', m0_arr
+            !   print*, 'm3', m3_arr
+            !   print*, 'field', field(k)
+            !   stop
+            ! endif
+
+          enddo
+          call save_dg(sum(field), name, i_dgtime,  units,dim='time')
+          ! if (ih==1) print*, 'imom, ih', imom, ih, sum(field)
+        enddo
+      enddo
+    endif
 
     deallocate(field_bin)
     deallocate(field_moms)

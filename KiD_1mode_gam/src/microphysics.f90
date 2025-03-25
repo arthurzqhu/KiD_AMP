@@ -1214,8 +1214,8 @@ if (dosedimentation) then
               units='m^'//Mnum//'/m^2/s'
               call save_dg(proc_lmx(1,:,i)/dt,name,i_dgtime,units,dim='z')
             enddo
-            call save_dg(k,proc_lmass/dt,'dm_sed',i_dgtime,units='kg/m^2/s',dim='z')
-            call save_dg(k,proc_lnum/dt,'dn_sed',i_dgtime,units='#/m^2/s',dim='z')
+            ! call save_dg(k,proc_lmass/dt,'dm_sed',i_dgtime,units='kg/m^2/s',dim='z')
+            ! call save_dg(k,proc_lnum/dt,'dn_sed',i_dgtime,units='#/m^2/s',dim='z')
             ! call save_dg(k,proc_lmx/dt,'dmx_sed',i_dgtime,units='m^x/kg/s',dim='z')
             ! call save_dg(k,proc_lmy/dt,'dmy_sed',i_dgtime,units='m^y/kg/s',dim='z')
           else
