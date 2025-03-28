@@ -239,7 +239,9 @@ contains
              endif
           end do
           call save_dg(field, name, i_dgtime,  units,dim=dims)
+
        end do
+
     end do
 
     ! output extra moments
@@ -260,7 +262,9 @@ contains
             if (ih==1) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), 1)
             if (ih==2) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), split_bins+1)
           enddo
-          call save_dg(field, name, i_dgtime, units, dim='z')
+
+          call save_dg(field, name, i_dgtime,  units,dim=dims)
+
         enddo
       enddo
     endif
@@ -521,18 +525,27 @@ contains
             endif
           endif
 
-          ! if (ih==2) print*, i_dgtime, sum(field)
+          ! ! if (ih==2) print*, i_dgtime, sum(field)
           call save_dg(sum(field), name, i_dgtime,  units,dim='time')
-          ! print*, 'path', imom, sum(field)
+          ! print*, 'path', ih, imom, sum(field)
+
+         ! print*, 'ih, imom, path', ih, imom, field(25)
+         ! if (sum(field)>0 .and. imom==4) then
+         !   ! print*, hydrometeors(25,1,1)%moments(:,:)
+         !   stop
+         ! endif
+
+
        end do
+
     end do
 
     ! output extra moments
 
-    field(:) = 0.
 
     if (ampORbin .eq. 'bin') then
       do ih = 1,nspecies
+        field(:) = 0.
         do imom=3,4
           name=trim(h_names(ih))//'_'//trim(mom_names(imom))//'_path'
           units='m^k/m2'
@@ -544,22 +557,23 @@ contains
               m3_arr = hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,1)
               m0_arr = hydrometeors(k,nx,1)%moments(split_bins+1:max_nbins,2)
             endif
-            if (ih==1) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), 1)
-            if (ih==2) field(k)=momk(m3_arr, m0_arr, dble(pmomsc(imom)), split_bins+1)
-            ! field(k)=sum(rho(k)*dz(k)*mx_arr)
-            ! if (field(k) > 1e-4) then
-            !   print*, 'ih', ih
-            !   print*, 'm0', m0_arr
-            !   print*, 'm3', m3_arr
-            !   print*, 'field', field(k)
-            !   stop
-            ! endif
+            if (ih==1) field(k)=rho(k)*dz(k)*momk(m3_arr, m0_arr, dble(pmomsc(imom)), 1)
+            if (ih==2) field(k)=rho(k)*dz(k)*momk(m3_arr, m0_arr, dble(pmomsc(imom)), split_bins+1)
 
           enddo
           call save_dg(sum(field), name, i_dgtime,  units,dim='time')
-          ! if (ih==1) print*, 'imom, ih', imom, ih, sum(field)
+
+          ! print*, 'path', ih, imom, sum(field)
+
+         ! print*, 'ih, imom, layer', ih, imom, field(25)
+         ! if (sum(field)>0 .and. imom==4) then
+         !   stop
+         ! endif
+
         enddo
+
       enddo
+
     endif
 
     deallocate(field_bin)

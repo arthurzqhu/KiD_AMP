@@ -247,7 +247,8 @@ contains
        ! units='m^k/kg'
      ! endif
 
-  call save_proc_dp(fieldproc,name,i_dgtime, units)
+  ! call save_proc_dp(fieldproc,name,i_dgtime, units)
+
       if (bintype .eq. 'sbm') then
          ! print*, 'mc before mp', mc(20,1,(/4,1,5,6/))+mr(20,1,(/4,1,5,6/))
          call mp_sbm(dropsm2d,p2d,t2d,qv2d,aer2d,mc,mr)
@@ -667,11 +668,11 @@ double precision function momk(ffcdm, ffcdn, mk, bin_i)
     diag_m=ffcdm/ffcdn
     diag_D=(diag_m*QtoM3)**(1./3.)
     do ib=1,bins
-      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(ib+bin_i)) .or. (diag_D(ib)<diams(ib+bin_i-1))) then
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(max_nbins)) .or. (diag_D(ib)<diams(1))) then
         diag_D(ib)=diams(ib+bin_i-1)
       endif
     end do
-    momk=sum(ffcdn(1:size(ffcdm))*diag_D**mk)*col
+    momk=sum(ffcdn(1:size(ffcdm))*diag_D**mk)
   else
     stop 'only implemented TAU'
   endif
