@@ -576,7 +576,6 @@ integer :: num_cols = 0               ! The number of columns in the CSV file
 integer :: ib
 
 
-
 infinity = huge(dnc)
 
 z_cbi=zctrl(2)

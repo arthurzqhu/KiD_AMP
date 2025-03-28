@@ -11,6 +11,7 @@ w_range=(0.4 5)
 # nruns=$(($len1*$len2))
 
 nens=10000
+n_perturbed_param=12
 
 # for (( iens = 1; iens <= nens; iens++ )); do
 # for (( iid = 1; iid <= nruns; iid++ )); do
@@ -23,7 +24,7 @@ nens=10000
 # echo $jw $w_list[$jw]
 echo $a_range $w_range
 
-seq $nens | parallel -j 32 --workdir $PWD ./boss_ppe_runs.zsh $a_range[1] $a_range[2] $w_range[1] $w_range[2] {} $nens
+seq $nens | parallel -j 64 --workdir $PWD ./boss_ppe_runs.zsh $a_range[1] $a_range[2] $w_range[1] $w_range[2] {} $nens $n_perturbed_param
 # seq $nens | parallel -j 32 --workdir $PWD ./boss_ppe_runs.zsh $a_list[$ja] $w_list[$jw] {}
 # done
 # done

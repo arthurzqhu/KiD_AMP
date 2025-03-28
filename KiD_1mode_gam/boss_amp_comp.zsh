@@ -1,10 +1,13 @@
 #!/bin/zsh
 
 # config of the run
-mps=("boss_4m_3069")
-config_name="condcoll"
+mps=("BIN_TAU")
+config_name="fullmic"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
+
+nikki='target'
+# nikki=$(date +'%Y-%m-%d')
 
 # # initial condition for all cases
 cim3=0.
@@ -24,7 +27,7 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=0
+l_sed_s=1
 l_adv_s=1
 
 # []==if, &&==then, ||=else
@@ -142,7 +145,7 @@ echo $mp
    elif [[ $mp = 'BIN_TAU' ]]; then
      nhm='2,2'
      nhb='34,1'
-     momnames="'M1','M2'"
+     momnames="'M1','M2','M3','M4'"
      imc1=6
      imc2=9
      imr1=6
@@ -164,7 +167,7 @@ echo $mp
    fi
 
 
-   outdir=/data1/arthurhu/KiD_output/$(date +'%Y-%m-%d')/$config_name/$var1str/$var2str/${mp}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/$var2str/${mp}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -262,14 +265,13 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.0         !Timestep for diagnostic output
+dg_dt=5.         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
 tctrl(4)=1200.    !For cases 105-107
 zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to init. hydromets.
-!irealz=2001
 /
 
 &ppe

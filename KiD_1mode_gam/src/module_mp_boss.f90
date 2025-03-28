@@ -14,7 +14,7 @@ integer, parameter :: STATUS_ERROR  = -1
 integer, parameter :: STATUS_OK     = 0
 integer, save      :: global_status = STATUS_OK
 integer            :: n_param
-! logical            :: l_mlim2, l_bmncoal, l_mlim
+logical            :: l_mlim2, l_bmncoal, l_mlim
 
 ! ice microphysics lookup table array dimensions
 integer, parameter :: isize        = 50
@@ -1703,37 +1703,36 @@ m0 = mc0 + mr0
 mx = mcx + mrx
 my = mcy + mry
 
- do i = its,ite
-   do k = kts,kte
-     if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+do i = its,ite
+  do k = kts,kte
+    if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+      if (initprof .eq. 'c') then
+        qcs(k,i,1) = m3*M3toq
+        qcs(k,i,3) = mx
+        qcs(k,i,4) = my
+      elseif (initprof .eq. 'i') then
+        qcs(k,i,1) = m3*(z(k)-z_cbi)/d_cloudi*M3toq
+        qcs(k,i,3) = mx*((z(k)-z_cbi)/d_cloudi)**(momx/3)
+        qcs(k,i,4) = my*((z(k)-z_cbi)/d_cloudi)**(momy/3)
+      endif
+      qcs(k,i,2) = m0
 
-       if (initprof .eq. 'c') then
-         qcs(k,i,1) = m3*M3toq
-         qcs(k,i,3) = mx
-         qcs(k,i,4) = my
-       elseif (initprof .eq. 'i') then
-         qcs(k,i,1) = m3*(z(k)-z_cbi)/d_cloudi*M3toq
-         qcs(k,i,3) = mx*((z(k)-z_cbi)/d_cloudi)**(momx/3)
-         qcs(k,i,4) = my*((z(k)-z_cbi)/d_cloudi)**(momy/3)
-       endif
-       qcs(k,i,2) = m0
+    endif
+  enddo
 
-     endif
-   enddo
+  if (extralayer) then
+    m3 = 2d-4*QtoM3
+    m0 = 1e5
+    do k = 10,37
+      qcs(k,i,1) = m3*M3toq
+      qcs(k,i,2) = m0
+      dnc = (m3/m0*gamnu1_0/gamnu1_3)**(1./3.)
+      qcs(k,i,3) = m3/(dnc**(h_shape(1)+3)*gamnu1_3)*dnc**(h_shape(1)+momx)*gamnu1_w
+      qcs(k,i,4) = m3/(dnc**(h_shape(1)+3)*gamnu1_3)*dnc**(h_shape(1)+momy)*gamnu1_x
+    enddo
+  endif
 
-   if (extralayer) then
-     m3 = 2d-4*QtoM3
-     m0 = 1e5
-     do k = 10,37
-       qcs(k,i,1) = m3*M3toq
-       qcs(k,i,2) = m0
-       dnc = (m3/m0*gamnu1_0/gamnu1_3)**(1./3.)
-       qcs(k,i,3) = m3/(dnc**(h_shape(1)+3)*gamnu1_3)*dnc**(h_shape(1)+momx)*gamnu1_w
-       qcs(k,i,4) = m3/(dnc**(h_shape(1)+3)*gamnu1_3)*dnc**(h_shape(1)+momy)*gamnu1_x
-     enddo
-   endif
-
- enddo
+enddo
 
   return
 
@@ -2301,6 +2300,11 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
      mycon   = 0.;     myevp   = 0.
      nccoal  = 0.;     mxcoal  = 0.
      mycoal  = 0.
+
+     fluxdiv_qc  = 0.
+     fluxdiv_nc  = 0.
+     fluxdiv_qcx = 0.
+     fluxdiv_qcy = 0.
 
 ! HM NOTE: no ice processes are coupled yet with SLC. This will
 ! need to be redone when ice microphysics is included.
@@ -3019,11 +3023,9 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
 
 ! if spectral width is 0, then ncevp will be 0 (since it's initialized to 0 earlier)
         if ((kk03x-1.).ge.1.e-20.and.(kk3xy-1.).ge.1.e-20) then
-          ncevp=g_evap*qc0(k,i)*a0evap*mtilde**bm0evap*(kk03x-1.)**bx0evap*(kk3xy-1.)**by0evap !&
-            ! +gevap*qc0(k,i)*a0evap2*mtilde**bm0evap2*(kk03x-1.)**bx0evap2*(kk3xy-1.)**by0evap2
+          ncevp=g_evap*qc0(k,i)*a0evap*mtilde**bm0evap*(kk03x-1.)**bx0evap*(kk3xy-1.)**by0evap &
+            +gevap*qc0(k,i)*a0evap2*mtilde**bm0evap2*(kk03x-1.)**bx0evap2*(kk3xy-1.)**by0evap2
         end if
-        ! print*, a0evap, bm0evap, bx0evap, by0evap, a0evap2, bm0evap2, bx0evap2, by0evap2
-        ! stop
         ! if (abs(ncevp)>1e9) then
         !   print*, 'before ratio', ncnuc, ncevp, g_evap, qc0(k,i),a0evap,mtilde,bm0evap,bx0evap,by0evap,kk03x,kk3xy
         ! endif
@@ -3766,7 +3768,7 @@ if (.not. dosedimentation) goto 1250
                  expr2 = 1.
 
                  expr1 = mpow/(mpow+mlim**bmfall)
-                 ! if (l_mlim2) expr2 = mxytilde**bmfall/(mxytilde**bmfall+mlim2**bmfall)
+                 if (l_mlim2) expr2 = mxytilde**bmfall/(mxytilde**bmfall+mlim2**bmfall)
 
                  V_nc(k) = g_fall*afall*expr1*expr2*(kk03x**bx0fall*kk3xy**by0fall)
                  V_qc(k) = g_fall*afall*expr1*expr2*(kk03x**bx3fall*kk3xy**by3fall)
@@ -10460,8 +10462,8 @@ use namelists, only: n_perturbed_param, n_ppe
 
 real, allocatable, dimension(:) :: pvalue_mean, pvalue_sd, pvalue_isd, params_save, &
   pvalue_isd_slice, pvalue_sd_slice
-integer :: io_status, iiparam, n_perturbed_param_mp, n_bins, ibin
-integer :: seed_size, i
+integer :: io_status, iiparam, n_bins, ibin
+integer :: seed_size, i, idb
 integer, allocatable :: seed(:)
 
 
@@ -10470,13 +10472,17 @@ type(csv_file) :: dens_csv, bins_csv
 character(len=30),dimension(:),allocatable :: header, pnames
 logical,dimension(:),allocatable :: t
 logical :: stat_ok, stat_ok2
-integer,dimension(:),allocatable :: itypes
+integer,dimension(:),allocatable :: itypes, db_idx
 double precision, allocatable :: rand_perturb(:), posterior_dens(:,:), posterior_binedges(:,:), &
   posterior_cdf(:,:), posterior_binmeans(:,:)
 double precision :: logspan, perturb_ratio(n_param), nudge_diff, infl_std(n_param)
 character(len=200) :: filename
 character(len=100) :: varname
 character(len=4) :: n_ppe_str, n_param_ppe_str
+
+l_bmncoal = .false.
+l_mlim2 = .true.
+
 
 ! read the file
 call pv_file%read(trim(param_val_fpath),header_row=1,status_ok=stat_ok)
@@ -10488,7 +10494,6 @@ call pv_file%get_header(header,stat_ok,1)
 ! call ps_file%read(trim(param_infl_sigma_fpath), header_row=1,status_ok=stat_ok2)
 
 n_param = size(header)
-n_perturbed_param_mp = n_perturbed_param - 2
 n_bins = 50
 
 ! n_perturbed_param = 16
@@ -10497,16 +10502,16 @@ n_bins = 50
 ! write(n_ppe_str,'(I4)') n_ppe
 
 ! check if the length is correct
-if (n_param /= 35) then
-  print*, 'n_param = ', n_param
-  stop 'incorrect number of parameters'
-endif
-! if ((l_bmncoal .and. n_param /= 31) &
-!     .and. (l_mlim2 .and. n_param/=36) &
-!     .and. (n_param /=35)) then
-!   print*, 'n_param=',n_param
+! if (n_param /= 35) then
+!   print*, 'n_param = ', n_param
 !   stop 'incorrect number of parameters'
 ! endif
+if ((l_bmncoal .and. n_param /= 31) &
+    .and. (l_mlim2 .and. n_param/=40) &
+    .and. (n_param /=39)) then
+  print*, 'n_param=',n_param
+  stop 'incorrect number of parameters'
+endif
 
 allocate(pvalue_mean(n_param))
 allocate(pvalue_sd(n_param))
@@ -10524,41 +10529,77 @@ print*, 'loading ', param_val_fpath
 
 params_save = pvalue_mean
 
-
 if (l_ppe) then
 
   if (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
-    allocate(pvalue_isd_slice(n_perturbed_param_mp))
-    allocate(pvalue_sd_slice(n_perturbed_param_mp))
-    ! pvalue_isd_slice(1:4)=pvalue_isd(1:4)
-    pvalue_isd_slice(1:n_perturbed_param_mp)=pvalue_isd(13:n_param-n_perturbed_param_mp+1)
-    pvalue_isd_slice(1) = 10
-    pvalue_isd_slice(2) = 50
-    pvalue_isd_slice(3:n_perturbed_param_mp) = 2
+    allocate(pvalue_isd_slice(n_perturbed_param))
+    allocate(pvalue_sd_slice(n_perturbed_param))
+    ! NOTE: coll-coal:
+    ! pvalue_isd_slice(1:n_perturbed_param)=pvalue_isd(13:n_param-n_perturbed_param+1)
+    ! pvalue_isd_slice(1) = 10
+    ! pvalue_isd_slice(2) = 50
+    ! pvalue_isd_slice(3:n_perturbed_param) = 2
     ! pvalue_sd_slice(1:4)=pvalue_sd(1:4)
-    pvalue_sd_slice(1:n_perturbed_param_mp)=pvalue_sd(13:n_param-n_perturbed_param_mp+1)
+    ! pvalue_sd_slice(1:n_perturbed_param)=pvalue_sd(13:n_param-n_perturbed_param+1)
+    ! NOTE: nevp and sed:
+    ! pvalue_isd_slice(1:n_perturbed_param) = pvalue_isd(1:n_perturbed_param)
+    ! pvalue_isd_slice(5) = 5
+    ! pvalue_isd_slice(6) = 5
+    ! pvalue_isd_slice(7:16) = .5
+    ! pvalue_isd_slice(17) = 30
+    ! pvalue_isd_slice(18) = 30
+    ! pvalue_isd_slice(19:28) = 2
+    ! pvalue_isd_slice(27) = 30
+    ! pvalue_isd_slice(3:12) = 5
+    ! pvalue_isd_slice(1) = 30
+    ! pvalue_isd_slice(2) = 30
+    ! pvalue_isd_slice(11) = 30
 
-    do iiparam = 1,n_perturbed_param_mp
+    ! NOTE: all:
+    pvalue_isd_slice(1:n_perturbed_param) = pvalue_isd(1:n_perturbed_param)
+    pvalue_isd_slice(17) = 10
+    pvalue_isd_slice(18) = 50
+    pvalue_isd_slice(19:28) = 2
+    pvalue_isd_slice(29:30) = 30
+    pvalue_isd_slice(31:38) = 5
+    pvalue_isd_slice(39) = 30
+    pvalue_isd_slice(40) = 5
+
+    ! ! NOTE: coll-coal:
+    ! do iiparam = 1,n_perturbed_param
+    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+    !   params_save(iiparam+16) = pvalue_mean(iiparam+16) + nudge_diff
+    ! enddo
+
+    ! NOTE: all
+    do iiparam = 1,n_perturbed_param
       nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-      params_save(iiparam+12) = pvalue_mean(iiparam+12) + nudge_diff
+      params_save(iiparam) = pvalue_mean(iiparam) + nudge_diff
     enddo
 
+    ! ! NOTE: sed:
+    ! do iiparam = 1,n_perturbed_param
+    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+    !   params_save(iiparam+28) = pvalue_mean(iiparam+28) + nudge_diff
+    !   ! params_save(iiparam+24) = pvalue_mean(iiparam+24) + nudge_diff
+    ! enddo
+
   elseif (s_sample_dist .eq. 'custom') then
-    allocate(posterior_dens(n_bins, n_perturbed_param_mp))
-    allocate(posterior_binedges(n_bins+1, n_perturbed_param_mp))
-    allocate(posterior_binmeans(n_bins, n_perturbed_param_mp))
-    allocate(posterior_cdf(n_bins, n_perturbed_param_mp))
+    allocate(posterior_dens(n_bins, n_perturbed_param))
+    allocate(posterior_binedges(n_bins+1, n_perturbed_param))
+    allocate(posterior_binmeans(n_bins, n_perturbed_param))
+    allocate(posterior_cdf(n_bins, n_perturbed_param))
 
     ! read the file
     call dens_csv%read(trim(custom_dens_path),header_row=1,status_ok=stat_ok)
     call bins_csv%read(trim(custom_bins_path),header_row=1,status_ok=stat_ok)
 
     ! get MCMC posterior distributions
-    do iiparam = 1, n_perturbed_param_mp
+    do iiparam = 1, n_perturbed_param
       do ibin = 1, n_bins+1
-        call bins_csv%get(ibin,iiparam+1,posterior_binedges(ibin, iiparam),stat_ok)
+        call bins_csv%get(ibin,iiparam,posterior_binedges(ibin, iiparam),stat_ok)
         if (ibin > n_bins) cycle
-        call dens_csv%get(ibin,iiparam+1,posterior_dens(ibin, iiparam),stat_ok)
+        call dens_csv%get(ibin,iiparam,posterior_dens(ibin, iiparam),stat_ok)
       enddo
     enddo
     posterior_binmeans = (posterior_binedges(2:n_bins+1, :) + posterior_binedges(1:n_bins, :))/2
@@ -10570,76 +10611,93 @@ if (l_ppe) then
     enddo
 
     ! in case CDF doesn't sum up to 1
-    do iparam = 1, n_perturbed_param_mp
+    do iparam = 1, n_perturbed_param
       posterior_cdf(:, iparam) = posterior_cdf(:, iparam)/posterior_cdf(n_bins, iparam)
     enddo
 
     ! pick a number between 0 and 1 from lhs and find it in the cdf
-    rand_perturb = lsample(2:n_perturbed_param,irealz)
-
-    do iparam = 1, n_perturbed_param_mp
+    do iparam = 1, n_perturbed_param
       do ibin = 1, n_bins
-        if (rand_perturb(iparam) <= posterior_cdf(ibin, iparam)) then
+        if (lsample(iparam, irealz) <= posterior_cdf(ibin, iparam)) then
           ! print *, 'Selected bin = ', ibin, posterior_binmeans(ibin, iparam), iparam
-          params_save(iparam) = posterior_binmeans(ibin, iparam)
+          params_save(iparam+16) = posterior_binmeans(ibin, iparam)
           exit
         endif
       enddo
     enddo
+
+    ! do iparam = 9, n_perturbed_param
+    !   do ibin = 1, n_bins
+    !     if (lsample(iparam, irealz) <= posterior_cdf(ibin, iparam)) then
+    !       ! print *, 'Selected bin = ', ibin, posterior_binmeans(ibin, iparam), iparam
+    !       params_save(iparam+8) = posterior_binmeans(ibin, iparam)
+    !       exit
+    !     endif
+    !   enddo
+    ! enddo
+
   endif
 endif
 
 print*, 'params:', params_save
 
-a0evap   = db_to_val(params_save(1 ))
-bx0evap  = params_save(2 )
-by0evap  = params_save(3 )
-! a0evap2  = db_to_val(params_save(4 ))
-! bx0evap2 = params_save(5 )
-! by0evap2 = params_save(6 )
-bm0evap  = params_save(4 )
-! bm0evap2 = params_save(8 )
-aevap    = db_to_val(params_save(5 ))
-bmevap   = params_save(6)
-bx3evap  = params_save(7)
-by3evap  = params_save(8)
-bxxevap  = params_save(9)
-byxevap  = params_save(10)
-bxyevap  = params_save(11)
-byyevap  = params_save(12)
-
-a0coal  = db_to_val(params_save(13))
-mtrans  = db_to_val(params_save(14))
-bxscoal = params_save(15)
-byscoal = params_save(16)
-bx0coal = params_save(17)
-by0coal = params_save(18)
-bxxcoal = params_save(19)
-byxcoal = params_save(20)
-bxycoal = params_save(21)
-byycoal = params_save(22)
-bbsmall = params_save(23)
-bblarge = params_save(24)
-
-afall   = db_to_val(params_save(25))
-mlim    = db_to_val(params_save(26))
-bx0fall = params_save(27)
-by0fall = params_save(28)
-bx3fall = params_save(29)
-by3fall = params_save(30)
-bxxfall = params_save(31)
-byxfall = params_save(32)
-bxyfall = params_save(33)
-byyfall = params_save(34)
-bmfall  = params_save(35)
-
-! saving the parameter used for PPE (also just in case)
+! saving the parameter before converting db to real vals
 call pv_file%open(trim(KiD_outdir)//'params.csv',n_cols=n_param,status_ok=stat_ok)
 call pv_file%add(header)
 call pv_file%next_row()
 call pv_file%add(params_save)
 call pv_file%next_row()
 call pv_file%close(stat_ok)
+
+! convert these db values to real values
+db_idx = [1, 4, 9, 17, 18, 29, 30, 39]
+do i = 1, size(db_idx)
+  idb = db_idx(i)
+  params_save(idb) = db_to_val(params_save(idb))
+enddo
+
+a0evap   = params_save(1 )
+bx0evap  = params_save(2 )
+by0evap  = params_save(3 )
+a0evap2  = params_save(4 )
+bx0evap2 = params_save(5 )
+by0evap2 = params_save(6 )
+bm0evap  = params_save(7 )
+bm0evap2 = params_save(8 )
+aevap    = params_save(9 )
+bmevap   = params_save(10)
+bx3evap  = params_save(11)
+by3evap  = params_save(12)
+bxxevap  = params_save(13)
+byxevap  = params_save(14)
+bxyevap  = params_save(15)
+byyevap  = params_save(16)
+
+a0coal   = params_save(17)
+mtrans   = params_save(18)
+bxscoal  = params_save(19)
+byscoal  = params_save(20)
+bx0coal  = params_save(21)
+by0coal  = params_save(22)
+bxxcoal  = params_save(23)
+byxcoal  = params_save(24)
+bxycoal  = params_save(25)
+byycoal  = params_save(26)
+bbsmall  = params_save(27)
+bblarge  = params_save(28)
+
+afall    = params_save(29)
+mlim     = params_save(30)
+bx0fall  = params_save(31)
+by0fall  = params_save(32)
+bx3fall  = params_save(33)
+by3fall  = params_save(34)
+bxxfall  = params_save(35)
+byxfall  = params_save(36)
+bxyfall  = params_save(37)
+byyfall  = params_save(38)
+mlim2    = params_save(39)
+bmfall   = params_save(40)
 
 end subroutine read_boss_slc_param
 

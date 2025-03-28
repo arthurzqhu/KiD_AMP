@@ -2,10 +2,16 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="condcoll_ppe_posterior_r1"
+config_name="condcoll_r1"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
+nikki=$(date +'%Y-%m-%d')
+s_sample_dist="custom"
+custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_density.csv"
+custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_bins.csv"
+
+#
 # # initial condition for all cases
 cim3=0.
 cim0=0.
@@ -24,7 +30,7 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=0
+l_sed_s=1
 l_adv_s=1
 
 # []==if, &&==then, ||=else
@@ -154,7 +160,7 @@ echo $mp
    fi
 
 
-   outdir=/data1/arthurhu/KiD_output/$(date +'%Y-%m-%d')/$config_name/${mp}_ens${5}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${5}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -265,10 +271,10 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 
 &ppe
 l_ppe=.true.
-s_sample_dist='custom'
-custom_dens_path='/home/arthurhu/BOSS_PPE/MCMC_posterior/r1_param_density.csv'
-custom_bins_path='/home/arthurhu/BOSS_PPE/MCMC_posterior/r1_param_bins.csv'
-n_perturbed_param=14
+s_sample_dist="$s_sample_dist"
+custom_dens_path="$custom_dens_path"
+custom_bins_path="$custom_bins_path"
+n_perturbed_param=$7
 n_ppe=$6
 irealz=$5
 deflation_factor=1.
