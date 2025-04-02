@@ -10529,23 +10529,26 @@ print*, 'loading ', param_val_fpath
 
 params_save = pvalue_mean
 
+! TODO: refactor
+! - set a flag for every process and deal with them individually
+! - automatically detect whether the latin hypercube already exists
+! - generate one if it does not
 if (l_ppe) then
 
   if (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
     allocate(pvalue_isd_slice(n_perturbed_param))
     allocate(pvalue_sd_slice(n_perturbed_param))
     ! NOTE: coll-coal:
-    ! pvalue_isd_slice(1:n_perturbed_param)=pvalue_isd(13:n_param-n_perturbed_param+1)
     ! pvalue_isd_slice(1) = 10
     ! pvalue_isd_slice(2) = 50
     ! pvalue_isd_slice(3:n_perturbed_param) = 2
-    ! pvalue_sd_slice(1:4)=pvalue_sd(1:4)
-    ! pvalue_sd_slice(1:n_perturbed_param)=pvalue_sd(13:n_param-n_perturbed_param+1)
-    ! NOTE: nevp and sed:
-    ! pvalue_isd_slice(1:n_perturbed_param) = pvalue_isd(1:n_perturbed_param)
-    ! pvalue_isd_slice(5) = 5
-    ! pvalue_isd_slice(6) = 5
-    ! pvalue_isd_slice(7:16) = .5
+
+    ! NOTE: nevp and coal:
+    pvalue_isd_slice(1:8) = pvalue_isd(1:8)
+    ! pvalue_isd_slice(17:28) = pvalue_isd(9:n_perturbed_param)
+    pvalue_isd_slice(9) = 5
+    pvalue_isd_slice(10) = 5
+    pvalue_isd_slice(11:20) = .5
     ! pvalue_isd_slice(17) = 30
     ! pvalue_isd_slice(18) = 30
     ! pvalue_isd_slice(19:28) = 2
@@ -10556,14 +10559,24 @@ if (l_ppe) then
     ! pvalue_isd_slice(11) = 30
 
     ! NOTE: all:
-    pvalue_isd_slice(1:n_perturbed_param) = pvalue_isd(1:n_perturbed_param)
-    pvalue_isd_slice(17) = 10
-    pvalue_isd_slice(18) = 50
-    pvalue_isd_slice(19:28) = 2
-    pvalue_isd_slice(29:30) = 30
-    pvalue_isd_slice(31:38) = 5
-    pvalue_isd_slice(39) = 30
-    pvalue_isd_slice(40) = 5
+    ! pvalue_isd_slice(1:n_perturbed_param) = pvalue_isd(1:n_perturbed_param)
+    ! pvalue_isd_slice(17) = 10
+    ! pvalue_isd_slice(18) = 50
+    ! pvalue_isd_slice(19:28) = 2
+    ! pvalue_isd_slice(29:30) = 30
+    ! pvalue_isd_slice(31:38) = 5
+    ! pvalue_isd_slice(39) = 30
+    ! pvalue_isd_slice(40) = 5
+
+    ! NOTE: nevp and coal
+    do iiparam = 1,8
+      nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+      params_save(iiparam) = pvalue_mean(iiparam) + nudge_diff
+    enddo
+    do iiparam = 9,n_perturbed_param
+      nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+      params_save(iiparam+8) = pvalue_mean(iiparam+8) + nudge_diff
+    enddo
 
     ! ! NOTE: coll-coal:
     ! do iiparam = 1,n_perturbed_param
@@ -10571,11 +10584,18 @@ if (l_ppe) then
     !   params_save(iiparam+16) = pvalue_mean(iiparam+16) + nudge_diff
     ! enddo
 
-    ! NOTE: all
-    do iiparam = 1,n_perturbed_param
-      nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-      params_save(iiparam) = pvalue_mean(iiparam) + nudge_diff
-    enddo
+
+    ! ! NOTE: coll-coal:
+    ! do iiparam = 1,n_perturbed_param
+    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+    !   params_save(iiparam+16) = pvalue_mean(iiparam+16) + nudge_diff
+    ! enddo
+
+    ! ! NOTE: all
+    ! do iiparam = 1,n_perturbed_param
+    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
+    !   params_save(iiparam) = pvalue_mean(iiparam) + nudge_diff
+    ! enddo
 
     ! ! NOTE: sed:
     ! do iiparam = 1,n_perturbed_param

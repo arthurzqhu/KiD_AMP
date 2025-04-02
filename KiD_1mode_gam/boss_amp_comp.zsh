@@ -2,8 +2,8 @@
 
 # config of the run
 mps=("BIN_TAU")
-config_name="fullmic"
-caselist=(101) #(101 102 103 105 106 107)
+config_name="condevp_withcoal"
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 nikki='target'
@@ -27,7 +27,7 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=1
+l_sed_s=0
 l_adv_s=1
 
 # []==if, &&==then, ||=else

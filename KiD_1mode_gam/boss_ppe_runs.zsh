@@ -2,14 +2,15 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="condcoll_r1"
-caselist=(101) #(101 102 103 105 106 107)
+config_name="condevp_withcoal"
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="custom"
-custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_density.csv"
-custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_bins.csv"
+s_sample_dist="lhs"
+param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
+custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_density_RWM_wgtd2.csv"
+custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_bins_RWM_wgtd2.csv"
 
 #
 # # initial condition for all cases
@@ -30,7 +31,7 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=1
+l_sed_s=0
 l_adv_s=1
 
 # []==if, &&==then, ||=else
@@ -226,7 +227,7 @@ aero_rd_init=0.05e-6
 mom_init=0,0,0
 
 ! param_val_fpath="../../CloudBOSS/boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
-param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid.csv"
+param_val_fpath="$param_val_fpath"
 ! param_infl_sigma_fpath="../../CloudBOSS/boss_slc_param_sigma_${Pdep}30${imc1}${imc2}.csv"
 !param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
@@ -298,7 +299,7 @@ l_periodic_bound=.false.
 l_truncated=.false.
 l_init_test=.false.
 l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
-l_boss_partition_liq=.true.
+l_boss_partition_liq=.false.
 l_boss_save_dsd=.false.
 l_getrates=.false.
 /
