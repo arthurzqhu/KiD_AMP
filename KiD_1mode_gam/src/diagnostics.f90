@@ -161,7 +161,7 @@ contains
 
 
   subroutine save_diagnostics_1d
-    use mphys_amp, only: momk
+    use global_fun, only: momk
     real(wp), allocatable :: field(:)
     real(wp), allocatable :: field_flag(:,:)
     real(wp), allocatable :: field_nx(:)

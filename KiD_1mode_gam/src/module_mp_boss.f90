@@ -49,8 +49,6 @@ real, dimension(iisize,rimsize,densize,iisize,rimsize,densize)             :: it
 double precision, dimension(iisize,rimsize,densize,iisize,rimsize,densize) :: itabcolli1_dp
 double precision, dimension(iisize,rimsize,densize,iisize,rimsize,densize) :: itabcolli2_dp
 
-! integer switch for warm rain autoconversion/accretion schemes
-integer :: iparam
 ! whether to perform warm collision coalescence
 logical,public :: docc_slc = .true.
 
@@ -1163,7 +1161,7 @@ max_total_Ni = 2000.e+3  !(m)
 ! = 1 Seifert and Beheng 2001
 ! = 2 Beheng 1994
 ! = 3 Khairoutdinov and Kogan 2000
-iparam = 3
+! iparam = 3
 
 ! droplet concentration (m-3)
 nccnst = 200.e+6
@@ -9899,11 +9897,11 @@ SUBROUTINE access_lookup_table_coll_3mom(dumzz,dumjj,dumii,dumj,dumi,index,dum1,
           mu_c = max(mu_c,2.)
           mu_c = min(mu_c,15.)
 
-        ! interpolate for mass distribution spectral shape parameter (for SB warm processes)
-          if (iparam.eq.1) then
-             dumi = int(mu_c)
-             nu   = dnu(dumi)+(dnu(dumi+1)-dnu(dumi))*(mu_c-dumi)
-          endif
+        ! ! interpolate for mass distribution spectral shape parameter (for SB warm processes)
+        !   if (iparam.eq.1) then
+        !      dumi = int(mu_c)
+        !      nu   = dnu(dumi)+(dnu(dumi+1)-dnu(dumi))*(mu_c-dumi)
+        !   endif
 
         ! calculate lamc
           lamc = (cons1*nc*(mu_c+3.)*(mu_c+2.)*(mu_c+1.)/qc)**thrd
@@ -10451,17 +10449,18 @@ END SUBROUTINE access_lookup_table
 subroutine read_boss_slc_param
 
 use namelists, only: param_val_fpath, KiD_outdir, irealz, l_ppe, deflation_factor, &
-                     s_sample_dist, custom_dens_path, custom_bins_path
+                     s_sample_dist, custom_dens_path, custom_bins_path, &
+                     l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
 use netcdf
 use csv_module
 use parameters, only: lsample
-use namelists, only: n_perturbed_param, n_ppe
+use namelists, only: n_ppe
+use micro_prm, only: npp, n_param_nevp, n_param_condevp, n_param_coal, n_param_sed
 
-! use global_fun, only: random_stdnormal
+use global_fun, only: get_perturbed_params, get_perturbed_params_custom, get_posterior
 
 
-real, allocatable, dimension(:) :: pvalue_mean, pvalue_sd, pvalue_isd, params_save, &
-  pvalue_isd_slice, pvalue_sd_slice
+real, allocatable, dimension(:) :: pvalue_mean, pvalue_sd, pvalue_isd, params_save
 integer :: io_status, iiparam, n_bins, ibin
 integer :: seed_size, i, idb
 integer, allocatable :: seed(:)
@@ -10473,9 +10472,8 @@ character(len=30),dimension(:),allocatable :: header, pnames
 logical,dimension(:),allocatable :: t
 logical :: stat_ok, stat_ok2
 integer,dimension(:),allocatable :: itypes, db_idx
-double precision, allocatable :: rand_perturb(:), posterior_dens(:,:), posterior_binedges(:,:), &
-  posterior_cdf(:,:), posterior_binmeans(:,:)
-double precision :: logspan, perturb_ratio(n_param), nudge_diff, infl_std(n_param)
+double precision, allocatable :: rand_perturb(:), posterior_cdf(:,:), posterior_binmeans(:,:)
+double precision :: logspan, nudge_diff
 character(len=200) :: filename
 character(len=100) :: varname
 character(len=4) :: n_ppe_str, n_param_ppe_str
@@ -10483,32 +10481,16 @@ character(len=4) :: n_ppe_str, n_param_ppe_str
 l_bmncoal = .false.
 l_mlim2 = .true.
 
-
 ! read the file
 call pv_file%read(trim(param_val_fpath),header_row=1,status_ok=stat_ok)
 
 ! get the header and type info
 call pv_file%get_header(header,stat_ok,1)
 
-! read the param sigma file
-! call ps_file%read(trim(param_infl_sigma_fpath), header_row=1,status_ok=stat_ok2)
-
 n_param = size(header)
 n_bins = 50
 
-! n_perturbed_param = 16
-! n_ppe = 1000
-! write(n_param_ppe_str,'(I2)') n_perturbed_param
-! write(n_ppe_str,'(I4)') n_ppe
-
-! check if the length is correct
-! if (n_param /= 35) then
-!   print*, 'n_param = ', n_param
-!   stop 'incorrect number of parameters'
-! endif
-if ((l_bmncoal .and. n_param /= 31) &
-    .and. (l_mlim2 .and. n_param/=40) &
-    .and. (n_param /=39)) then
+if (n_param > 100) then ! an arbitrary large enough number
   print*, 'n_param=',n_param
   stop 'incorrect number of parameters'
 endif
@@ -10529,137 +10511,17 @@ print*, 'loading ', param_val_fpath
 
 params_save = pvalue_mean
 
-! TODO: refactor
-! - set a flag for every process and deal with them individually
-! - automatically detect whether the latin hypercube already exists
-! - generate one if it does not
 if (l_ppe) then
-
   if (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
-    allocate(pvalue_isd_slice(n_perturbed_param))
-    allocate(pvalue_sd_slice(n_perturbed_param))
-    ! NOTE: coll-coal:
-    ! pvalue_isd_slice(1) = 10
-    ! pvalue_isd_slice(2) = 50
-    ! pvalue_isd_slice(3:n_perturbed_param) = 2
-
-    ! NOTE: nevp and coal:
-    pvalue_isd_slice(1:8) = pvalue_isd(1:8)
-    ! pvalue_isd_slice(17:28) = pvalue_isd(9:n_perturbed_param)
-    pvalue_isd_slice(9) = 5
-    pvalue_isd_slice(10) = 5
-    pvalue_isd_slice(11:20) = .5
-    ! pvalue_isd_slice(17) = 30
-    ! pvalue_isd_slice(18) = 30
-    ! pvalue_isd_slice(19:28) = 2
-    ! pvalue_isd_slice(27) = 30
-    ! pvalue_isd_slice(3:12) = 5
-    ! pvalue_isd_slice(1) = 30
-    ! pvalue_isd_slice(2) = 30
-    ! pvalue_isd_slice(11) = 30
-
-    ! NOTE: all:
-    ! pvalue_isd_slice(1:n_perturbed_param) = pvalue_isd(1:n_perturbed_param)
-    ! pvalue_isd_slice(17) = 10
-    ! pvalue_isd_slice(18) = 50
-    ! pvalue_isd_slice(19:28) = 2
-    ! pvalue_isd_slice(29:30) = 30
-    ! pvalue_isd_slice(31:38) = 5
-    ! pvalue_isd_slice(39) = 30
-    ! pvalue_isd_slice(40) = 5
-
-    ! NOTE: nevp and coal
-    do iiparam = 1,8
-      nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-      params_save(iiparam) = pvalue_mean(iiparam) + nudge_diff
-    enddo
-    do iiparam = 9,n_perturbed_param
-      nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-      params_save(iiparam+8) = pvalue_mean(iiparam+8) + nudge_diff
-    enddo
-
-    ! ! NOTE: coll-coal:
-    ! do iiparam = 1,n_perturbed_param
-    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-    !   params_save(iiparam+16) = pvalue_mean(iiparam+16) + nudge_diff
-    ! enddo
-
-
-    ! ! NOTE: coll-coal:
-    ! do iiparam = 1,n_perturbed_param
-    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-    !   params_save(iiparam+16) = pvalue_mean(iiparam+16) + nudge_diff
-    ! enddo
-
-    ! ! NOTE: all
-    ! do iiparam = 1,n_perturbed_param
-    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-    !   params_save(iiparam) = pvalue_mean(iiparam) + nudge_diff
-    ! enddo
-
-    ! ! NOTE: sed:
-    ! do iiparam = 1,n_perturbed_param
-    !   nudge_diff = (lsample(iiparam+2,irealz)-.5)*2*pvalue_isd_slice(iiparam)*deflation_factor
-    !   params_save(iiparam+28) = pvalue_mean(iiparam+28) + nudge_diff
-    !   ! params_save(iiparam+24) = pvalue_mean(iiparam+24) + nudge_diff
-    ! enddo
-
+    call get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
   elseif (s_sample_dist .eq. 'custom') then
-    allocate(posterior_dens(n_bins, n_perturbed_param))
-    allocate(posterior_binedges(n_bins+1, n_perturbed_param))
-    allocate(posterior_binmeans(n_bins, n_perturbed_param))
-    allocate(posterior_cdf(n_bins, n_perturbed_param))
-
-    ! read the file
-    call dens_csv%read(trim(custom_dens_path),header_row=1,status_ok=stat_ok)
-    call bins_csv%read(trim(custom_bins_path),header_row=1,status_ok=stat_ok)
-
-    ! get MCMC posterior distributions
-    do iiparam = 1, n_perturbed_param
-      do ibin = 1, n_bins+1
-        call bins_csv%get(ibin,iiparam,posterior_binedges(ibin, iiparam),stat_ok)
-        if (ibin > n_bins) cycle
-        call dens_csv%get(ibin,iiparam,posterior_dens(ibin, iiparam),stat_ok)
-      enddo
-    enddo
-    posterior_binmeans = (posterior_binedges(2:n_bins+1, :) + posterior_binedges(1:n_bins, :))/2
-
-    ! build the cdf
-    posterior_cdf(1, :) = posterior_dens(1, :)
-    do ibin = 2, n_bins
-      posterior_cdf(ibin, :) = posterior_cdf(ibin-1, :) + posterior_dens(ibin, :)
-    enddo
-
-    ! in case CDF doesn't sum up to 1
-    do iparam = 1, n_perturbed_param
-      posterior_cdf(:, iparam) = posterior_cdf(:, iparam)/posterior_cdf(n_bins, iparam)
-    enddo
-
-    ! pick a number between 0 and 1 from lhs and find it in the cdf
-    do iparam = 1, n_perturbed_param
-      do ibin = 1, n_bins
-        if (lsample(iparam, irealz) <= posterior_cdf(ibin, iparam)) then
-          ! print *, 'Selected bin = ', ibin, posterior_binmeans(ibin, iparam), iparam
-          params_save(iparam+16) = posterior_binmeans(ibin, iparam)
-          exit
-        endif
-      enddo
-    enddo
-
-    ! do iparam = 9, n_perturbed_param
-    !   do ibin = 1, n_bins
-    !     if (lsample(iparam, irealz) <= posterior_cdf(ibin, iparam)) then
-    !       ! print *, 'Selected bin = ', ibin, posterior_binmeans(ibin, iparam), iparam
-    !       params_save(iparam+8) = posterior_binmeans(ibin, iparam)
-    !       exit
-    !     endif
-    !   enddo
-    ! enddo
-
+    call get_posterior(posterior_binmeans, posterior_cdf, n_bins, npp)
+    call get_perturbed_params_custom(params_save, posterior_binmeans, posterior_cdf, n_bins)
   endif
 endif
 
 print*, 'params:', params_save
+stop
 
 ! saving the parameter before converting db to real vals
 call pv_file%open(trim(KiD_outdir)//'params.csv',n_cols=n_param,status_ok=stat_ok)
@@ -10684,6 +10546,7 @@ bx0evap2 = params_save(5 )
 by0evap2 = params_save(6 )
 bm0evap  = params_save(7 )
 bm0evap2 = params_save(8 )
+
 aevap    = params_save(9 )
 bmevap   = params_save(10)
 bx3evap  = params_save(11)

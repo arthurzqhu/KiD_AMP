@@ -296,9 +296,9 @@ real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2, &
 ! for ML-AMP
 type(network_type) :: moment2state_net
 
-
-
-
+! for BOSS
+integer :: n_param_nevp = 8, n_param_condevp = 8, n_param_coal = 12, n_param_sed = 12
+integer :: npp ! number of total perturbed parameters
 
 
 !******* for operating SBM when max_nbins is set to 34 *******

@@ -15,7 +15,7 @@ Module main
 
   Use typeKind
   Use parameters, only : dt, dg_dt, nx, nz, num_h_moments, h_shape
-  Use namelists, only : read_namelist, l_ppe, n_perturbed_param, n_ppe
+  Use namelists, only : read_namelist, l_ppe, n_ppe
   Use runtime, only : time, time_step, n_times
   Use switches
   Use set_profiles,  only : read_profiles
@@ -48,7 +48,7 @@ contains
       call set_constants
 
       ! the initial condition will be sampled from LH regardless of s_sample_dist
-      if (l_ppe) call load_latinhc(n_perturbed_param, n_ppe)
+      if (l_ppe) call load_latinhc(n_ppe)
 
       ! Set up the initial fields and forcing
       if (l_input_file)then

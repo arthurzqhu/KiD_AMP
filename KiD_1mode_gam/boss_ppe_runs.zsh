@@ -8,9 +8,18 @@ case_num=${#caselist[@]}
 
 nikki=$(date +'%Y-%m-%d')
 s_sample_dist="lhs"
-param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
-custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_density_RWM_wgtd2.csv"
-custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_bins_RWM_wgtd2.csv"
+lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
+param_val_fpath="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/CloudBOSS/param_consolid_updated.csv"
+# param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
+custom_dens_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_density_RWM.csv"
+custom_bins_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_bins_RWM.csv"
+# custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_density_RWM_wgtd2.csv"
+# custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_bins_RWM_wgtd2.csv"
+
+l_ppe_nevp=".true."
+l_ppe_condevp=".false."
+l_ppe_coal=".true."
+l_ppe_sed=".false."
 
 #
 # # initial condition for all cases
@@ -161,7 +170,8 @@ echo $mp
    fi
 
 
-   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${5}/
+   outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
+   # outdir=/Volumes/ESSD/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -275,7 +285,6 @@ l_ppe=.true.
 s_sample_dist="$s_sample_dist"
 custom_dens_path="$custom_dens_path"
 custom_bins_path="$custom_bins_path"
-n_perturbed_param=$7
 n_ppe=$6
 irealz=$5
 deflation_factor=1.
@@ -283,6 +292,11 @@ Na_min=${Na_min}e6
 Na_max=${Na_max}e6
 w_min=$w_min
 w_max=$w_max
+lhs_path="$lhs_path"
+l_ppe_nevp=$l_ppe_nevp
+l_ppe_condevp=$l_ppe_condevp
+l_ppe_coal=$l_ppe_coal
+l_ppe_sed=$l_ppe_sed
 /
 
 &switch

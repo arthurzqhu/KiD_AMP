@@ -701,7 +701,7 @@ use physconst, only: pi
 use diagnostics, only: i_dgtime
 use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
 use, intrinsic :: iso_fortran_env, only: real32
-use global_fun
+! use global_fun
 use column_variables, only: hydrometeors
 use module_mp_amp, only: invert_moments, invert_moments_nn
 use namelists, only: l_truncated, l_init_test, l_use_nn, n_cat
@@ -1053,7 +1053,7 @@ subroutine mp_sbm(ffcdr8,press,tempk,qv,fncnr8,mc,mr)
 use module_hujisbm
 use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
-use global_fun
+! use global_fun
 
 implicit none
 integer:: i,j,k,ip
@@ -1092,7 +1092,7 @@ use micro_prm
 use parameters, only: nx,nz,num_h_moments,max_nbins
 use namelists, only: l_advect
 use mphys_tau_bin_declare, only: lk_cloud,xk,xkgmean
-use global_fun
+! use global_fun
 implicit none
 integer:: i,j,k,ip
 

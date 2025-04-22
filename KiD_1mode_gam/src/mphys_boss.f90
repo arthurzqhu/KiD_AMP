@@ -15,7 +15,7 @@ use switches, only: l_advect,l_diverge, l_noadv_theta, l_noadv_qv
 use switches, only: zctrl
 use runtime, only: time
 use module_mp_boss
-use global_fun
+! use global_fun
 
 real, dimension(nz,nx) :: th_new,th_old,qv_new,qv_old,qitot,qirim,nitot,birim,ssat,uzpl,pres,&
   dzq,diag_ze,diag_effc,diag_effi,diag_vmi,diag_di,diag_rhoi,SCF_out

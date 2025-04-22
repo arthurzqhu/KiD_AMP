@@ -21,7 +21,7 @@ module mphys_amp
   Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors, nmom_diag, moments_diag
   use switches, only: zctrl
   use runtime, only: l_dgstep
-  use global_fun
+  ! use global_fun
   Implicit None
 
   !Logical switches
@@ -654,37 +654,5 @@ endif
 !enddo
 
 end Subroutine mphys_amp_interface
-
-double precision function momk(ffcdm, ffcdn, mk, bin_i)
-  double precision, allocatable, dimension(:), intent(in) :: ffcdm, ffcdn
-  integer, intent(in) :: bin_i
-  double precision, allocatable :: diag_m(:), diag_D(:)
-  double precision :: inf, mk
-  integer :: ib, bins
-
-  inf = huge(mk)
-  bins = size(ffcdm)
-  if (bintype .eq. 'tau') then
-    diag_m=ffcdm/ffcdn
-    diag_D=(diag_m*QtoM3)**(1./3.)
-    do ib=1,bins
-      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(max_nbins)) .or. (diag_D(ib)<diams(1))) then
-        diag_D(ib)=diams(ib+bin_i-1)
-      endif
-    end do
-    momk=sum(ffcdn(1:size(ffcdm))*diag_D**mk)
-  else
-    stop 'only implemented TAU'
-  endif
-
-  if (momk > inf) then
-    print*, 'diag_D', diag_D
-    ! print*, 'ffcds', ffcdm, ffcdn
-    print*, ffcdn(1:size(ffcdm)), diag_D, mk, col
-    stop
-  endif
-
-
-end function momk
 
 end module mphys_amp

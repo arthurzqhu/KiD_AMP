@@ -871,7 +871,7 @@ use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
                              XACT
 use runtime, only: time, l_dgstep
-use global_fun
+use global_fun, only: diagnose_moment
 ! use module_mp_boss
 
 implicit none

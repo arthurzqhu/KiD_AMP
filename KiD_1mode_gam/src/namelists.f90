@@ -37,12 +37,13 @@ module namelists
   real(8), allocatable :: moments_diag(:)
   logical :: docollisions, docondensation, donucleation, dosedimentation, &
              dobreakup, l_truncated, l_init_test, log_predictNc, l_use_nn, &
-             l_boss_partition_liq, l_ppe, l_getrates, l_boss_save_dsd
-  character(100) :: param_val_fpath = "../../CloudBOSS/boss_slc_param_values.csv"
-  character(100) :: param_infl_sigma_fpath = "../../CloudBOSS/boss_slc_param_sigma.csv"
-  character(100) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
+             l_boss_partition_liq, l_ppe, l_getrates, l_boss_save_dsd, &
+             l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+  character(200) :: param_val_fpath = "../../CloudBOSS/boss_slc_param_values.csv"
+  character(200) :: param_infl_sigma_fpath = "../../CloudBOSS/boss_slc_param_sigma.csv"
+  character(200) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
   character(20)  :: s_sample_dist
-  character(100) :: custom_dens_path, custom_bins_path
+  character(200) :: custom_dens_path, custom_bins_path, lhs_path
 
 ! integer switch for type of BOSS autoconversion (q)
 !1 = 1-term auto wo rain dependence
@@ -114,7 +115,7 @@ real, public :: vTqrmax = 10. ! [m/s]
 integer, public :: idraw = 1, rand_seed
 
 ! ppe variables
-integer, public :: irealz, n_perturbed_param, n_ppe
+integer, public :: irealz, n_ppe
 real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
@@ -132,7 +133,8 @@ real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
   namelist/case/input_file, l_input_file, ifiletype, icase
 
   namelist/ppe/l_ppe, s_sample_dist, custom_dens_path, custom_bins_path, irealz, &
-               deflation_factor, Na_min, Na_max, w_min, w_max, n_perturbed_param, n_ppe
+               deflation_factor, Na_min, Na_max, w_min, w_max, &
+               n_ppe, lhs_path, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
 
   namelist/switch/l_mphys, l_advect, l_diverge, l_pupdate &
        , l_fix_qv, l_nomphys_qv, l_noadv_qv, l_posadv_qv &

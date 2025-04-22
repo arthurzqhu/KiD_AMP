@@ -765,21 +765,69 @@ end subroutine random_stdnormal
 
 ! ----------------------------------------------------------
 
-subroutine load_latinhc(n_perturbed_param, n_ppe)
+double precision function momk(ffcdm, ffcdn, mk, bin_i)
+  use namelists, only: bintype
+  use micro_prm, only: diams, col, QtoM3
+  use parameters, only: max_nbins
+  double precision, allocatable, dimension(:), intent(in) :: ffcdm, ffcdn
+  integer, intent(in) :: bin_i
+  double precision, allocatable :: diag_m(:), diag_D(:)
+  double precision :: inf, mk
+  integer :: ib, bins
+
+  inf = huge(mk)
+  bins = size(ffcdm)
+  if (bintype .eq. 'tau') then
+    diag_m=ffcdm/ffcdn
+    diag_D=(diag_m*QtoM3)**(1./3.)
+    do ib=1,bins
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(max_nbins)) .or. (diag_D(ib)<diams(1))) then
+        diag_D(ib)=diams(ib+bin_i-1)
+      endif
+    end do
+    momk=sum(ffcdn(1:size(ffcdm))*diag_D**mk)
+  else
+    stop 'only implemented TAU'
+  endif
+
+  if (momk > inf) then
+    print*, 'diag_D', diag_D
+    ! print*, 'ffcds', ffcdm, ffcdn
+    print*, ffcdn(1:size(ffcdm)), diag_D, mk, col
+    stop
+  endif
+
+
+end function momk
+
+! ----------------------------------------------------------
+
+subroutine load_latinhc(n_ppe)
 use parameters, only: lsample, aero_N_init
 use switches, only: wctrl
-use namelists, only: irealz, Na_max, Na_min, w_max, w_min
+use namelists, only: irealz, Na_max, Na_min, w_max, w_min, lhs_path, &
+                     l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
+use module_lhc, only: write_lhc_nc
   
-integer, intent(in) :: n_perturbed_param, n_ppe
+integer, intent(in) :: n_ppe
 character(len=200) :: filename
 character(len=100) :: varname
-character(len=6) :: n_ppe_str, n_perturbed_param_str
+character(len=6) :: n_ppe_str, npp_str
+logical :: file_exist
 
-write(n_perturbed_param_str,'(I0)') n_perturbed_param+2
+npp = 0
+if (l_ppe_nevp) npp = npp + n_param_nevp
+if (l_ppe_condevp) npp = npp + n_param_condevp
+if (l_ppe_coal) npp = npp + n_param_coal
+if (l_ppe_sed) npp = npp + n_param_sed
+
+write(npp_str,'(I0)') npp+2
 write(n_ppe_str,'(I0)') n_ppe
 
-filename = '/home/arthurhu/KiD_AMP/KiD_1mode_gam/lhs_module/lhs_out_p'// &
-  trim(n_perturbed_param_str)//'_n'//trim(n_ppe_str)//'.nc'
+filename = trim(lhs_path)//'/lhs_out_p'// trim(npp_str)//'_n'//trim(n_ppe_str)//'.nc'
+inquire(file = filename, exist = file_exist)
+if (.not. file_exist) call write_lhc_nc(npp+2, n_ppe)
 print*, 'loading LHS:', filename
 varname = 'lhs_sample'
 call read_netcdf(lsample, filename, varname)
@@ -790,5 +838,182 @@ aero_N_init(1) = lsample(1, irealz) * (Na_max - Na_min) + Na_min
 wctrl(1) = lsample(2, irealz) * (w_max - w_min) + w_min
 
 end subroutine load_latinhc
+! ----------------------------------------------------------
+subroutine get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
+
+use parameters, only: lsample
+use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
+use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, deflation_factor
+integer :: ilsample, icondevp, icoal, ised, iparam_indproc, iparam_allproc, n_param
+real, allocatable, dimension(:) :: pvalue_mean, pvalue_isd, params_save
+double precision :: nudge_diff
+
+icondevp = 1; icoal = 1; ised = 1; 
+n_param = n_param_nevp + n_param_condevp + n_param_coal + n_param_sed
+
+if (l_ppe_nevp) then
+  do iparam_indproc = 1, n_param_nevp
+    ilsample = iparam_indproc
+    iparam_allproc = iparam_indproc
+    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(ilsample)*deflation_factor
+    params_save(ilsample) = pvalue_mean(ilsample) + nudge_diff
+  enddo
+  ! push the starting index of other processes if nevp params are perturbed
+  icondevp = ilsample; icoal = ilsample; ised = ilsample
+endif
+
+if (l_ppe_condevp) then
+  do iparam_indproc = 1, n_param_condevp
+    ilsample = iparam_indproc + icondevp
+    iparam_allproc = iparam_indproc + n_param_nevp
+    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
+    params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
+  enddo
+  icoal = ilsample; ised = ilsample
+endif
+
+if (l_ppe_coal) then
+  pvalue_isd(n_param_nevp+n_param_condevp+1) = 10 ! a0coal
+  pvalue_isd(n_param_nevp+n_param_condevp+2) = 30 ! mtrans
+  pvalue_isd(n_param_nevp+n_param_condevp+3:n_param_nevp+n_param_condevp+n_param_coal)=2 ! the exponents
+
+  do iparam_indproc = 1, n_param_coal
+    ilsample = iparam_indproc + icoal
+    iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp
+    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
+    params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
+  enddo
+  ised = ilsample
+endif
+
+if (l_ppe_sed) then
+  pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+3:n_param) = 5 ! the exponents
+  pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+1) = 50 ! afall
+  pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+2) = 30 ! mlim
+  pvalue_isd(n_param-1) = 30 ! mlim2
+
+  do iparam_indproc = 1, n_param_sed
+    ilsample = iparam_indproc + ised
+    iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
+    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
+    params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
+  enddo
+endif
+
+  
+end subroutine get_perturbed_params
+! ----------------------------------------------------------
+subroutine get_perturbed_params_custom(params_save, posterior_binmeans, posterior_cdf, n_bins)
+  
+use parameters, only: lsample
+use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
+use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+integer :: ilsample, icondevp, icoal, ised, ibin, iparam_allproc, iparam_indproc
+double precision, allocatable :: posterior_binmeans(:,:), posterior_cdf(:,:)
+real, allocatable :: params_save(:)
+double precision :: nudge_diff
+
+ilsample = 1; icondevp = 1; icoal = 1; ised = 1
+
+! pick a number between 0 and 1 from lhs and find it in the cdf
+if (l_ppe_nevp) then
+  do iparam_indproc = 1, n_param_nevp
+    ilsample = iparam_indproc
+    iparam_allproc = iparam_indproc
+    do ibin = 1, n_bins
+      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+        params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
+        exit
+      endif
+    enddo
+  enddo
+  icondevp = ilsample; icoal = ilsample; ised = ilsample
+endif
+
+if (l_ppe_condevp) then
+  do iparam_indproc = 1, n_param_condevp
+    ilsample = iparam_indproc + icondevp
+    iparam_allproc = iparam_indproc + n_param_nevp
+    do ibin = 1, n_bins
+      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+        params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
+        exit
+      endif
+    enddo
+  enddo
+  icoal = ilsample; ised = ilsample
+endif
+
+if (l_ppe_coal) then
+  do iparam_indproc = 1, n_param_coal
+    ilsample = iparam_indproc + icoal
+    iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp
+    do ibin = 1, n_bins
+      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+        params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
+        exit
+      endif
+    enddo
+  enddo
+  ised = ilsample
+endif
+
+if (l_ppe_sed) then
+  do iparam_indproc = 1, n_param_sed
+    ilsample = iparam_indproc + ised
+    iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
+    do ibin = 1, n_bins
+      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+        params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
+        exit
+      endif
+    enddo
+  enddo
+endif
+
+end subroutine get_perturbed_params_custom
+
+! ----------------------------------------------------------
+
+subroutine get_posterior(posterior_binmeans, posterior_cdf, n_bins, npp)
+use namelists, only: custom_dens_path, custom_bins_path
+use csv_module
+
+double precision, allocatable, dimension(:,:) :: posterior_dens, posterior_binedges, posterior_binmeans, posterior_cdf
+integer :: ilsample, ibin, npp, iparam
+logical :: stat_ok
+type(csv_file) :: dens_csv, bins_csv
+  
+allocate(posterior_dens(n_bins, npp))
+allocate(posterior_binedges(n_bins+1, npp))
+allocate(posterior_binmeans(n_bins, npp))
+allocate(posterior_cdf(n_bins, npp))
+
+! read the file
+call dens_csv%read(trim(custom_dens_path),header_row=1,status_ok=stat_ok)
+call bins_csv%read(trim(custom_bins_path),header_row=1,status_ok=stat_ok)
+
+! get MCMC posterior distributions
+do iparam = 1, npp
+  do ibin = 1, n_bins+1
+    call bins_csv%get(ibin,iparam,posterior_binedges(ibin, iparam),stat_ok)
+    if (ibin > n_bins) cycle
+    call dens_csv%get(ibin,iparam,posterior_dens(ibin, iparam),stat_ok)
+  enddo
+enddo
+posterior_binmeans = (posterior_binedges(2:n_bins+1, :) + posterior_binedges(1:n_bins, :))/2
+
+! build the cdf
+posterior_cdf(1, :) = posterior_dens(1, :)
+do ibin = 2, n_bins
+  posterior_cdf(ibin, :) = posterior_cdf(ibin-1, :) + posterior_dens(ibin, :)
+enddo
+
+! in case CDF doesn't sum up to 1
+do ilsample = 1, npp
+  posterior_cdf(:, ilsample) = posterior_cdf(:, ilsample)/posterior_cdf(n_bins, ilsample)
+enddo
+
+end subroutine get_posterior
 ! ----------------------------------------------------------
 end module global_fun
