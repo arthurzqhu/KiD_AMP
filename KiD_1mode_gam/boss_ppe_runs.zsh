@@ -2,27 +2,27 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="condevp_withcoal"
-caselist=(102) #(101 102 103 105 106 107)
+config_name="fullmic_Psed_r1_RWM"
+caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="lhs"
-lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
-param_val_fpath="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/CloudBOSS/param_consolid_updated.csv"
-# param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
-custom_dens_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_density_RWM.csv"
-custom_bins_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_bins_RWM.csv"
-# custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_density_RWM_wgtd2.csv"
-# custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/condcoll_r1_param_bins_RWM_wgtd2.csv"
+s_sample_dist="custom"
+# lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
+lhs_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/lhs_nc"
+# param_val_fpath="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/CloudBOSS/param_consolid_updated.csv"
+param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
+# custom_dens_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_density_RWM.csv"
+# custom_bins_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_bins_RWM.csv"
+custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_density_RWM.csv"
+custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_bins_RWM.csv"
 
-l_ppe_nevp=".true."
+l_ppe_nevp=".false."
 l_ppe_condevp=".false."
-l_ppe_coal=".true."
-l_ppe_sed=".false."
+l_ppe_coal=".false."
+l_ppe_sed=".true."
 
-#
-# # initial condition for all cases
+# initial condition for all cases
 cim3=0.
 cim0=0.
 
@@ -40,7 +40,7 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=0
+l_sed_s=1
 l_adv_s=1
 
 # []==if, &&==then, ||=else
@@ -170,8 +170,8 @@ echo $mp
    fi
 
 
-   outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   # outdir=/Volumes/ESSD/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
+   # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${5}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]

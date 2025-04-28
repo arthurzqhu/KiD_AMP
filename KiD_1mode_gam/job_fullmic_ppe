@@ -7,4 +7,4 @@ nens=2000
 
 echo $a_range $w_range
 
-seq $nens | parallel -j 10 --workdir $PWD ./boss_ppe_runs.zsh $a_range[1] $a_range[2] $w_range[1] $w_range[2] {} $nens
+seq $nens | parallel -j 48 --workdir $PWD ./boss_ppe_runs.zsh $a_range[1] $a_range[2] $w_range[1] $w_range[2] {} $nens

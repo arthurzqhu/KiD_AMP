@@ -10521,7 +10521,6 @@ if (l_ppe) then
 endif
 
 print*, 'params:', params_save
-stop
 
 ! saving the parameter before converting db to real vals
 call pv_file%open(trim(KiD_outdir)//'params.csv',n_cols=n_param,status_ok=stat_ok)

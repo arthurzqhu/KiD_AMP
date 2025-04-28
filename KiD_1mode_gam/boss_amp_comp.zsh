@@ -2,8 +2,8 @@
 
 # config of the run
 mps=("BIN_TAU")
-config_name="condevp_withcoal"
-caselist=(102) #(101 102 103 105 106 107)
+config_name="condcoll"
+caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 nikki='target'
@@ -232,7 +232,7 @@ aero_rd_init=0.05e-6
 mom_init=0,0,0
 
 !param_val_fpath="../../CloudBOSS/${dirdep}boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
-param_val_fpath="../../Cloud_BOSS/param_consolid.csv"
+param_val_fpath="../../Cloud_BOSS/param_consolid_fullyupdated.csv"
 !param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
 
@@ -277,7 +277,6 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 &ppe
 l_ppe=.false.
 s_sample_dist='custom'
-n_perturbed_param=18
 n_ppe=2000
 irealz=1
 deflation_factor=.3
