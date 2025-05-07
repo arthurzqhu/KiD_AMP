@@ -1210,7 +1210,13 @@ if (dosedimentation) then
           if (nx==1) then
             do i=1,10
               write(Mnum,'(I1)') i-1
-              name='dm'//Mnum//'_sed'
+              if (i==1) then
+                name='dn_sed'
+              elseif (i==4) then
+                name='dm_sed'
+              else
+                name='dm'//Mnum//'_sed'
+              endif
               units='m^'//Mnum//'/m^2/s'
               call save_dg(proc_lmx(1,:,i)/dt,name,i_dgtime,units,dim='z')
             enddo

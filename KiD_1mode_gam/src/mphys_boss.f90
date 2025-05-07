@@ -1,7 +1,7 @@
 module mphys_boss
 
 use parameters, only : num_h_moments, num_h_bins, h_shape, nspecies, nz, dt &
-  , h_names, mom_units, max_char_len, nx, dg_dt, dgstart
+  , h_names, mom_units, max_char_len, nx, dg_dt, dgstart, kidpath, Dm_init
 use column_variables
 use common_physics, only : qsaturation
 use physconst, only : p0, r_on_cp, pi, rhow
@@ -34,7 +34,7 @@ subroutine mphys_boss_interface(npmcr)
 use mphys_tau_bin_declare, only: xkgmean, dgmean
 use module_bin_init, only: bin_init, data
 
-integer :: j,k,imom,it
+integer :: j,k,imom,it, i_rain_alt
 integer :: npmcr(nspecies), p3stat
 real, dimension(nz,nx,npmcr(1)) :: qcs
 real, dimension(nz,nx,npmcr(2)) :: qrs
@@ -42,6 +42,7 @@ real, dimension(nz) :: Dm_c, Dm_r, Dm_w
 real, dimension(nx) :: prt_drzl,prt_rain,prt_crys,prt_snow,prt_grpl,prt_pell,prt_hail,prt_sndp
 real, dimension(nz,nx,max_nbins) :: ffcd_mass_befm, ffcd_num_befm, ffcd_mass_aftm, ffcd_num_aftm
 real(8),dimension(nz,nx,1:10) :: mc,mr
+real :: rm_s, rn_s, dn_rs
 character(max_char_len) :: name, units
 character(1) :: Mnum
 logical :: prep_stop = .false.
@@ -125,13 +126,12 @@ if (micro_unset .and. l_boss_partition_liq) then
     enddo
   enddo
 
-
 endif
 
 
 if (n_cat==1) then ! single cat
   if (micro_unset) then
-    call boss_slc_init(lookup_file_dir='.', nCat=1, trplMomI=.false., model='KiD', &
+    call boss_slc_init(lookup_file_dir=kidpath, nCat=1, trplMomI=.false., model='KiD', &
       stat=p3stat, abort_on_err=.false., dowr=.true.,qcs=qcs,its=1,ite=nx,kts=1,kte=nz,&
       npm=npm)
     micro_unset = .false.
@@ -140,19 +140,27 @@ if (n_cat==1) then ! single cat
     !   call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
   endif
 
-  ! print*, 'bef', qcs(80,1,1)
-  ! if (mod(time-dt,dg_dt)<dt.and.time>dgstart+dt) print*, 'hyd', hydrometeors(80,1,1)%moments(1,1), hydrometeors(80,1,2)%moments(1,1)
+  ! set rain source if there is one
+  if (Dm_init > 0.) then
+    i_rain_alt = nz - 1
+    rn_s = 1e4
+    rm_s = Dm_init**3*M3toq*rn_s
+    dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
+    qcs(nz-1,1,1) = rm_s
+    qcs(nz-1,1,2) = rn_s
+    qcs(nz-1,1,3) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc1)*gamnu1_w
+    qcs(nz-1,1,4) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc2)*gamnu1_x
+  endif
+
   call boss_slc_main(qcs,npm,th_old,th_new,qv_old,qv_new,dt,qitot,qirim,&
     nitot,birim,ssat,uzpl,pres,dzq,it,prt_liq,prt_sol,1,nx,1, &
     nz,1,diag_ze,diag_effc,diag_effi,diag_vmi,diag_di,diag_rhoi,&
     log_predictNc,typeDiags_ON,trim(model),clbfact_dep,clbfact_sub,debug_on,scpf_on,&
     scpf_pfrac,scpf_resfact,SCF_out)
-  ! print*, 'aft', qcs(80,1,1)
-  ! print*, qcs(:,:,2)
 
 else ! two cat
   if (micro_unset) then
-    call boss_2cat_init(lookup_file_dir='.', nCat=1, trplMomI=.false., &
+    call boss_2cat_init(lookup_file_dir=kidpath, nCat=1, trplMomI=.false., &
       model='KiD',stat=p3stat,abort_on_err=.false., dowr=.true.,iparam=4, &
       qcs=qcs,qrs=qrs,its=1,ite=nx,kts=1,kte=nz,npm=npm)
     micro_unset = .false.

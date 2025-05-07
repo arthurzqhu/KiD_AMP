@@ -19,8 +19,9 @@ Module diagnostics
   Use header_data
   Use switches, only: l_diverge, wctrl
 
-  Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin,nmom_diag, imomc1, imomc2
-  use micro_prm, only: QtoM3, pmomsc
+  Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin,nmom_diag, imomc1, imomc2, &
+    l_save_tend, l_save_adv, l_save_div, l_save_mphys
+  use micro_prm, only: QtoM3, pmomsc, rain_source
 
   Implicit none
 
@@ -278,6 +279,9 @@ contains
     !========================================================
     ! Tendency terms
     !========================================================
+    if (l_save_tend) then
+
+    if (l_save_adv) then
     !
     ! Advection
     !
@@ -321,7 +325,9 @@ contains
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
+    endif
 
+    if (l_save_div) then
     !
     !-----------
     !
@@ -374,6 +380,9 @@ contains
        end do
     end if
 
+    endif
+    
+    if (l_save_mphys) then
     !-------------
     !
     ! Microphysics
@@ -422,6 +431,7 @@ contains
           call save_dg(field, name, i_dgtime,  units,dim=dims)
        end do
     end do
+    endif
     !----------------
     !
     ! Imposed forcing
@@ -455,6 +465,7 @@ contains
     !      call save_dg(field, name, i_dgtime,  units,dim=dims)
     !   end do
     !end do
+    endif ! l_save_tend
 
     !--------------
     !
@@ -2344,8 +2355,18 @@ contains
     status=nf90_put_att(ncid, nf90_global, 'Advection ID', advection_id)
     status=nf90_put_att(ncid, nf90_global, 'references', references)
     status=nf90_put_att(ncid, nf90_global, 'comments', comments)
-    status=nf90_put_att(ncid, nf90_global, 'Na', aero_N_init/1e6)
-    status=nf90_put_att(ncid, nf90_global, 'w', wctrl)
+    if (Na_min > 0.) then
+      status=nf90_put_att(ncid, nf90_global, 'Na', aero_N_init/1e6)
+    endif
+    if (w_min > 0.) then
+      status=nf90_put_att(ncid, nf90_global, 'w', wctrl(1))
+    endif
+    if (Dm_init>0.) then
+      status=nf90_put_att(ncid, nf90_global, 'dm', Dm_init)
+    endif
+    if (rain_source(1)>0.) then
+      status=nf90_put_att(ncid, nf90_global, 'dm', rain_source(1))
+    endif
 
     status=nf90_def_dim(ncid, 'time', int(n_dgtimes, kind=incdfp), timeid)
     call check_ncstatus(status)

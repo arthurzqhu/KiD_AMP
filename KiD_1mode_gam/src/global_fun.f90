@@ -803,10 +803,11 @@ end function momk
 ! ----------------------------------------------------------
 
 subroutine load_latinhc(n_ppe)
-use parameters, only: lsample, aero_N_init
+use parameters, only: lsample, aero_N_init, Dm_init
 use switches, only: wctrl
 use namelists, only: irealz, Na_max, Na_min, w_max, w_min, lhs_path, &
-                     l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+                     l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
+                     Dm_min, Dm_max, n_init
 use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
 use module_lhc, only: write_lhc_nc
   
@@ -822,20 +823,24 @@ if (l_ppe_condevp) npp = npp + n_param_condevp
 if (l_ppe_coal) npp = npp + n_param_coal
 if (l_ppe_sed) npp = npp + n_param_sed
 
-write(npp_str,'(I0)') npp+2
+write(npp_str,'(I0)') npp+n_init
 write(n_ppe_str,'(I0)') n_ppe
 
 filename = trim(lhs_path)//'/lhs_out_p'// trim(npp_str)//'_n'//trim(n_ppe_str)//'.nc'
 inquire(file = filename, exist = file_exist)
-if (.not. file_exist) call write_lhc_nc(npp+2, n_ppe)
+if (.not. file_exist) call write_lhc_nc(npp+n_init, n_ppe)
 print*, 'loading LHS:', filename
 varname = 'lhs_sample'
 call read_netcdf(lsample, filename, varname)
 
-! draw a aero_N_init between Na_min and Na_max
-aero_N_init(1) = lsample(1, irealz) * (Na_max - Na_min) + Na_min
-! draw a wctrl(1) between w_min and w_max
-wctrl(1) = lsample(2, irealz) * (w_max - w_min) + w_min
+if (Dm_min>0.) then
+  Dm_init = lsample(1, irealz) * (Dm_max - Dm_min) + Dm_min
+elseif (Na_min>0. .and. w_min>0.) then
+  ! draw a aero_N_init between Na_min and Na_max
+  aero_N_init(1) = lsample(1, irealz) * (Na_max - Na_min) + Na_min
+  ! draw a wctrl(1) between w_min and w_max
+  wctrl(1) = lsample(2, irealz) * (w_max - w_min) + w_min
+endif
 
 end subroutine load_latinhc
 ! ----------------------------------------------------------
@@ -843,7 +848,8 @@ subroutine get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
 
 use parameters, only: lsample
 use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
-use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, deflation_factor
+use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, deflation_factor, &
+  n_init
 integer :: ilsample, icondevp, icoal, ised, iparam_indproc, iparam_allproc, n_param
 real, allocatable, dimension(:) :: pvalue_mean, pvalue_isd, params_save
 double precision :: nudge_diff
@@ -855,7 +861,7 @@ if (l_ppe_nevp) then
   do iparam_indproc = 1, n_param_nevp
     ilsample = iparam_indproc
     iparam_allproc = iparam_indproc
-    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(ilsample)*deflation_factor
+    nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(ilsample)*deflation_factor
     params_save(ilsample) = pvalue_mean(ilsample) + nudge_diff
   enddo
   ! push the starting index of other processes if nevp params are perturbed
@@ -866,7 +872,7 @@ if (l_ppe_condevp) then
   do iparam_indproc = 1, n_param_condevp
     ilsample = iparam_indproc + icondevp
     iparam_allproc = iparam_indproc + n_param_nevp
-    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
+    nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
   icoal = ilsample; ised = ilsample
@@ -880,7 +886,7 @@ if (l_ppe_coal) then
   do iparam_indproc = 1, n_param_coal
     ilsample = iparam_indproc + icoal
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp
-    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
+    nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
   ised = ilsample
@@ -895,7 +901,7 @@ if (l_ppe_sed) then
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
-    nudge_diff = (lsample(ilsample+2,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
+    nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
 endif
@@ -907,7 +913,7 @@ subroutine get_perturbed_params_custom(params_save, posterior_binmeans, posterio
   
 use parameters, only: lsample
 use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
-use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, n_init
 integer :: ilsample, icondevp, icoal, ised, ibin, iparam_allproc, iparam_indproc
 double precision, allocatable :: posterior_binmeans(:,:), posterior_cdf(:,:)
 real, allocatable :: params_save(:)
@@ -921,7 +927,7 @@ if (l_ppe_nevp) then
     ilsample = iparam_indproc
     iparam_allproc = iparam_indproc
     do ibin = 1, n_bins
-      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+      if (lsample(ilsample+n_init, irealz) <= posterior_cdf(ibin, ilsample)) then
         params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
         exit
       endif
@@ -935,7 +941,7 @@ if (l_ppe_condevp) then
     ilsample = iparam_indproc + icondevp
     iparam_allproc = iparam_indproc + n_param_nevp
     do ibin = 1, n_bins
-      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+      if (lsample(ilsample+n_init, irealz) <= posterior_cdf(ibin, ilsample)) then
         params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
         exit
       endif
@@ -949,7 +955,7 @@ if (l_ppe_coal) then
     ilsample = iparam_indproc + icoal
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp
     do ibin = 1, n_bins
-      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+      if (lsample(ilsample+n_init, irealz) <= posterior_cdf(ibin, ilsample)) then
         params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
         exit
       endif
@@ -963,7 +969,7 @@ if (l_ppe_sed) then
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
     do ibin = 1, n_bins
-      if (lsample(ilsample, irealz) <= posterior_cdf(ibin, ilsample)) then
+      if (lsample(ilsample+n_init, irealz) <= posterior_cdf(ibin, ilsample)) then
         params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
         exit
       endif

@@ -2,25 +2,28 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="fullmic_Psed_r1_RWM"
-caselist=(101) #(101 102 103 105 106 107)
+config_name="condevpcoal"
+caselist=(102) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
+KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="custom"
+s_sample_dist="lhs"
 # lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
-lhs_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/lhs_nc"
+lhs_path="${KiD_path}lhs_nc"
+echo $lhs_path
 # param_val_fpath="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/CloudBOSS/param_consolid_updated.csv"
-param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
+param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
 # custom_dens_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_density_RWM.csv"
 # custom_bins_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_bins_RWM.csv"
-custom_dens_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_density_RWM.csv"
-custom_bins_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_bins_RWM.csv"
+custom_dens_path="/global/homes/a/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_density_RWM.csv"
+custom_bins_path="/global/homes/a/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_bins_RWM.csv"
 
-l_ppe_nevp=".false."
-l_ppe_condevp=".false."
-l_ppe_coal=".false."
-l_ppe_sed=".true."
+l_ppe_nevp=".true."
+l_ppe_condevp=".true."
+l_ppe_coal=".true."
+l_ppe_sed=".false."
 
 # initial condition for all cases
 cim3=0.
@@ -40,7 +43,7 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=1
+l_sed_s=0
 l_adv_s=1
 
 # []==if, &&==then, ||=else
@@ -171,7 +174,7 @@ echo $mp
 
 
    # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${5}/
+   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${5}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -184,7 +187,7 @@ echo $mp
          mkdir -p $outdir
       fi
       echo ${config_name}_${mp}
-      nml_fn=namelists/jobnml/${config_name}_${mp}_ens${5}.nml
+      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${5}.nml
       cat > $nml_fn << END
 &mphys
 ! hydrometeor names
@@ -288,6 +291,8 @@ custom_bins_path="$custom_bins_path"
 n_ppe=$6
 irealz=$5
 deflation_factor=1.
+Dm_min=0.
+Dm_max=0.
 Na_min=${Na_min}e6
 Na_max=${Na_max}e6
 w_min=$w_min
@@ -330,6 +335,6 @@ extralayer=.false.
 moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /
 END
-     ./bin/KiD_1D.exe $nml_fn
+     ${KiD_path}bin/KiD_1D.exe $nml_fn
   done
 done

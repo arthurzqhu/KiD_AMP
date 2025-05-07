@@ -785,6 +785,7 @@ subroutine write_lhc_nc(param_dim, sample_dim)
 !    John Burkardt
 !
   use netcdf
+  use parameters, only: kidpath
   implicit none
 
   integer ( kind = 4 ) seed
@@ -827,7 +828,7 @@ subroutine write_lhc_nc(param_dim, sample_dim)
   write(param_dim_str, '(I0)') param_dim
   write(sample_dim_str, '(I0)') sample_dim
 
-  filename = "lhs_nc/lhs_out_p"//trim(param_dim_str)//"_n"//trim(sample_dim_str)//".nc"
+  filename = trim(kidpath)//"lhs_nc/lhs_out_p"//trim(param_dim_str)//"_n"//trim(sample_dim_str)//".nc"
   retval = nf90_create(trim(filename), NF90_CLOBBER, ncid)
   if (retval /= nf90_noerr) then
     print *, "Error creating file:", nf90_strerror(retval)

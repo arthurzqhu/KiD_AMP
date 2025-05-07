@@ -2,7 +2,7 @@
 
 # config of the run
 mps=("BIN_TAU")
-config_name="fullmic"
+config_name="rainshaft"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
@@ -26,10 +26,10 @@ t1=3600.
 t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
-l_nuc_cond_s=1
-l_coll_s=1
+l_nuc_cond_s=0
+l_coll_s=0
 l_sed_s=1
-l_adv_s=1
+l_adv_s=0
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -46,13 +46,14 @@ else
    l_noadv_hyd='.true.'
 fi
 
-ia=$1
-iw=$2
-var1str=Na$ia
-var2str=w$iw
-
 isp_c=4
 isp_r=4
+ia=100
+iw=1
+
+rs_dm=$1
+rs_N=1e4
+var1str=dm$rs_dm
 
 # # reset oscillation time based on updraft speed to prevent overshooting
 # if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
@@ -168,7 +169,7 @@ echo $mp
    fi
 
 
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/$var2str/${mp}/
+   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -180,8 +181,8 @@ echo $mp
       if [ ! -d $outdir ]; then
          mkdir -p $outdir
       fi
-      echo ${config_name}_${mp}_${var1str}_${var2str}
-      nml_fn="${KiD_path}namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml"
+      echo ${config_name}_${mp}_${var1str}
+      nml_fn="${KiD_path}namelists/jobnml/${config_name}_${mp}_${var1str}.nml"
 
       cat > $nml_fn << END
 &mphys

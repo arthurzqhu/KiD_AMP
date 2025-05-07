@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/global/u2/a/arthurhu/homebrew/bin/python3
 #
 # Make dependencies from fortran source
 #

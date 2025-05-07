@@ -68,6 +68,7 @@ module parameters
   real(wp) :: aero_N_init(naerosol)=0.0
   real(wp) :: aero_rd_init(naerosol)=0.0
   real(wp) :: aero_sig_init(naerosol)=0.0
+  real(wp) :: Dm_init=0.
 
   integer :: num_h_moments(nspecies)= (/  &
         1 & ! cloud
@@ -120,5 +121,7 @@ module parameters
    ! determine the last bin of cloud
    ! if not using bin, this value is ignored
    integer :: split_bins
+
+   character(200) :: kidpath="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
 end module parameters

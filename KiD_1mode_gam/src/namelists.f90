@@ -44,6 +44,7 @@ module namelists
   character(200) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
   character(20)  :: s_sample_dist
   character(200) :: custom_dens_path, custom_bins_path, lhs_path
+  integer :: n_init
 
 ! integer switch for type of BOSS autoconversion (q)
 !1 = 1-term auto wo rain dependence
@@ -116,7 +117,8 @@ integer, public :: idraw = 1, rand_seed
 
 ! ppe variables
 integer, public :: irealz, n_ppe
-real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
+real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max, Dm_min, Dm_max
+logical :: l_save_tend, l_save_adv, l_save_div, l_save_mphys
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
@@ -134,7 +136,8 @@ real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
 
   namelist/ppe/l_ppe, s_sample_dist, custom_dens_path, custom_bins_path, irealz, &
                deflation_factor, Na_min, Na_max, w_min, w_max, &
-               n_ppe, lhs_path, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+               n_ppe, lhs_path, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
+               Dm_min, Dm_max, n_init
 
   namelist/switch/l_mphys, l_advect, l_diverge, l_pupdate &
        , l_fix_qv, l_nomphys_qv, l_noadv_qv, l_posadv_qv &
@@ -144,7 +147,7 @@ real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max
        , l_sed_ult, l_diverge_advection, l_periodic_bound  &
        , l_force_positive, l_noevaporation, l_nocondensation &
        , l_truncated, l_init_test, l_use_nn, l_boss_partition_liq &
-       , l_getrates, l_boss_save_dsd
+       , l_getrates, l_boss_save_dsd, l_save_tend, l_save_adv, l_save_div, l_save_mphys
 
   logical :: iiwarm=.false.
   character(200) :: KiD_outdir=''

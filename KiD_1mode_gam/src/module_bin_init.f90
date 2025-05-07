@@ -172,14 +172,15 @@ contains
 !************************************************************
        SUBROUTINE DATA
 !************************************************************
+      use parameters, only: kidpath
       IMPLICIT NONE
 
       INTEGER I,J,K
       REAL XP
-    OPEN(30,FILE='./src/tau_data/KIJ',STATUS='old')
-    OPEN(31,FILE='./src/tau_data/KBARF',STATUS='old')
-    OPEN(32,FILE='./src/tau_data/PLL',STATUS='old')
-    OPEN(33,FILE='./src/tau_data/ACON1',STATUS='old')
+    OPEN(30,FILE=trim(kidpath)//'./src/tau_data/KIJ',STATUS='old')
+    OPEN(31,FILE=trim(kidpath)//'./src/tau_data/KBARF',STATUS='old')
+    OPEN(32,FILE=trim(kidpath)//'./src/tau_data/PLL',STATUS='old')
+    OPEN(33,FILE=trim(kidpath)//'./src/tau_data/ACON1',STATUS='old')
 
 !      PI=4.*ATAN(1.)
 

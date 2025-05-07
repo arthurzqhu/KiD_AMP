@@ -36,7 +36,7 @@ contains
     use, intrinsic :: ieee_arithmetic, only: IEEE_Value, IEEE_QUIET_NAN
     use, intrinsic :: iso_fortran_env, only: real32
 
-    integer :: i, j, k, imom, rain_alt, ib
+    integer :: i, j, k, imom, i_rain_alt, ib
     real, dimension(nz,nx) :: t2d, p2d, qv2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpc2d
     real(8), dimension(nz,nx,num_h_moments(1)) :: Mpr2d
@@ -161,36 +161,36 @@ contains
 
    ! set rain source if there is one: {{{
    if (rain_source(1)>0.) then 
-       ! set the zctrl(1) to be where the rain source is, which happens to be nz-1
-       ! cant be nz because tau does not sediment moisture from the topmost layer
-       rain_alt=int(zctrl(1)/((zctrl(1))/nz))-1
+       ! set the rain source to be at nz - 1
+       ! cant be nz because tau does not sediment hydrometeors from the topmost layer
+       i_rain_alt = nz - 1
        rm_s=rain_source(1)**3*pi/6*rhow*rain_source(2)
        dnr_s=(rm_s*6./3.14159/rhow/rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
 
        do j=1,nx
            if (bintype .eq. 'sbm') then
                CALL init_dist_sbm(dble(0.),h_shape(1),dble(0.),rm_s,h_shape(2),dnr_s,&
-                    diams,dropsm2d(rain_alt,j,:))
+                    diams,dropsm2d(i_rain_alt,j,:))
            elseif (bintype .eq. 'tau') then
                CALL init_dist_tau(dble(0.),h_shape(1),dble(0.),rm_s,h_shape(2),dnr_s,&
-                    dropsm2d(rain_alt,j,:),dropsn2d(rain_alt,j,:))
+                    dropsm2d(i_rain_alt,j,:),dropsn2d(i_rain_alt,j,:))
            endif
        enddo
        if (ampORbin .eq. 'amp') then
-           guessr2d(rain_alt,:,2)=dnr_s
+           guessr2d(i_rain_alt,:,2)=dnr_s
            pmomsr(1:3)=(/3,imomr1,imomr2/)
            do j=1,nx
                do i=1,num_h_moments(2)
                    if (bintype .eq. 'sbm') then
-                       mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/xl(split_bins+1:nkr)&
+                       mr_s(i)=sum(dropsm2d(i_rain_alt,j,split_bins+1:nkr)/xl(split_bins+1:nkr)&
                              *diams(split_bins+1:nkr)**pmomsr(i))*col*rhow
                    elseif (bintype .eq. 'tau') then
-                       mr_s(i)=sum(dropsm2d(rain_alt,j,split_bins+1:nkr)/binmass(split_bins+1:nkr)&
+                       mr_s(i)=sum(dropsm2d(i_rain_alt,j,split_bins+1:nkr)/binmass(split_bins+1:nkr)&
                              *diams(split_bins+1:nkr)**pmomsc(i))*col
            
                    end if
                enddo
-               Mpr2d(rain_alt,j,1:num_h_moments(2))=mr_s(1:num_h_moments(2))
+               Mpr2d(i_rain_alt,j,1:num_h_moments(2))=mr_s(1:num_h_moments(2))
            enddo 
        endif
    endif
