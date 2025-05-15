@@ -31,18 +31,18 @@ real(8), save, dimension(nz,nx,2) :: guessc,guessr
 contains
   
 subroutine mphys_boss_interface(npmcr)
-use mphys_tau_bin_declare, only: xkgmean, dgmean
+use mphys_tau_bin_declare, only: xkgmean, dgmean, XKK1, LK
 use module_bin_init, only: bin_init, data
 
 integer :: j,k,imom,it, i_rain_alt
 integer :: npmcr(nspecies), p3stat
 real, dimension(nz,nx,npmcr(1)) :: qcs
 real, dimension(nz,nx,npmcr(2)) :: qrs
-real, dimension(nz) :: Dm_c, Dm_r, Dm_w
+real, dimension(nz) :: Dm_c, Dm_r, Dm_w, reffc, reffr
 real, dimension(nx) :: prt_drzl,prt_rain,prt_crys,prt_snow,prt_grpl,prt_pell,prt_hail,prt_sndp
 real, dimension(nz,nx,max_nbins) :: ffcd_mass_befm, ffcd_num_befm, ffcd_mass_aftm, ffcd_num_aftm
 real(8),dimension(nz,nx,1:10) :: mc,mr
-real :: rm_s, rn_s, dn_rs
+real :: rm_s, rn_s, dn_rs, mc_ratio, mr_ratio, max_diam
 character(max_char_len) :: name, units
 character(1) :: Mnum
 logical :: prep_stop = .false.
@@ -131,6 +131,7 @@ endif
 
 if (n_cat==1) then ! single cat
   if (micro_unset) then
+    l_diag = .true.
     call boss_slc_init(lookup_file_dir=kidpath, nCat=1, trplMomI=.false., model='KiD', &
       stat=p3stat, abort_on_err=.false., dowr=.true.,qcs=qcs,its=1,ite=nx,kts=1,kte=nz,&
       npm=npm)
@@ -233,9 +234,29 @@ if (l_boss_partition_liq .and. l_diag) then
   Dm_c = (mc(:,1,4)/mc(:,1,1))**(1/3.)
   Dm_r = (mr(:,1,4)/mr(:,1,1))**(1/3.)
   Dm_w = ((mc(:,1,4)+mr(:,1,4))/(mc(:,1,1)+mr(:,1,1)))**(1/3.)
+  reffc = mc(:,1,3)/mc(:,1,2)*0.5
+  reffr = mr(:,1,3)/mr(:,1,2)*0.5
+  ! reff = (mc(:,1,3)+mr(:,1,3))/(mc(:,1,2)+mr(:,1,2))*0.5
   call save_dg(Dm_c, 'Dm_c',i_dgtime,'m',dim='z')
   call save_dg(Dm_r, 'Dm_r',i_dgtime,'m',dim='z')
   call save_dg(Dm_w, 'Dm_w',i_dgtime,'m',dim='z')
+  call save_dg(reffc, 'reffc',i_dgtime,'m',dim='z')
+  call save_dg(reffr, 'reffr',i_dgtime,'m',dim='z')
+
+  ! max_diam = XKK1(LK)*2*2**(1./3.)
+  ! do k=1,120
+  !   if (mc(k,1,1)<100 .and. mc(k,1,1)>0.) print*, 'mc', time, mc(k,1,4), mc(k,1,1)
+  !   if (mr(k,1,1)<100 .and. mr(k,1,1)>0.) print*, 'mr', time, mr(k,1,4), mr(k,1,1)
+  ! enddo
+
+  ! if (any(Dm_c > max_diam)) then
+    ! print*, 'Dm_c', maxval(Dm_c)
+    ! stop
+  ! endif
+  ! if (any(Dm_r > max_diam)) then
+    ! print*, 'Dm_r', maxval(Dm_r)
+    ! stop
+  ! endif
 
   do imom=1,10
     write(Mnum,'(I1)') imom-1
@@ -262,27 +283,29 @@ if (l_boss_partition_liq .and. l_diag) then
   endif
 
   ! if it's diagnosed then update moments with mc, mr instead
+  ! partition with the ratio first:
 
   if (n_cat==1) then
-    do imom = 1, num_h_moments(1)
-      ip = pmomsc(imom)+1
-      do j=1,nx
-        do k=1,nz
-          dhydrometeors_mphys(k,j,1)%moments(1,imom) = &
-            (mc(k,j,ip) - hydrometeors(k,j,1)%moments(1,imom))/dt
-        enddo
-      enddo
-    end do
-    ! print*, 'dmc', mc(80,1,4), hydrometeors(80,1,1)%moments(1,1)
+    do j=1,nx
+      do k=1,nz
+        do imom = 1, num_h_moments(1)
+          ip = pmomsc(imom)+1
 
-    do imom = 1, num_h_moments(2)
-      ip = pmomsr(imom)+1
-      do j=1,nx
-        do k=1,nz
+          if (mc(k,j,ip) + mr(k,j,ip) <= 0) then
+            mc_ratio = 0.
+            mr_ratio = 0.
+          else
+            mc_ratio = mc(k,j,ip) / (mc(k,j,ip) + mr(k,j,ip))
+            mr_ratio = 1 - mc_ratio
+          endif
+
+          dhydrometeors_mphys(k,j,1)%moments(1,imom) = &
+            (qcs(k,j,imom)*mc_ratio - hydrometeors(k,j,1)%moments(1,imom))/dt
           ! to ensure that the moment set is not broken by the DSD diagnosis
-          qrs(k,j,imom) = qcs(k,j,imom) - mc(k,j,ip)
+
+          ! qrs(k,j,imom) = qcs(k,j,imom) - mc(k,j,ip)
           dhydrometeors_mphys(k,j,2)%moments(1,imom) = &
-            (qrs(k,j,imom) - hydrometeors(k,j,2)%moments(1,imom))/dt
+            (qcs(k,j,imom)*(1-mc_ratio) - hydrometeors(k,j,2)%moments(1,imom))/dt
         enddo
       enddo
     enddo
@@ -336,6 +359,10 @@ do j=1,nx
     guessr(k,j,1) = gam_param(2,2)
   enddo
 enddo
+
+print*, 'guessc', 1/guessc(30,1,2)
+print*, 'guessr', 1/guessr(30,1,2)
+stop
 
 end subroutine invert_mom_boss
 

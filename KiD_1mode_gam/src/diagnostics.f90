@@ -2355,12 +2355,9 @@ contains
     status=nf90_put_att(ncid, nf90_global, 'Advection ID', advection_id)
     status=nf90_put_att(ncid, nf90_global, 'references', references)
     status=nf90_put_att(ncid, nf90_global, 'comments', comments)
-    if (Na_min > 0.) then
-      status=nf90_put_att(ncid, nf90_global, 'Na', aero_N_init/1e6)
-    endif
-    if (w_min > 0.) then
-      status=nf90_put_att(ncid, nf90_global, 'w', wctrl(1))
-    endif
+    status=nf90_put_att(ncid, nf90_global, 'Na', aero_N_init/1e6)
+    status=nf90_put_att(ncid, nf90_global, 'w', wctrl(1))
+
     if (Dm_init>0.) then
       status=nf90_put_att(ncid, nf90_global, 'dm', Dm_init)
     endif
