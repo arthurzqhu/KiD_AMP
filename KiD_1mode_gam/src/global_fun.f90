@@ -914,17 +914,17 @@ subroutine get_perturbed_params_custom(params_save, posterior_binmeans, posterio
 use parameters, only: lsample
 use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
 use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, n_init
-integer :: ilsample, icondevp, icoal, ised, ibin, iparam_allproc, iparam_indproc
+integer :: ilsample, inevp, icondevp, icoal, ised, ibin, iparam_allproc, iparam_indproc
 double precision, allocatable :: posterior_binmeans(:,:), posterior_cdf(:,:)
 real, allocatable :: params_save(:)
 double precision :: nudge_diff
 
-ilsample = 1; icondevp = 1; icoal = 1; ised = 1
+ilsample = 1; inevp = 0; icondevp = 0; icoal = 0; ised = 0
 
 ! pick a number between 0 and 1 from lhs and find it in the cdf
 if (l_ppe_nevp) then
   do iparam_indproc = 1, n_param_nevp
-    ilsample = iparam_indproc
+    ilsample = iparam_indproc + inevp
     iparam_allproc = iparam_indproc
     do ibin = 1, n_bins
       if (lsample(ilsample+n_init, irealz) <= posterior_cdf(ibin, ilsample)) then
@@ -965,12 +965,15 @@ if (l_ppe_coal) then
 endif
 
 if (l_ppe_sed) then
+  print*, 'n_param_sed', n_param_sed
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
+    ! print*, 'ilsample, iparam_indproc, iparam_allproc', ilsample, iparam_indproc, iparam_allproc
     do ibin = 1, n_bins
       if (lsample(ilsample+n_init, irealz) <= posterior_cdf(ibin, ilsample)) then
         params_save(iparam_allproc) = posterior_binmeans(ibin, ilsample)
+        ! print*, posterior_binmeans(ibin, ilsample)
         exit
       endif
     enddo
@@ -1016,8 +1019,8 @@ do ibin = 2, n_bins
 enddo
 
 ! in case CDF doesn't sum up to 1
-do ilsample = 1, npp
-  posterior_cdf(:, ilsample) = posterior_cdf(:, ilsample)/posterior_cdf(n_bins, ilsample)
+do iparam = 1, npp
+  posterior_cdf(:, iparam) = posterior_cdf(:, iparam)/posterior_cdf(n_bins, iparam)
 enddo
 
 end subroutine get_posterior
