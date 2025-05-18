@@ -172,7 +172,7 @@ contains
 !************************************************************
        SUBROUTINE DATA
 !************************************************************
-      use parameters, only: kidpath
+      use namelists, only: kidpath
       IMPLICIT NONE
 
       INTEGER I,J,K

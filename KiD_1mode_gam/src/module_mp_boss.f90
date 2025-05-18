@@ -10454,7 +10454,7 @@ use namelists, only: param_val_fpath, KiD_outdir, irealz, l_ppe, deflation_facto
 use netcdf
 use csv_module
 use parameters, only: lsample, pymc_filedirs_type
-use namelists, only: n_ppe
+use namelists, only: n_ppe, nevp_dir, condevp_dir, coal_dir, sed_dir
 use micro_prm, only: npp, n_param_nevp, n_param_condevp, n_param_coal, n_param_sed
 
 use ppe_fun, only: get_perturbed_params, get_perturbed_params_custom, get_posterior, &
@@ -10514,10 +10514,10 @@ params_save = pvalue_mean
 
 if (l_ppe) then
   if (s_sample_dist .eq. 'pymc') then
-    pymc_filedirs%nevp_dir = '/Users/arthurhu/research/idata/nevap_2t_N30000_3069_drizzle_idata.nc'
-    pymc_filedirs%condevp_dir = '/Users/arthurhu/research/idata/condevap_N30000_3069_drizzle_idata.nc'
-    pymc_filedirs%coal_dir = '/Users/arthurhu/research/idata/coal_4map_drizzle_idata.nc'
-    pymc_filedirs%sed_dir = '/Users/arthurhu/research/idata/fall_N30000_4m_3069_drizzle_idata.nc'
+    pymc_filedirs%nevp_dir = nevp_dir
+    pymc_filedirs%condevp_dir = condevp_dir
+    pymc_filedirs%coal_dir = coal_dir
+    pymc_filedirs%sed_dir = sed_dir
     call get_perturbed_params_pymc(params_save, pymc_filedirs)
   elseif (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
     call get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
@@ -10538,7 +10538,7 @@ call pv_file%next_row()
 call pv_file%close(stat_ok)
 
 ! convert these db values to real values
-db_idx = [1, 4, 9, 17, 18, 29, 30, 39]
+db_idx = [1, 4, 9, 17, 18, 29, 30]
 do i = 1, size(db_idx)
   idb = db_idx(i)
   params_save(idb) = db_to_val(params_save(idb))

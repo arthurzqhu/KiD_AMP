@@ -785,7 +785,7 @@ subroutine write_lhc_nc(param_dim, sample_dim)
 !    John Burkardt
 !
   use netcdf
-  use parameters, only: kidpath
+  use namelists, only: kidpath
   implicit none
 
   integer ( kind = 4 ) seed

@@ -1,12 +1,12 @@
 module mphys_boss
 
 use parameters, only : num_h_moments, num_h_bins, h_shape, nspecies, nz, dt &
-  , h_names, mom_units, max_char_len, nx, dg_dt, dgstart, kidpath, Dm_init
+  , h_names, mom_units, max_char_len, nx, dg_dt, dgstart, Dm_init
 use column_variables
 use common_physics, only : qsaturation
 use physconst, only : p0, r_on_cp, pi, rhow
 use namelists, only: log_predictNc, l_truncated, l_init_test, n_cat, l_use_nn &
-  , l_boss_partition_liq, l_boss_save_dsd
+  , l_boss_partition_liq, l_boss_save_dsd, kidpath
 
 use module_hujisbm
 use micro_prm

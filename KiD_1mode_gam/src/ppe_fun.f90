@@ -23,8 +23,8 @@ subroutine read_netcdf(variable, filename, varname, group_name)
   real(8), dimension(:,:), allocatable :: variable   ! Array to hold the variable data
 
   character(len=200) :: filename
-  character(len=100) :: varname
-  character(len=20), optional :: group_name
+  character(len=*) :: varname
+  character(len=100), optional :: group_name
   logical :: l_group
 
   if (allocated(variable)) deallocate(variable)
@@ -33,7 +33,7 @@ subroutine read_netcdf(variable, filename, varname, group_name)
   ! Open the NetCDF file (read-only mode)
   status = nf90_open(filename, nf90_nowrite, ncid)
   if (status /= nf90_noerr) then
-    print *, 'Error opening NetCDF file'
+    print *, 'Error opening NetCDF file in read_netcdf'
     stop
   end if
 
@@ -47,9 +47,9 @@ subroutine read_netcdf(variable, filename, varname, group_name)
   endif
 
 
-  status = nf90_inq_varid(parentid, varname, varid)
+  status = nf90_inq_varid(parentid, trim(varname), varid)
   if (status /= nf90_noerr) then
-    print *, 'Error getting variable ID', varname, status
+    print *, 'Error getting variable ID: ', varname, nf90_strerror(status)
     status = nf90_close(ncid)
     stop
   end if
@@ -336,6 +336,7 @@ integer :: n_param, inevp, icondevp, icoal, ised
 inevp = n_init; icondevp = n_init; icoal = n_init; ised = n_init;
 n_param = n_param_nevp + n_param_condevp + n_param_coal + n_param_sed
 
+
 if (l_ppe_nevp) then
   allocate(max_std(n_param_nevp))
   max_std(:) = large_val
@@ -357,7 +358,7 @@ endif
 
 if (l_ppe_coal) then
   allocate(max_std(n_param_coal))
-  max_std = [2,5,1,1,1,1,1,1,1,1,1,1]
+  max_std = [10,30,2,2,2,2,2,2,2,2,2,2]
   call load_pymc(params_coal, max_std, lsample(icoal+1:icoal+n_param_coal, irealz), n_param_coal, pymc_filedirs%coal_dir)
   deallocate(max_std)
   params_save(n_param_nevp+n_param_condevp+1:n_param_nevp+n_param_condevp+n_param_coal) = &
@@ -367,7 +368,7 @@ endif
 
 if (l_ppe_sed) then
   allocate(max_std(n_param_sed))
-  max_std = [10,6,1,1,1,1,1,1,1,1,6,1]
+  max_std = [50,30,2,2,2,2,2,2,2,2,30,2]
   call load_pymc(params_sed, max_std, lsample(ised+1:ised+n_param_sed, irealz), n_param_sed, pymc_filedirs%sed_dir)
   deallocate(max_std)
   params_save(n_param_nevp+n_param_condevp+n_param_coal+1:n_param) = &
@@ -385,7 +386,8 @@ real, dimension(n_param) :: params_loaded
 real(8), allocatable, dimension(:,:,:) :: params_proc_sampled
 real(8), allocatable, dimension(:,:) :: params_read
 character(len=200) :: pymc_filedir
-character(len=100) :: varname, group_name
+character(len=100) :: group_name
+character(len=10) :: varname
 integer :: ncid, varid, cid, did, pid
 integer :: nchain, ndraw, n_param
 real(8), allocatable :: posterior(:,:,:), a0coal(:,:)
@@ -463,6 +465,7 @@ subroutine draw_mvnormal(posterior, nchain, ndraw, n_param, max_std, trunc_lhs, 
   do i = 1, n_param
     do j = 1, n_param
       cappedCov(i,j) = s(i) * s(j) * inflCov(i,j)
+      ! if (i/=j) cappedCov(i,j) = 0.
     end do
   end do
 
@@ -476,7 +479,11 @@ subroutine draw_mvnormal(posterior, nchain, ndraw, n_param, max_std, trunc_lhs, 
 
   !— 5) transform: theta = mean + L·z —
   z(:, 1) = (trunc_lhs-.5)*2!*pvalue_isd(iparam_allproc)*deflation_factor
-  perturbed_val = matmul(L, z)
+  perturbed_val = matmul(L, z)/5
+  ! print*, perturbed_val
+  ! print*, 'cov', cov
+  ! print*, 'cappedCov', cappedCov
+  ! stop
   theta = sngl(mean + perturbed_val(:, 1))
   
 end subroutine draw_mvnormal
@@ -499,7 +506,7 @@ function get_pnames_from_netcdf(filename, group_name) result(vnames)
   ! Open the NetCDF file (read-only mode)
   status = nf90_open(filename, nf90_nowrite, ncid)
   if (status /= nf90_noerr) then
-    print *, 'Error opening NetCDF file'
+    print *, 'Error opening NetCDF file in get_pnames_from_netcdf: ', trim(nf90_strerror(status))
     stop
   end if
 

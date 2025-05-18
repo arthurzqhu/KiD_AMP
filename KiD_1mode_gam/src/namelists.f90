@@ -119,6 +119,8 @@ integer, public :: idraw = 1, rand_seed
 integer, public :: irealz, n_ppe
 real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max, Dm_min, Dm_max
 logical :: l_save_tend, l_save_adv, l_save_div, l_save_mphys
+character(200) :: kidpath="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
        h_names, mom_names, mom_units,num_aero_moments,num_aero_bins, &
@@ -137,7 +139,7 @@ logical :: l_save_tend, l_save_adv, l_save_div, l_save_mphys
   namelist/ppe/l_ppe, s_sample_dist, custom_dens_path, custom_bins_path, irealz, &
                deflation_factor, Na_min, Na_max, w_min, w_max, &
                n_ppe, lhs_path, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
-               Dm_min, Dm_max, n_init
+               Dm_min, Dm_max, n_init, nevp_dir, condevp_dir, coal_dir, sed_dir
 
   namelist/switch/l_mphys, l_advect, l_diverge, l_pupdate &
        , l_fix_qv, l_nomphys_qv, l_noadv_qv, l_posadv_qv &
@@ -175,7 +177,7 @@ logical :: l_save_tend, l_save_adv, l_save_div, l_save_mphys
      , l_active_inarg2000, iopt_inuc, l_cu_cold, l_oneway, l_newoptions &
 #endif
      ! Thompson 09...
-     , l_reuse_thompson_lookup
+     , l_reuse_thompson_lookup, kidpath
 
   ! Namelist input...
 

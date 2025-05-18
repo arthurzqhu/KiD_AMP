@@ -122,9 +122,6 @@ module parameters
    ! if not using bin, this value is ignored
    integer :: split_bins
 
-   character(200) :: kidpath="./"
-   ! character(200) :: kidpath="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
-
    type pymc_filedirs_type
      character(len=200) :: nevp_dir
      character(len=200) :: condevp_dir
