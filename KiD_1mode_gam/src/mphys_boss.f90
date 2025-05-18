@@ -360,10 +360,6 @@ do j=1,nx
   enddo
 enddo
 
-print*, 'guessc', 1/guessc(30,1,2)
-print*, 'guessr', 1/guessr(30,1,2)
-stop
-
 end subroutine invert_mom_boss
 
 end module mphys_boss

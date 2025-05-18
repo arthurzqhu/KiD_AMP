@@ -10453,18 +10453,18 @@ use namelists, only: param_val_fpath, KiD_outdir, irealz, l_ppe, deflation_facto
                      l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
 use netcdf
 use csv_module
-use parameters, only: lsample
+use parameters, only: lsample, pymc_filedirs_type
 use namelists, only: n_ppe
 use micro_prm, only: npp, n_param_nevp, n_param_condevp, n_param_coal, n_param_sed
 
-use global_fun, only: get_perturbed_params, get_perturbed_params_custom, get_posterior
+use ppe_fun, only: get_perturbed_params, get_perturbed_params_custom, get_posterior, &
+  get_perturbed_params_pymc
 
 
 real, allocatable, dimension(:) :: pvalue_mean, pvalue_sd, pvalue_isd, params_save
 integer :: io_status, iiparam, n_bins, ibin
 integer :: seed_size, i, idb
 integer, allocatable :: seed(:)
-
 
 type(csv_file) :: pv_file, ps_file ! param val and param sigma
 type(csv_file) :: dens_csv, bins_csv
@@ -10477,6 +10477,7 @@ double precision :: logspan, nudge_diff
 character(len=200) :: filename
 character(len=100) :: varname
 character(len=4) :: n_ppe_str, n_param_ppe_str
+type(pymc_filedirs_type) :: pymc_filedirs
 
 l_bmncoal = .false.
 l_mlim2 = .true.
@@ -10512,7 +10513,13 @@ print*, 'loading ', param_val_fpath
 params_save = pvalue_mean
 
 if (l_ppe) then
-  if (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
+  if (s_sample_dist .eq. 'pymc') then
+    pymc_filedirs%nevp_dir = '/Users/arthurhu/research/idata/nevap_2t_N30000_3069_drizzle_idata.nc'
+    pymc_filedirs%condevp_dir = '/Users/arthurhu/research/idata/condevap_N30000_3069_drizzle_idata.nc'
+    pymc_filedirs%coal_dir = '/Users/arthurhu/research/idata/coal_4map_drizzle_idata.nc'
+    pymc_filedirs%sed_dir = '/Users/arthurhu/research/idata/fall_N30000_4m_3069_drizzle_idata.nc'
+    call get_perturbed_params_pymc(params_save, pymc_filedirs)
+  elseif (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
     call get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
   elseif (s_sample_dist .eq. 'custom') then
     call get_posterior(posterior_binmeans, posterior_cdf, n_bins, npp)

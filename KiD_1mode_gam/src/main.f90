@@ -29,7 +29,7 @@ Module main
   Use divergence, only : diverge_column
   Use micro_prm, only: check_bintype,set_constants,nkr,npm,l_sctab_mod,diag_dt3,diag_dt4
   Use column_variables
-  Use global_fun
+  Use ppe_fun, only: load_latinhc
   Implicit none
 
 contains
