@@ -147,6 +147,7 @@ use namelists, only: irealz, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, d
   n_init
 integer :: ilsample, inevp, icondevp, icoal, ised, iparam_indproc, iparam_allproc, n_param
 real, allocatable, dimension(:) :: pvalue_mean, pvalue_isd, params_save
+real(8), allocatable, dimension(:) :: max_std
 double precision :: nudge_diff
 
 ! icondevp = 1; icoal = 1; ised = 1; 
@@ -189,17 +190,23 @@ if (l_ppe_coal) then
 endif
 
 if (l_ppe_sed) then
-  pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+3:n_param) = 5 ! the exponents
-  pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+1) = 50 ! afall
-  pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+2) = 30 ! mlim
-  pvalue_isd(n_param-1) = 30 ! mlim2
 
+  ! pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+3:n_param) = 2 ! the exponents
+  ! pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+1) = 50 ! afall
+  ! pvalue_isd(n_param_nevp+n_param_condevp+n_param_coal+2) = 30 ! mlim
+  ! pvalue_isd(n_param-1) = 30 ! mlim2
+
+  allocate(max_std(n_param_sed))
+  max_std = [50,30,2,2,2,2,2,2,2,2,2]
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
+    pvalue_isd(iparam_allproc) = min(max_std(iparam_indproc), pvalue_isd(iparam_allproc))
     nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
+  deallocate(max_std)
+
 endif
 
   
@@ -368,7 +375,7 @@ endif
 
 if (l_ppe_sed) then
   allocate(max_std(n_param_sed))
-  max_std = [50,30,2,2,2,2,2,2,2,2,30,2]
+  max_std = [50,30,2,2,2,2,2,2,2,2,2]
   call load_pymc(params_sed, max_std, lsample(ised+1:ised+n_param_sed, irealz), n_param_sed, pymc_filedirs%sed_dir)
   deallocate(max_std)
   params_save(n_param_nevp+n_param_condevp+n_param_coal+1:n_param) = &
@@ -479,7 +486,7 @@ subroutine draw_mvnormal(posterior, nchain, ndraw, n_param, max_std, trunc_lhs, 
 
   !— 5) transform: theta = mean + L·z —
   z(:, 1) = (trunc_lhs-.5)*2!*pvalue_isd(iparam_allproc)*deflation_factor
-  perturbed_val = matmul(L, z)/5
+  perturbed_val = matmul(L, z)
   ! print*, perturbed_val
   ! print*, 'cov', cov
   ! print*, 'cappedCov', cappedCov

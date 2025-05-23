@@ -10480,7 +10480,7 @@ character(len=4) :: n_ppe_str, n_param_ppe_str
 type(pymc_filedirs_type) :: pymc_filedirs
 
 l_bmncoal = .false.
-l_mlim2 = .true.
+l_mlim2 = .false.
 
 ! read the file
 call pv_file%read(trim(param_val_fpath),header_row=1,status_ok=stat_ok)
@@ -10585,8 +10585,8 @@ bxxfall  = params_save(35)
 byxfall  = params_save(36)
 bxyfall  = params_save(37)
 byyfall  = params_save(38)
-mlim2    = params_save(39)
-bmfall   = params_save(40)
+! mlim2    = params_save(39)
+bmfall   = params_save(39)
 
 end subroutine read_boss_slc_param
 
