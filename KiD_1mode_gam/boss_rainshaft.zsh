@@ -2,23 +2,20 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="rainshaft"
+config_name="rainshaft_Vx_r1"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
-KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+# KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="lhs"
+s_sample_dist="custom"
 # lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
 lhs_path="${KiD_path}lhs_nc"
-echo $lhs_path
-# param_val_fpath="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/CloudBOSS/param_consolid_updated.csv"
-param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_updated.csv"
-# custom_dens_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_density_RWM.csv"
-# custom_bins_path="/Users/arthurhu/github/BOSS_PPE/MCMC_posterior/condevp_withcoal_r1_param_bins_RWM.csv"
-custom_dens_path="/global/homes/a/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_density_RWM.csv"
-custom_bins_path="/global/homes/a/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_bins_RWM.csv"
+param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
+posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_narrow_N10000_dt300_r0_param_psd_narrow.nc"
+# posterior_path="/global/homes/a/arthurhu/BOSS_PPE/MCMC_posterior/fullmic_r1_param_density_RWM.csv"
 
 l_ppe_nevp=".false."
 l_ppe_condevp=".false."
@@ -169,7 +166,8 @@ echo $mp
 
 
    # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${3}/
+   # outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${3}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -182,7 +180,7 @@ echo $mp
          mkdir -p $outdir
       fi
       echo ${config_name}_${mp}
-      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${3}.nml
+      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${4}.nml
       cat > $nml_fn << END
 &mphys
 ! hydrometeor names
@@ -269,7 +267,7 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.0         !Timestep for diagnostic output
+dg_dt=60.0         !Timestep for diagnostic output
 wctrl(1)=0.      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -282,10 +280,9 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 l_ppe=.true.
 n_init=1
 s_sample_dist="$s_sample_dist"
-custom_dens_path="$custom_dens_path"
-custom_bins_path="$custom_bins_path"
-n_ppe=$4
-irealz=$3
+posterior_path="$posterior_path"
+n_ppe=$3
+irealz=$4
 deflation_factor=1.
 Dm_min=$1
 Dm_max=$2
@@ -331,6 +328,7 @@ mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
+kidpath='${KiD_path}'
 !l_diag_nu=.false.
 moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /

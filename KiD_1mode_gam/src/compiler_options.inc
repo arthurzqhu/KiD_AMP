@@ -1,6 +1,6 @@
 
-COMPILER=/usr/local/bin/gfortran# Gnu 
-#COMPILER=gfortran# Gnu 
+# COMPILER=/usr/local/bin/gfortran #Gnu 
+COMPILER=gfortran# Gnu 
 #COMPILER=pgf90#    Portland
 #COMPILER=ifort#     Intel
 #COMPILER=nagfor#      NAG 
@@ -10,16 +10,19 @@ VPATH = ./:./UM_source
 #NCPATH=/usr/local/netcdf/$(COMPILER)/
 #NCPATH=/home/h01/lemdev/netcdf/$(COMPILER)/
 # NCPATH=/share/apps/netcdf-c-4.7.4-intel/
-FKBPATH=/Users/arthurhu/github/FKB/build
-NCPATH=/usr/local/Cellar/netcdf-fortran/4.6.1
-NCPATHC=/usr/local/Cellar/netcdf/4.9.2_1
+# FKBPATH=/Users/arthurhu/github/FKB/build
+FKBPATH=/home/arthurhu/FKB/build
+NCPATH=/home/arthurhu/.local/Cellar/netcdf-fortran/4.6.1_2
+NCPATHC=/home/arthurhu/.local/Cellar/netcdf/4.9.3
+# NCPATH=/usr/local/Cellar/netcdf-fortran/4.6.1
+# NCPATHC=/usr/local/Cellar/netcdf/4.9.2_1
 
 TESTING=
 
 ifeq ($(COMPILER), gfortran)
 FPP= -x f95-cpp-input
 ifdef TESTING
-OPTS=-g -O0 -W -Wall -pedantic-errors -fbounds-check -fbacktrace \
+OPTS=-g -O0 -W -Wall -fbounds-check -fbacktrace \
 -ffpe-trap=invalid,zero,overflow -frange-check #-Werror -fsanitize=address
 else
 OPTS=-O3 -pg -g -fallow-argument-mismatch -fno-backtrace

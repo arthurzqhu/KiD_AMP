@@ -3801,10 +3801,6 @@ if (.not. dosedimentation) goto 1250
 
            enddo kloop_sedi_c2
            ! stop
-           call save_dg(V_nc,'V_nc',i_dgtime,units='m/s',dim='z')
-           call save_dg(V_qc,'V_qc',i_dgtime,units='m/s',dim='z')
-           call save_dg(V_qx,'V_qx',i_dgtime,units='m/s',dim='z')
-           call save_dg(V_qy,'V_qy',i_dgtime,units='m/s',dim='z')
 
            !-- compute dt_sub
            tmpint1 = int(comax+1.)    !number of substeps remaining if dt_sub were constant
@@ -3877,6 +3873,11 @@ if (.not. dosedimentation) goto 1250
 
   endif qc_present
   ! stop
+
+  call save_dg(V_nc,'V_nc',i_dgtime,units='m/s',dim='z')
+  call save_dg(V_qc,'V_qc',i_dgtime,units='m/s',dim='z')
+  call save_dg(V_qx,'V_qx',i_dgtime,units='m/s',dim='z')
+  call save_dg(V_qy,'V_qy',i_dgtime,units='m/s',dim='z')
 
 !------------------------------------------------------------------------------------------!
 ! Ice sedimentation:  (adaptivive substepping)
@@ -10449,8 +10450,7 @@ END SUBROUTINE access_lookup_table
 subroutine read_boss_slc_param
 
 use namelists, only: param_val_fpath, KiD_outdir, irealz, l_ppe, deflation_factor, &
-                     s_sample_dist, custom_dens_path, custom_bins_path, &
-                     l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
+                     s_sample_dist, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed
 use netcdf
 use csv_module
 use parameters, only: lsample, pymc_filedirs_type
@@ -10491,9 +10491,9 @@ call pv_file%get_header(header,stat_ok,1)
 n_param = size(header)
 n_bins = 50
 
-if (n_param > 100) then ! an arbitrary large enough number
+if (n_param /= n_param_nevp+n_param_condevp+n_param_coal+n_param_sed) then ! an arbitrary large enough number
   print*, 'n_param=',n_param
-  stop 'incorrect number of parameters'
+  stop "number of process parameters doesn't add up total number of parameters"
 endif
 
 allocate(pvalue_mean(n_param))
@@ -10527,6 +10527,7 @@ if (l_ppe) then
   endif
 endif
 
+print*, 'number of params:', size(params_save)
 print*, 'params:', params_save
 
 ! saving the parameter before converting db to real vals

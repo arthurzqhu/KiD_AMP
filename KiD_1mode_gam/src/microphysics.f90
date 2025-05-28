@@ -2111,6 +2111,22 @@ ENDDO
       fieldproc=cfall(:,nx,:)
       call save_proc_dp(fieldproc,name, i_dgtime, units)
 
+      name='V_nc'
+      field=cfall(:,nx,3)
+      call save_dg(field,name, i_dgtime, units, dim='z')
+
+      name='V_qc'
+      field=cfall(:,nx,6)
+      call save_dg(field,name, i_dgtime, units, dim='z')
+
+      name='V_qx'
+      field=cfall(:,nx,9)
+      call save_dg(field,name, i_dgtime, units, dim='z')
+
+      name='V_qy'
+      field=cfall(:,nx,12)
+      call save_dg(field,name, i_dgtime, units, dim='z')
+
       name='ccond'
       units='m^k/kg/s'
       fieldproc=ccond(:,nx,:)/dt

@@ -43,7 +43,7 @@ module namelists
   character(200) :: param_infl_sigma_fpath = "../../CloudBOSS/boss_slc_param_sigma.csv"
   character(200) :: param_val_fpath_2cat = "../../CloudBOSS/boss_2cat_param_values.csv"
   character(20)  :: s_sample_dist
-  character(200) :: custom_dens_path, custom_bins_path, lhs_path
+  character(200) :: posterior_path, lhs_path
   integer :: n_init
 
 ! integer switch for type of BOSS autoconversion (q)
@@ -119,7 +119,7 @@ integer, public :: idraw = 1, rand_seed
 integer, public :: irealz, n_ppe
 real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max, Dm_min, Dm_max
 logical :: l_save_tend, l_save_adv, l_save_div, l_save_mphys
-character(200) :: kidpath="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+character(200) :: kidpath
 character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
 
   namelist/mphys/num_h_moments, num_h_bins, h_shape, mom_init, &
@@ -136,7 +136,7 @@ character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
        , xctrl, lhf_ctrl, shf_ctrl, diaglevel, dgstart, rhctrl
   namelist/case/input_file, l_input_file, ifiletype, icase
 
-  namelist/ppe/l_ppe, s_sample_dist, custom_dens_path, custom_bins_path, irealz, &
+  namelist/ppe/l_ppe, s_sample_dist, posterior_path, irealz, &
                deflation_factor, Na_min, Na_max, w_min, w_max, &
                n_ppe, lhs_path, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
                Dm_min, Dm_max, n_init, nevp_dir, condevp_dir, coal_dir, sed_dir
@@ -162,7 +162,7 @@ character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
 
   namelist/addcontrol/iiwarm, KiD_outdir, KiD_outfile, ovc_factor, &
           mp_proc_dg, bintype, ampORbin, l_coll_coal, initprof, extralayer, &
-          l_hist_run, moments_diag &
+          l_hist_run, moments_diag, kidpath &
 #if SHIPWAY_MICRO == 1
      ! Shipway 4A ...
      , option, l_evap, l_sed_3mdiff &
@@ -177,7 +177,7 @@ character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
      , l_active_inarg2000, iopt_inuc, l_cu_cold, l_oneway, l_newoptions &
 #endif
      ! Thompson 09...
-     , l_reuse_thompson_lookup, kidpath
+     , l_reuse_thompson_lookup
 
   ! Namelist input...
 

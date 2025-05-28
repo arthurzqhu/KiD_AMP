@@ -197,7 +197,7 @@ if (l_ppe_sed) then
   ! pvalue_isd(n_param-1) = 30 ! mlim2
 
   allocate(max_std(n_param_sed))
-  max_std = [50,30,2,2,2,2,2,2,2,2,2]
+  max_std = [30,10,2,2,2,2,2,2,2,2,2]
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
@@ -268,7 +268,6 @@ if (l_ppe_coal) then
 endif
 
 if (l_ppe_sed) then
-  print*, 'n_param_sed', n_param_sed
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
@@ -286,7 +285,7 @@ end subroutine get_perturbed_params_custom
 ! ----------------------------------------------------------
 
 subroutine get_posterior(posterior_binmeans, posterior_cdf, n_bins, npp)
-use namelists, only: custom_dens_path, custom_bins_path
+use namelists, only: posterior_path
 use csv_module
 
 double precision, allocatable, dimension(:,:) :: posterior_dens, posterior_binedges, posterior_binmeans, posterior_cdf
@@ -299,18 +298,9 @@ allocate(posterior_binedges(n_bins+1, npp))
 allocate(posterior_binmeans(n_bins, npp))
 allocate(posterior_cdf(n_bins, npp))
 
-! read the file
-call dens_csv%read(trim(custom_dens_path),header_row=1,status_ok=stat_ok)
-call bins_csv%read(trim(custom_bins_path),header_row=1,status_ok=stat_ok)
+call read_netcdf(posterior_binedges, posterior_path, 'bin_edges')
+call read_netcdf(posterior_dens, posterior_path, 'density')
 
-! get MCMC posterior distributions
-do iparam = 1, npp
-  do ibin = 1, n_bins+1
-    call bins_csv%get(ibin,iparam,posterior_binedges(ibin, iparam),stat_ok)
-    if (ibin > n_bins) cycle
-    call dens_csv%get(ibin,iparam,posterior_dens(ibin, iparam),stat_ok)
-  enddo
-enddo
 posterior_binmeans = (posterior_binedges(2:n_bins+1, :) + posterior_binedges(1:n_bins, :))/2
 
 ! build the cdf

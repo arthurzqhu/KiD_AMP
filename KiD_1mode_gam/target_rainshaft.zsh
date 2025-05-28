@@ -2,11 +2,11 @@
 
 # config of the run
 mps=("BIN_TAU")
-config_name="rainshaft"
+config_name="rainshaft_dt60"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
-KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
 nikki='target'
 # nikki=$(date +'%Y-%m-%d')
@@ -169,7 +169,7 @@ echo $mp
    fi
 
 
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -269,7 +269,7 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.         !Timestep for diagnostic output
+dg_dt=60.         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -318,6 +318,7 @@ mp_proc_dg=.true.
 initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
+kidpath='$KiD_path'
 !l_diag_nu=.false.
 moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /
