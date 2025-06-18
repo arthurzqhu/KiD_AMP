@@ -98,11 +98,11 @@ end subroutine read_netcdf
 ! ----------------------------------------------------------
 
 subroutine load_latinhc(n_ppe)
-use parameters, only: lsample, aero_N_init, Dm_init
+use parameters, only: lsample, aero_N_init, Dm_init, Nd_init
 use switches, only: wctrl
 use namelists, only: irealz, Na_max, Na_min, w_max, w_min, lhs_path, &
                      l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
-                     Dm_min, Dm_max, n_init
+                     Dm_min, Dm_max, n_init, Nd_min, Nd_max
 use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
 use module_lhc, only: write_lhc_nc
   
@@ -128,13 +128,19 @@ print*, 'loading LHS:', filename
 varname = 'lhs_sample'
 call read_netcdf(lsample, filename, varname)
 
-if (Dm_min>0.) then
+if (Dm_min>0. .and. Nd_min>0.) then
+  Dm_init = lsample(1, irealz) * (Dm_max - Dm_min) + Dm_min
+  Nd_init = lsample(2, irealz) * (Nd_max - Nd_min) + Nd_min
+elseif (Dm_min>0.) then
   Dm_init = lsample(1, irealz) * (Dm_max - Dm_min) + Dm_min
 elseif (Na_min>0. .and. w_min>0.) then
   ! draw a aero_N_init between Na_min and Na_max
   aero_N_init(1) = lsample(1, irealz) * (Na_max - Na_min) + Na_min
   ! draw a wctrl(1) between w_min and w_max
   wctrl(1) = lsample(2, irealz) * (w_max - w_min) + w_min
+elseif (w_min>0.) then ! only varying w
+  wctrl(1) = lsample(1, irealz) * (w_max - w_min) + w_min
+  aero_N_init(1) = (Na_max - Na_min) + Na_min
 endif
 
 end subroutine load_latinhc
@@ -176,13 +182,15 @@ if (l_ppe_condevp) then
 endif
 
 if (l_ppe_coal) then
-  pvalue_isd(n_param_nevp+n_param_condevp+1) = 10 ! a0coal
-  pvalue_isd(n_param_nevp+n_param_condevp+2) = 30 ! mtrans
-  pvalue_isd(n_param_nevp+n_param_condevp+3:n_param_nevp+n_param_condevp+n_param_coal)=2 ! the exponents
+  allocate(max_std(n_param_coal))
+  max_std(:) = 2.
+  max_std(1) = 10.
+  max_std(n_param_coal) = 10.
 
   do iparam_indproc = 1, n_param_coal
     ilsample = iparam_indproc + icoal
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp
+    pvalue_isd(iparam_allproc) = min(max_std(iparam_indproc), pvalue_isd(iparam_allproc))
     nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
@@ -197,11 +205,14 @@ if (l_ppe_sed) then
   ! pvalue_isd(n_param-1) = 30 ! mlim2
 
   allocate(max_std(n_param_sed))
-  max_std = [30,10,2,2,2,2,2,2,2,2,2]
+  max_std(:) = 2.
+  max_std(1) = 30.
+  max_std(n_param_sed) = 30.
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
     pvalue_isd(iparam_allproc) = min(max_std(iparam_indproc), pvalue_isd(iparam_allproc))
+    ! pvalue_isd(iparam_allproc) = max_std(iparam_indproc)
     nudge_diff = (lsample(ilsample+n_init,irealz)-.5)*2*pvalue_isd(iparam_allproc)*deflation_factor
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
@@ -365,7 +376,8 @@ endif
 
 if (l_ppe_sed) then
   allocate(max_std(n_param_sed))
-  max_std = [50,30,2,2,2,2,2,2,2,2,2]
+  ! max_std = [50,30,2,2,2,2,2,2,2,2,2]
+  max_std = [30,30,30,30,2,2,2,2,2,2,2,2,2,2,30]
   call load_pymc(params_sed, max_std, lsample(ised+1:ised+n_param_sed, irealz), n_param_sed, pymc_filedirs%sed_dir)
   deallocate(max_std)
   params_save(n_param_nevp+n_param_condevp+n_param_coal+1:n_param) = &
@@ -449,7 +461,7 @@ subroutine draw_mvnormal(posterior, nchain, ndraw, n_param, max_std, trunc_lhs, 
   cappedCov = cov
 
   !- 3) inflate covariance
-  inflCov = cov*ndraw
+  inflCov = cov*ndraw**(0.75)
   do i = 1, n_param
     if (inflCov(i,i) > 0.) then
       inflStd(i) = sqrt(inflCov(i,i))

@@ -2,7 +2,7 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="rainshaft_evapcoal"
+config_name="box_coal"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
@@ -14,14 +14,14 @@ s_sample_dist="lhs"
 # lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
 lhs_path="${KiD_path}lhs_nc"
 # param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
-param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
+param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
 # posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_narrow_N10000_dt300_r0_param_psd_narrow.nc"
 posterior_path="/pscratch/sd/a/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_orig_r1_N10000_dt300_post.nc"
 
 l_ppe_nevp=".false."
 l_ppe_condevp=".false."
 l_ppe_coal=".true."
-l_ppe_sed=".true."
+l_ppe_sed=".false."
 
 # initial condition for all cases
 cim3=0.
@@ -39,9 +39,9 @@ t1=3600.
 t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
-l_nuc_cond_s=1
+l_nuc_cond_s=0
 l_coll_s=1
-l_sed_s=1
+l_sed_s=0
 l_adv_s=0
 
 # []==if, &&==then, ||=else
@@ -167,8 +167,8 @@ echo $mp
 
 
    # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
-   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
+   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
+   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -181,7 +181,7 @@ echo $mp
          mkdir -p $outdir
       fi
       echo ${config_name}_${mp}
-      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${4}.nml
+      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${6}.nml
       cat > $nml_fn << END
 &mphys
 ! hydrometeor names
@@ -282,11 +282,13 @@ l_ppe=.true.
 n_init=1
 s_sample_dist="$s_sample_dist"
 posterior_path="$posterior_path"
-n_ppe=$3
-irealz=$4
+n_ppe=$5
+irealz=$6
 deflation_factor=1.
-Dm_min=$1
+Dm_min=$1 ! in um # in um
 Dm_max=$2
+Nd_min=$3 ! in 1/cc
+Nd_max=$4
 Na_min=0.
 Na_max=0.
 w_min=0.
@@ -327,7 +329,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin:l}'
 bintype='${bintype:l}'
 mp_proc_dg=.true.
-initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
+initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
 kidpath='${KiD_path}'

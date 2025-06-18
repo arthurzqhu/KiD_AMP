@@ -1008,8 +1008,8 @@ real, dimension(nz,nx,max_nbins) :: ffcd_mass2d, ffcd_num2d
 integer, parameter :: offset=1 ! 1 = no microphysics on the bottom level
 real(8) :: inf=huge(sq(1,1,1))
 real(8) :: g_fall, kk03x, kk3xy, m3(nz), m0(nz), mx(nz), my(nz), mscale=1d-12, &
-  V_nc(nz), V_qc(nz), V_qx(nz), m3_3d(nx,nz,max_nbins), m0_3d(nx,nz,max_nbins),&
-  V_qy(nz), mm, mtilde, meand(max_nbins), m0_diag, m3_diag, mk
+  V_M0(nz), V_M3(nz), V_Mx(nz), m3_3d(nx,nz,max_nbins), m0_3d(nx,nz,max_nbins),&
+  V_My(nz), mm, mtilde, meand(max_nbins), m0_diag, m3_diag, mk
 real(8), allocatable :: mom_fall(:,:,:), cfall(:,:,:), ccond(:,:,:), cevap(:,:,:), ccoal(:,:,:), &
   act(:,:,:)
 integer :: mom
@@ -1257,34 +1257,34 @@ if (dosedimentation) then
 !             kk3xy=m3(k)**(2*(momy-momx)/(momy-3))*my(k)**(2*(momx-3)/(momy-3))/mx(k)**2 ! convert qc from mass mix ratio to M3
 
 !             ! all units below are m/s 
-!             V_nc(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!             V_M0(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
 !               (kk03x**bx0fall*kk3xy**by0fall)
-!             V_qc(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!             V_M3(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
 !               (kk03x**bx3fall*kk3xy**by3fall)
-!             V_qx(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!             V_Mx(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
 !               (kk03x**bxxfall*kk3xy**byxfall)
-!             V_qy(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
+!             V_My(k) = g_fall*afall*mtilde**bmfall/(mtilde**bmfall+mlim**bmfall)* &
 !               (kk03x**bxyfall*kk3xy**byyfall)
 
 !             ! print*, 'meand', meand
 !             ! print*, 'diams', diams
 !             ! print*, 'test', (amkorig(j,k,:)/ankorig(j,k,:)*QtoM3)**(1./3.)
 
-!             V_nc(k) = min(V_nc(k),9.1)
-!             V_qc(k) = min(V_qc(k),9.1)
-!             V_qx(k) = min(V_qx(k),9.1)
-!             V_qy(k) = min(V_qy(k),9.1)
+!             V_M0(k) = min(V_M0(k),9.1)
+!             V_M3(k) = min(V_M3(k),9.1)
+!             V_Mx(k) = min(V_Mx(k),9.1)
+!             V_My(k) = min(V_My(k),9.1)
 
 !             if (k==kkp) then
-!               proc_lmass = -V_qc(k)*m3(k)*M3toq*rho(k)/dzn(k)*dt/rho(k)
-!               proc_lnum  = -V_nc(k)*m0(k)*rho(k)/dzn(k)*dt/rho(k)
-!               proc_lmx   = -V_qx(k)*mx(k)*rho(k)/dzn(k)*dt/rho(k)
-!               proc_lmy   = -V_qy(k)*my(k)*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lmass = -V_M3(k)*m3(k)*M3toq*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lnum  = -V_M0(k)*m0(k)*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lmx   = -V_Mx(k)*mx(k)*rho(k)/dzn(k)*dt/rho(k)
+!               proc_lmy   = -V_My(k)*my(k)*rho(k)/dzn(k)*dt/rho(k)
 !             else
-!               proc_lmass = (V_qc(k+1)*m3(k+1)*M3toq*rho(k+1)-V_qc(k)*m3(k)*M3toq*rho(k))/dzn(k)*dt/rho(k)
-!               proc_lnum  = (V_nc(k+1)*m0(k+1)*rho(k+1)-V_nc(k)*m0(k)*rho(k))/dzn(k)*dt/rho(k)
-!               proc_lmx   = (V_qx(k+1)*mx(k+1)*rho(k+1)-V_qx(k)*mx(k)*rho(k))/dzn(k)*dt/rho(k)
-!               proc_lmy   = (V_qy(k+1)*my(k+1)*rho(k+1)-V_qy(k)*my(k)*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lmass = (V_M3(k+1)*m3(k+1)*M3toq*rho(k+1)-V_M3(k)*m3(k)*M3toq*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lnum  = (V_M0(k+1)*m0(k+1)*rho(k+1)-V_M0(k)*m0(k)*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lmx   = (V_Mx(k+1)*mx(k+1)*rho(k+1)-V_Mx(k)*mx(k)*rho(k))/dzn(k)*dt/rho(k)
+!               proc_lmy   = (V_My(k+1)*my(k+1)*rho(k+1)-V_My(k)*my(k)*rho(k))/dzn(k)*dt/rho(k)
 !             endif
 
 
@@ -1952,7 +1952,7 @@ endif
                 ccoal(k,j,imom) = ccoal(k,j,imom) + DIEND(L)
               case(3)
                 ccond(k,j,imom) = ccond(k,j,imom) + DIEMC(L)*QtoM3
-                ccoal(k,j,imom) = ccoal(k,j,imom) + DIEMD(L)*QtoM3
+                ccoal(k,j,imom) = 0. !ccoal(k,j,imom) + DIEMD(L)*QtoM3
               case default
                 if (m0_3d(j,k,l) > 0. .and. m3_3d(j,k,l) > 0.) then
                   m0_diag = m0_3d(j,k,l)
@@ -2111,19 +2111,19 @@ ENDDO
       fieldproc=cfall(:,nx,:)
       call save_proc_dp(fieldproc,name, i_dgtime, units)
 
-      name='V_nc'
+      name='V_M0'
       field=cfall(:,nx,3)
       call save_dg(field,name, i_dgtime, units, dim='z')
 
-      name='V_qc'
+      name='V_M3'
       field=cfall(:,nx,6)
       call save_dg(field,name, i_dgtime, units, dim='z')
 
-      name='V_qx'
+      name='V_Mx'
       field=cfall(:,nx,9)
       call save_dg(field,name, i_dgtime, units, dim='z')
 
-      name='V_qy'
+      name='V_My'
       field=cfall(:,nx,12)
       call save_dg(field,name, i_dgtime, units, dim='z')
 
@@ -2143,6 +2143,21 @@ ENDDO
       units='m^k/kg/s'
       fieldproc=ccoal(:,nx,:)/dt
       call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='dn_liq_coll'
+      units='1/kg/s'
+      field=-ccoal(:,nx,3)/dt
+      call save_dg(field, name, i_dgtime, units, dim='z')
+
+      name='dmx_liq_coll'
+      units='m^6/kg/s'
+      field=ccoal(:,nx,9)/dt
+      call save_dg(field, name, i_dgtime, units, dim='z')
+
+      name='dmy_liq_coll'
+      units='m^9/kg/s'
+      field=ccoal(:,nx,12)/dt
+      call save_dg(field, name, i_dgtime, units, dim='z')
 
       name='act'
       units='m^k/kg/s'

@@ -1,14 +1,15 @@
 module  module_mp_boss
 
-  use namelists, only: imomc1, imomc2, donucleation, docondensation, &
+  use namelists, only: imomc1, imomc2, l_noevaporation, donucleation, docondensation, &
     docollisions, dosedimentation,iautoq,ivTnc,ivTqc,ivTnr,ivTqr,dNc_min,dNc_max,&
     dNr_min,dNr_max,vTncmax,vTqcmax,vTnrmax,vTqrmax,extralayer,idraw
-  use parameters, only: aero_N_init
+  use parameters, only: aero_N_init, nz, nx, dg_dt, dgstart, Dm_init, Nd_init
   use diagnostics, only: i_dgtime, save_dg
   use switches, only: zctrl
   use column_variables, only: z
   use namelists, only: cloud_init, rain_init, initprof
   use micro_prm, only: QtoM3, M3toq
+  use runtime, only: time
 
 integer, parameter :: STATUS_ERROR  = -1
 integer, parameter :: STATUS_OK     = 0
@@ -83,13 +84,15 @@ real, public :: nanew1slc,nanew2slc,nanew1,nanew2
 !...............................................................
 ! constants for BOSS (read in from namelist.input)
 
-double precision, public :: a0coal,bxscoal,byscoal,bbsmall,bblarge,mtrans,bpres,&
-  bx0coal,by0coal,bxxcoal,byxcoal,bxycoal,byycoal,bmcoal,bncoal
+double precision, public :: a0coal,bxscoal,byscoal,bbsmall,bblarge,&
+  mtrans,bpres,bx0coal,by0coal,bxxcoal,byxcoal,bxycoal,byycoal,bmcoal,bncoal,&
+  bxcoal,bycoal
 
-double precision, public :: mlim,afall,bx0fall,by0fall,bx3fall,by3fall,bxxfall,byxfall,  &
-       bxyfall,byyfall,bmfall,mlim2,bnfall,mpow
+double precision, public :: mlim,afall,a0fall,a3fall,axfall,ayfall,bx0fall,by0fall,&
+  bx3fall,by3fall,bxxfall,byxfall,bxyfall,byyfall,blfall,bmfall,bnfall,mlim2,mpow,b0fall,&
+  b3fall,bxfall,byfall,expr,exprx,expry,mpow1,mpow2,mpow3
 
-double precision, public :: a0evap,aevap,bm0evap,bmevap,bx0evap,by0evap,bx3evap,by3evap, &
+double precision, public :: a0evap1,aevap,bm0evap1,bmevap,bx0evap1,by0evap1,bx3evap,by3evap, &
                    bxxevap,byxevap,bxyevap,byyevap,a0evap2,bm0evap2,bx0evap2,by0evap2
 
 real(8) :: mxscale, myscale, diam_scale, diam_scale_log, &
@@ -240,6 +243,9 @@ real(8), allocatable, dimension(:) :: pvTnr
 real :: dm_cloud_ce, dm_rain_ce, dm_ce
 integer :: timer=1
 character(1) :: Mnum
+
+logical :: l_diag ! whether or not to save diagnostics at the current time step
+
 
 contains
 
@@ -1123,7 +1129,7 @@ real                           :: lamr,mu_r,dum,dm,dum1,dum2,dum3,dum4,dum5,  &
 logical                        :: err_abort
 integer                        :: ierr
 real :: z_cbi,z_cti,d_cloudi
-double precision :: dnc,m3,m0,mx,my,mc3,mc0,mcx,mcy,mr3,mr0,mrx,mry
+double precision :: dnc,m3,m0,mx,my,mc3,mc0,mcx,mcy,mr3,mr0,mrx,mry,dn_rs
 
 !------------------------------------------------------------------------------------------!
 
@@ -1701,6 +1707,19 @@ m0 = mc0 + mr0
 mx = mcx + mrx
 my = mcy + mry
 
+if (Dm_init > 0.) then
+  if (Nd_init > 0.) then
+    m0 = Nd_init*1e6
+  else
+    m0 = 1e4
+  endif
+  m3 = (Dm_init*1e-6)**3*m0
+  dn_rs = (m3/m0*gamnu1_0/gamnu1_3)**(1./3.)
+  print*, dn_rs
+  mx = m3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momx)*gamnu1_w
+  my = m3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momy)*gamnu1_x
+endif
+
 do i = its,ite
   do k = kts,kte
     if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
@@ -1864,6 +1883,10 @@ real :: myevp
 real :: nccoal
 real :: mxcoal
 real :: mycoal
+real(8) :: nccoal2d(kts:kte,its:ite)
+real(8) :: mxcoal2d(kts:kte,its:ite)
+real(8) :: mycoal2d(kts:kte,its:ite)
+real(8), dimension(nz) :: field
 
 ! ice-phase microphysical process rates:
 !  (all Q process rates in kg kg-1 s-1)
@@ -1911,20 +1934,20 @@ real, dimension(kts:kte,its:ite)      :: inv_dzq,inv_rho,ze_ice,ze_rain,prec,acn
           rhofacr,rhofaci,xxls,xxlv,xlf,qvs,qvi,sup,supi,vtrmi1,tmparr1,mflux_r,       &
           mflux_i,invexn
 
-real, dimension(kts:kte) :: V_qit,V_nit,V_qc,V_nc,V_zit,flux_qit,flux_qc,     &
-          flux_nc,flux_nit,flux_qir,flux_bir,flux_zit,V_qx,V_qy,flux_qcx,flux_qcy, &
-          V_nc_prx, V_qc_prx, V_qx_prx, V_qy_prx
+real, dimension(kts:kte) :: V_qit,V_nit,V_M3,V_M0,V_zit,flux_qit,flux_M3,     &
+          flux_M0,flux_nit,flux_qir,flux_bir,flux_zit,V_Mx,V_My,flux_Mx,flux_My
 
 real, dimension(kts:kte) :: SCF,iSCF,SPF,iSPF,SPF_clr,Qv_cld,Qv_clr
+double precision, dimension(kts:kte) :: fluxdiv_qc_col,fluxdiv_nc_col,fluxdiv_qcx_col,fluxdiv_qcy_col
 real                     :: ssat_cld,ssat_clr,ssat_r,supi_cld,sup_cld,sup_r
 
 real    :: lammax,lammin,mu,dv,sc,dqsdt,ab,kap,epsr,epsc,xx,aaa,epsilon,sigvl,epsi_tot, &
           aact,sm1,sm2,uu1,uu2,dum,dum1,dum2,dumqv,dumqvs,dums,ratio,qsat0,dum3,dum4,  &
           dum5,dum6,rdumii,rdumjj,dqsidt,abi,dumqvi,rhop,v_impact,ri,iTc,D_c,tmp1,     &
           tmp2,inv_dum3,odt,oxx,oabi,fluxdiv_qit,fluxdiv_nit,fluxdiv_qir,fluxdiv_bir,  &
-          prt_accum,fluxdiv_qc,fluxdiv_nc,comax,dt_sub,fluxdiv_zit,D_new,Q_nuc,N_nuc, &
+          prt_accum,fluxdiv_M3,fluxdiv_M0,comax,dt_sub,fluxdiv_zit,D_new,Q_nuc,N_nuc, &
           deltaD_init,dum1c,dum4c,dum5c,dumt,qcon_satadj,qdep_satadj,sources,sinks,    &
-          timeScaleFactor,dt_left,fluxdiv_qcx,fluxdiv_qcy
+          timeScaleFactor,dt_left,fluxdiv_Mx,fluxdiv_My
 
 double precision :: tmpdbl1,tmpdbl2,tmpdbl3
 
@@ -1985,7 +2008,7 @@ real, dimension(nCat) :: dumm0,dumm3
 
 ! local parameters for SLC-BOSS
 real :: mscale = 1.e-12 ! normalization factor, units of m^3 (kl moved 121923)
-real :: mm,mtilde,kk03x,kk3xy,mxytilde
+real :: mm,mtilde,kk03x,kk3xy,mymx,mxm3,mym3
 double precision :: hh,m3,mxdum,mydum,mxcoaldum,mycoaldum,mxevpdum,myevpdum,mxcondum,mycondum,mhat
 real :: dumepsc
 
@@ -2013,6 +2036,8 @@ real :: dumepsc
 !     endif
 !    !==
 !-----------------------------------------------------------------------------------!
+
+l_diag = (mod(time,dg_dt)<dt) .and. (time>dgstart)
 
 tmp1 = uzpl(1,1)    !avoids compiler warning for unused variable 'uzpl'
 
@@ -2111,6 +2136,15 @@ diag_effi = 25.e-6 ! default value
 diag_vmi  = 0.
 diag_di   = 0.
 diag_rhoi = 0.
+
+nccoal2d(:,:) = 0.;  mxcoal2d(:,:) = 0.
+mycoal2d(:,:) = 0.
+
+fluxdiv_qc_col(:)  = 0.
+fluxdiv_nc_col(:)  = 0.
+fluxdiv_qcx_col(:) = 0.
+fluxdiv_qcy_col(:) = 0.
+
 if (present(diag_dhmax)) diag_dhmax = 0.
 if (present(diag_lami))  diag_lami  = 0.
 if (present(diag_mui))   diag_mui   = 0.
@@ -2299,10 +2333,12 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
      nccoal  = 0.;     mxcoal  = 0.
      mycoal  = 0.
 
-     fluxdiv_qc  = 0.
-     fluxdiv_nc  = 0.
-     fluxdiv_qcx = 0.
-     fluxdiv_qcy = 0.
+
+
+     fluxdiv_M3 = 0.
+     fluxdiv_M0 = 0.
+     fluxdiv_Mx = 0.
+     fluxdiv_My = 0.
 
 ! HM NOTE: no ice processes are coupled yet with SLC. This will
 ! need to be redone when ice microphysics is included.
@@ -3021,11 +3057,11 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
 
 ! if spectral width is 0, then ncevp will be 0 (since it's initialized to 0 earlier)
         if ((kk03x-1.).ge.1.e-20.and.(kk3xy-1.).ge.1.e-20) then
-          ncevp=g_evap*qc0(k,i)*a0evap*mtilde**bm0evap*(kk03x-1.)**bx0evap*(kk3xy-1.)**by0evap &
+          ncevp=g_evap*qc0(k,i)*a0evap1*mtilde**bm0evap1*(kk03x-1.)**bx0evap1*(kk3xy-1.)**by0evap1 &
             +gevap*qc0(k,i)*a0evap2*mtilde**bm0evap2*(kk03x-1.)**bx0evap2*(kk3xy-1.)**by0evap2
         end if
         ! if (abs(ncevp)>1e9) then
-        !   print*, 'before ratio', ncnuc, ncevp, g_evap, qc0(k,i),a0evap,mtilde,bm0evap,bx0evap,by0evap,kk03x,kk3xy
+        !   print*, 'before ratio', ncnuc, ncevp, g_evap, qc0(k,i),a0evap1,mtilde,bm0evap1,bx0evap1,by0evap1,kk03x,kk3xy
         ! endif
         mxevpdum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momx/3.*(dble(mm))**((momx-3.)/3.)*kk03x**bxxevap*kk3xy**byxevap
         myevpdum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momy/3.*(dble(mm))**((momy-3.)/3.)*kk03x**bxyevap*kk3xy**byyevap
@@ -3062,8 +3098,10 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
        dm_cloud_ce = (qccon - qcevp)*dt
        dm_ce = dm_cloud_ce
 
-       call save_dg(k,dm_cloud_ce,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
-       call save_dg(k,dm_ce,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+       if (l_diag) then
+         call save_dg(k,dm_cloud_ce,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
+         call save_dg(k,dm_ce,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+       endif
 
      iice_loop_depsub:  do iice = 1,nCat
 
@@ -3150,43 +3188,27 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
         mm=(6./(pi*rhow)*qc(k,i))/qc0(k,i) ! convert qc from mass mix ratio to M3
         mtilde=mm/mscale
         m3=qc(k,i)*QtoM3
+        mxm3=(mxdum/m3)/diam_scale**(momx-3)
+        mym3=(mydum/m3)/diam_scale**(momy-3)
         kk03x=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
         kk3xy=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
 
-        ! if (l_bmncoal) then
-        !   hh=a0coal*mtilde**bmcoal*qc0(k,i)**bncoal
-        !   nccoal=hh*dble(kk03x)**dble(bx0coal)*dble(kk3xy)**dble(by0coal)
-        !   mxcoaldum=hh*dble(kk03x)**dble(bxxcoal)*dble(kk3xy)**dble(byxcoal)*(2.**(momx/3.)-2.)*(dble(mm))**(momx/3.)
-        !   mycoaldum=hh*dble(kk03x)**dble(bxycoal)*dble(kk3xy)**dble(byycoal)*(2.**(momy/3.)-2.)*(dble(mm))**(momy/3.)
-        !   ! if (k==60) then
-        !   !   print*, hh
-        !   !   print*, a0coal, mtilde, bmcoal, qc0(k,i), bncoal
-        !   !   print*, mxcoaldum
-        !   !   stop
-        !   ! endif
-        ! else
-          mhat=mtilde*kk03x**bxscoal*kk3xy**byscoal
-          hh=pres(k,i)**bpres*a0coal*(((dble(mhat))**bbsmall+mtrans**bbsmall)**(bblarge/bbsmall)-mtrans**bblarge)*qc0(k,i)**2
+        mhat=mtilde*kk03x**bxscoal*kk3xy**byscoal
+        ! hh=a0coal*qc0(k,i)**2*mtilde**bmcoal*mxm3**bxcoal*mym3**bycoal
+        hh=a0coal*(((dble(mhat))**bbsmall+mtrans**bbsmall)**(bblarge/bbsmall)-mtrans**bblarge)*qc0(k,i)**2
 
-          ! NOTE:all tendencies are added to the respective moments, so nccoal must be < 0 
-          nccoal=hh*(2.**(0./3.)-2.)*dble(mm)**(0./3.)*         dble(kk03x)**dble(bx0coal)*dble(kk3xy)**dble(by0coal)
-          mxcoaldum=hh*(2.**(momx/3.)-2.)*(dble(mm))**(momx/3.)*dble(kk03x)**dble(bxxcoal)*dble(kk3xy)**dble(byxcoal)
-          mycoaldum=hh*(2.**(momy/3.)-2.)*(dble(mm))**(momy/3.)*dble(kk03x)**dble(bxycoal)*dble(kk3xy)**dble(byycoal)
-          ! if (k==60) then
-          !   print*, hh
-          !   print*, a0coal, mtilde, mhat, qc0(k,i)
-          !   print*, mxcoaldum
-          !   stop
-          ! endif
-        ! endif
+        ! NOTE:all tendencies are added to the respective moments, so nccoal must be < 0 
+        nccoal=hh*(2.**(0./3.)-2.)*dble(mm)**(0./3.)*         dble(kk03x)**dble(bx0coal)*dble(kk3xy)**dble(by0coal)
+        mxcoaldum=hh*(2.**(momx/3.)-2.)*(dble(mm))**(momx/3.)*dble(kk03x)**dble(bxxcoal)*dble(kk3xy)**dble(byxcoal)
+        mycoaldum=hh*(2.**(momy/3.)-2.)*(dble(mm))**(momy/3.)*dble(kk03x)**dble(bxycoal)*dble(kk3xy)**dble(byycoal)
 
 ! now normalize mx and my rates and convert to single precision
         mxcoal=real(mxcoaldum/mxscale)
         mycoal=real(mycoaldum/myscale)
 
-       call save_dg(k,-nccoal,'dn_liq_coll',i_dgtime,units='1/kg/s',dim='z')
-       call save_dg(k,mxcoaldum,'dmx_liq_coll',i_dgtime,units='m^x/kg/s',dim='z')
-       call save_dg(k,mycoaldum,'dmy_liq_coll',i_dgtime,units='1/kg/s',dim='z')
+        nccoal2d(k,1) = - nccoal
+        mxcoal2d(k,1) = mxcoaldum
+        mycoal2d(k,1) = mycoaldum
 
      end if ! liquid mass > qsmall
 
@@ -3301,8 +3323,10 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
         myevp = myevp*ratio
      endif
 
-     call save_dg(k,ncnuc,'dn_liq_nuc',i_dgtime,units='1/kg/s',dim='z')
-     call save_dg(k,ncevp,'dn_liq_evap',i_dgtime,units='1/kg/s',dim='z')
+     if (l_diag) then
+       call save_dg(k,ncnuc,'dn_liq_nuc',i_dgtime,units='1/kg/s',dim='z')
+       call save_dg(k,ncevp,'dn_liq_evap',i_dgtime,units='1/kg/s',dim='z')
+     endif
 
 
  !-- Limit ice process rates to prevent overdepletion of sources such that
@@ -3584,6 +3608,11 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
    mynuc = 0.
  endif
 
+ if (l_noevaporation) then
+   ncevp = 0.; qcevp = 0.
+   mxevp = 0.; myevp = 0.
+ endif
+
  if (.not. docondensation) then
    qccon = 0.; mxcon = 0.
    mycon = 0.; qcevp = 0.
@@ -3645,6 +3674,15 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
 555    continue
 
   enddo k_loop_main
+
+  if (l_diag) then
+    field=nccoal2d(:,1)
+    call save_dg(field,'dn_liq_coll',i_dgtime,'1/kg/s',dim='z')
+    field=mxcoal2d(:,1)
+    call save_dg(field,'dmx_liq_coll',i_dgtime,'m^x/kg/s',dim='z')
+    field=mycoal2d(:,1)
+    call save_dg(field,'dmy_liq_coll',i_dgtime,'m^y/kg/s',dim='z')
+  endif
 
 !-- for sedimentation-only tests:
 ! 6969 continue
@@ -3732,10 +3770,10 @@ if (.not. dosedimentation) goto 1250
         substep_sedi_c2: do while (dt_left.gt.1.e-4)
 
            comax  = 0.
-           V_qc(:) = 0.
-           V_nc(:) = 0.
-           V_qx(:) = 0.
-           V_qy(:) = 0.
+           V_M3(:) = 0.
+           V_M0(:) = 0.
+           V_Mx(:) = 0.
+           V_My(:) = 0.
 
            kloop_sedi_c2: do k = k_qxtop,k_qxbot,-kdir
 
@@ -3756,48 +3794,45 @@ if (.not. dosedimentation) goto 1250
                  m3=qc(k,i)*QtoM3
                  mm=m3/qc0(k,i) ! convert qc from mass mix ratio to M3
                  mtilde=mm/mscale
-                 mxytilde=mydum/mxdum/(diam_scale**(momy-momx))
+                 mxm3=(mxdum/m3)/diam_scale**(momx-3)
+                 mymx=mydum/mxdum/(diam_scale**(momy-momx))
                  kk03x=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
                  kk3xy=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
 
 ! all units below are m/s 
-                 mpow = mtilde**bmfall
-                 expr1 = mpow
-                 expr2 = 1.
+                 mpow1 = mtilde**bmfall
+                 ! mpow2 = mxm3**bmfall
+                 ! mpow3 = mymx**bnfall
+                 ! expr  = mpow1/(mpow1+mlim**bmfall)
+                 ! exprx = mpow2/(mpow2+mlim**bmfall)
+                 ! expry = mpow3/(mpow3+mlim**bnfall)
 
-                 expr1 = mpow/(mpow+mlim**bmfall)
-                 if (l_mlim2) expr2 = mxytilde**bmfall/(mxytilde**bmfall+mlim2**bmfall)
-
-                 V_nc(k) = g_fall*afall*expr1*expr2*(kk03x**bx0fall*kk3xy**by0fall)
-                 V_qc(k) = g_fall*afall*expr1*expr2*(kk03x**bx3fall*kk3xy**by3fall)
-                 V_qx(k) = g_fall*afall*expr1*expr2*(kk03x**bxxfall*kk3xy**byxfall)
-                 V_qy(k) = g_fall*afall*expr1*expr2*(kk03x**bxyfall*kk3xy**byyfall)
+                 V_M0(k) = g_fall*afall*mpow1*(kk03x**bx0fall*kk3xy**by0fall)
+                 V_M3(k) = g_fall*afall*mpow1*(kk03x**bx3fall*kk3xy**by3fall)
+                 V_Mx(k) = g_fall*afall*mpow1*(kk03x**bxxfall*kk3xy**byxfall)
+                 V_My(k) = g_fall*afall*mpow1*(kk03x**bxyfall*kk3xy**byyfall)
 
 ! set max value
 
-                 V_nc_prx(k) = V_nc(k)
-                 V_qc_prx(k) = V_qc(k)
-                 V_qx_prx(k) = V_qx(k)
-                 V_qy_prx(k) = V_qy(k)
-                 V_nc(k) = min(V_nc(k),9.1)
-                 V_qc(k) = min(V_qc(k),9.1)
-                 V_qx(k) = min(V_qx(k),9.1)
-                 V_qy(k) = min(V_qy(k),9.1)
+                 V_M0(k) = min(V_M0(k),9.1)
+                 V_M3(k) = min(V_M3(k),9.1)
+                 V_Mx(k) = min(V_Mx(k),9.1)
+                 V_My(k) = min(V_My(k),9.1)
 
 ! old, 2-cat
-!                   V_qc(k) = acn(k,i)*gamma(4.+bcn+mu_c(k,i))*dum/(gamma(mu_c(k,i)+4.))
-!                   V_nc(k) = acn(k,i)*gamma(1.+bcn+mu_c(k,i))*dum/(gamma(mu_c(k,i)+1.))
+!                   V_M3(k) = acn(k,i)*gamma(4.+bcn+mu_c(k,i))*dum/(gamma(mu_c(k,i)+4.))
+!                   V_M0(k) = acn(k,i)*gamma(1.+bcn+mu_c(k,i))*dum/(gamma(mu_c(k,i)+1.))
 
               endif
 
 
 ! HM modified for SLC, account for qx and qy fallspeeds
 ! TO DO: check if fallspeeds monotonically increase with moment order, if so
-! then only need to check the V_qy fallspeed
-              comax = max(comax, V_nc(k)*dt_left*inv_dzq(k,i))
-              comax = max(comax, V_qc(k)*dt_left*inv_dzq(k,i))
-              comax = max(comax, V_qx(k)*dt_left*inv_dzq(k,i))
-              comax = max(comax, V_qy(k)*dt_left*inv_dzq(k,i))
+! then only need to check the V_My fallspeed
+              comax = max(comax, V_M0(k)*dt_left*inv_dzq(k,i))
+              comax = max(comax, V_M3(k)*dt_left*inv_dzq(k,i))
+              comax = max(comax, V_Mx(k)*dt_left*inv_dzq(k,i))
+              comax = max(comax, V_My(k)*dt_left*inv_dzq(k,i))
 
            enddo kloop_sedi_c2
            ! stop
@@ -3814,47 +3849,45 @@ if (.not. dosedimentation) goto 1250
 
            !-- calculate fluxes
            do k = k_temp,k_qxtop,kdir
-              flux_qc(k) = V_qc(k)*qc(k,i)*rho(k,i)
-              flux_nc(k) = V_nc(k)*qc0(k,i)*rho(k,i)
-              flux_qcx(k) = V_qx(k)*qcx(k,i)*rho(k,i)
-              flux_qcy(k) = V_qy(k)*qcy(k,i)*rho(k,i)
+              flux_M3(k) = V_M3(k)*qc(k,i)*rho(k,i)
+              flux_M0(k) = V_M0(k)*qc0(k,i)*rho(k,i)
+              flux_Mx(k) = V_Mx(k)*qcx(k,i)*rho(k,i)
+              flux_My(k) = V_My(k)*qcy(k,i)*rho(k,i)
            enddo
-           ! print*, 'V_qc', sum(V_qc)
-           ! print*, 'flux_qc', flux_qc(kbot)
+           ! print*, 'V_M3', sum(V_M3)
+           ! print*, 'flux_M3', flux_M3(kbot)
 
            !accumulated precip during time step
-           ! if (k_qxbot.eq.kbot) prt_accum = prt_accum + flux_qc(kbot)*dt_sub
+           ! if (k_qxbot.eq.kbot) prt_accum = prt_accum + flux_M3(kbot)*dt_sub
            ! FIXME: 
-           if (k_qxbot.le.kbot+1) prt_accum = prt_accum + flux_qc(kbot+1)*dt_sub
+           if (k_qxbot.le.kbot+1) prt_accum = prt_accum + flux_M3(kbot+1)*dt_sub
            !or, optimized: prt_accum = prt_accum - (k_qxbot.eq.kbot)*dt_sub
 
            !-- for top level only (since flux is 0 above)
            do k = k_qxtop,k_temp,-kdir
              if (k == k_qxtop) then
-               fluxdiv_qc = -flux_qc(k)*inv_dzq(k,i)
-               fluxdiv_nc = -flux_nc(k)*inv_dzq(k,i)
-               fluxdiv_qcx = -flux_qcx(k)*inv_dzq(k,i)
-               fluxdiv_qcy = -flux_qcy(k)*inv_dzq(k,i)
-               qc(k,i) = qc(k,i) + fluxdiv_qc*dt_sub*inv_rho(k,i)
-               qc0(k,i) = qc0(k,i) + fluxdiv_nc*dt_sub*inv_rho(k,i)
-               qcx(k,i) = qcx(k,i) + fluxdiv_qcx*dt_sub*inv_rho(k,i)
-               qcy(k,i) = qcy(k,i) + fluxdiv_qcy*dt_sub*inv_rho(k,i)
+               fluxdiv_M3 = -flux_M3(k)*inv_dzq(k,i)
+               fluxdiv_M0 = -flux_M0(k)*inv_dzq(k,i)
+               fluxdiv_Mx = -flux_Mx(k)*inv_dzq(k,i)
+               fluxdiv_My = -flux_My(k)*inv_dzq(k,i)
+               qc(k,i) = qc(k,i) + fluxdiv_M3*dt_sub*inv_rho(k,i)
+               qc0(k,i) = qc0(k,i) + fluxdiv_M0*dt_sub*inv_rho(k,i)
+               qcx(k,i) = qcx(k,i) + fluxdiv_Mx*dt_sub*inv_rho(k,i)
+               qcy(k,i) = qcy(k,i) + fluxdiv_My*dt_sub*inv_rho(k,i)
              else
-               fluxdiv_qc = (flux_qc(k+kdir) - flux_qc(k))*inv_dzq(k,i)
-               fluxdiv_nc = (flux_nc(k+kdir) - flux_nc(k))*inv_dzq(k,i)
-               fluxdiv_qcx = (flux_qcx(k+kdir) - flux_qcx(k))*inv_dzq(k,i)
-               fluxdiv_qcy = (flux_qcy(k+kdir) - flux_qcy(k))*inv_dzq(k,i)
-               qc(k,i) = qc(k,i) + fluxdiv_qc*dt_sub*inv_rho(k,i)
-               qc0(k,i) = qc0(k,i) + fluxdiv_nc*dt_sub*inv_rho(k,i)
-               qcx(k,i) = qcx(k,i) + fluxdiv_qcx*dt_sub*inv_rho(k,i)
-               qcy(k,i) = qcy(k,i) + fluxdiv_qcy*dt_sub*inv_rho(k,i)
+               fluxdiv_M3 = (flux_M3(k+kdir) - flux_M3(k))*inv_dzq(k,i)
+               fluxdiv_M0 = (flux_M0(k+kdir) - flux_M0(k))*inv_dzq(k,i)
+               fluxdiv_Mx = (flux_Mx(k+kdir) - flux_Mx(k))*inv_dzq(k,i)
+               fluxdiv_My = (flux_My(k+kdir) - flux_My(k))*inv_dzq(k,i)
+               qc(k,i) = qc(k,i) + fluxdiv_M3*dt_sub*inv_rho(k,i)
+               qc0(k,i) = qc0(k,i) + fluxdiv_M0*dt_sub*inv_rho(k,i)
+               qcx(k,i) = qcx(k,i) + fluxdiv_Mx*dt_sub*inv_rho(k,i)
+               qcy(k,i) = qcy(k,i) + fluxdiv_My*dt_sub*inv_rho(k,i)
              endif
-              call save_dg(k,fluxdiv_qc,'dm_sed',i_dgtime,units='kg/m^2/s',dim='z')
-              call save_dg(k,fluxdiv_nc,'dn_sed',i_dgtime,units='#/m^2/s',dim='z')
-              write(Mnum,'(I1)') int(momx)
-              call save_dg(k,fluxdiv_qcx*mxscale,'dm'//Mnum//'_sed',i_dgtime,units='m^'//Mnum//'/m^2/s',dim='z')
-              write(Mnum,'(I1)') int(momy)
-              call save_dg(k,fluxdiv_qcy*myscale,'dm'//Mnum//'_sed',i_dgtime,units='m^'//Mnum//'/m^2/s',dim='z')
+             fluxdiv_qc_col(k) = fluxdiv_M3
+             fluxdiv_nc_col(k) = fluxdiv_M0
+             fluxdiv_qcx_col(k) = fluxdiv_Mx*mxscale
+             fluxdiv_qcy_col(k) = fluxdiv_My*myscale
            enddo
            ! stop
 
@@ -3874,10 +3907,12 @@ if (.not. dosedimentation) goto 1250
   endif qc_present
   ! stop
 
-  call save_dg(V_nc,'V_nc',i_dgtime,units='m/s',dim='z')
-  call save_dg(V_qc,'V_qc',i_dgtime,units='m/s',dim='z')
-  call save_dg(V_qx,'V_qx',i_dgtime,units='m/s',dim='z')
-  call save_dg(V_qy,'V_qy',i_dgtime,units='m/s',dim='z')
+  if (l_diag) then
+    call save_dg(V_M0,'V_M0',i_dgtime,units='m/s',dim='z')
+    call save_dg(V_M3,'V_M3',i_dgtime,units='m/s',dim='z')
+    call save_dg(V_Mx,'V_Mx',i_dgtime,units='m/s',dim='z')
+    call save_dg(V_My,'V_My',i_dgtime,units='m/s',dim='z')
+  endif
 
 !------------------------------------------------------------------------------------------!
 ! Ice sedimentation:  (adaptivive substepping)
@@ -4704,6 +4739,17 @@ compute_type_diags: if (typeDiags_ON) then
 
 endif compute_type_diags
 
+if (l_diag) then
+  do k = kts,kte
+    call save_dg(k,fluxdiv_qc_col(k),'dm_sed',i_dgtime,units='kg/m^2/s',dim='z')
+    call save_dg(k,fluxdiv_nc_col(k),'dn_sed',i_dgtime,units='#/m^2/s',dim='z')
+    write(Mnum,'(I1)') int(momx)
+    call save_dg(k,fluxdiv_qcx_col(k),'dm'//Mnum//'_sed',i_dgtime,units='m^'//Mnum//'/m^2/s',dim='z')
+    write(Mnum,'(I1)') int(momy)
+    call save_dg(k,fluxdiv_qcy_col(k),'dm'//Mnum//'_sed',i_dgtime,units='m^'//Mnum//'/m^2/s',dim='z')
+  enddo
+endif
+
 
 !=== (end of section for diagnostic hydrometeor/precip types)
 
@@ -5042,6 +5088,7 @@ end subroutine boss_slc_main
 !print*,'spp,iparam',spp,iparam
 !......
 
+l_diag = (mod(time,dg_dt)<dt) .and. (time>dgstart)
 
  tmp1 = uzpl(1,1)    !avoids compiler warning for unused variable 'uzpl'
 
@@ -6050,9 +6097,11 @@ end subroutine boss_slc_main
        dm_rain_ce = (qrcon - qrevp)*dt
        dm_ce = dm_cloud_ce + dm_rain_ce
 
-       call save_dg(k,dm_cloud_ce,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
-       call save_dg(k,dm_rain_ce,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z')
-       call save_dg(k,dm_ce,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+       if (l_diag) then
+         call save_dg(k,dm_cloud_ce,'dm_cloud_ce',i_dgtime,units='kg/kg/s',dim='z')
+         call save_dg(k,dm_rain_ce,'dm_rain_ce',i_dgtime,units='kg/kg/s',dim='z')
+         call save_dg(k,dm_ce,'dm_ce',i_dgtime,units='kg/kg/s',dim='z')
+       endif
 
        iice_loop_depsub:  do iice = 1,nCat
 
@@ -10539,55 +10588,76 @@ call pv_file%next_row()
 call pv_file%close(stat_ok)
 
 ! convert these db values to real values
-db_idx = [1, 4, 9, 17, 18, 29, 30]
-do i = 1, size(db_idx)
-  idb = db_idx(i)
-  params_save(idb) = db_to_val(params_save(idb))
+do i = 1, n_param
+  if (index(header(i), '_db') > 0) then
+    params_save(i) = db_to_val(params_save(i))
+  endif
 enddo
 
-a0evap   = params_save(1 )
-bx0evap  = params_save(2 )
-by0evap  = params_save(3 )
-a0evap2  = params_save(4 )
-bx0evap2 = params_save(5 )
-by0evap2 = params_save(6 )
-bm0evap  = params_save(7 )
-bm0evap2 = params_save(8 )
+a0evap1  = params_save(1 )
+a0evap2  = params_save(2 )
+bm0evap1 = params_save(3 )
+bm0evap2 = params_save(4 )
+bx0evap1 = params_save(5 )
+bx0evap2 = params_save(6 )
+by0evap1 = params_save(7 )
+by0evap2 = params_save(8 )
 
 aevap    = params_save(9 )
 bmevap   = params_save(10)
 bx3evap  = params_save(11)
-by3evap  = params_save(12)
-bxxevap  = params_save(13)
-byxevap  = params_save(14)
-bxyevap  = params_save(15)
+bxxevap  = params_save(12)
+bxyevap  = params_save(13)
+by3evap  = params_save(14)
+byxevap  = params_save(15)
 byyevap  = params_save(16)
 
 a0coal   = params_save(17)
-mtrans   = params_save(18)
-bxscoal  = params_save(19)
-byscoal  = params_save(20)
-bx0coal  = params_save(21)
-by0coal  = params_save(22)
-bxxcoal  = params_save(23)
-byxcoal  = params_save(24)
-bxycoal  = params_save(25)
-byycoal  = params_save(26)
-bbsmall  = params_save(27)
-bblarge  = params_save(28)
+bblarge  = params_save(18)
+bbsmall  = params_save(19)
+bx0coal  = params_save(20)
+bxscoal  = params_save(21)
+bxxcoal  = params_save(22)
+bxycoal  = params_save(23)
+by0coal  = params_save(24)
+byscoal  = params_save(25)
+byxcoal  = params_save(26)
+byycoal  = params_save(27)
+mtrans   = params_save(28)
+
+! a0coal   = params_save(17)
+! bmcoal   = params_save(18)
+! bxcoal   = params_save(19)
+! bycoal   = params_save(20)
+! bx0coal  = params_save(21)
+! by0coal  = params_save(22)
+! bxxcoal  = params_save(23)
+! byxcoal  = params_save(24)
+! bxycoal  = params_save(25)
+! byycoal  = params_save(26)
+
+! afall    = params_save(27)
+! bmfall   = params_save(28)
+! bx0fall  = params_save(29)
+! bx3fall  = params_save(30)
+! bxxfall  = params_save(31)
+! bxyfall  = params_save(32)
+! by0fall  = params_save(33)
+! by3fall  = params_save(34)
+! byxfall  = params_save(35)
+! byyfall  = params_save(36)
 
 afall    = params_save(29)
-mlim     = params_save(30)
+bmfall   = params_save(30)
 bx0fall  = params_save(31)
-by0fall  = params_save(32)
-bx3fall  = params_save(33)
-by3fall  = params_save(34)
-bxxfall  = params_save(35)
-byxfall  = params_save(36)
-bxyfall  = params_save(37)
+bx3fall  = params_save(32)
+bxxfall  = params_save(33)
+bxyfall  = params_save(34)
+by0fall  = params_save(35)
+by3fall  = params_save(36)
+byxfall  = params_save(37)
 byyfall  = params_save(38)
-! mlim2    = params_save(39)
-bmfall   = params_save(39)
+! mlim     = params_save(39)
 
 end subroutine read_boss_slc_param
 

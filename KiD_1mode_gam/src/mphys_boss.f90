@@ -14,7 +14,7 @@ use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp
 use switches, only: l_advect,l_diverge, l_noadv_theta, l_noadv_qv
 use switches, only: zctrl
 use runtime, only: time
-use module_mp_boss
+use module_mp_boss, only: boss_2cat_init, boss_slc_init, boss_2cat_main, boss_slc_main
 ! use global_fun
 
 real, dimension(nz,nx) :: th_new,th_old,qv_new,qv_old,qitot,qirim,nitot,birim,ssat,uzpl,pres,&
@@ -55,7 +55,7 @@ scpf_on = .false.
 clbfact_dep = 1.
 clbfact_sub = 1.
 debug_on = .false.
-l_diag = (mod(time,dg_dt)<dt) .and. (time>=dgstart)
+l_diag = (mod(time,dg_dt)<dt) .and. (time>dgstart)
 
 it = time/dt
 qcs(:,:,:) = 0.
@@ -141,17 +141,28 @@ if (n_cat==1) then ! single cat
     !   call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
   endif
 
-  ! set rain source if there is one
-  if (Dm_init > 0.) then
-    i_rain_alt = nz - 1
-    rn_s = 1e4
-    rm_s = Dm_init**3*M3toq*rn_s
-    dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
-    qcs(nz-1,1,1) = rm_s
-    qcs(nz-1,1,2) = rn_s
-    qcs(nz-1,1,3) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc1)*gamnu1_w
-    qcs(nz-1,1,4) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc2)*gamnu1_x
-  endif
+  ! ! set rain source if there is one
+  ! if (Dm_init > 0.) then
+  !   if (Nd_init > 0.) then
+  !     rn_s = Nd_init*1e6
+  !   else
+  !     rn_s = 1e4
+  !   endif
+  !   rm_s = (Dm_init*1e6)**3*M3toq*rn_s
+  !   dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
+  !   qcs(nz-1,1,1) = rm_s
+  !   qcs(nz-1,1,2) = rn_s
+  !   qcs(nz-1,1,3) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc1)*gamnu1_w
+  !   qcs(nz-1,1,4) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc2)*gamnu1_x
+  ! elseif (rain_source(1) > 0.) then
+  !   rn_s = rain_source(2)
+  !   rm_s = rain_source(1)**3*M3toq*rn_s
+  !   dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
+  !   qcs(nz-1,1,1) = rm_s
+  !   qcs(nz-1,1,2) = rn_s
+  !   qcs(nz-1,1,3) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc1)*gamnu1_w
+  !   qcs(nz-1,1,4) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc2)*gamnu1_x
+  ! endif
 
   call boss_slc_main(qcs,npm,th_old,th_new,qv_old,qv_new,dt,qitot,qirim,&
     nitot,birim,ssat,uzpl,pres,dzq,it,prt_liq,prt_sol,1,nx,1, &
@@ -167,13 +178,11 @@ else ! two cat
     micro_unset = .false.
   endif
 
-  ! print*, 'bef', qrs(80,1,1:2)
   call boss_2cat_main(qcs(:,:,1),qcs(:,:,2),qrs(:,:,1),qrs(:,:,2),th_old,th_new, &
     qv_old,qv_new,dt,qitot,qirim,nitot,birim,ssat,uzpl,pres,dzq,it,prt_liq,prt_sol, &
     1,nx,1,nz,1,diag_ze,diag_effc,diag_effi,diag_vmi,diag_di,diag_rhoi,4,log_predictNc, &
     typeDiags_ON,trim(model),clbfact_dep,clbfact_sub,debug_on,scpf_on,scpf_pfrac,&
     scpf_resfact,SCF_out)
-  ! print*, 'aft', qrs(80,1,1:2)
 
 endif
 

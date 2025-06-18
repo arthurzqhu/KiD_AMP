@@ -2,26 +2,24 @@
 
 # config of the run
 mps=("boss_4m_3069")
-config_name="rainshaft_evapcoal"
+config_name="updraft_coal_varw_4ma_r2"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
-# KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
 KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="lhs"
+s_sample_dist="custom"
 # lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
 lhs_path="${KiD_path}lhs_nc"
-# param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
-param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
-# posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_narrow_N10000_dt300_r0_param_psd_narrow.nc"
-posterior_path="/pscratch/sd/a/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_orig_r1_N10000_dt300_post.nc"
+# param_val_fpath="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/CloudBOSS/param_consolid_updated.csv"
+param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL.csv"
+posterior_path="/pscratch/sd/a/arthurhu/BOSS_PPE/MCMC_posterior/updraft_coal_varw_4ma_r1_N5000_dt300_post.nc"
 
 l_ppe_nevp=".false."
 l_ppe_condevp=".false."
 l_ppe_coal=".true."
-l_ppe_sed=".true."
+l_ppe_sed=".false."
 
 # initial condition for all cases
 cim3=0.
@@ -41,8 +39,8 @@ t2=900.
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=1
-l_sed_s=1
-l_adv_s=0
+l_sed_s=0
+l_adv_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -61,6 +59,11 @@ fi
 
 isp_c=4
 isp_r=4
+
+Na_min=250
+Na_max=250
+w_min=$1
+w_max=$2
 
 # # reset oscillation time based on updraft speed to prevent overshooting
 # if [[ $((($ztop-$zct)/$w_max)) -lt $t2 && $l_adv_s -eq 1 ]]; then
@@ -168,7 +171,6 @@ echo $mp
 
    # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
    outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
-   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -278,25 +280,24 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 /
 
 &ppe
-l_ppe=.true.
 n_init=1
+l_ppe=.true.
 s_sample_dist="$s_sample_dist"
 posterior_path="$posterior_path"
 n_ppe=$3
 irealz=$4
 deflation_factor=1.
-Dm_min=$1
-Dm_max=$2
-Na_min=0.
-Na_max=0.
-w_min=0.
-w_max=0.
+Dm_min=0.
+Dm_max=0.
+Na_min=${Na_min}e6
+Na_max=${Na_max}e6
+w_min=$w_min
+w_max=$w_max
 lhs_path="$lhs_path"
 l_ppe_nevp=$l_ppe_nevp
 l_ppe_condevp=$l_ppe_condevp
 l_ppe_coal=$l_ppe_coal
 l_ppe_sed=$l_ppe_sed
-sed_dir="/global/homes/a/arthurhu/Cloud_BOSS/fall_N30000_4m_M69_RICO_indvA.nc"
 /
 
 &switch
@@ -316,10 +317,6 @@ l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
 l_boss_partition_liq=.false.
 l_boss_save_dsd=.false.
 l_getrates=.false.
-l_save_tend=.false.
-l_save_adv=.false.
-l_save_mphys=.false.
-l_save_div=.false.
 /
 
 &addcontrol

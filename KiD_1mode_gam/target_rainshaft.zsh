@@ -1,15 +1,18 @@
 #!/bin/zsh
 
 # config of the run
-mps=("BIN_TAU")
-config_name="rainshaft_dt60"
+mps=("boss_4m_3069")
+# mps=("BIN_TAU")
+config_name="rainshaft_discrete"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
-KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+# KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
-nikki='target'
-# nikki=$(date +'%Y-%m-%d')
+# nikki='target'
+nikki=$(date +'%Y-%m-%d')
+param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_RICO_simPLfall_simpleVN_r2.csv"
 
 # # initial condition for all cases
 cim3=0.
@@ -169,7 +172,8 @@ echo $mp
    fi
 
 
-   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
+   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
+   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -236,7 +240,7 @@ aero_rd_init=0.05e-6
 mom_init=0,0,0
 
 !param_val_fpath="../../CloudBOSS/${dirdep}boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
-param_val_fpath="../../Cloud_BOSS/param_consolid_fullyupdated.csv"
+param_val_fpath="$param_val_fpath"
 !param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
 
@@ -280,7 +284,7 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 
 &ppe
 l_ppe=.false.
-s_sample_dist='custom'
+s_sample_dist='lhs'
 n_ppe=2000
 irealz=1
 deflation_factor=.3

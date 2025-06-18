@@ -9,7 +9,7 @@
 module mphys_amp
 
   Use parameters, only : num_h_moments, num_h_bins, h_shape, nspecies, nz, dt &
-       , h_names, mom_units, max_char_len, nx
+       , h_names, mom_units, max_char_len, nx, Dm_init, Nd_init
   Use column_variables
   Use common_physics, only : qsaturation
   Use physconst, only : p0, r_on_cp, pi, rhow
@@ -18,7 +18,7 @@ module mphys_amp
   Use micro_prm
   Use diagnostics, only: save_dg, i_dgtime, my_save_dg_bin_dp, save_proc_dp
   Use switches, only: l_advect,l_diverge, l_noadv_theta, l_noadv_qv
-  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors, nmom_diag, moments_diag
+  Use namelists, only: bintype, ampORbin, l_noadv_hydrometeors, nmom_diag, moments_diag, rain_source
   use switches, only: zctrl
   use runtime, only: l_dgstep
   ! use global_fun

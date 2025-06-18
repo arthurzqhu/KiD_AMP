@@ -20,8 +20,8 @@ Module diagnostics
   Use switches, only: l_diverge, wctrl
 
   Use namelists, only: KiD_outdir, KiD_outfile, fileNameOut,ampORbin,nmom_diag, imomc1, imomc2, &
-    l_save_tend, l_save_adv, l_save_div, l_save_mphys
-  use micro_prm, only: QtoM3, pmomsc, rain_source
+    l_save_tend, l_save_adv, l_save_div, l_save_mphys, rain_source
+  use micro_prm, only: QtoM3, pmomsc
 
   Implicit none
 
@@ -151,7 +151,7 @@ contains
 
   subroutine query_dgstep
 
-    if(mod(time,dg_dt)<dt.and.time>=dgstart)then
+    if(mod(time,dg_dt)<dt.and.time>dgstart)then
        l_dgstep=.true.
        i_dgtime=i_dgtime+1
     else
@@ -2360,6 +2360,9 @@ contains
 
     if (Dm_init>0.) then
       status=nf90_put_att(ncid, nf90_global, 'dm', Dm_init)
+    endif
+    if (Nd_init>0.) then
+      status=nf90_put_att(ncid, nf90_global, 'Nd', Nd_init)
     endif
     if (rain_source(1)>0.) then
       status=nf90_put_att(ncid, nf90_global, 'dm', rain_source(1))

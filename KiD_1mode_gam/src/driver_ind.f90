@@ -550,12 +550,12 @@ end subroutine sbm_init
 subroutine tau_init(aer2d,dropsm2d,dropsn2d)
 
 use switches, only: zctrl
-use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins
+use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins,Dm_init,Nd_init
 use column_variables, only: z
 use micro_prm
 use mphys_tau_bin_declare, only: xk, x_bin, xkgmean
 ! use module_mp_boss
-use namelists, only: moments_diag, nmom_diag
+use namelists, only: moments_diag, nmom_diag, cloud_layer_DN
 
 implicit none
 !real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
@@ -585,6 +585,13 @@ d_cloudi=z_cti-z_cbi
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
 dnc=0.;dnr=0.
+
+Dm_init = cloud_layer_DN(1)
+Nd_init = cloud_layer_DN(2)
+
+cloud_init(2) = Nd_init*1e6
+cloud_init(1) = (Dm_init*1e-6)**3*cloud_init(2)*M3toq
+
 if (initprof .eq. 'c')  then
    if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
                              /cloud_init(2)*gamma(h_shape(1)) &
@@ -597,49 +604,6 @@ if (initprof .eq. 'c')  then
    CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
                       dnr,ffcd_mass,ffcd_num)
 endif
-
-if (l_hist_run) then
-   ! Open the CSV file
-   filename='./hist_run_prof/sbm_a200w8_400s.txt'
-   ! filenamen='./hist_run_prof/'//trim(bintype)//'n.txt'
-   open(10, file=filename, status='old', action='read', iostat=iostat)
-   if (iostat /= 0) then
-      print *, "Error opening file:", filename
-      stop
-   endif
-
-   ! open(11, file=filenamen, status='old', action='read', iostat=iostat)
-   ! if (iostat /= 0) then
-   !    print *, "Error opening file:", filenamen
-   !    stop
-   ! endif
-
-   ! Read the data from the CSV file
-   do while (.true.)
-      read(10, *, iostat=iostat) dropsm2d(num_rows+1,1,:)
-      ! read(11, *, iostat=iostat) dropsn2d(num_rows+1,1,:)
-      if (iostat /= 0) exit ! Exit the loop when there is no more data to read
-      num_rows = num_rows + 1
-      num_cols = size(dropsm2d, 3)
-      if (num_rows > max_rows) then
-         print *, "Error: Maximum number of rows exceeded"
-         stop
-      endif
-      if (num_cols > max_cols) then
-         print *, "Error: Maximum number of columns exceeded"
-         stop
-      endif
-   enddo
-
-   ! Close the CSV file
-   close(10)
-endif
-
-do k=1,nz
-   do i=1,nx
-      if (bintype .eq. 'tau') dropsn2d(k,i,:) = dropsm2d(k,i,:)/binmass
-   enddo
-enddo
 
 do i=1,nx
    do k=1,nz

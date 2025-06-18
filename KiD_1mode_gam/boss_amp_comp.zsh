@@ -1,12 +1,14 @@
 #!/bin/zsh
 
 # config of the run
+# mps=("boss_4m_3069")
 mps=("BIN_TAU")
-config_name="fullmic"
+config_name="box_coal"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
 KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
 
 nikki='target'
 # nikki=$(date +'%Y-%m-%d')
@@ -27,14 +29,16 @@ t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
-l_coll_s=1
-l_sed_s=1
+l_coll_s=0
+l_sed_s=0
 l_adv_s=1
+l_noevap_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
 [ $l_coll_s -eq 1 ] && l_coll_f='.true.' || l_coll_f='.false.'
 [ $l_sed_s -eq 1 ] && l_sed_f='.true.' || l_sed_f='.false.'
+[ $l_noevap_s -eq 1 ] && l_noevap_f='.true.' || l_sed_f='.false.'
 
 if [ "$l_adv_s" = 1 ]; then
    l_adv='.true.'
@@ -91,10 +95,10 @@ echo $mp
       imr1=0 # II moment for rain
       imr2=0 # III moment for rain
    elif [[ $mp = *boss_4m* ]]; then
-      imc1=${mp[-2]}
-      imc2=${mp[-1]}
-      imr1=${mp[-2]}
-      imr2=${mp[-1]}
+      imc1=6
+      imc2=9
+      imr1=6
+      imr2=9
    elif [[ $mp = *boss_2m* ]]; then
       imc1=0
       imc2=0
@@ -235,7 +239,7 @@ aero_rd_init=0.05e-6
 mom_init=0,0,0
 
 !param_val_fpath="../../CloudBOSS/${dirdep}boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
-param_val_fpath="../../Cloud_BOSS/param_consolid_fullyupdated.csv"
+param_val_fpath="$param_val_fpath"
 !param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
 
@@ -268,7 +272,7 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=5.         !Timestep for diagnostic output
+dg_dt=60.         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -317,6 +321,7 @@ mp_proc_dg=.true.
 initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
+kidpath='$KiD_path'
 !l_diag_nu=.false.
 moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /

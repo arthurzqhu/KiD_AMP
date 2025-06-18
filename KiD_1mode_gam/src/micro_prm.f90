@@ -4,7 +4,7 @@ use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
                     num_h_bins, ampORbin,num_aero_moments,ss_init, &
-                    rain_source, mp_proc_dg, initprof, extralayer, l_hist_run
+                    mp_proc_dg, initprof, extralayer, l_hist_run
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK, lk_cloud
 use switches, only: zctrl
 use physconst, only: pi
@@ -297,7 +297,7 @@ real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2, &
 type(network_type) :: moment2state_net
 
 ! for BOSS
-integer :: n_param_nevp = 8, n_param_condevp = 8, n_param_coal = 12, n_param_sed = 11
+integer :: n_param_nevp = 8, n_param_condevp = 8, n_param_coal = 12, n_param_sed = 10
 integer :: npp ! number of total perturbed parameters
 
 
