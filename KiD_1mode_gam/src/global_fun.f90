@@ -697,6 +697,7 @@ double precision function momk(ffcdm, ffcdn, mk, bin_i)
   use namelists, only: bintype
   use micro_prm, only: diams, col, QtoM3
   use parameters, only: max_nbins
+  use mphys_tau_bin_declare, only: dione
   double precision, allocatable, dimension(:), intent(in) :: ffcdm, ffcdn
   integer, intent(in) :: bin_i
   double precision, allocatable :: diag_m(:), diag_D(:)
@@ -709,7 +710,7 @@ double precision function momk(ffcdm, ffcdn, mk, bin_i)
     diag_m=ffcdm/ffcdn
     diag_D=(diag_m*QtoM3)**(1./3.)
     do ib=1,bins
-      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(max_nbins)) .or. (diag_D(ib)<diams(1))) then
+      if ((diag_D(ib) .ne. diag_D(ib)) .or. (diag_D(ib)>diams(max_nbins)) .or. (diag_D(ib)<dione(1))) then
         diag_D(ib)=diams(ib+bin_i-1)
       endif
     end do
