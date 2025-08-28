@@ -1,24 +1,27 @@
 #!/bin/zsh
 
 # config of the run
-mps=("boss_4m_3069")
-# mps=("BIN_TAU")
-config_name="rainshaft_discrete"
+# mps=("boss_4m")
+mps=("BIN_TAU")
+config_name="rainshaft_nevp"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
-# KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
-KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+# KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
-# nikki='target'
-nikki=$(date +'%Y-%m-%d')
-param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_RICO_simPLfall_simpleVN_r2.csv"
+nikki='target'
+# nikki=$(date +'%Y-%m-%d')
+param_val_dir="/home/arthurhu/CloudBOSS/param_csv/"
+param_val_fn="param_consolid_simPL_coal3046_4ma_hill_growth_fall3046_hill_indv_mlim_condcoal_r1.csv"
+param_val_fpath=$param_val_dir$param_val_fn
 
 # # initial condition for all cases
 cim3=0.
 cim0=0.
 rim3=0.
 rim0=0.
+momxy="46"
 
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
@@ -29,7 +32,7 @@ t1=3600.
 t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
-l_nuc_cond_s=0
+l_nuc_cond_s=1
 l_coll_s=0
 l_sed_s=1
 l_adv_s=0
@@ -49,14 +52,15 @@ else
    l_noadv_hyd='.true.'
 fi
 
-isp_c=4
-isp_r=4
+isp_c=$2
+isp_r=$2
 ia=100
 iw=1
 
 rs_dm=$1
 rs_N=1e4
 var1str=dm$rs_dm
+var2str=nu$isp_c
 
 # # reset oscillation time based on updraft speed to prevent overshooting
 # if [[ $((($ztop-$zct)/$iw)) -lt $t2 && $l_adv_s -eq 1 ]]; then
@@ -69,19 +73,20 @@ var1str=dm$rs_dm
 for ((imp=1; imp<=${#mps[@]}; imp=imp+1))
 do
 mp=${mps[$imp]}
+mp+=$momxy
 echo $mp
    if [[ $mp = 'AMP4m_SBM' ]]; then
       isp_c=2  # shape parameter for cloud
       isp_r=2  # shape parameter for rain
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
+      imc1=${momxy[1]} # II moment for cloud
+      imc2=${momxy[2]} # III moment for cloud
+      imr1=${momxy[1]} # II moment for rain
+      imr2=${momxy[2]} # III moment for rain
    elif [[ $mp = *AMP4m_TAU* ]]; then
-      imc1=${mp[-2]}
-      imc2=${mp[-1]}
-      imr1=${mp[-2]}
-      imr2=${mp[-1]}
+      imc1=${momxy[1]}
+      imc2=${momxy[2]}
+      imr1=${momxy[1]}
+      imr2=${momxy[2]}
    elif [[ $mp = 'AMP2m_SBM' ]]; then
       isp_c=$isp_c  # shape parameter for cloud
       isp_r=$isp_r  # shape parameter for rain
@@ -95,10 +100,10 @@ echo $mp
       imr1=0 # II moment for rain
       imr2=0 # III moment for rain
    elif [[ $mp = *boss_4m* ]]; then
-      imc1=${mp[-2]}
-      imc2=${mp[-1]}
-      imr1=${mp[-2]}
-      imr2=${mp[-1]}
+      imc1=${momxy[1]}
+      imc2=${momxy[2]}
+      imr1=${momxy[1]}
+      imr2=${momxy[2]}
    elif [[ $mp = *boss_2m* ]]; then
       imc1=0
       imc2=0
@@ -144,17 +149,17 @@ echo $mp
      nhb='1,1'
      n_cat=2
      momnames="'M1','M2'"
-   elif [[ $mp = 'BIN_SBM' ]]; then
+   elif [[ $mp = *BIN_SBM* ]]; then
      nhm='1,1'
      nhb='33,33'
-   elif [[ $mp = 'BIN_TAU' ]]; then
+   elif [[ $mp = *BIN_TAU* ]]; then
      nhm='2,2'
      nhb='34,1'
      momnames="'M1','M2','M3','M4'"
-     imc1=6
-     imc2=9
-     imr1=6
-     imr2=9
+     imc1=${momxy[1]}
+     imc2=${momxy[2]}
+     imr1=${momxy[1]}
+     imr2=${momxy[2]}
    fi
 
    if [[ $mp = *AMP* ]]; then
@@ -172,8 +177,8 @@ echo $mp
    fi
 
 
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
-   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
+   # outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/${mp}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/$var2str/${mp}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -185,8 +190,8 @@ echo $mp
       if [ ! -d $outdir ]; then
          mkdir -p $outdir
       fi
-      echo ${config_name}_${mp}_${var1str}
-      nml_fn="${KiD_path}namelists/jobnml/${config_name}_${mp}_${var1str}.nml"
+      echo ${config_name}_${mp}_${var1str}_${var2str}
+      nml_fn="${KiD_path}namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml"
 
       cat > $nml_fn << END
 &mphys
@@ -273,7 +278,7 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=60.         !Timestep for diagnostic output
+dg_dt=10.         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -310,7 +315,7 @@ l_truncated=.false.
 l_init_test=.false.
 l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
 l_boss_partition_liq=.true.
-l_boss_save_dsd=.false.
+l_boss_save_dsd=.true.
 l_getrates=.false.
 /
 

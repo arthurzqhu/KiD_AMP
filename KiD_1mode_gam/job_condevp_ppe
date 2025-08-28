@@ -1,0 +1,11 @@
+#!/bin/zsh
+
+Na_range=(40 500) # g/kg
+w_range=(.4 5) # 1/cc
+
+nens=5000
+
+echo $Na_range $w_range
+
+seq $nens | parallel -j 64 --workdir $PWD ./boss_condevp.zsh $nens {}
+# seq $nens | parallel -j 64 --workdir $PWD ./boss_condevp.zsh $Na_range[1] $Na_range[2] $w_range[1] $w_range[2] $nens {}

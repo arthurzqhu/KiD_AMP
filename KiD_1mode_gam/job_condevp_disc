@@ -1,0 +1,21 @@
+#!/bin/zsh
+
+Na_list=(50 100 150 200 250 300 350 400)
+w_list=(0.5 1 1.5 2 2.5 3 3.5 4)
+
+len1=${#Na_list[@]}
+len2=${#w_list[@]}
+
+nruns=$(($len1*$len2))
+
+for (( iid = 1; iid <= nruns; iid++ )); do
+
+jNa=$(($iid%$len1))
+[[ $jNa == 0 ]] && jNa=$len1
+jw=$((($iid+$len1-1)/$len1))
+
+echo $jNa $Na_list[$jNa]
+echo $jw $w_list[$jw]
+
+./target_condevp.zsh $Na_list[$jNa] $w_list[$jw] &
+done

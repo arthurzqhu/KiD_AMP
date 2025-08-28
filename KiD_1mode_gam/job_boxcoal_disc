@@ -1,0 +1,21 @@
+#!/bin/zsh
+
+qc_list=(0.03 0.06 0.117 0.229 0.448 0.876 1.71 3.35 6.54)
+Nd_list=(50 100 150 200 250 300 350 400)
+
+len1=${#qc_list[@]}
+len2=${#Nd_list[@]}
+
+nruns=$(($len1*$len2))
+
+for (( iid = 1; iid <= nruns; iid++ )); do
+
+jqc=$(($iid%$len1))
+[[ $jqc == 0 ]] && jqc=$len1
+jNd=$((($iid+$len1-1)/$len1))
+
+echo $jqc $qc_list[$jqc]
+echo $jNd $Nd_list[$jNd]
+
+./box_coal_disc.zsh $qc_list[$jqc] $Nd_list[$jNd] &
+done

@@ -3,7 +3,7 @@
 # config of the run
 # mps=("boss_4m_3069")
 mps=("BIN_TAU")
-config_name="box_coal"
+config_name="condcoal"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 

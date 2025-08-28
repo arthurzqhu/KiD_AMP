@@ -1,23 +1,28 @@
 #!/bin/zsh
 
 # config of the run
-# mps=("boss_4m_3069")
-mps=("BIN_TAU")
-config_name="box_coal"
+mps=("boss_4m")
+# mps=("BIN_TAU")
+config_name="box_coal_varqn_dt5_test"
 caselist=(101) #(101 102 103 105 106 107)
 case_num=${#caselist[@]}
 
-KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
-param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
+KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+param_val_dir="/home/arthurhu/CloudBOSS/param_csv/"
+param_val_fn="param_test.csv"
+param_val_fpath=$param_val_dir$param_val_fn
+# KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+# param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
 
-nikki='target'
-# nikki=$(date +'%Y-%m-%d')
+# nikki='target'
+nikki=$(date +'%Y-%m-%d')
 
 # # initial condition for all cases
 cim3=0.
 cim0=0.
 rim3=0.
 rim0=0.
+momxy="46"
 
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
@@ -53,9 +58,9 @@ fi
 ia=200
 iw=1
 
-dm=$1
+qc=$1
 Nd=$2
-var1str=dm$dm
+var1str=qc$qc
 var2str=Nd$Nd
 
 isp_c=4
@@ -72,19 +77,18 @@ isp_r=4
 for ((imp=1; imp<=${#mps[@]}; imp=imp+1))
 do
 mp=${mps[$imp]}
+mp+=$momxy
 echo $mp
    if [[ $mp = 'AMP4m_SBM' ]]; then
-      isp_c=2  # shape parameter for cloud
-      isp_r=2  # shape parameter for rain
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
+      imc1=${momxy[1]} # II moment for cloud
+      imc2=${momxy[2]} # III moment for cloud
+      imr1=${momxy[1]} # II moment for rain
+      imr2=${momxy[2]} # III moment for rain
    elif [[ $mp = *AMP4m_TAU* ]]; then
-      imc1=${mp[-2]}
-      imc2=${mp[-1]}
-      imr1=${mp[-2]}
-      imr2=${mp[-1]}
+      imc1=${momxy[1]}
+      imc2=${momxy[2]}
+      imr1=${momxy[1]}
+      imr2=${momxy[2]}
    elif [[ $mp = 'AMP2m_SBM' ]]; then
       isp_c=$isp_c  # shape parameter for cloud
       isp_r=$isp_r  # shape parameter for rain
@@ -98,10 +102,10 @@ echo $mp
       imr1=0 # II moment for rain
       imr2=0 # III moment for rain
    elif [[ $mp = *boss_4m* ]]; then
-      imc1=6
-      imc2=9
-      imr1=6
-      imr2=9
+      imc1=${momxy[1]}
+      imc2=${momxy[2]}
+      imr1=${momxy[1]}
+      imr2=${momxy[2]}
    elif [[ $mp = *boss_2m* ]]; then
       imc1=0
       imc2=0
@@ -147,17 +151,17 @@ echo $mp
      nhb='1,1'
      n_cat=2
      momnames="'M1','M2'"
-   elif [[ $mp = 'BIN_SBM' ]]; then
+   elif [[ $mp = BIN_SBM* ]]; then
      nhm='1,1'
      nhb='33,33'
-   elif [[ $mp = 'BIN_TAU' ]]; then
+   elif [[ $mp = BIN_TAU* ]]; then
      nhm='2,2'
      nhb='34,1'
      momnames="'M1','M2','M3','M4'"
-     imc1=6
-     imc2=9
-     imr1=6
-     imr2=9
+     imc1=${momxy[1]}
+     imc2=${momxy[2]}
+     imr1=${momxy[1]}
+     imr2=${momxy[2]}
    fi
 
    if [[ $mp = *AMP* ]]; then
@@ -175,7 +179,8 @@ echo $mp
    fi
 
 
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/$var1str/$var2str/${mp}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/$var2str/${mp}/
+   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -210,8 +215,8 @@ rain_init=${rim3},${rim0}
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
 rain_source=${rs_dm},${rs_N}
 
-!a layer of water initiated with size and number
-cloud_layer_DN=${dm},${Nd}
+!a layer of water initiated with mass and number
+cloud_layer_QN=${qc},${Nd}
 
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
@@ -278,7 +283,7 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=60.         !Timestep for diagnostic output
+dg_dt=5.         !Timestep for diagnostic output
 wctrl(1)=${iw}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -314,7 +319,7 @@ l_periodic_bound=.false.
 l_truncated=.false.
 l_init_test=.false.
 l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
-l_boss_partition_liq=.true.
+l_boss_partition_liq=.false.
 l_boss_save_dsd=.false.
 l_getrates=.false.
 /
@@ -324,7 +329,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin:l}'
 bintype='${bintype:l}'
 mp_proc_dg=.true.
-initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
+initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
 kidpath='$KiD_path'

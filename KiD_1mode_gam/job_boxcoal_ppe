@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+qc_range=(0.02 8) # g/kg
+Nd_range=(45 450) # 1/cc
+
+nens=5000
+
+echo $qc_range $Nd_range
+
+seq $nens | parallel -j 64 --workdir $PWD ./boss_box_coal.zsh $qc_range[1] $qc_range[2] $Nd_range[1] $Nd_range[2] $nens {}

@@ -1,51 +1,40 @@
 #!/bin/zsh
 
 # config of the run
-mps=("boss_4m_3046")
-config_name="rainshaft_nevp_r1"
+mps=("boss_4m")
+# mps=("BIN_TAU")
+config_name="condnuc_qn_disc_nopredictNc"
 caselist=(101) #(101 102 103 105 106 107)
+case_num=${#caselist[@]}
 
 KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+param_val_fpath="/home/arthurhu/CloudBOSS/param_csv/param_orig.csv"
 # KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+# param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
 
+# nikki='target'
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="post"
-# lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
-lhs_path="${KiD_path}lhs_nc"
-# param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
-param_val_dir="/home/arthurhu/CloudBOSS/param_csv/"
-param_val_fn="param_consolid_simPL_coal3046_4ma_hill_growth_fall3046_hill_indv_mlim_condcoal_r1.csv"
-param_val_fpath=$param_val_dir$param_val_fn
-# posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_narrow_N10000_dt300_r0_param_psd_narrow.nc"
-posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_nevp_46_momvals_N5000_dt10.0_post.nc"
-n_init=2
 
-l_ppe_nevp=".true."
-l_ppe_condevp=".false."
-l_ppe_coal=".false."
-l_ppe_sed=".true."
-
-# initial condition for all cases
+# # initial condition for all cases
 cim3=0.
 cim0=0.
-
 rim3=0.
 rim0=0.
+momxy="69"
 
 rs_dm=0. # mean-mass diameter (m), ignores the case once this is non-zero
 rs_N=0. # number mixing ratio (#/kg)
 ztop=6000. # top of the domain
 zcb=1000. # cloud base height
 zct=3000. # cloud bottom height
-t1=3600.
+t1=900.
 t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
 l_coll_s=0
-l_sed_s=1
-l_adv_s=0
-case_num=${#caselist[@]}
+l_sed_s=0
+l_adv_s=1
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -62,31 +51,40 @@ else
    l_noadv_hyd='.true.'
 fi
 
+Na=$1
+w=$2
+var1str=Na$Na
+var2str=w$w
+
+qc=0.
+Nd=0.
+
 isp_c=4
 isp_r=4
 
 # # reset oscillation time based on updraft speed to prevent overshooting
-# if [[ $((($ztop-$zct)/$w_max)) -lt $t2 && $l_adv_s -eq 1 ]]; then
-#   t2=$((($ztop-$zct)/$w_max))
-#   t1=$(($t2*4))
+# if [[ $((($ztop-$zct)/$w)) -lt $t2 && $l_adv_s -eq 1 ]]; then
+#   t2=$((($ztop-$zct)/$w))
+#   if [[ $t1 -gt $(($t2*4)) ]]; then
+#     t1=$(($t2*4))
+#   fi
 # fi
 
 for ((imp=1; imp<=${#mps[@]}; imp=imp+1))
 do
 mp=${mps[$imp]}
+mp+=$momxy
 echo $mp
    if [[ $mp = 'AMP4m_SBM' ]]; then
-      isp_c=2  # shape parameter for cloud
-      isp_r=2  # shape parameter for rain
-      imc1=4 # II moment for cloud
-      imc2=5 # III moment for cloud
-      imr1=4 # II moment for rain
-      imr2=5 # III moment for rain
+      imc1=${momxy[1]} # II moment for cloud
+      imc2=${momxy[2]} # III moment for cloud
+      imr1=${momxy[1]} # II moment for rain
+      imr2=${momxy[2]} # III moment for rain
    elif [[ $mp = *AMP4m_TAU* ]]; then
-      imc1=${mp[-2]}
-      imc2=${mp[-1]}
-      imr1=${mp[-2]}
-      imr2=${mp[-1]}
+      imc1=${momxy[1]}
+      imc2=${momxy[2]}
+      imr1=${momxy[1]}
+      imr2=${momxy[2]}
    elif [[ $mp = 'AMP2m_SBM' ]]; then
       isp_c=$isp_c  # shape parameter for cloud
       isp_r=$isp_r  # shape parameter for rain
@@ -100,10 +98,10 @@ echo $mp
       imr1=0 # II moment for rain
       imr2=0 # III moment for rain
    elif [[ $mp = *boss_4m* ]]; then
-      imc1=${mp[-2]}
-      imc2=${mp[-1]}
-      imr1=${mp[-2]}
-      imr2=${mp[-1]}
+      imc1=${momxy[1]}
+      imc2=${momxy[2]}
+      imr1=${momxy[1]}
+      imr2=${momxy[2]}
    elif [[ $mp = *boss_2m* ]]; then
       imc1=0
       imc2=0
@@ -121,6 +119,12 @@ echo $mp
      Pdep='pres_'
    else
      Pdep=''
+   fi
+
+   if [[ $mp = *oldboss_4m* ]]; then
+     dirdep='gdrive/'
+   else
+     dirdep=''
    fi
 
    if [[ $mp = *boss* ]] then
@@ -143,15 +147,17 @@ echo $mp
      nhb='1,1'
      n_cat=2
      momnames="'M1','M2'"
-   elif [[ $mp = 'BIN_SBM' ]]; then
+   elif [[ $mp = BIN_SBM* ]]; then
      nhm='1,1'
      nhb='33,33'
-   elif [[ $mp = 'BIN_TAU' ]]; then
+   elif [[ $mp = BIN_TAU* ]]; then
      nhm='2,2'
      nhb='34,1'
-     momnames="'M1','M2'"
-     imc1=6
-     imc2=9
+     momnames="'M1','M2','M3','M4'"
+     imc1=${momxy[1]}
+     imc2=${momxy[2]}
+     imr1=${momxy[1]}
+     imr2=${momxy[2]}
    fi
 
    if [[ $mp = *AMP* ]]; then
@@ -169,9 +175,8 @@ echo $mp
    fi
 
 
-   # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   # outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
-   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/$var1str/$var2str/${mp}/
+   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -183,15 +188,16 @@ echo $mp
       if [ ! -d $outdir ]; then
          mkdir -p $outdir
       fi
-      echo ${config_name}_${mp}
-      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${6}.nml
+      echo ${config_name}_${mp}_${var1str}_${var2str}
+      nml_fn="${KiD_path}namelists/jobnml/${config_name}_${mp}_${var1str}_${var2str}.nml"
+
       cat > $nml_fn << END
 &mphys
 ! hydrometeor names
 h_names='cloud','rain'
 
 !Moment names
-mom_names='M1','M2','M3','M4','M5','M6'
+mom_names=${momnames}
 
 !Initial shape parameter
 h_shape=${isp_c},${isp_r}
@@ -204,6 +210,9 @@ rain_init=${rim3},${rim0}
 
 !Constant rain source mean-mass diameter (m) and number mixing ratio (#/kg)
 rain_source=${rs_dm},${rs_N}
+
+!a layer of water initiated with mass and number
+cloud_layer_QN=${qc},${Nd}
 
 ! number of moments for each species
 !To run AMP as the bin scheme, set num_h_moments = 1 and num_h_bins = 33
@@ -227,7 +236,7 @@ log_predictNc = .false.
 ! Aerosol initialization
 num_aero_moments=1
 num_aero_bins=1
-aero_N_init=0. !or CCN at 1% SS
+aero_N_init=${Na}.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -236,9 +245,8 @@ aero_rd_init=0.05e-6
 !recommended (Adele)
 mom_init=0,0,0
 
-! param_val_fpath="../../CloudBOSS/boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
+!param_val_fpath="../../CloudBOSS/${dirdep}boss_slc_param_values_${Pdep}30${imc1}${imc2}.csv"
 param_val_fpath="$param_val_fpath"
-! param_infl_sigma_fpath="../../CloudBOSS/boss_slc_param_sigma_${Pdep}30${imc1}${imc2}.csv"
 !param_val_fpath_2cat="../../CloudBOSS/boss_2cat_param_values.csv"
 param_val_fpath_2cat="../../BOSS-drizzLES/params/boss_post_mcmcNUTS0p8_les_obsσ_rpn_d_covobsrun_lwprr.csv"
 
@@ -271,8 +279,8 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=10.0         !Timestep for diagnostic output
-wctrl(1)=0.      !Updraft speed
+dg_dt=5.         !Timestep for diagnostic output
+wctrl(1)=${w}      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
@@ -281,28 +289,17 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 /
 
 &ppe
-l_ppe=.true.
-n_init=$n_init
-s_sample_dist="$s_sample_dist"
-posterior_path="$posterior_path"
-n_ppe=$5
-irealz=$6
-deflation_factor=1.
-Dm_min=$1
-Dm_max=$2
-nu_min=$3
-nu_max=$4
+l_ppe=.false.
+s_sample_dist='custom'
+n_ppe=2000
+irealz=1
+deflation_factor=.3
 Na_min=0.
 Na_max=0.
 w_min=0.
 w_max=0.
-lhs_path="${KiD_path}lhs_nc"
-l_ppe_nevp=$l_ppe_nevp
-l_ppe_condevp=$l_ppe_condevp
-l_ppe_coal=$l_ppe_coal
-l_ppe_sed=$l_ppe_sed
-infl_factor=2.
 /
+
 
 &switch
 l_advect=${l_adv}
@@ -321,10 +318,6 @@ l_use_nn=${l_use_nn} ! whether use NN based AMP or old AMP algo
 l_boss_partition_liq=.false.
 l_boss_save_dsd=.false.
 l_getrates=.false.
-l_save_tend=.false.
-l_save_adv=.false.
-l_save_mphys=.false.
-l_save_div=.false.
 /
 
 &addcontrol
@@ -335,7 +328,7 @@ mp_proc_dg=.true.
 initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
-kidpath='${KiD_path}'
+kidpath='$KiD_path'
 !l_diag_nu=.false.
 moments_diag = -6, -3, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15
 /

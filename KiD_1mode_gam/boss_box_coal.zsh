@@ -1,22 +1,24 @@
 #!/bin/zsh
 
 # config of the run
-mps=("boss_4m_3069")
-config_name="box_coal"
+mps=("boss_4m_3046")
+config_name="box_coal_qn_4ma_hill_growth"
 caselist=(101) #(101 102 103 105 106 107)
-case_num=${#caselist[@]}
 
-# KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
-KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
+KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
+# KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
 nikki=$(date +'%Y-%m-%d')
 s_sample_dist="lhs"
-# lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
-lhs_path="${KiD_path}lhs_nc"
-# param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
-param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
-# posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_narrow_N10000_dt300_r0_param_psd_narrow.nc"
-posterior_path="/pscratch/sd/a/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_orig_r1_N10000_dt300_post.nc"
+param_val_dir="/home/arthurhu/CloudBOSS/param_csv/"
+param_val_fn="param_consolid_simPL_coal3046_4ma_hill_growth_fall3046_hill_indv_mlim.csv"
+param_val_fpath=$param_val_dir$param_val_fn
+# param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
+posterior_dir="/home/arthurhu/BOSS_PPE/MCMC_posterior/"
+posterior_fn="box_coal_qn_hill_growth_ratio_46_momvals_N2000_dt1_post.nc"
+posterior_path=$posterior_dir$posterior_fn
+# posterior_path="/pscratch/sd/a/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_orig_r1_N10000_dt300_post.nc"
+n_init=2
 
 l_ppe_nevp=".false."
 l_ppe_condevp=".false."
@@ -43,6 +45,7 @@ l_nuc_cond_s=0
 l_coll_s=1
 l_sed_s=0
 l_adv_s=0
+case_num=${#caselist[@]}
 
 # []==if, &&==then, ||=else
 [ $l_nuc_cond_s -eq 1 ] && l_nuc_cond_f='.true.' || l_nuc_cond_f='.false.'
@@ -167,8 +170,8 @@ echo $mp
 
 
    # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
-   # outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
+   # outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -268,7 +271,7 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=60.0         !Timestep for diagnostic output
+dg_dt=5.0         !Timestep for diagnostic output
 wctrl(1)=0.      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
@@ -279,26 +282,30 @@ zctrl=${zc} !zctrl(1) is the domain height, (2) and (3) specify the location to 
 
 &ppe
 l_ppe=.true.
-n_init=1
+n_init=$n_init
 s_sample_dist="$s_sample_dist"
 posterior_path="$posterior_path"
 n_ppe=$5
 irealz=$6
 deflation_factor=1.
-Dm_min=$1 ! in um # in um
-Dm_max=$2
+Dm_min=0. ! in um
+Dm_max=0.
+qc_min=$1 ! g/kg
+qc_max=$2 ! g/kg
+! nu_min=$1
+! nu_max=$2
 Nd_min=$3 ! in 1/cc
 Nd_max=$4
 Na_min=0.
 Na_max=0.
 w_min=0.
 w_max=0.
-lhs_path="$lhs_path"
+lhs_path="${KiD_path}lhs_nc"
 l_ppe_nevp=$l_ppe_nevp
 l_ppe_condevp=$l_ppe_condevp
 l_ppe_coal=$l_ppe_coal
 l_ppe_sed=$l_ppe_sed
-sed_dir="/global/homes/a/arthurhu/Cloud_BOSS/fall_N30000_4m_M69_RICO_indvA.nc"
+infl_factor=1.
 /
 
 &switch
@@ -329,7 +336,7 @@ KiD_outdir='$outdir'
 ampORbin='${ampORbin:l}'
 bintype='${bintype:l}'
 mp_proc_dg=.true.
-initprof='c' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
+initprof='i' ! 'i' for an increasing initial water profile wrt height, 'c' for constant
 l_hist_run=.false.
 extralayer=.false.
 kidpath='${KiD_path}'

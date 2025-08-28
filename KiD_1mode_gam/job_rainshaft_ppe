@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+dm_range=(40 1200)
+nu_range=(1 15)
+
+nens=5000
+
+echo $dm_range $nu_range
+
+seq $nens | parallel -j 16 --workdir $PWD ./boss_rainshaft.zsh $dm_range[1] $dm_range[2] $nu_range[1] $nu_range[2] $nens {}

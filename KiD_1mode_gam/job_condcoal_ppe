@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+Na_range=(40 450) # g/kg
+w_range=(0.4 4.5) # 1/cc
+
+nens=5000
+
+echo $Na_range $w_range
+
+seq $nens | parallel -j 64 --workdir $PWD ./boss_condcoal.zsh $Na_range[1] $Na_range[2] $w_range[1] $w_range[2] $nens {}

@@ -2,28 +2,31 @@
 
 # config of the run
 mps=("boss_4m_3046")
-config_name="rainshaft_nevp_r1"
+config_name="condcoal_r1"
 caselist=(101) #(101 102 103 105 106 107)
 
 KiD_path="/home/arthurhu/KiD_AMP/KiD_1mode_gam/"
 # KiD_path="/global/homes/a/arthurhu/KiD_AMP/KiD_1mode_gam/"
 
 nikki=$(date +'%Y-%m-%d')
-s_sample_dist="post"
-# lhs_path="/Users/arthurhu/Library/Mobile Documents/com~apple~CloudDocs/storage/postdoc/KiD_AMP/KiD_1mode_gam/lhs_nc"
-lhs_path="${KiD_path}lhs_nc"
-# param_val_fpath="/home/arthurhu/Cloud_BOSS/param_consolid_RICO.csv"
+s_sample_dist="custom"
 param_val_dir="/home/arthurhu/CloudBOSS/param_csv/"
-param_val_fn="param_consolid_simPL_coal3046_4ma_hill_growth_fall3046_hill_indv_mlim_condcoal_r1.csv"
+param_val_fn="param_consolid_simPL_coal3046_4ma_hill_growth_fall3046_hill_indv_mlim.csv"
 param_val_fpath=$param_val_dir$param_val_fn
-# posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_narrow_N10000_dt300_r0_param_psd_narrow.nc"
-posterior_path="/home/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_nevp_46_momvals_N5000_dt10.0_post.nc"
+# param_val_fpath="/global/homes/a/arthurhu/Cloud_BOSS/param_consolid_simPL_fall.csv"
+posterior_dir="/home/arthurhu/BOSS_PPE/MCMC_posterior/"
+posterior_fn="condcoal_46_momvals_N5000_dt5.0_post.nc"
+posterior_path=$posterior_dir$posterior_fn
+# posterior_path="/pscratch/sd/a/arthurhu/BOSS_PPE/MCMC_posterior/rainshaft_orig_r1_N10000_dt300_post.nc"
 n_init=2
 
-l_ppe_nevp=".true."
+n_ppe=$5
+irealz=$6
+
+l_ppe_nevp=".false."
 l_ppe_condevp=".false."
-l_ppe_coal=".false."
-l_ppe_sed=".true."
+l_ppe_coal=".true."
+l_ppe_sed=".false."
 
 # initial condition for all cases
 cim3=0.
@@ -37,14 +40,14 @@ rs_N=0. # number mixing ratio (#/kg)
 ztop=6000. # top of the domain
 zcb=1000. # cloud base height
 zct=3000. # cloud bottom height
-t1=3600.
+t1=1800.
 t2=900.
 
 # switches for nucleation/condensation, collision, sedimentation, and advection
 l_nuc_cond_s=1
-l_coll_s=0
-l_sed_s=1
-l_adv_s=0
+l_coll_s=1
+l_sed_s=0
+l_adv_s=1
 case_num=${#caselist[@]}
 
 # []==if, &&==then, ||=else
@@ -170,8 +173,8 @@ echo $mp
 
 
    # outdir=~/research/KiD_output/$nikki/$config_name/${mp}_ens${5}/
-   # outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${4}/
-   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
+   # outdir=/pscratch/sd/a/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${6}/
+   outdir=/data1/arthurhu/KiD_output/$nikki/$config_name/${mp}_ens${irealz}/
    for ((ic=1; ic<=case_num; ic++))
    do
       if [[ ${caselist[ic]} -gt 104 ]] && [[ ${caselist[ic]} -lt 200 ]]
@@ -184,7 +187,7 @@ echo $mp
          mkdir -p $outdir
       fi
       echo ${config_name}_${mp}
-      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${6}.nml
+      nml_fn=${KiD_path}namelists/jobnml/${config_name}_${mp}_ens${irealz}.nml
       cat > $nml_fn << END
 &mphys
 ! hydrometeor names
@@ -218,7 +221,7 @@ imomr1 = ${imr1}  !1st predicted rain moment
 imomr2 = ${imr2}  !2nd predicted rain moment (if 3M)
 
 !Microphysics process control
-donucleation = ${l_nuc_cond_f}
+donucleation = .true.
 docondensation = ${l_nuc_cond_f}
 docollisions = ${l_coll_f}
 dosedimentation = ${l_sed_f}
@@ -227,7 +230,7 @@ log_predictNc = .false.
 ! Aerosol initialization
 num_aero_moments=1
 num_aero_bins=1
-aero_N_init=0. !or CCN at 1% SS
+aero_N_init=200.e6 !or CCN at 1% SS
 aero_sig_init=1.4
 aero_rd_init=0.05e-6
 
@@ -271,8 +274,8 @@ icase=${caselist[ic]}
 mphys_scheme='${mp_id}'
 dt=0.5            !Timestep length (s)
 dgstart=0.0       !When to start diagnostic output
-dg_dt=10.0         !Timestep for diagnostic output
-wctrl(1)=0.      !Updraft speed
+dg_dt=5.0         !Timestep for diagnostic output
+wctrl(1)=2.      !Updraft speed
 tctrl(1)=${t1}    !Total length of simulation (s)
 tctrl(2)=${t2}     !May not be used, depends on the case. Typically the period of w oscillation
 tctrl(3)=1080.    !For cases 105-107
@@ -285,17 +288,21 @@ l_ppe=.true.
 n_init=$n_init
 s_sample_dist="$s_sample_dist"
 posterior_path="$posterior_path"
-n_ppe=$5
-irealz=$6
-deflation_factor=1.
-Dm_min=$1
-Dm_max=$2
-nu_min=$3
-nu_max=$4
-Na_min=0.
-Na_max=0.
-w_min=0.
-w_max=0.
+n_ppe=$n_ppe
+irealz=$irealz
+deflation_factor=2.
+Dm_min=0. ! in um
+Dm_max=0.
+qc_min=0. ! g/kg
+qc_max=0. ! g/kg
+! nu_min=0.
+! nu_max=0.
+Nd_min=0. ! in 1/cc
+Nd_max=0.
+Na_min=$1
+Na_max=$2
+w_min=$3
+w_max=$4
 lhs_path="${KiD_path}lhs_nc"
 l_ppe_nevp=$l_ppe_nevp
 l_ppe_condevp=$l_ppe_condevp
