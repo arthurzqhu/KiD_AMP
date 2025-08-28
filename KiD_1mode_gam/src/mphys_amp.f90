@@ -164,7 +164,7 @@ contains
        ! set the rain source to be at nz - 1
        ! cant be nz because tau does not sediment hydrometeors from the topmost layer
        i_rain_alt = nz - 1
-       rm_s=rain_source(1)**3*pi/6*rhow*rain_source(2)
+       rm_s=(rain_source(1)*1e-6)**3*pi/6*rhow*rain_source(2)
        dnr_s=(rm_s*6./3.14159/rhow/rain_source(2)*gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
 
        do j=1,nx

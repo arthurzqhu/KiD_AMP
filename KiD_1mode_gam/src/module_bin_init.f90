@@ -90,7 +90,7 @@ contains
       DO 18 L=2,LK ! constructing mass bins
         XK(L)=2.0*XK(L-1)
         XK_gr(l) = XK(l)*1.e3
-        DIONE(L)=2.0*DIONE(L-1)
+        DIONE(L)=2.0**(1/3.)*DIONE(L-1)
  18   CONTINUE
       DO 109 L=1,LK ! getting radius XKK1, diameter in μm ZRU
         XKK1(L)=((XK(L)*6./3141.59)**(1./3.))/2.

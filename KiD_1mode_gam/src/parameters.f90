@@ -70,6 +70,8 @@ module parameters
   real(wp) :: aero_sig_init(naerosol)=0.0
   real(wp) :: Dm_init=0.
   real(wp) :: Nd_init=0.
+  real(wp) :: qc_init=0.
+  real(wp) :: nu_init=0.
 
   integer :: num_h_moments(nspecies)= (/  &
         1 & ! cloud

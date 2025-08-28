@@ -550,12 +550,12 @@ end subroutine sbm_init
 subroutine tau_init(aer2d,dropsm2d,dropsn2d)
 
 use switches, only: zctrl
-use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins,Dm_init,Nd_init
+use parameters, only:nx,nz,num_h_moments,h_shape,max_nbins,qc_init,Nd_init
 use column_variables, only: z
 use micro_prm
 use mphys_tau_bin_declare, only: xk, x_bin, xkgmean
 ! use module_mp_boss
-use namelists, only: moments_diag, nmom_diag, cloud_layer_DN
+use namelists, only: moments_diag, nmom_diag, cloud_layer_QN
 
 implicit none
 !real(8),dimension(NQP) :: tcd ! tau composite distribution -ahu
@@ -564,7 +564,7 @@ real(8) :: dnc,dnr
 real(8),dimension(max_nbins) :: ffcd_mass,ffcd_num
 integer :: i,k
 real(8), dimension(nz,nx,max_nbins) :: aer2d,dropsm2d,dropsn2d
-real(8) :: z_cbi,z_cti,d_cloudi
+real(8) :: z_cbi,z_cti,d_cloudi, qc_correct_factor, nc_correct_factor
 real(8) :: infinity
 integer, parameter :: max_rows = 120  ! Maximum number of rows in the CSV file
 integer, parameter :: max_cols = 34   ! Maximum number of columns in the CSV file
@@ -585,29 +585,39 @@ d_cloudi=z_cti-z_cbi
 CALL micro_init_tau()
 !Set up initial distribution and set moment values and parameter guesses
 dnc=0.;dnr=0.
+qc_correct_factor = 1.
+nc_correct_factor = 1.
 
-Dm_init = cloud_layer_DN(1)
-Nd_init = cloud_layer_DN(2)
+qc_init = cloud_layer_QN(1)
+Nd_init = cloud_layer_QN(2)
 
 cloud_init(2) = Nd_init*1e6
-cloud_init(1) = (Dm_init*1e-6)**3*cloud_init(2)*M3toq
+cloud_init(1) = qc_init*1e-3
+
 
 if (initprof .eq. 'c')  then
-   if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
-                             /cloud_init(2)*gamma(h_shape(1)) &
-                             /gamma(h_shape(1)+3))**(1./3.)
-   if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
-                            /rain_init(2)*gamma(h_shape(2)) &
-                            /gamma(h_shape(2)+3))**(1./3.)
-   if (gamma(h_shape(1)+3) > infinity) dnc = 0.
-   if (gamma(h_shape(2)+3) > infinity) dnr = 0.
-   CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
-                      dnr,ffcd_mass,ffcd_num)
+  if(cloud_init(1)>0.)dnc = (cloud_init(1)*6./3.14159/1000. &
+    /cloud_init(2)*gamma(h_shape(1)) &
+    /gamma(h_shape(1)+3))**(1./3.)
+  if(rain_init(1)>0.)dnr = (rain_init(1)*6./3.14159/1000. &
+    /rain_init(2)*gamma(h_shape(2)) &
+    /gamma(h_shape(2)+3))**(1./3.)
+  if (gamma(h_shape(1)+3) > infinity) dnc = 0.
+  if (gamma(h_shape(2)+3) > infinity) dnr = 0.
+  CALL init_dist_tau(cloud_init(1),h_shape(1),dnc,rain_init(1),h_shape(2),&
+    dnr,ffcd_mass,ffcd_num)
+  if (sum(ffcd_mass)>0.) then
+    qc_correct_factor = cloud_init(1)/(sum(ffcd_mass)*col)
+    nc_correct_factor = cloud_init(2)/(sum(ffcd_num)*col)
+  endif
+  ffcd_mass = ffcd_mass*qc_correct_factor
+  ffcd_num = ffcd_num*nc_correct_factor
 endif
+
 
 do i=1,nx
    do k=1,nz
-      if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
+      if (z(k)>zctrl(2) .and. z(k)<=zctrl(3)) then
          if (initprof .eq. 'i') then
             if(cloud_init(1)>0.)dnc = (cloud_init(1)*(z(k)-z_cbi)/d_cloudi*6./3.14159/1000. &
                                       /cloud_init(2)*gamma(h_shape(1)) &
@@ -620,6 +630,12 @@ do i=1,nx
             CALL init_dist_tau(cloud_init(1)*(z(k)-z_cbi)/d_cloudi,&
                h_shape(1),dnc,rain_init(1)*(z(k)-z_cbi)/d_cloudi,&
                h_shape(2),dnr,ffcd_mass,ffcd_num)
+             if (sum(ffcd_mass)>0.) then
+               qc_correct_factor = cloud_init(1)*(z(k)-z_cbi)/d_cloudi/(sum(ffcd_mass)*col)
+               nc_correct_factor = cloud_init(2)/(sum(ffcd_num)*col)
+             endif
+             ffcd_mass = ffcd_mass*qc_correct_factor
+             ffcd_num = ffcd_num*nc_correct_factor
          endif
 
          dropsm2d(k,i,:)=ffcd_mass
@@ -633,22 +649,11 @@ if (extralayer) then
           gamma(h_shape(2))/gamma(h_shape(2)+3))**(1./3.)
    CALL init_dist_tau(0d0, h_shape(1), dnc, 2d-4, h_shape(2), dnr, ffcd_mass, ffcd_num)
 
-   ! ib = 31
-   ! ffcd_mass(:) = 0.
-   ! ffcd_num(:) = 0.
-   ! ffcd_num(ib) = 1d5/col
-   ! ffcd_mass(ib) = xkgmean(ib)*ffcd_num(ib)
-
-   ! do k=50,50
    do k=10,37
       dropsm2d(k,1,:) = ffcd_mass
       dropsn2d(k,1,:) = ffcd_num
    enddo
 endif
-
-! momx = imomc1
-! momy = imomc2
-! call read_boss_slc_param
 
 end subroutine tau_init
 ! }}}
@@ -1079,6 +1084,11 @@ do k=1,nz
       call calcmoms(ffcdr8_mass2d(k,j,:),ffcdr8_num2d(k,j,:),10,mc(k,j,:),mr(k,j,:))
    enddo
 enddo
+
+! if (mc(60,1,4)+mr(60,1,4)>0) then
+!   print*, 'm3, m0', mc(60,1,4)+mr(60,1,4), mc(60,1,1)+mr(60,1,1)
+!   print*, 'm6, m9', mc(60,1,7)+mr(60,1,7), mc(60,1,10)+mr(60,1,10)
+! endif
 
 ! print*, 'meand after mphys', get_meandiam(mc(40,1,4)+mr(40,1,4), mc(40,1,1)+mr(40,1,1))
 ! print*, 'mom45 after mphys', mc(40,1,5)+mr(40,1,5), mc(40,1,6)+mr(40,1,6)

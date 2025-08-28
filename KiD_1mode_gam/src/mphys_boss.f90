@@ -6,7 +6,7 @@ use column_variables
 use common_physics, only : qsaturation
 use physconst, only : p0, r_on_cp, pi, rhow
 use namelists, only: log_predictNc, l_truncated, l_init_test, n_cat, l_use_nn &
-  , l_boss_partition_liq, l_boss_save_dsd, kidpath
+  , l_boss_partition_liq, l_boss_save_dsd, kidpath, rain_source
 
 use module_hujisbm
 use micro_prm
@@ -141,28 +141,28 @@ if (n_cat==1) then ! single cat
     !   call moment2state_net % load("/Users/arthurhu/Downloads/moments_to_state_fixed_mu_nn.txt")
   endif
 
-  ! ! set rain source if there is one
-  ! if (Dm_init > 0.) then
-  !   if (Nd_init > 0.) then
-  !     rn_s = Nd_init*1e6
-  !   else
-  !     rn_s = 1e4
-  !   endif
-  !   rm_s = (Dm_init*1e6)**3*M3toq*rn_s
-  !   dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
-  !   qcs(nz-1,1,1) = rm_s
-  !   qcs(nz-1,1,2) = rn_s
-  !   qcs(nz-1,1,3) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc1)*gamnu1_w
-  !   qcs(nz-1,1,4) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc2)*gamnu1_x
-  ! elseif (rain_source(1) > 0.) then
-  !   rn_s = rain_source(2)
-  !   rm_s = rain_source(1)**3*M3toq*rn_s
-  !   dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
-  !   qcs(nz-1,1,1) = rm_s
-  !   qcs(nz-1,1,2) = rn_s
-  !   qcs(nz-1,1,3) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc1)*gamnu1_w
-  !   qcs(nz-1,1,4) = rm_s*QtoM3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+imomc2)*gamnu1_x
-  ! endif
+  ! set rain source if there is one
+  if (Dm_init > 0.) then
+    if (Nd_init > 0.) then
+      rn_s = Nd_init*1e6
+    else
+      rn_s = 1e4
+    endif
+    rm_s = (Dm_init*1e-6)**3*M3toq*rn_s
+    dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
+    qcs(nz-1,1,1) = rm_s
+    qcs(nz-1,1,2) = rn_s
+    qcs(nz-1,1,3) = rm_s*QtoM3/(dble(dn_rs)**(h_shape(1)+3)*gamnu1_3)*dble(dn_rs)**(h_shape(1)+imomc1)*gamnu1_w
+    qcs(nz-1,1,4) = rm_s*QtoM3/(dble(dn_rs)**(h_shape(1)+3)*gamnu1_3)*dble(dn_rs)**(h_shape(1)+imomc2)*gamnu1_x
+  elseif (rain_source(1) > 0.) then
+    rn_s = rain_source(2)
+    rm_s = (rain_source(1)*1e-6)**3*M3toq*rn_s
+    dn_rs = (rm_s/rn_s*gamnu1_0/gamnu1_3)**(1./3.)
+    qcs(nz-1,1,1) = rm_s
+    qcs(nz-1,1,2) = rn_s
+    qcs(nz-1,1,3) = rm_s*QtoM3/(dble(dn_rs)**(h_shape(1)+3)*gamnu1_3)*dble(dn_rs)**(h_shape(1)+imomc1)*gamnu1_w
+    qcs(nz-1,1,4) = rm_s*QtoM3/(dble(dn_rs)**(h_shape(1)+3)*gamnu1_3)*dble(dn_rs)**(h_shape(1)+imomc2)*gamnu1_x
+  endif
 
   call boss_slc_main(qcs,npm,th_old,th_new,qv_old,qv_new,dt,qitot,qirim,&
     nitot,birim,ssat,uzpl,pres,dzq,it,prt_liq,prt_sol,1,nx,1, &

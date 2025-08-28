@@ -98,19 +98,22 @@ end subroutine read_netcdf
 ! ----------------------------------------------------------
 
 subroutine load_latinhc(n_ppe)
-use parameters, only: lsample, aero_N_init, Dm_init, Nd_init
+use parameters, only: lsample, aero_N_init, Dm_init, Nd_init, qc_init, nu_init
 use switches, only: wctrl
-use namelists, only: irealz, Na_max, Na_min, w_max, w_min, lhs_path, &
+use namelists, only: Na_max, Na_min, w_max, w_min, lhs_path, &
                      l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
-                     Dm_min, Dm_max, n_init, Nd_min, Nd_max
+                     Dm_min, Dm_max, n_init, Nd_min, Nd_max, qc_min, qc_max, &
+                     nu_min, nu_max
 use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed, npp
 use module_lhc, only: write_lhc_nc
   
 integer, intent(in) :: n_ppe
+integer :: i_init
 character(len=200) :: filename
 character(len=100) :: varname
 character(len=6) :: n_ppe_str, npp_str
 logical :: file_exist
+real(8) :: qc_init_log
 
 npp = 0
 if (l_ppe_nevp) npp = npp + n_param_nevp
@@ -128,22 +131,38 @@ print*, 'loading LHS:', filename
 varname = 'lhs_sample'
 call read_netcdf(lsample, filename, varname)
 
-if (Dm_min>0. .and. Nd_min>0.) then
-  Dm_init = lsample(1, irealz) * (Dm_max - Dm_min) + Dm_min
-  Nd_init = lsample(2, irealz) * (Nd_max - Nd_min) + Nd_min
-elseif (Dm_min>0.) then
-  Dm_init = lsample(1, irealz) * (Dm_max - Dm_min) + Dm_min
-elseif (Na_min>0. .and. w_min>0.) then
-  ! draw a aero_N_init between Na_min and Na_max
-  aero_N_init(1) = lsample(1, irealz) * (Na_max - Na_min) + Na_min
-  ! draw a wctrl(1) between w_min and w_max
-  wctrl(1) = lsample(2, irealz) * (w_max - w_min) + w_min
-elseif (w_min>0.) then ! only varying w
-  wctrl(1) = lsample(1, irealz) * (w_max - w_min) + w_min
-  aero_N_init(1) = (Na_max - Na_min) + Na_min
+i_init = 0
+nu_init = -999
+
+if (nu_max > 0.) call get_latinhc_point(nu_init, i_init, nu_min, nu_max)
+if (qc_min > 0.) then
+  call get_latinhc_point(qc_init_log, i_init, log(qc_min), log(qc_max))
+  qc_init = exp(qc_init_log)
+endif
+if (Nd_min>0.) call get_latinhc_point(Nd_init, i_init, Nd_min, Nd_max)
+if (Dm_min>0.) call get_latinhc_point(Dm_init, i_init, Dm_min, Dm_max)
+if (Na_min>0.) call get_latinhc_point(aero_N_init(1), i_init, Na_min*1e6, Na_max*1e6)
+if (w_min>0.) call get_latinhc_point(wctrl(1), i_init, w_min, w_max)
+
+if (i_init /= n_init) then
+  print*, 'i_init, n_init', i_init, n_init
+  print*, 'ensemble incorrectly initiated, check namelist `n_init`, `*_min`, `*_max` values.'
+  stop
 endif
 
 end subroutine load_latinhc
+! ----------------------------------------------------------
+subroutine get_latinhc_point(val_sample, i_init, min_val, max_val)
+use parameters, only: lsample
+use namelists, only: irealz
+integer, INTENT(inout) :: i_init
+real(8), intent(out) :: val_sample
+real :: min_val, max_val
+
+i_init = i_init + 1
+val_sample = lsample(i_init, irealz) * (max_val - min_val) + min_val
+  
+end subroutine get_latinhc_point
 ! ----------------------------------------------------------
 subroutine get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
 
@@ -183,9 +202,9 @@ endif
 
 if (l_ppe_coal) then
   allocate(max_std(n_param_coal))
-  max_std(:) = 2.
-  max_std(1) = 10.
-  max_std(n_param_coal) = 10.
+  max_std(:) = 5.
+  max_std(1) = 30.
+  max_std(n_param_coal) = 30.
 
   do iparam_indproc = 1, n_param_coal
     ilsample = iparam_indproc + icoal
@@ -195,6 +214,7 @@ if (l_ppe_coal) then
     params_save(iparam_allproc) = pvalue_mean(iparam_allproc) + nudge_diff
   enddo
   ised = ilsample
+  deallocate(max_std)
 endif
 
 if (l_ppe_sed) then
@@ -206,8 +226,8 @@ if (l_ppe_sed) then
 
   allocate(max_std(n_param_sed))
   max_std(:) = 2.
-  max_std(1) = 30.
-  max_std(n_param_sed) = 30.
+  max_std(1) = 10.
+  max_std(n_param_sed-3:n_param_sed) = 10.
   do iparam_indproc = 1, n_param_sed
     ilsample = iparam_indproc + ised
     iparam_allproc = iparam_indproc + n_param_nevp + n_param_condevp + n_param_coal
@@ -296,13 +316,13 @@ end subroutine get_perturbed_params_custom
 ! ----------------------------------------------------------
 
 subroutine get_posterior(posterior_binmeans, posterior_cdf, n_bins, npp)
-use namelists, only: posterior_path
+use namelists, only: posterior_path, infl_factor
 use csv_module
 
-double precision, allocatable, dimension(:,:) :: posterior_dens, posterior_binedges, posterior_binmeans, posterior_cdf
+double precision, allocatable, dimension(:,:) :: posterior_dens, posterior_binedges, posterior_binmeans, posterior_cdf, meanval
 integer :: ilsample, ibin, npp, iparam
 logical :: stat_ok
-type(csv_file) :: dens_csv, bins_csv
+double precision :: mean
   
 allocate(posterior_dens(n_bins, npp))
 allocate(posterior_binedges(n_bins+1, npp))
@@ -313,6 +333,12 @@ call read_netcdf(posterior_binedges, posterior_path, 'bin_edges')
 call read_netcdf(posterior_dens, posterior_path, 'density')
 
 posterior_binmeans = (posterior_binedges(2:n_bins+1, :) + posterior_binedges(1:n_bins, :))/2
+do iparam = 1, npp
+  mean = sum(posterior_binmeans(:,iparam))/n_bins
+  do ibin = 1, n_bins
+    posterior_binmeans(ibin,iparam) = infl_factor*posterior_binmeans(ibin,iparam) - mean
+  enddo
+enddo
 
 ! build the cdf
 posterior_cdf(1, :) = posterior_dens(1, :)
@@ -357,7 +383,8 @@ endif
 if (l_ppe_condevp) then
   allocate(max_std(n_param_condevp))
   max_std(:) = large_val
-  call load_pymc(params_condevp, max_std, lsample(icondevp+1:icondevp+n_param_condevp, irealz), n_param_condevp, pymc_filedirs%condevp_dir)
+  call load_pymc(params_condevp, max_std, lsample(icondevp+1:icondevp+n_param_condevp, irealz), n_param_condevp, &
+    pymc_filedirs%condevp_dir)
   deallocate(max_std)
   params_save(n_param_nevp+1:n_param_nevp+n_param_condevp) = params_condevp
   icoal = icondevp + n_param_condevp; ised = icondevp + n_param_condevp

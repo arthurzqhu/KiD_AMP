@@ -1,12 +1,12 @@
 module micro_prm
-use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins, h_shape
+use parameters, only: max_nbins, num_h_moments, num_h_bins, nz,nx,split_bins, h_shape, nu_init
 use namelists, only:imomc1,imomc2,imomr1,imomr2,donucleation, &
                     docondensation,docollisions,dosedimentation, &
                     cloud_init,rain_init,bintype,num_h_moments, &
                     num_h_bins, ampORbin,num_aero_moments,ss_init, &
-                    mp_proc_dg, initprof, extralayer, l_hist_run
+                    mp_proc_dg, initprof, extralayer, l_hist_run, l_ppe
 use mphys_tau_bin_declare, only: JMINP, JMAXP, KKP, NQP, XK, dgmean, LK, lk_cloud
-use switches, only: zctrl
+use switches, only: zctrl, imphys, imphys_boss
 use physconst, only: pi
 use mod_network, only: network_type ! for ML-AMP
 
@@ -22,12 +22,12 @@ real :: w_lem(JMINP:JMAXP, KKP)
 real :: VT_TAU(LK)
 
 type qindex
-    integer :: ispecies ! Species index
-    integer :: imoment  ! moment index
- end type qindex
+  integer :: ispecies ! Species index
+  integer :: imoment  ! moment index
+end type qindex
 
- type(qindex), allocatable :: qindices(:)
- integer :: nqs ! number of qindices (possibly different from nqp)
+type(qindex), allocatable :: qindices(:)
+integer :: nqs ! number of qindices (possibly different from nqp)
 
 !*****Variables originally from RAMS*******!
 real, parameter ::                    &
@@ -297,7 +297,7 @@ real(8) :: nuterm31, nutermw1, nutermx1, nuterm32, nutermw2, nutermx2, &
 type(network_type) :: moment2state_net
 
 ! for BOSS
-integer :: n_param_nevp = 8, n_param_condevp = 8, n_param_coal = 12, n_param_sed = 10
+integer :: n_param_nevp = 8, n_param_condevp = 8, n_param_coal = 12, n_param_sed = 14
 integer :: npp ! number of total perturbed parameters
 
 
@@ -338,6 +338,13 @@ contains
 
    subroutine set_constants
      implicit none
+
+     if (l_ppe .and. nu_init >= 0) then
+       h_shape(:) = nu_init
+     else
+       nu_init = h_shape(1)
+     endif
+
      gamnu1_3 = gamma(h_shape(1)+3)
      gamnu2_3 = gamma(h_shape(2)+3)
      gamnu1_0 = gamma(h_shape(1))

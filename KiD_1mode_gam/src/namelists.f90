@@ -32,7 +32,7 @@ module namelists
   integer:: imomc1,imomc2,imomr1,imomr2,n_cat,nmom_diag
   real(8) :: ss_init
   real(8), dimension(4):: cloud_init,rain_init, rain_source ! rain_source=Dm,N
-  real(8), dimension(2) :: cloud_layer_DN
+  real(8), dimension(2) :: cloud_layer_QN
   real(8) :: ovc_factor=0.0 ! overcorrection factor
   real(8) :: rhctrl ! actually saturation ratio not relative humidity
   real(8), allocatable :: moments_diag(:)
@@ -119,7 +119,7 @@ integer, public :: idraw = 1, rand_seed
 ! ppe variables
 integer, public :: irealz, n_ppe
 real, public :: deflation_factor = 1., Na_min, Na_max, w_min, w_max, Dm_min, Dm_max, &
-  Nd_min, Nd_max
+  Nd_min, Nd_max, qc_min, qc_max, nu_min, nu_max, infl_factor
 logical :: l_save_tend, l_save_adv, l_save_div, l_save_mphys
 character(200) :: kidpath
 character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
@@ -131,7 +131,7 @@ character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
        dosedimentation,dobreakup,cloud_init,rain_init,ss_init, rain_source, &
        param_val_fpath, param_infl_sigma_fpath, log_predictNc, param_val_fpath_2cat,iautoq,ivTnc,ivTqc, &
        ivTnr,ivTqr,dNc_min,dNc_max,dNr_min,dNr_max,vTncmax,vTqcmax,vTnrmax,vTqrmax,&
-       n_cat,idraw,rand_seed,nmom_diag,cloud_layer_DN
+       n_cat,idraw,rand_seed,nmom_diag,cloud_layer_QN
 
   namelist/control/dt, dg_dt, mphys_scheme, mphys_var &
        , wctrl, zctrl, tctrl, pctrl_z, pctrl_v, pctrl_T, ipctrl &
@@ -142,7 +142,7 @@ character(200) :: nevp_dir, condevp_dir, coal_dir, sed_dir
                deflation_factor, Na_min, Na_max, w_min, w_max, &
                n_ppe, lhs_path, l_ppe_nevp, l_ppe_condevp, l_ppe_coal, l_ppe_sed, &
                Dm_min, Dm_max, n_init, nevp_dir, condevp_dir, coal_dir, sed_dir, &
-               Nd_min, Nd_max
+               Nd_min, Nd_max, qc_min, qc_max, nu_min, nu_max, infl_factor
 
   namelist/switch/l_mphys, l_advect, l_diverge, l_pupdate &
        , l_fix_qv, l_nomphys_qv, l_noadv_qv, l_posadv_qv &

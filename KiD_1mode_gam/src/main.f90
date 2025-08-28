@@ -45,10 +45,10 @@ contains
       if (l_namelists) call read_namelist
 
       call check_bintype
-      call set_constants
 
       ! the initial condition will be sampled from LH regardless of s_sample_dist
       if (l_ppe) call load_latinhc(n_ppe)
+      call set_constants
 
       ! Set up the initial fields and forcing
       if (l_input_file)then

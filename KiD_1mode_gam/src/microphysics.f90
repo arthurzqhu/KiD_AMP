@@ -865,7 +865,8 @@ use column_variables, only: dtheta_adv, dtheta_div, dqv_adv, dqv_div, dss_adv, &
 use mphys_tau_bin_declare
 use namelists, only: aero_N_init,l_advect,l_diverge,ampORbin
 use micro_prm, only: col, qindices, q_lem, th_lem, sq_lem,sth_lem, w_lem, &
-                     ffcdprev_mass, ffcdprev_num, nkr, diams, VT_TAU, M3toQ, QtoM3
+                     ffcdprev_mass, ffcdprev_num, nkr, diams, VT_TAU, M3toQ, QtoM3, &
+                     pmomsc
 use physconst, only : p0, this_r_on_cp=>r_on_cp, pi
 use module_mp_tau_bin, only: GET_FORCING, COND_new, EVAP_new, REBIN, SXY, &
                              SCONC, BREAK, MICROcheck, REFFCALC, BIN_SEDIMENT, &
@@ -1987,7 +1988,7 @@ endif
           if (ccond(k,j,6)<0) then
             cevap(k,j,:) = -ccond(k,j,:)
             ! print*, ccond(k,j,(/3,6/)), cevap(k,j,(/3,6/))
-            ccond(k,j,:) = 0.
+            ! ccond(k,j,:) = 0.
           endif
         endif
 
@@ -2120,11 +2121,11 @@ ENDDO
       call save_dg(field,name, i_dgtime, units, dim='z')
 
       name='V_Mx'
-      field=cfall(:,nx,9)
+      field=cfall(:,nx,pmomsc(3)+3)
       call save_dg(field,name, i_dgtime, units, dim='z')
 
       name='V_My'
-      field=cfall(:,nx,12)
+      field=cfall(:,nx,pmomsc(4)+3)
       call save_dg(field,name, i_dgtime, units, dim='z')
 
       name='ccond'
@@ -2144,19 +2145,44 @@ ENDDO
       fieldproc=ccoal(:,nx,:)/dt
       call save_proc_dp(fieldproc,name, i_dgtime, units)
 
+      name='dm0_cond'
+      units='1/kg/s'
+      field=ccond(:,nx,3)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='dm3_cond'
+      units='kg/kg/s'
+      field=ccond(:,nx,6)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='dmx_cond'
+      write(Mnum,'(I1)') pmomsc(3)
+      units='m^'//Mnum//'/kg/s'
+      field=ccond(:,nx,pmomsc(3)+3)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+      name='dmy_cond'
+      write(Mnum,'(I1)') pmomsc(4)
+      units='m^'//Mnum//'/kg/s'
+      field=ccond(:,nx,pmomsc(4)+3)/dt
+      call save_proc_dp(fieldproc,name, i_dgtime, units)
+
+
       name='dn_liq_coll'
       units='1/kg/s'
       field=-ccoal(:,nx,3)/dt
       call save_dg(field, name, i_dgtime, units, dim='z')
 
       name='dmx_liq_coll'
-      units='m^6/kg/s'
-      field=ccoal(:,nx,9)/dt
+      write(Mnum,'(I1)') pmomsc(3)
+      units='m^'//Mnum//'/kg/s'
+      field=ccoal(:,nx,pmomsc(3)+3)/dt
       call save_dg(field, name, i_dgtime, units, dim='z')
 
       name='dmy_liq_coll'
-      units='m^9/kg/s'
-      field=ccoal(:,nx,12)/dt
+      write(Mnum,'(I1)') pmomsc(3)
+      units='m^'//Mnum//'/kg/s'
+      field=ccoal(:,nx,pmomsc(4)+3)/dt
       call save_dg(field, name, i_dgtime, units, dim='z')
 
       name='act'
