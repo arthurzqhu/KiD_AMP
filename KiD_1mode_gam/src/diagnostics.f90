@@ -2281,6 +2281,7 @@ contains
     Use netcdf
     Use switches, only : icase
     Use namelists
+    use micro_prm, only: n_param_nevp, n_param_condevp, n_param_coal, n_param_sed
 
     character(max_char_len) :: outfile, nmlfile, outdir, name
 
@@ -2294,6 +2295,13 @@ contains
                dim2d(2), dim3d(3), tzmdim(3)
     integer, allocatable :: varid(:)
     real(8), allocatable :: field3d(:,:,:)
+
+    ! converting logical to integer to be saved in netcdf global attributes
+    integer :: l_ppe_i, & 
+               l_ppe_nevp_i, &
+               l_ppe_condevp_i, &
+               l_ppe_coal_i, &
+               l_ppe_sed_i
 
     write(6,*) 'Integration complete.'
 
@@ -2357,15 +2365,50 @@ contains
     status=nf90_put_att(ncid, nf90_global, 'comments', comments)
     status=nf90_put_att(ncid, nf90_global, 'Na', aero_N_init/1e6)
     status=nf90_put_att(ncid, nf90_global, 'w', wctrl(1))
+    status=nf90_put_att(ncid, nf90_global, 'Na_units', '1/cc')
+    status=nf90_put_att(ncid, nf90_global, 'w_units', 'm/s')
 
     if (Dm_init>0.) then
       status=nf90_put_att(ncid, nf90_global, 'dm', Dm_init)
+      status=nf90_put_att(ncid, nf90_global, 'dm_units', '\mum')
+    endif
+    if (qc_init>0.) then
+      status=nf90_put_att(ncid, nf90_global, 'qc', qc_init)
+      status=nf90_put_att(ncid, nf90_global, 'qc_units', 'g/kg')
+    endif
+    if (nu_init>0.) then
+      status=nf90_put_att(ncid, nf90_global, 'nu', nu_init)
+      status=nf90_put_att(ncid, nf90_global, 'nu_units', '')
     endif
     if (Nd_init>0.) then
       status=nf90_put_att(ncid, nf90_global, 'Nd', Nd_init)
+      status=nf90_put_att(ncid, nf90_global, 'Nd_units', '1/cc')
     endif
     if (rain_source(1)>0.) then
       status=nf90_put_att(ncid, nf90_global, 'dm', rain_source(1))
+      status=nf90_put_att(ncid, nf90_global, 'dm_units', '\mum')
+    endif
+
+    if (mphys_scheme .eq. 'boss') then
+
+      status=nf90_put_att(ncid, nf90_global, 'boss_n_param_nevp',    n_param_nevp)
+      status=nf90_put_att(ncid, nf90_global, 'boss_n_param_condevp', n_param_condevp)
+      status=nf90_put_att(ncid, nf90_global, 'boss_n_param_coal',    n_param_coal)
+      status=nf90_put_att(ncid, nf90_global, 'boss_n_param_sed',     n_param_sed)
+
+      l_ppe_i = merge(1,0,l_ppe)
+      status=nf90_put_att(ncid, nf90_global, 'boss_is_ppe', l_ppe_i)
+      if (l_ppe) then
+        l_ppe_nevp_i = merge(1,0,l_ppe_nevp)
+        l_ppe_condevp_i = merge(1,0,l_ppe_condevp)
+        l_ppe_coal_i = merge(1,0,l_ppe_coal)
+        l_ppe_sed_i = merge(1,0,l_ppe_sed)
+        status=nf90_put_att(ncid, nf90_global, 'boss_param_perturbed_nevp',    l_ppe_nevp_i)
+        status=nf90_put_att(ncid, nf90_global, 'boss_param_perturbed_condevp', l_ppe_condevp_i)
+        status=nf90_put_att(ncid, nf90_global, 'boss_param_perturbed_coal',    l_ppe_coal_i)
+        status=nf90_put_att(ncid, nf90_global, 'boss_param_perturbed_sed',     l_ppe_sed_i)
+      endif
+
     endif
 
     status=nf90_def_dim(ncid, 'time', int(n_dgtimes, kind=incdfp), timeid)
