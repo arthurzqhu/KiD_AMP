@@ -3,13 +3,14 @@ module  module_mp_boss
   use namelists, only: imomc1, imomc2, l_noevaporation, donucleation, docondensation, &
     docollisions, dosedimentation,iautoq,ivTnc,ivTqc,ivTnr,ivTqr,dNc_min,dNc_max,&
     dNr_min,dNr_max,vTncmax,vTqcmax,vTnrmax,vTqrmax,extralayer,idraw
-  use parameters, only: aero_N_init, nz, nx, dg_dt, dgstart, Dm_init, Nd_init
+  use parameters, only: aero_N_init, nz, nx, dg_dt, dgstart, qc_init, Nd_init
   use diagnostics, only: i_dgtime, save_dg
   use switches, only: zctrl
   use column_variables, only: z
-  use namelists, only: cloud_init, rain_init, initprof
+  use namelists, only: cloud_init, rain_init, initprof, cloud_layer_QN
   use micro_prm, only: QtoM3, M3toq
   use runtime, only: time
+  use mphys_tau_bin_declare, only: xk
 
 integer, parameter :: STATUS_ERROR  = -1
 integer, parameter :: STATUS_OK     = 0
@@ -71,7 +72,7 @@ real, parameter :: mu_i_max = 20.
  logical, parameter :: isstep1adj = .true.
 
 ! physical and mathematical constants
-real           :: rhosur,rhosui,ar,br,f1r,f2r,ecr,rhow,kr,kc,bimm,aimm,rin,mi0,nccnst=200.e+6,  &
+real           :: rhosur,rhosui,ar,br,f1r,f2r,ecr,rhow,kr,kc,bimm,aimm,rin,mi0,nccnst,  &
                  eci,eri,bcn,cpw,e0,cons1,cons2,cons3,cons4,cons5,cons6,cons7,         &
                  inv_rhow,qsmall,nsmall,bsmall,zsmall,cp,g,rd,rv,ep_2,inv_cp,mw,osm,   &
                  vi,epsm,rhoa,map,ma,rr,bact,inv_rm1,inv_rm2,sig1,f11,f21,sig2, &
@@ -84,19 +85,20 @@ real, public :: nanew1slc,nanew2slc,nanew1,nanew2
 !...............................................................
 ! constants for BOSS (read in from namelist.input)
 
-double precision, public :: a0coal,bxscoal,byscoal,bbsmall,bblarge,&
-  mtrans,bpres,bx0coal,by0coal,bxxcoal,byxcoal,bxycoal,byycoal,bmcoal,bncoal,&
-  bxcoal,bycoal
+double precision, public :: a0coal,axcoal,bxscoal,byscoal,bbsmall,bblarge,&
+  mtrans0,mtransx,mtransy,bpres,bx0coal,by0coal,bxxcoal,byxcoal,bxycoal,byycoal,bccoal,bmcoal,bn0coal,&
+  bnxcoal,bnycoal
 
 double precision, public :: mlim,afall,a0fall,a3fall,axfall,ayfall,bx0fall,by0fall,&
-  bx3fall,by3fall,bxxfall,byxfall,bxyfall,byyfall,blfall,bmfall,bnfall,mlim2,mpow,b0fall,&
-  b3fall,bxfall,byfall,expr,exprx,expry,mpow1,mpow2,mpow3
+  bx3fall,by3fall,bxxfall,byxfall,bxyfall,byyfall,blfall,bmfall,bnfall,mlim0,mlim3,&
+  mlimx,mlimy,mpow,b0fall,&
+  b3fall,bxfall,byfall,expr,expr0,expr3,exprx,expry,mpow1,mpow2,mpow3
 
 double precision, public :: a0evap1,aevap,bm0evap1,bmevap,bx0evap1,by0evap1,bx3evap,by3evap, &
                    bxxevap,byxevap,bxyevap,byyevap,a0evap2,bm0evap2,bx0evap2,by0evap2
 
 real(8) :: mxscale, myscale, diam_scale, diam_scale_log, &
-  m3scale_nuc, mxscale_nuc, myscale_nuc, mxscale_log, myscale_log, m3scale_log
+  mxscale_nuc, myscale_nuc, mxscale_log, myscale_log, m3scale_log
 real :: momx, momy
 
 ! integer switch for type of BOSS autoconversion (q)
@@ -420,7 +422,8 @@ inv_dNr_max = 1. / dNr_max
  cons4 = 1./(dbrk**3*pi*rhow)
  cons5 = piov6*bimm
  cons6 = piov6**2*rhow*bimm
- cons7 = 4.*piov3*rhow*(1.77e-6)**3
+ ! cons7 = 4.*piov3*rhow*(1.77e-6)**3
+ cons7 = 3.14159*3.125E-6**3*1000./6.0*1.01
 
 ! aerosol/droplet activation parameters
 ! originally for ammonium sulphate (?)
@@ -1129,7 +1132,7 @@ real                           :: lamr,mu_r,dum,dm,dum1,dum2,dum3,dum4,dum5,  &
 logical                        :: err_abort
 integer                        :: ierr
 real :: z_cbi,z_cti,d_cloudi
-double precision :: dnc,m3,m0,mx,my,mc3,mc0,mcx,mcy,mr3,mr0,mrx,mry,dn_rs
+double precision :: dnc,m3,m3local,m0,mx,my,mc3,mc0,mcx,mcy,mr3,mr0,mrx,mry,dn_rs
 
 !------------------------------------------------------------------------------------------!
 
@@ -1170,7 +1173,7 @@ max_total_Ni = 2000.e+3  !(m)
 ! iparam = 3
 
 ! droplet concentration (m-3)
-nccnst = 200.e+6
+nccnst = aero_N_init(1)
 
 ! parameters for Seifert and Beheng (2001) autoconversion/accretion
 kc     = 9.44e+9
@@ -1239,7 +1242,10 @@ cons3 = 1./(cons2*(25.e-6)**3)
 cons4 = 1./(dbrk**3*pi*rhow)
 cons5 = piov6*bimm
 cons6 = piov6**2*rhow*bimm
-cons7 = 4.*piov3*rhow*(1.77e-6)**3
+! cons7 = 4.*piov3*rhow*(1.58e-6)**3
+! now same as TAU in KiD
+! cons7 = 3.14159*3.125E-6**3*1000./6.0*1.01
+cons7 = (1.568e-6*2)**3.*M3toQ
 
 ! aerosol/droplet activation parameters (parameters for DYCOMS)
 mw     = 0.018
@@ -1707,17 +1713,15 @@ m0 = mc0 + mr0
 mx = mcx + mrx
 my = mcy + mry
 
-if (Dm_init > 0.) then
-  if (Nd_init > 0.) then
-    m0 = Nd_init*1e6
-  else
-    m0 = 1e4
-  endif
-  m3 = (Dm_init*1e-6)**3*m0
+if (cloud_layer_QN(1)>0.) then
+  qc_init = cloud_layer_QN(1)
+  Nd_init = cloud_layer_QN(2)
+endif
+
+if (Nd_init > 0.) then
+  m0 = Nd_init*1e6
+  m3 = qc_init*1e-3*QtoM3
   dn_rs = (m3/m0*gamnu1_0/gamnu1_3)**(1./3.)
-  print*, dn_rs
-  mx = m3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momx)*gamnu1_w
-  my = m3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momy)*gamnu1_x
 endif
 
 do i = its,ite
@@ -1725,16 +1729,20 @@ do i = its,ite
     if (z(k)>=zctrl(2) .and. z(k)<=zctrl(3)) then
       if (initprof .eq. 'c') then
         qcs(k,i,1) = m3*M3toq
-        qcs(k,i,3) = mx
-        qcs(k,i,4) = my
+        qcs(k,i,3) = m3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momx)*gamnu1_w
+        qcs(k,i,4) = m3/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momy)*gamnu1_x
       elseif (initprof .eq. 'i') then
-        qcs(k,i,1) = m3*(z(k)-z_cbi)/d_cloudi*M3toq
-        qcs(k,i,3) = mx*((z(k)-z_cbi)/d_cloudi)**(momx/3)
-        qcs(k,i,4) = my*((z(k)-z_cbi)/d_cloudi)**(momy/3)
+        m3local = m3*(z(k)-z_cbi)/d_cloudi
+        qcs(k,i,1) = m3local*M3toq
+        dn_rs = (m3local/m0*gamnu1_0/gamnu1_3)**(1./3.)
+        mx = m3local/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momx)*gamnu1_w
+        my = m3local/(dn_rs**(h_shape(1)+3)*gamnu1_3)*dn_rs**(h_shape(1)+momy)*gamnu1_x
+        qcs(k,i,3) = mx!*((z(k)-z_cbi)/d_cloudi)**(momx/3)
+        qcs(k,i,4) = my!*((z(k)-z_cbi)/d_cloudi)**(momy/3)
       endif
       qcs(k,i,2) = m0
-
     endif
+
   enddo
 
   if (extralayer) then
@@ -2008,8 +2016,8 @@ real, dimension(nCat) :: dumm0,dumm3
 
 ! local parameters for SLC-BOSS
 real :: mscale = 1.e-12 ! normalization factor, units of m^3 (kl moved 121923)
-real :: mm,mtilde,kk03x,kk3xy,mymx,mxm3,mym3
-double precision :: hh,m3,mxdum,mydum,mxcoaldum,mycoaldum,mxevpdum,myevpdum,mxcondum,mycondum,mhat
+real :: mm,mtilde,KX,KY
+double precision :: hh0,hhx,hhy,hh,m3,mxdum,mydum,mxcoaldum,mycoaldum,mxevpdum,myevpdum,mxcondum,mycondum,mhat
 real :: dumepsc
 
 !-----------------------------------------------------------------------------------!
@@ -2048,9 +2056,8 @@ myscale = diam_scale**momy !1e-36 for M9
 m3scale_log = diam_scale_log*3
 mxscale_log = diam_scale_log*momx
 myscale_log = diam_scale_log*momy
-m3scale_nuc = (1.77e-6*2)**3/mscale
-mxscale_nuc = (1.77e-6*2)**dble(momx)/dble(mxscale)
-myscale_nuc = (1.77e-6*2)**dble(momy)/dble(myscale)
+mxscale_nuc = (1.568e-6*2)**dble(momx)/dble(mxscale)
+myscale_nuc = (1.568e-6*2)**dble(momy)/dble(myscale)
 
 qc = qcs(:,:,1)
 qc0 = qcs(:,:,2)
@@ -2956,10 +2963,10 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
         mm=(6./(pi*rhow)*qc(k,i))/qc0(k,i) ! convert qc from mass mix ratio to M3
         mtilde=mm/mscale
         m3=qc(k,i)*QtoM3
-        kk03x=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
-        kk3xy=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
+        KX=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
+        KY=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
 
-        dumepsc=qc0(k,i)*aevap*mtilde**bmevap*kk03x**bx3evap*kk3xy**by3evap/mscale
+        dumepsc=qc0(k,i)*aevap*mtilde**bmevap*KX**bx3evap*KY**by3evap/mscale
         ! print*, dumepsc, qc0(k,i), aevap, mtilde
 !          print*,'test',epsc,2.*pi*rho(k,i)*dv*dumepsc
         epsc = 2.*pi*rho(k,i)*dv*dumepsc
@@ -3034,8 +3041,8 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
      if (qc(k,i).ge.qsmall) &
        qccon = (aaa*epsc*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsc*oxx*(1.-sngl(dexp(-dble(xx*dt)))))/ab
       ! g_ce = 2.*pi*rho(k,i)*dv*ssat_cld/ab
+      ! qccon = dumepsc*2.*pi*rho(k,i)*dv*ssat_cld/ab
       g_ce = qccon/dumepsc
-      ! qccon = dumepsc*mscale*2.*pi*rho(k,i)*dv*ssat_cld/ab
       ! g_ce = 2.*pi*rho(k,i)*dv*ssat_cld/ab
 
     !evaporate instantly for very small water contents
@@ -3056,18 +3063,12 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
 ! get tendencies for other moments
 
 ! if spectral width is 0, then ncevp will be 0 (since it's initialized to 0 earlier)
-        if ((kk03x-1.).ge.1.e-20.and.(kk3xy-1.).ge.1.e-20) then
-          ncevp=g_evap*qc0(k,i)*a0evap1*mtilde**bm0evap1*(kk03x-1.)**bx0evap1*(kk3xy-1.)**by0evap1 &
-            +gevap*qc0(k,i)*a0evap2*mtilde**bm0evap2*(kk03x-1.)**bx0evap2*(kk3xy-1.)**by0evap2
+        if ((KX-1.).ge.1.e-20.and.(KY-1.).ge.1.e-20) then
+          ncevp=g_evap*qc0(k,i)*a0evap1*mtilde**bm0evap1*(KX-1.)**bx0evap1*(KY-1.)**by0evap1 &
+            +g_evap*qc0(k,i)*a0evap2*mtilde**bm0evap2*(KX-1.)**bx0evap2*(KY-1.)**by0evap2
         end if
-        ! if (abs(ncevp)>1e9) then
-        !   print*, 'before ratio', ncnuc, ncevp, g_evap, qc0(k,i),a0evap1,mtilde,bm0evap1,bx0evap1,by0evap1,kk03x,kk3xy
-        ! endif
-        mxevpdum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momx/3.*(dble(mm))**((momx-3.)/3.)*kk03x**bxxevap*kk3xy**byxevap
-        myevpdum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momy/3.*(dble(mm))**((momy-3.)/3.)*kk03x**bxyevap*kk3xy**byyevap
-        ! print*, mxevpdum, myevpdum
-        ! mxcondum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momx/3.*(dble(mm))**((momx-3.)/3.)*kk03x**bxxevap*kk3xy**byxevap
-        ! mycondum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momy/3.*(dble(mm))**((momy-3.)/3.)*kk03x**bxyevap*kk3xy**byyevap
+        mxevpdum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momx/3.*(dble(mm))**((momx-3.)/3.)*KX**bxxevap*KY**byxevap
+        myevpdum=g_ce*qc0(k,i)*aevap*mtilde**bmevap*momy/3.*(dble(mm))**((momy-3.)/3.)*KX**bxyevap*KY**byyevap
         if (mxevpdum>0) then
           mxcondum = mxevpdum
           mxevpdum = 0.
@@ -3087,11 +3088,6 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
         mxcon=real(mxcondum/mxscale)
         mycon=real(mycondum/myscale)
 
-!          ncevp = qcevp*qc0(k,i)/qc(k,i)
-!          mxcon = qccon*qcx(k,i)/qc(k,i)
-!          mxevp = qcevp*qcx(k,i)/qc(k,i)
-!          mycon = qccon*qcy(k,i)/qc(k,i)
-!          myevp = qcevp*qcy(k,i)/qc(k,i)
      end if
 
 
@@ -3188,19 +3184,20 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
         mm=(6./(pi*rhow)*qc(k,i))/qc0(k,i) ! convert qc from mass mix ratio to M3
         mtilde=mm/mscale
         m3=qc(k,i)*QtoM3
-        mxm3=(mxdum/m3)/diam_scale**(momx-3)
-        mym3=(mydum/m3)/diam_scale**(momy-3)
-        kk03x=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
-        kk3xy=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
+        KX=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
+        KY=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
 
-        mhat=mtilde*kk03x**bxscoal*kk3xy**byscoal
-        ! hh=a0coal*qc0(k,i)**2*mtilde**bmcoal*mxm3**bxcoal*mym3**bycoal
-        hh=a0coal*(((dble(mhat))**bbsmall+mtrans**bbsmall)**(bblarge/bbsmall)-mtrans**bblarge)*qc0(k,i)**2
+        mhat=dble(mtilde)!*KX**bxscoal*KY**byscoal
+        hh0=a0coal*mhat**bn0coal/(mhat**bmcoal+mtrans0**bmcoal)*qc0(k,i)**2
+        hhx=a0coal*mhat**bnxcoal/(mhat**bmcoal+mtrans0**bmcoal)*qc0(k,i)**2
+        hhy=a0coal*mhat**bnycoal/(mhat**bmcoal+mtrans0**bmcoal)*qc0(k,i)**2
 
-        ! NOTE:all tendencies are added to the respective moments, so nccoal must be < 0 
-        nccoal=hh*(2.**(0./3.)-2.)*dble(mm)**(0./3.)*         dble(kk03x)**dble(bx0coal)*dble(kk3xy)**dble(by0coal)
-        mxcoaldum=hh*(2.**(momx/3.)-2.)*(dble(mm))**(momx/3.)*dble(kk03x)**dble(bxxcoal)*dble(kk3xy)**dble(byxcoal)
-        mycoaldum=hh*(2.**(momy/3.)-2.)*(dble(mm))**(momy/3.)*dble(kk03x)**dble(bxycoal)*dble(kk3xy)**dble(byycoal)
+        bccoal = 1.
+        nccoal    = -hh0*KX**bx0coal*KY**by0coal
+        mxcoaldum =  hhx*((bccoal**3+1)**(momx/3.)-(bccoal**momx+1))*(dble(mm))**(momx/3.)* &
+          KX**bxxcoal*KY**byxcoal
+        mycoaldum =  hhy*((bccoal**3+1)**(momy/3.)-(bccoal**momy+1))*(dble(mm))**(momy/3.)* &
+          KX**bxycoal*KY**byycoal
 
 ! now normalize mx and my rates and convert to single precision
         mxcoal=real(mxcoaldum/mxscale)
@@ -3247,7 +3244,6 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
            dum2  = (dum2-qc0(k,i)*iSCF(k))*odt*SCF(k)
            dum2  = max(0.,dum2)
            ncnuc = dum2
-           ! if (ncnuc>0) print*, ncnuc, ncnuc+qc0(k,i), uu1, uu2
 
          ! HM add for SLC, process rates for non-dimensional mx and my
          ! simplified process rates
@@ -3256,11 +3252,13 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
 
          ! don't include mass increase from droplet activation during first time step
          ! since this is already accounted for by saturation adjustment below
+
            if (it.le.1) then
               qcnuc = 0.
            else
               qcnuc = ncnuc*cons7
            endif
+
            ! print*, 'sup_cld, qcnuc', sup_cld, qcnuc
            ! stop
         endif
@@ -3273,20 +3271,20 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
 ! This is only called once at the beginning of the simulation
 ! to remove any supersaturation in the intial conditions
 
-     !if (it.le.1) then
-     !   dumt   = th(k,i)*(pres(k,i)*1.e-5)**(rd*inv_cp)
-     !   dumqv  = Qv_cld(k)
-     !   dumqvs = qv_sat(dumt,pres(k,i),0)
-     !   dums   = dumqv-dumqvs
-     !   qccon  = dums/(1.+xxlv(k,i)**2*dumqvs/(cp*rv*dumt**2))*odt*SCF(k)
-     !   qccon  = max(0.,qccon)
-     !   if (qccon.le.1.e-7) qccon = 0.
-!! sensitivity, modify to adjust qv and T but don't add to cloud water
-     !   qv(k,i)=qv(k,i)-qccon*dt
-     !   th(k,i)=th(k,i)+invexn(k,i)*qccon*xxlv(k,i)*inv_cp*dt
-     !   qccon=0.
-!!..................
-     !endif
+     if (it.le.1) then
+        dumt   = th(k,i)*(pres(k,i)*1.e-5)**(rd*inv_cp)
+        dumqv  = Qv_cld(k)
+        dumqvs = qv_sat(dumt,pres(k,i),0)
+        dums   = dumqv-dumqvs
+        qccon  = dums/(1.+xxlv(k,i)**2*dumqvs/(cp*rv*dumt**2))*odt*SCF(k)
+        qccon  = max(0.,qccon)
+        if (qccon.le.1.e-7) qccon = 0.
+! sensitivity, modify to adjust qv and T but don't add to cloud water
+        qv(k,i)=qv(k,i)-qccon*dt
+        th(k,i)=th(k,i)+invexn(k,i)*qccon*xxlv(k,i)*inv_cp*dt
+        qccon=0.
+!..................
+     endif
 
 
 !.................................................................
@@ -3765,8 +3763,6 @@ if (.not. dosedimentation) goto 1250
         endif
      enddo
 
-     two_moment: if (log_predictNc) then  !2-moment cloud:
-
         substep_sedi_c2: do while (dt_left.gt.1.e-4)
 
            comax  = 0.
@@ -3790,27 +3786,28 @@ if (.not. dosedimentation) goto 1250
                  mxdum=dble(qcx(k,i))*mxscale
                  mydum=dble(qcy(k,i))*myscale
 
-                 g_fall = (1.18796E0/rho(k,i))**0.54
+                 g_fall = (1.18796/rho(k,i))**0.54
                  m3=qc(k,i)*QtoM3
                  mm=m3/qc0(k,i) ! convert qc from mass mix ratio to M3
                  mtilde=mm/mscale
-                 mxm3=(mxdum/m3)/diam_scale**(momx-3)
-                 mymx=mydum/mxdum/(diam_scale**(momy-momx))
-                 kk03x=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
-                 kk3xy=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
+                 KX=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
+                 KY=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
 
 ! all units below are m/s 
+                 bmfall = 2./3.
                  mpow1 = mtilde**bmfall
-                 ! mpow2 = mxm3**bmfall
-                 ! mpow3 = mymx**bnfall
+                 expr0 = mpow1/(mlim0**bnfall+mtilde**bnfall)
+                 expr3 = mpow1/(mlim3**bnfall+mtilde**bnfall)
+                 exprx = mpow1/(mlimx**bnfall+mtilde**bnfall)
+                 expry = mpow1/(mlimy**bnfall+mtilde**bnfall)
                  ! expr  = mpow1/(mpow1+mlim**bmfall)
                  ! exprx = mpow2/(mpow2+mlim**bmfall)
                  ! expry = mpow3/(mpow3+mlim**bnfall)
 
-                 V_M0(k) = g_fall*afall*mpow1*(kk03x**bx0fall*kk3xy**by0fall)
-                 V_M3(k) = g_fall*afall*mpow1*(kk03x**bx3fall*kk3xy**by3fall)
-                 V_Mx(k) = g_fall*afall*mpow1*(kk03x**bxxfall*kk3xy**byxfall)
-                 V_My(k) = g_fall*afall*mpow1*(kk03x**bxyfall*kk3xy**byyfall)
+                 V_M0(k) = g_fall*afall*expr0*(KX**bx0fall*KY**by0fall)
+                 V_M3(k) = g_fall*afall*expr3*(KX**bx3fall*KY**by3fall)
+                 V_Mx(k) = g_fall*afall*exprx*(KX**bxxfall*KY**byxfall)
+                 V_My(k) = g_fall*afall*expry*(KX**bxyfall*KY**byyfall)
 
 ! set max value
 
@@ -3835,7 +3832,6 @@ if (.not. dosedimentation) goto 1250
               comax = max(comax, V_My(k)*dt_left*inv_dzq(k,i))
 
            enddo kloop_sedi_c2
-           ! stop
 
            !-- compute dt_sub
            tmpint1 = int(comax+1.)    !number of substeps remaining if dt_sub were constant
@@ -3895,12 +3891,6 @@ if (.not. dosedimentation) goto 1250
            if (k_qxbot.ne.kbot) k_qxbot = k_qxbot - kdir
 
         enddo substep_sedi_c2
-
-        ! {{{
-
-     else  !1-moment cloud:
-       stop 'log_predictNc should be set to true'
-     ENDIF two_moment
 
      prt_liq(i) = prt_accum*odt  !note, contribution from rain is added below
 
@@ -10028,15 +10018,9 @@ SUBROUTINE access_lookup_table_coll_3mom(dumzz,dumjj,dumii,dumj,dumi,index,dum1,
           ! todo: change mom_lmtr to 03y
           mom_lmtr = 10.**((2*log10(mx) + 2*mxscale_log - &
             (2*(momy-momx)/(momy-3))*log10(m3))*((momy-3)/(2*(momx-3)))-myscale_log)
-          ! my = max(my,10.**((2*log10(mx) + 2*mxscale_log - &
-          !   (2*(momy-momx)/(momy-3))*log10(m3))*((momy-3)/(2*(momx-3)))-myscale_log))
           if (my<mom_lmtr) then
             my = mom_lmtr
-            ! print*, 'my', my, mom_lmtr
-            ! stop
           endif
-          ! my = max(my,10.**((2*log10(mx) + 2*mxscale_log - &
-          !   (2*(momy-momx)/momy)*log10(nc))*(momy/(2*momx)) - myscale_log))
 
         ! currently there is no upper bound on non-dimnensional variance
 
@@ -10516,7 +10500,6 @@ integer :: seed_size, i, idb
 integer, allocatable :: seed(:)
 
 type(csv_file) :: pv_file, ps_file ! param val and param sigma
-type(csv_file) :: dens_csv, bins_csv
 character(len=30),dimension(:),allocatable :: header, pnames
 logical,dimension(:),allocatable :: t
 logical :: stat_ok, stat_ok2
@@ -10570,7 +10553,7 @@ if (l_ppe) then
     call get_perturbed_params_pymc(params_save, pymc_filedirs)
   elseif (s_sample_dist .eq. 'normal' .or. s_sample_dist .eq. 'lhs') then
     call get_perturbed_params(params_save, pvalue_mean, pvalue_isd)
-  elseif (s_sample_dist .eq. 'custom') then
+  elseif (s_sample_dist .eq. 'post') then
     call get_posterior(posterior_binmeans, posterior_cdf, n_bins, npp)
     call get_perturbed_params_custom(params_save, posterior_binmeans, posterior_cdf, n_bins)
   endif
@@ -10613,17 +10596,20 @@ byxevap  = params_save(15)
 byyevap  = params_save(16)
 
 a0coal   = params_save(17)
-bblarge  = params_save(18)
-bbsmall  = params_save(19)
-bx0coal  = params_save(20)
-bxscoal  = params_save(21)
-bxxcoal  = params_save(22)
-bxycoal  = params_save(23)
-by0coal  = params_save(24)
-byscoal  = params_save(25)
-byxcoal  = params_save(26)
-byycoal  = params_save(27)
-mtrans   = params_save(28)
+bmcoal   = params_save(18)
+bn0coal  = params_save(19)
+bnxcoal  = params_save(20)
+bnycoal  = params_save(21)
+bx0coal  = params_save(22)
+bxxcoal  = params_save(23)
+bxycoal  = params_save(24)
+by0coal  = params_save(25)
+byxcoal  = params_save(27)
+byycoal  = params_save(28)
+mtrans0  = params_save(29)
+
+! mtransx  = params_save(29)
+! mtransy  = params_save(30)
 
 ! a0coal   = params_save(17)
 ! bmcoal   = params_save(18)
@@ -10647,17 +10633,20 @@ mtrans   = params_save(28)
 ! byxfall  = params_save(35)
 ! byyfall  = params_save(36)
 
-afall    = params_save(29)
-bmfall   = params_save(30)
-bx0fall  = params_save(31)
-bx3fall  = params_save(32)
-bxxfall  = params_save(33)
-bxyfall  = params_save(34)
-by0fall  = params_save(35)
-by3fall  = params_save(36)
-byxfall  = params_save(37)
-byyfall  = params_save(38)
-! mlim     = params_save(39)
+afall    = params_save(27)
+bnfall   = params_save(28)
+bx0fall  = params_save(29)
+bx3fall  = params_save(30)
+bxxfall  = params_save(31)
+bxyfall  = params_save(32)
+by0fall  = params_save(33)
+by3fall  = params_save(34)
+byxfall  = params_save(35)
+byyfall  = params_save(36)
+mlim0    = params_save(37)
+mlim3    = params_save(38)
+mlimx    = params_save(39)
+mlimy    = params_save(40)
 
 end subroutine read_boss_slc_param
 
