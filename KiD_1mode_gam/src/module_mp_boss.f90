@@ -2966,10 +2966,10 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
         KX=qc0(k,i)**(2*(momx-3)/momx)*mxdum**(6/momx)/m3**2 ! convert qc from mass mix ratio to M3
         KY=m3**(2*(momy-momx)/(momy-3))*mydum**(2*(momx-3)/(momy-3))/mxdum**2 ! convert qc from mass mix ratio to M3
 
-        dumepsc=qc0(k,i)*aevap*mtilde**bmevap*KX**bx3evap*KY**by3evap/mscale
+        dumepsc=qc0(k,i)*aevap*mtilde**bmevap*KX**bx3evap*KY**by3evap
         ! print*, dumepsc, qc0(k,i), aevap, mtilde
 !          print*,'test',epsc,2.*pi*rho(k,i)*dv*dumepsc
-        epsc = 2.*pi*rho(k,i)*dv*dumepsc
+        epsc = 2.*pi*rho(k,i)*dv*dumepsc*M3toQ
      else
         epsc = 0.
      endif
@@ -3042,7 +3042,7 @@ i_loop_main: do i = its,ite  ! main i-loop (around the entire scheme)
        qccon = (aaa*epsc*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsc*oxx*(1.-sngl(dexp(-dble(xx*dt)))))/ab
       ! g_ce = 2.*pi*rho(k,i)*dv*ssat_cld/ab
       ! qccon = dumepsc*2.*pi*rho(k,i)*dv*ssat_cld/ab
-      g_ce = qccon/dumepsc
+      g_ce = qccon/dumepsc*QtoM3
       ! g_ce = 2.*pi*rho(k,i)*dv*ssat_cld/ab
 
     !evaporate instantly for very small water contents
